@@ -5,32 +5,39 @@ import Html exposing (Html, text, div, h1, img, button)
 import Html.Attributes exposing (src, width)
 import Html.Events exposing (onClick)
 import String
+import Maybe exposing (Maybe(..))
 
 
 ---- MODEL ----
 
+type ContractType =
+    ContractType
+    { name: String
+    , ctype: Maybe ContractType
+    }
+
 type AgentType =
     AgentType
         { name: String
-        , atype: AgentType
+        , atype: Maybe AgentType
          }
 
 type CommitmentType =
     CommitmentType
         { name: String
-        , ctype: CommitmentType
+        , ctype: Maybe CommitmentType
          }
 
 type EventType =
     EventType
         { name: String
-        , etype: EventType
+        , etype: Maybe EventType
          }
 
 type ResourceType =
     ResourceType
         { name: String
-        , rtype: ResourceType
+        , rtype: Maybe ResourceType
         }
 
 type Agent =
@@ -38,6 +45,15 @@ type Agent =
         { name: String
         , atype: AgentType
          }
+
+type Contract =
+    Contract
+    { name: String
+    , ctype: ContractType
+    , parties: List Agent
+--    , clauses: 
+--    , terms: 
+    }
 
 type Commitment =
     Commitment
@@ -60,6 +76,7 @@ type Event =
 type Instance =
     Instance
         { id: Int
+        , contract: Contract
         , commitments: List Commitment
         , events: List Event
         }
@@ -91,7 +108,20 @@ update msg model =
 
 newSale : Int -> Instance
 newSale id =
-    Instance {id=id, commitments=[], events=[]}
+    Instance
+    { id=id
+    , contract=
+        Contract
+            { ctype=
+                ContractType
+                { name="Sale"
+                , ctype=Nothing
+                }
+            , name="Pizza sale #" ++ String.fromInt id
+            , parties=[]
+            }
+    , commitments=[]
+    , events=[]}
 
 ---- VIEW ----
 
@@ -102,7 +132,7 @@ view model =
         [ img [ src "logo.svg", width 50 ] []
         , h1 [] [ text "Your Elm App is working!" ]
         , button [onClick NewSale] [text "New pizza sale"]
-        , text <| String.join ", " <| List.map (\(Instance i) -> String.fromInt i.id) model.instances
+        , text <| String.join ", " <| List.map (\(Instance i) -> (\(Contract c) -> c.name) i.contract) model.instances
         ]
 
 
