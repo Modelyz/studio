@@ -9,14 +9,71 @@ import String
 
 ---- MODEL ----
 
+type AgentType =
+    AgentType
+        { name: String
+        , atype: AgentType
+         }
+
+type CommitmentType =
+    CommitmentType
+        { name: String
+        , ctype: CommitmentType
+         }
+
+type EventType =
+    EventType
+        { name: String
+        , etype: EventType
+         }
+
+type ResourceType =
+    ResourceType
+        { name: String
+        , rtype: ResourceType
+        }
+
+type Agent =
+    Agent
+        { name: String
+        , atype: AgentType
+         }
+
+type Commitment =
+    Commitment
+        { name: String
+        , ctype: CommitmentType
+        , qty: Float
+        , rtype: ResourceType
+        , provider: Agent
+        , receiver: Agent }
+
+type Event =
+    Event
+        { name: String
+        , etype: EventType
+        , qty: Float
+        , rtype: ResourceType
+        , provider: Agent
+        , receiver: Agent }
+
+type Instance =
+    Instance
+        { id: Int
+        , commitments: List Commitment
+        , events: List Event
+        }
+
+type alias Pattern =
+    {}
 
 type alias Model =
-    Int
+    { pattern: Pattern,  instances: List Instance }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( 0, Cmd.none )
+    ( {pattern={}, instances=[]}, Cmd.none )
 
 
 
@@ -24,16 +81,17 @@ init =
 
 
 type Msg
-    = Plus | Moins
+    = NewSale
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Plus -> ( model + 1, Cmd.none)
-        Moins -> ( model - 1, Cmd.none)
+        NewSale -> ( {model | instances=model.instances++[newSale <| List.length model.instances + 1]}, Cmd.none)
 
-
+newSale : Int -> Instance
+newSale id =
+    Instance {id=id, commitments=[], events=[]}
 
 ---- VIEW ----
 
@@ -43,9 +101,8 @@ view model =
     div []
         [ img [ src "logo.svg", width 50 ] []
         , h1 [] [ text "Your Elm App is working!" ]
-        , button [onClick Plus] [text "+"]
-        , button [onClick Moins] [text "-"]
-        , text <| String.fromInt model
+        , button [onClick NewSale] [text "New pizza sale"]
+        , text <| String.join ", " <| List.map (\(Instance i) -> String.fromInt i.id) model.instances
         ]
 
 
