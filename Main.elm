@@ -4,7 +4,7 @@ import Browser exposing (Document, application, UrlRequest)
 import Browser.Navigation exposing (Key)
 import Url exposing (Url)
 import Html exposing (Html, text, div, h1, img, button)
-import Html.Attributes exposing (src, width)
+import Html.Attributes exposing (class, src, width)
 import Html.Events exposing (onClick)
 import String
 import Maybe exposing (Maybe(..))
@@ -78,6 +78,7 @@ type Event =
 type Instance =
     Instance
         { id: Int
+        , name: String
         , contract: Contract
         , commitments: List Commitment
         , events: List Event
@@ -110,10 +111,12 @@ update msg model =
         NewSale -> ( {model | instances=model.instances++[newSale <| List.length model.instances + 1]}, Cmd.none)
         NoOp -> (model, Cmd.none)
 
+
 newSale : Int -> Instance
 newSale id =
     Instance
     { id=id
+    , name="Pizza Sale #" ++ String.fromInt id
     , contract=
         Contract
             { ctype=
@@ -127,20 +130,29 @@ newSale id =
     , commitments=[]
     , events=[]}
 
+
 ---- VIEW ----
+
+view_instance: Instance -> Html Msg
+view_instance i =
+    div [ class "column", class "is-one-quarter" ]
+        [ div [ class "box" ]
+              [ text <| (\(Instance ii) -> ii.name) i ]
+        ]
 
 
 view : Model -> Document Msg
 view model =
     { title = "Modelyz"
-    , body = [
-        div []
+    , body =
+        [ div [ class "section" ]
             [ img [ src "logo.svg", width 50 ] []
-            , h1 [] [ text "Your Elm App is working!" ]
+            , h1 [] [ text "Modelyz" ]
             , button [onClick NewSale] [text "New pizza sale"]
-            , text <| String.join ", " <| List.map (\(Instance i) -> (\(Contract c) -> c.name) i.contract) model.instances
             ]
-    ] }
+        , div [ class "columns", class "is-multiline" ]
+                    <| List.map view_instance model.instances
+        ] }
 
 
 onUrlRequest : UrlRequest -> Msg
