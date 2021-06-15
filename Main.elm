@@ -135,9 +135,9 @@ newSale id =
 
 view_instance: Instance -> Html Msg
 view_instance i =
-    div [ class "column", class "is-one-quarter" ]
-        [ div [ class "box" ]
-              [ text <| (\(Instance ii) -> ii.name) i ]
+    div [class "column", class "is-one-quarter"]
+        [div [class "box"]
+              [text <| (\(Instance ii) -> ii.name) i]
         ]
 
 
@@ -145,12 +145,12 @@ view : Model -> Document Msg
 view model =
     { title = "Modelyz"
     , body =
-        [ div [ class "section" ]
-            [ img [ src "logo.svg", width 50 ] []
-            , h1 [] [ text "Modelyz" ]
+        [div [class "section"]
+            [img [src "logo.svg", width 50] []
+            , h1 [] [text "Modelyz"]
             , button [onClick NewSale] [text "New pizza sale"]
             ]
-        , div [ class "columns", class "is-multiline" ]
+        , div [class "columns", class "is-multiline"]
                     <| List.map view_instance model.instances
         ] }
 
