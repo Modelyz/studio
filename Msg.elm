@@ -1,11 +1,11 @@
 module Msg exposing (..)
 
-import Browser exposing (UrlRequest)
-import Url exposing (Url)
+import Browser
+import Url
 
 type Msg
     = NewSale
     | NoOp
-    | LinkClicked UrlRequest
+    | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
 

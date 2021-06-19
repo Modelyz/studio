@@ -4,8 +4,8 @@ import Browser
 import Browser.Navigation as Nav exposing (..)
 import Url
 import Url.Parser
-import Html exposing (Html, text, div, h1, img, button)
-import Html.Attributes exposing (class, src, width)
+import Html exposing (Html, text, div, h1, img, button, a)
+import Html.Attributes exposing (class, src, width, href)
 import Html.Events exposing (onClick)
 import String
 import Maybe exposing (Maybe(..))
@@ -61,7 +61,7 @@ update msg model =
               | url = url
               , route = Route.parseUrl url
              }
-            , Cmd.none
+            , Nav.pushUrl model.navkey (Url.toString url)
             )
 
 
@@ -90,28 +90,33 @@ newSale id =
 
 view : Model -> Browser.Document Msg.Msg
 view model =
-    case model.route of
-        Route.NotFound -> NotFound.document
-        Route.Home -> 
-            { title = "Modelyz"
-            , body =
-                [div [class "section"]
-                    [img [src "/static/logo.svg", width 50] []
-                    , h1 [] [text "Modelyz"]
-                    , button [onClick Msg.NewSale] [text "New pizza sale"]
-                    ]
-                , div [class "columns", class "is-multiline"]
-                      <| List.map REA.Process.view model.processes
-                ] }
-        Route.SingleProcess id ->
-            { title = "Process", body = [ div [][text <| "process" ++ String.fromInt id ] ] }
+    { title = "Modelyz"
+    , body =
+        [ div [class "section"]
+            [ a [ href "/"]
+                [ img [src "/static/logo.svg", width 50] []
+                , h1 [] [text "Modelyz"]
+            ]]
+        , div [class "section"]
+            [ button [onClick Msg.NewSale] [text "New pizza sale"]
+            ]
+        , case model.route of
+            Route.NotFound -> NotFound.document
+            Route.Home -> 
+                div [class "columns", class "is-multiline"]
+                    <| List.map REA.Process.view model.processes
+            Route.SingleProcess id ->
+                div [][text <| "process" ++ String.fromInt id ]
+        ]
+    }
+
 
 onUrlRequest : Browser.UrlRequest -> Msg.Msg
 onUrlRequest = Msg.LinkClicked
 
 
 onUrlChange : Url.Url -> Msg.Msg
-onUrlChange url = Msg.NoOp
+onUrlChange = Msg.UrlChanged
 
 
 ---- PROGRAM ----

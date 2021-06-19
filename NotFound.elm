@@ -1,12 +1,8 @@
 module NotFound exposing (..)
 
-import Browser
-import Html exposing (div, text)
+import Html exposing (Html, div, text)
 import Msg 
 
-document: Browser.Document Msg.Msg
+document: Html.Html Msg.Msg
 document =
-    { title = "Not Found"
-    , body =
-      [ div [][ text "Not Found" ] ]
-    }
+    div [][ text "Not Found" ]
