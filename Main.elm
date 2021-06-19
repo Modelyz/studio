@@ -4,8 +4,8 @@ import Browser
 import Browser.Navigation as Nav exposing (..)
 import Url
 import Url.Parser
-import Html exposing (Html, text, div, h1, img, button, a)
-import Html.Attributes exposing (class, src, width, href)
+import Html exposing (Html, text, div, span, h1, img, button, a, nav)
+import Html.Attributes exposing (class, src, width, href, attribute)
 import Html.Events exposing (onClick)
 import String
 import Maybe exposing (Maybe(..))
@@ -92,11 +92,36 @@ view : Model -> Browser.Document Msg.Msg
 view model =
     { title = "Modelyz"
     , body =
-        [ div [class "section"]
-            [ a [ href "/"]
-                [ img [src "/static/logo.svg", width 50] []
-                , h1 [] [text "Modelyz"]
-            ]]
+        [ nav
+            [ class "navbar"
+            , attribute "role" "navigation"
+            , attribute "aria-label" "main navigation"
+            ]
+            [ div 
+                [ class "navbar-brand"
+                ]
+                [ a
+                    [ class "navbar-item"
+                    , href "/"
+                    ]
+                    [ img
+                        [ src "/static/logo.svg"
+                        , width 50
+                        ] []
+                    ]
+                , a
+                    [ attribute "role" "button"
+                    , class "navbar-burger"
+                    , attribute "aria-label" "menu"
+                    , attribute "aria-expanded" "false"
+                    , attribute "dat-target" "navBar"
+                    ]
+                    [ span [ attribute "aria-hidden" "true" ] [ ]
+                    , span [ attribute "aria-hidden" "true" ] [ ]
+                    , span [ attribute "aria-hidden" "true" ] [ ]
+                    ]
+               ]
+          ]
         , case model.route of
             Route.NotFound -> NotFound.document
             Route.Home -> 
