@@ -1,46 +1,73 @@
 module Main exposing (..)
 
-import Browser exposing (Document, application, UrlRequest)
-import Browser.Navigation exposing (Key)
-import Url exposing (Url)
+import Browser
+import Browser.Navigation as Nav exposing (..)
+import Url
+import Url.Parser
 import Html exposing (Html, text, div, h1, img, button)
 import Html.Attributes exposing (class, src, width)
 import Html.Events exposing (onClick)
 import String
 import Maybe exposing (Maybe(..))
 
-import Instance exposing (..)
-import Contract exposing (..)
-import Msg exposing (..)
+import REA.Process exposing (..)
+import REA.Contract exposing (..)
+import Msg
+import Route
+import NotFound
 
 ---- MODEL ----
 
-type alias Pattern =
-    {}
-
 type alias Model =
-    { pattern: Pattern,  instances: List Instance }
+    { url: Url.Url
+    , route: Route.Route
+    , navkey: Nav.Key
+    , processtype: ProcessType
+    , processes: List Process
+    }
 
 
-init : flags -> Url -> Key -> ( Model, Cmd msg )
-init flags url key =
-    ( {pattern={}, instances=[]}, Cmd.none )
+init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd msg )
+init flags url navkey =
+    ( { url=url
+      , route=Route.parseUrl url
+      , navkey=navkey
+      , processtype={}
+      , processes=[]
+      }
+    , Cmd.none
+    )
+
 
 
 
 ---- UPDATE ----
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg.Msg -> Model -> ( Model, Cmd Msg.Msg )
 update msg model =
     case msg of
-        Msg.NewSale -> ( {model | instances=model.instances++[newSale <| List.length model.instances + 1]}, Cmd.none)
+        Msg.NewSale -> ( {model | processes=model.processes++[newSale <| List.length model.processes + 1]}, Cmd.none)
         Msg.NoOp -> (model, Cmd.none)
+        Msg.LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                  ( { model | url=url, route=Route.parseUrl url }
+                    , Nav.pushUrl model.navkey (Url.toString url) )
+                Browser.External href ->
+                  ( model, Nav.load href )
+        Msg.UrlChanged url ->
+            ( { model
+              | url = url
+              , route = Route.parseUrl url
+             }
+            , Cmd.none
+            )
 
 
-newSale : Int -> Instance
+newSale : Int -> Process
 newSale id =
-    Instance
+    Process
     { id=id
     , name="Pizza Sale #" ++ String.fromInt id
     , contract=
@@ -61,34 +88,38 @@ newSale id =
 ---- VIEW ----
 
 
-view : Model -> Document Msg
+view : Model -> Browser.Document Msg.Msg
 view model =
-    { title = "Modelyz"
-    , body =
-        [div [class "section"]
-            [img [src "logo.svg", width 50] []
-            , h1 [] [text "Modelyz"]
-            , button [onClick Msg.NewSale] [text "New pizza sale"]
-            ]
-        , div [class "columns", class "is-multiline"]
-              <| List.map Instance.view model.instances
-        ] }
+    case model.route of
+        Route.NotFound -> NotFound.document
+        Route.Home -> 
+            { title = "Modelyz"
+            , body =
+                [div [class "section"]
+                    [img [src "/static/logo.svg", width 50] []
+                    , h1 [] [text "Modelyz"]
+                    , button [onClick Msg.NewSale] [text "New pizza sale"]
+                    ]
+                , div [class "columns", class "is-multiline"]
+                      <| List.map REA.Process.view model.processes
+                ] }
+        Route.SingleProcess id ->
+            { title = "Process", body = [ div [][text <| "process" ++ String.fromInt id ] ] }
+
+onUrlRequest : Browser.UrlRequest -> Msg.Msg
+onUrlRequest = Msg.LinkClicked
 
 
-onUrlRequest : UrlRequest -> Msg
-onUrlRequest url = Msg.NoOp
-
-
-onUrlChange : Url -> Msg
+onUrlChange : Url.Url -> Msg.Msg
 onUrlChange url = Msg.NoOp
 
 
 ---- PROGRAM ----
 
 
-main : Program () Model Msg
+main : Program () Model Msg.Msg
 main =
-    application
+    Browser.application
         { init = init
         , onUrlRequest = onUrlRequest
         , onUrlChange = onUrlChange

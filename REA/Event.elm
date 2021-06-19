@@ -1,7 +1,7 @@
-module Event exposing (..)
+module REA.Event exposing (..)
 
-import Resource exposing (..)
-import Agent exposing (..)
+import REA.Resource exposing (ResourceType)
+import REA.Agent exposing (Agent)
 
 type EventType =
     EventType

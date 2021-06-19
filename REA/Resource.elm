@@ -1,4 +1,4 @@
-module Resource exposing (..)
+module REA.Resource exposing (..)
 
 
 type ResourceType =

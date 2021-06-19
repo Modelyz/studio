@@ -1,4 +1,4 @@
-module Agent exposing (..)
+module REA.Agent exposing (..)
 
 
 type AgentType =

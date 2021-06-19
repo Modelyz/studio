@@ -1,7 +1,7 @@
-module Commitment exposing (..)
+module REA.Commitment exposing (..)
 
-import Agent exposing (..)
-import Resource exposing (..)
+import REA.Agent exposing (Agent)
+import REA.Resource exposing (ResourceType)
 
 type CommitmentType =
     CommitmentType

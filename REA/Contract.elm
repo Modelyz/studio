@@ -1,6 +1,6 @@
-module Contract exposing (..)
+module REA.Contract exposing (..)
 
-import Agent exposing (..)
+import REA.Agent exposing (Agent)
 
 type ContractType =
     ContractType
