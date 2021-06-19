@@ -97,14 +97,14 @@ view model =
                 [ img [src "/static/logo.svg", width 50] []
                 , h1 [] [text "Modelyz"]
             ]]
-        , div [class "section"]
-            [ button [onClick Msg.NewSale] [text "New pizza sale"]
-            ]
         , case model.route of
             Route.NotFound -> NotFound.document
             Route.Home -> 
-                div [class "columns", class "is-multiline"]
-                    <| List.map REA.Process.view model.processes
+                div [class "section"]
+                    [ button [onClick Msg.NewSale] [text "New pizza sale"]
+                    , div [class "columns", class "is-multiline"]
+                          <| List.map REA.Process.view model.processes
+                    ]
             Route.SingleProcess id ->
                 div [][text <| "process" ++ String.fromInt id ]
         ]
