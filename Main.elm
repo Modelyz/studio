@@ -37,9 +37,9 @@ init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg.Msg )
 init ( seed, seedExtension ) url navkey =
     ( { currentSeed=initialSeed seed seedExtension
       , currentUuid=Nothing
+      , navkey=navkey
       , url=url
       , route=Route.parseUrl url
-      , navkey=navkey
       , processtype={}
       , processes=[]
       }
@@ -61,16 +61,17 @@ update msg model =
         Msg.LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                  ( { model | url=url, route=Route.parseUrl url }
+                  ( { model
+                    | route=Route.parseUrl url
+                    }
                     , Nav.pushUrl model.navkey (Url.toString url) )
                 Browser.External href ->
                   ( model, Nav.load href )
         Msg.UrlChanged url ->
             ( { model
-              | url = url
-              , route = Route.parseUrl url
+              | route = Route.parseUrl url
              }
-            , Nav.pushUrl model.navkey (Url.toString url)
+            , Cmd.none
             )
         Msg.NewSale ->
             let
