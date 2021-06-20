@@ -9,5 +9,4 @@ type Msg
     | NoOp
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
-    | Store ES.Event
 

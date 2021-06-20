@@ -33,7 +33,7 @@ type alias Model =
     }
 
 
-init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd msg )
+init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg.Msg )
 init ( seed, seedExtension ) url navkey =
     ( { currentSeed=initialSeed seed seedExtension
       , currentUuid=Nothing
@@ -82,10 +82,10 @@ update msg model =
                 ( { model
                     | processes=model.processes ++ [ newSale saleId ]
                     , currentUuid = Just newUuid
-                    , currentSeed = newSeed }
-                , storeEvent event.name)
-        Msg.Store event ->
-            (model, storeEvent event.name)
+                    , currentSeed = newSeed
+                  }
+                , storeEvent <| String.fromInt saleId
+                )
 
 
 newSale : Int -> Process
