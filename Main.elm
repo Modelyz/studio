@@ -78,14 +78,16 @@ update msg model =
                 ( newUuid, newSeed ) =
                     step Prng.Uuid.generator <| model.currentSeed
                 saleId = List.length model.processes + 1
-                event = { uuid=model.currentUuid, name="Pizza sale" ++ String.fromInt saleId }
+                event = { uuid=Just newUuid, name="Pizza sale" ++ String.fromInt saleId }
             in
                 ( { model
                     | processes=model.processes ++ [ newSale saleId ]
                     , currentUuid = Just newUuid
                     , currentSeed = newSeed
                   }
-                , storeEvent <| String.fromInt saleId
+                , storeEvent <| case event.uuid of
+                    Nothing -> "nothing"
+                    Just uuid -> Prng.Uuid.toString uuid
                 )
 
 
