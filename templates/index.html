@@ -23,17 +23,53 @@
     </noscript>
     <div id="root"></div>
     <script>
+/**** indexedDB ****/
+let request = window.indexedDB.open('eventstore', 1);
+request.onupgradeneeded = function(e) {
+    console.log('Upgrading database...')
+    const db = e.target.result;
+    try {
+        db.deleteObjectStore('events');
+        console.log('Deleted the old database!')
+    } catch(e) {}
+    let idbstore = db.createObjectStore('events', {keyPath: 'uuid'});
+    idbstore.createIndex('uuid', 'uuid', { unique: true });
+    //idbstore.createIndex('layouts', ['model', 'rel']);
+    console.log('Database upgraded')
+};
+/**** Random UUID ****/
 const crypto = window.crypto || window.msCrypto;
 const getRandomInts = (n) => {
     const randInts = new Uint32Array(n);
     crypto.getRandomValues(randInts);
     return Array.from(randInts);
 };
+/**** run Elm ****/
 const randInts = getRandomInts(5);
 const flags = [randInts[0], randInts.slice(1)]
 var app = Elm.Main.init({flags:flags});
+/**** subscribe to Ports ****/
 app.ports.storeEvent.subscribe(function(message) {
-    alert(message);
+    let request = window.indexedDB.open('eventstore', 1);
+    request.onsuccess = function(e) {
+        console.log("open IDB successful"); //FIXME
+        const db = e.target.result;
+        const transaction = db.transaction(['events'], 'readwrite');
+        transaction.oncomplete = function(e) {
+            console.log("transaction complete")
+        }
+        transaction.error = function(e) {
+            alert("transaction error")
+        }
+        const addrequest = transaction.objectStore('events').put({uuid: message})
+        addrequest.onsuccess = () => {
+            console.log('Event successfully added to IDB')
+        }
+        addrequest.onerror = () => {
+            alert("IDB write failed"); // FIXME
+        }
+    }
+    request.onerror = () => { alert("open IDB failed"); /* FIXME */ }
 });
     </script>
 </body>
