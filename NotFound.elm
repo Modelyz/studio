@@ -1,7 +1,7 @@
 module NotFound exposing (..)
 
+import Msg
 import Html exposing (Html, div, text)
-import Msg 
 
 document: Html.Html Msg.Msg
 document =

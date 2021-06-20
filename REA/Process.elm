@@ -2,7 +2,7 @@ module REA.Process exposing (..)
 
 import Html exposing (Html, div, text, a)
 import Html.Attributes exposing (class, src, width, href)
-import Msg exposing (..)
+import Msg
 import REA.Commitment exposing (Commitment)
 import REA.Contract exposing (Contract)
 import REA.Event exposing (Event)
@@ -24,7 +24,7 @@ type Process =
         }
 
 
-view: Process -> Html Msg
+view: Process -> Html Msg.Msg
 view i =
     div [class "column", class "is-one-quarter"]
         [a [href <| "/process/" ++ (String.fromInt <| (\(Process x) -> x.id) i)]
