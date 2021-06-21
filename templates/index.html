@@ -58,18 +58,19 @@ app.ports.storeEvent.subscribe(function(message) {
         transaction.oncomplete = function(e) {
             console.log("transaction complete")
         }
-        transaction.error = function(e) {
-            alert("transaction error")
+        transaction.onerror = function(e) {
+            alert("transaction error:" + transaction.error)
         }
-        const addrequest = transaction.objectStore('events').put({uuid: message})
-        addrequest.onsuccess = () => {
+        const addrequest = transaction.objectStore('events').add({uuid: message})
+        addrequest.onsuccess = (e) => {
+            db.close()
             console.log('Event successfully added to IDB')
         }
-        addrequest.onerror = () => {
-            alert("IDB write failed"); // FIXME
+        addrequest.onerror = (e) => {
+            alert("IDB write failed: " + addrequest.error); // FIXME
         }
     }
-    request.onerror = () => { alert("open IDB failed"); /* FIXME */ }
+    request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
 });
     </script>
 </body>
