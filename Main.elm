@@ -2,18 +2,22 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
-import Url
-import Url.Parser
 import Html exposing (Html, text, div, span, h1, img, button, a, nav)
 import Html.Attributes exposing (class, src, width, href, attribute)
 import Html.Events exposing (onClick)
-import String
+import Json.Encode
 import Maybe exposing (Maybe(..))
 import Prng.Uuid exposing (Uuid, generator)
 import Random.Pcg.Extended exposing (Seed, initialSeed, step)
+import String
+import Task
+import Time
+import Url
+import Url.Parser
 
 
 -- local imports
+import ES
 import Msg
 import REA.Process exposing (..)
 import REA.Contract exposing (..)
@@ -24,24 +28,32 @@ import NotFound
 
 type alias Model =
     { currentSeed: Seed
-    , currentUuid: Maybe Prng.Uuid.Uuid
+    , currentUuid: Prng.Uuid.Uuid
     , url: Url.Url
     , route: Route.Route
     , navkey: Nav.Key
     , processtype: ProcessType
     , processes: List Process
+    , posixtime: Time.Posix
+    , events: List ES.Event
     }
 
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg.Msg )
 init ( seed, seedExtension ) url navkey =
+    let
+        ( newUuid, newSeed ) =
+            step Prng.Uuid.generator <| initialSeed seed seedExtension
+    in
     ( { currentSeed=initialSeed seed seedExtension
-      , currentUuid=Nothing
+      , currentUuid=newUuid
       , navkey=navkey
       , url=url
       , route=Route.parseUrl url
       , processtype={}
       , processes=[]
+      , posixtime=Time.millisToPosix 0
+      , events=[]
       }
     , Cmd.none
     )
@@ -49,7 +61,7 @@ init ( seed, seedExtension ) url navkey =
 
 -- PORTS --
 
-port storeEvent: String -> Cmd msg
+port storeEvent: Json.Encode.Value -> Cmd msg
 
 
 ---- UPDATE ----
@@ -73,26 +85,44 @@ update msg model =
              }
             , Cmd.none
             )
-        Msg.NewSale ->
+        Msg.NewEvent ->
             let
                 ( newUuid, newSeed ) =
-                    step Prng.Uuid.generator <| model.currentSeed
+                    step Prng.Uuid.generator model.currentSeed
                 saleId = List.length model.processes + 1
-                event = { uuid=Just newUuid, name="Pizza sale" ++ String.fromInt saleId }
+                event = { uuid=newUuid
+                        , posixtime=model.posixtime
+                        , name="Pizza sale" ++ String.fromInt saleId
+                        }
             in
                 ( { model
-                    | processes=model.processes ++ [ newSale saleId ]
-                    , currentUuid = Just newUuid
+                    | processes=model.processes ++ [ newEvent saleId ]
+                    , currentUuid = newUuid
                     , currentSeed = newSeed
+                    , events = event :: model.events
                   }
-                , storeEvent <| case event.uuid of
-                    Nothing -> "nothing"
-                    Just uuid -> Prng.Uuid.toString uuid
+                  , Task.perform Msg.TimestampEvent Time.now
                 )
+        Msg.TimestampEvent time ->
+            let
+                first = List.head model.events
+                remaining = case List.tail model.events of
+                    Nothing -> []
+                    Just r -> r
+            in case first of
+                Nothing -> (model, Cmd.none)
+                Just event ->
+                    let timedEvent = {event | posixtime=time}
+                    in
+                    ( { model
+                      | events= timedEvent :: remaining
+                      }
+                    , storeEvent <| ES.encode timedEvent
+                    )
 
 
-newSale : Int -> Process
-newSale id =
+newEvent : Int -> Process
+newEvent id =
     Process
     { id=id
     , name="Pizza Sale #" ++ String.fromInt id
@@ -155,7 +185,7 @@ view model =
                     [ class "section"
                     ]
                     [ button
-                        [ onClick Msg.NewSale
+                        [ onClick Msg.NewEvent
                         , class "button"
                         ]
                         [ text "New pizza sale"

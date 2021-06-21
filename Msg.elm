@@ -1,12 +1,13 @@
 module Msg exposing (..)
 
 import Browser
-import Url
 import ES
+import Time
+import Url
 
 type Msg
-    = NewSale
+    = NewEvent
     | NoOp
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
-
+    | TimestampEvent Time.Posix

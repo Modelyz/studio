@@ -49,22 +49,22 @@ const randInts = getRandomInts(5);
 const flags = [randInts[0], randInts.slice(1)]
 var app = Elm.Main.init({flags:flags});
 /**** subscribe to Ports ****/
-app.ports.storeEvent.subscribe(function(message) {
+app.ports.storeEvent.subscribe(function(event) {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = function(e) {
-        console.log("open IDB successful"); //FIXME
+        console.log("open IDB successful");
         const db = e.target.result;
         const transaction = db.transaction(['events'], 'readwrite');
         transaction.oncomplete = function(e) {
             console.log("transaction complete")
         }
         transaction.onerror = function(e) {
-            alert("transaction error:" + transaction.error)
+            alert("transaction error:" + transaction.error) // FIXME
         }
-        const addrequest = transaction.objectStore('events').add({uuid: message})
+        const addrequest = transaction.objectStore('events').add(event)
         addrequest.onsuccess = (e) => {
-            db.close()
             console.log('Event successfully added to IDB')
+            db.close()
         }
         addrequest.onerror = (e) => {
             alert("IDB write failed: " + addrequest.error); // FIXME
