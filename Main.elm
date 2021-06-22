@@ -19,8 +19,9 @@ import Url.Parser
 -- local imports
 import ES
 import Msg
-import REA.Process exposing (..)
-import REA.Contract exposing (..)
+import REA
+import REA.Process
+import REA.ProcessType
 import Route
 import NotFound
 
@@ -32,8 +33,8 @@ type alias Model =
     , url: Url.Url
     , route: Route.Route
     , navkey: Nav.Key
-    , processtype: ProcessType
-    , processes: List Process
+    , processtype: REA.ProcessType
+    , processes: List REA.Process
     , posixtime: Time.Posix
     , events: List ES.Event
     }
@@ -50,7 +51,7 @@ init ( seed, seedExtension ) url navkey =
       , navkey=navkey
       , url=url
       , route=Route.parseUrl url
-      , processtype={}
+      , processtype=REA.ProcessType.new
       , processes=[]
       , posixtime=Time.millisToPosix 0
       , events=[]
@@ -70,6 +71,7 @@ update : Msg.Msg -> Model -> ( Model, Cmd Msg.Msg )
 update msg model =
     case msg of
         Msg.NoOp -> (model, Cmd.none)
+        -- react to a click on a link
         Msg.LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -79,30 +81,33 @@ update msg model =
                     , Nav.pushUrl model.navkey (Url.toString url) )
                 Browser.External href ->
                   ( model, Nav.load href )
+        -- react to an url change
         Msg.UrlChanged url ->
             ( { model
               | route = Route.parseUrl url
              }
             , Cmd.none
             )
+        -- create a new event
         Msg.NewEvent ->
             let
                 ( newUuid, newSeed ) =
                     step Prng.Uuid.generator model.currentSeed
-                saleId = List.length model.processes + 1
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
-                        , name="Pizza sale" ++ String.fromInt saleId
+                        , name="New " ++ "Process" ++ " added"
+                        , entity=REA.PROCESS (REA.Process.new newUuid)
                         }
             in
                 ( { model
-                    | processes=model.processes ++ [ newEvent saleId ]
+                    | processes=model.processes ++ [ newEvent newUuid ]
                     , currentUuid = newUuid
                     , currentSeed = newSeed
                     , events = event :: model.events
                   }
                   , Task.perform Msg.TimestampEvent Time.now
                 )
+        -- add a timestamp to the event
         Msg.TimestampEvent time ->
             let
                 first = List.head model.events
@@ -121,23 +126,21 @@ update msg model =
                     )
 
 
-newEvent : Int -> Process
+newEvent : Prng.Uuid.Uuid -> REA.Process
 newEvent id =
-    Process
-    { id=id
-    , name="Pizza Sale #" ++ String.fromInt id
+    { uuid=id
+    , name="Pizza Sale #" ++ Prng.Uuid.toString id
     , contract=
-        Contract
             { ctype=
-                ContractType
+                REA.ContractType
                 { name="Sale"
                 , ctype=Nothing
                 }
-            , name="Pizza sale #" ++ String.fromInt id
+            , name="Pizza sale #" ++ Prng.Uuid.toString id
             , parties=[]
             }
-    , commitments=[]
-    , events=[]
+--    , commitments=[]
+--    , events=[]
     }
 
 

@@ -1,7 +1,6 @@
 module Msg exposing (..)
 
 import Browser
-import ES
 import Time
 import Url
 

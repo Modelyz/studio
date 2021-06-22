@@ -2,36 +2,39 @@ module REA exposing (..)
 
 import Prng.Uuid
 
-type Entity =
-    Resource
-    | ResourceType
-    | Event
-    | EventType
-    | Agent
-    | AgentType
-    | Commitment
-    | CommitmentType
-    | Contract
-    | ContractType
-    | Process
-    | ProcessType
 
+-- ENTITY --
+
+type Entity =
+    PROCESS Process
+    | AGENT Agent
+    | CONTRACTTYPE ContractType
+    | CONTRACT Contract
+--    | PROCESSTYPE ProcessType
+--    | RESOURCETYPE ResourceType
+--    | RESOURCE Resource
+--    | EVENTTYPE EventType
+--    | EVENT Event
+--    | AGENTTYPE AgentType
+--    | COMMITMENTTYPE CommitmentType
+--    | COMMITMENT Commitment
+    
 
 -- PROCESS --
 
 -- process type is the rea pattern
-type alias ProcessType =
+type ProcessType =
+    ProcessType
     {}
 
 
 -- a process is a specific occurence of a process type
-type Process =
-    Process
+type alias Process =
         { uuid: Prng.Uuid.Uuid
         , name: String
         , contract: Contract
-        , commitments: List Commitment
-        , events: List Event
+--        , commitments: List Commitment
+--        , events: List Event
         }
 
 
@@ -43,30 +46,26 @@ type ResourceType =
         , rtype: Maybe ResourceType
         }
 
-type Resource =
-    Resource
+type alias Resource =
     { name: String
     , rtype: ResourceType
     }
-
-
 -- EVENT --
 
 type EventType =
     EventType
-        { name: String
-        , etype: Maybe EventType
-         }
+    { name: String
+    , etype: Maybe EventType
+     }
 
 
-type Event =
-    Event
-        { name: String
-        , etype: EventType
-        , qty: Float
-        , rtype: ResourceType
-        , provider: Agent
-        , receiver: Agent }
+type alias Event =
+    { name: String
+    , etype: EventType
+    , qty: Float
+    , rtype: ResourceType
+    , provider: Agent
+    , receiver: Agent }
 
 
 -- AGENT --
@@ -78,15 +77,13 @@ type AgentType =
          }
 
 
-type Agent =
-    Agent
+type alias Agent =
         { name: String
         , atype: AgentType
          }
 
 
 -- COMMITMENT --
-
 
 type CommitmentType =
     CommitmentType
@@ -95,8 +92,7 @@ type CommitmentType =
          }
 
 
-type Commitment =
-    Commitment
+type alias Commitment =
         { name: String
         , ctype: CommitmentType
         , qty: Float
@@ -114,8 +110,7 @@ type ContractType =
     }
 
 
-type Contract =
-    Contract
+type alias Contract =
     { name: String
     , ctype: ContractType
     , parties: List Agent

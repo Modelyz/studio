@@ -1,34 +1,37 @@
 module REA.Process exposing (..)
 
 import Html exposing (Html, div, text, a)
-import Html.Attributes exposing (class, src, width, href)
+import Html.Attributes exposing (class, href)
+import Json.Encode
 import Msg
-import REA.Commitment exposing (Commitment)
-import REA.Contract exposing (Contract)
-import REA.Event exposing (Event)
+import Prng.Uuid
 
+import REA
+import REA.Contract
 
--- process type is the rea pattern
-type alias ProcessType =
-    {}
-
-
--- a process is a specific occurence of a process type
-type Process =
-    Process
-        { id: Int
-        , name: String
-        , contract: Contract
-        , commitments: List Commitment
-        , events: List Event
-        }
-
-
-view: Process -> Html Msg.Msg
-view i =
+view : REA.Process -> Html Msg.Msg
+view p =
     div [class "column", class "is-one-quarter"]
-        [a [href <| "/process/" ++ (String.fromInt <| (\(Process x) -> x.id) i)]
+        [a [href <| "/process/" ++ (Prng.Uuid.toString p.uuid)]
            [div [class "box"]
-                [text <| (\(Process x) -> x.name) i]
+                [text p.name]
            ]
         ]
+
+new : Prng.Uuid.Uuid -> REA.Process
+new uuid =
+    { uuid=uuid
+    , name="Pizza sale"
+    , contract=REA.Contract.new
+--    , commitments=[]
+--    , events=[]
+    }
+
+encode : REA.Process -> Json.Encode.Value
+encode p =
+    Json.Encode.object
+        [ ("uuid", Json.Encode.string <| Prng.Uuid.toString p.uuid)
+        , ("name", Json.Encode.string p.name)
+        , ("contract", REA.Contract.encode p.contract)
+        ]
+    
