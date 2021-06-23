@@ -196,9 +196,9 @@ view model =
                     , div [class "columns", class "is-multiline"]
                           <| List.map REA.Process.view model.processes
                     ]
-            Route.SingleProcess id ->
+            Route.SingleProcess uuid ->
                 div [ ]
-                    [ text <| "process" ++ String.fromInt id ]
+                    [ text <| "process" ++ uuid ]
         ]
     }
 

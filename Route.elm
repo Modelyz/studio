@@ -2,19 +2,20 @@ module Route exposing (..)
 
 import Url.Parser exposing (Parser, (</>), top, int, map, oneOf, s, string)
 import Url
+import Prng.Uuid
 
 
 type Route
     = NotFound
     | Home
-    | SingleProcess Int
+    | SingleProcess String
 
 
 routeParser : Parser (Route -> a) a
 routeParser =
   oneOf
     [ map Home              top
-    , map SingleProcess    (s "process" </> int)
+    , map SingleProcess    (s "process" </> string)
     ]
 
 
