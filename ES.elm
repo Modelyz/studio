@@ -11,6 +11,7 @@ type alias Event =
     , posixtime: Time.Posix
     , name: String
     , entity: REA.Entity
+    , entityType: String
     }
 
 
@@ -20,6 +21,7 @@ encode event =
         [ ("uuid", Json.Encode.string <| Prng.Uuid.toString event.uuid)
         , ("posixtime", Json.Encode.int <| Time.posixToMillis event.posixtime)
         , ("name", Json.Encode.string event.name)
+        , ("entityType", Json.Encode.string event.entityType)
         , ("entity", REA.Entity.encode event.entity)
         ]
 

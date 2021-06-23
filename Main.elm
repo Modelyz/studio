@@ -96,6 +96,7 @@ update msg model =
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
                         , name="New " ++ "Process" ++ " added"
+                        , entityType="Process" -- TODO other types?
                         , entity=REA.PROCESS (REA.Process.new newUuid)
                         }
             in

@@ -21,7 +21,7 @@ async def read_item(request: Request):
 
 # home page
 @app.get("/{a}/{b}", response_class=HTMLResponse)
-async def read_item2(request: Request, a: str, b: int):
+async def read_item2(request: Request, a: str, b: str):
     return templates.TemplateResponse(
         "index.html",
         {"request": request, 'a': a, 'b': b})
