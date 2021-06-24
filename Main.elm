@@ -21,6 +21,9 @@ import ES
 import Msg
 import REA
 import REA.Process
+import REA.Commitment
+import REA.CommitmentType
+import REA.Event
 import REA.ProcessType
 import Route
 import NotFound
@@ -88,20 +91,58 @@ update msg model =
              }
             , Cmd.none
             )
-        -- create a new event
+        Msg.NewCommitment ->
+            let
+                ( newUuid, newSeed ) =
+                    step Prng.Uuid.generator model.currentSeed
+                ename = "Commitment" -- TODO other types?
+                event = { uuid=newUuid
+                        , posixtime=model.posixtime
+                        , name="New " ++ ename ++ " added"
+                        , entityType=ename
+                        , entity=REA.COMMITMENTTYPE (REA.CommitmentType.new newUuid)
+                        }
+            in
+                ( { model -- FIXME : update the relevant proces with new commitments (to do in agregate function)
+                    | currentUuid = newUuid
+                    , currentSeed = newSeed
+                    , events = event :: model.events
+                  }
+                  , Task.perform Msg.TimestampEvent Time.now
+                )
         Msg.NewEvent ->
             let
                 ( newUuid, newSeed ) =
                     step Prng.Uuid.generator model.currentSeed
+                ename = "Event" -- TODO other types?
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
-                        , name="New " ++ "Process" ++ " added"
-                        , entityType="Process" -- TODO other types?
+                        , name="New " ++ ename ++ " added"
+                        , entityType=ename -- TODO other types?
+                        , entity=REA.EVENT (REA.Event.new newUuid)
+                        }
+            in
+                ( { model -- FIXME : update the relevant proces with new event (to do in agregate function)
+                    | currentUuid = newUuid
+                    , currentSeed = newSeed
+                    , events = event :: model.events
+                  }
+                  , Task.perform Msg.TimestampEvent Time.now
+                )
+        Msg.NewProcess ->
+            let
+                ( newUuid, newSeed ) =
+                    step Prng.Uuid.generator model.currentSeed
+                ename = "Process" -- TODO other types?
+                event = { uuid=newUuid
+                        , posixtime=model.posixtime
+                        , name="New " ++ ename ++ " added"
+                        , entityType=ename
                         , entity=REA.PROCESS (REA.Process.new newUuid)
                         }
             in
                 ( { model
-                    | processes=model.processes ++ [ newEvent newUuid ]
+                    | processes=model.processes ++ [REA.Process.new newUuid]
                     , currentUuid = newUuid
                     , currentSeed = newSeed
                     , events = event :: model.events
@@ -125,24 +166,6 @@ update msg model =
                       }
                     , storeEvent <| ES.encode timedEvent
                     )
-
-
-newEvent : Prng.Uuid.Uuid -> REA.Process
-newEvent id =
-    { uuid=id
-    , name="Pizza Sale #" ++ Prng.Uuid.toString id
-    , contract=
-            { ctype=
-                REA.ContractType
-                { name="Sale"
-                , ctype=Nothing
-                }
-            , name="Pizza sale #" ++ Prng.Uuid.toString id
-            , parties=[]
-            }
---    , commitments=[]
---    , events=[]
-    }
 
 
 ---- VIEW ----
@@ -189,13 +212,13 @@ view model =
                     [ class "section"
                     ]
                     [ button
-                        [ onClick Msg.NewEvent
+                        [ onClick <| Msg.NewProcess
                         , class "button"
                         ]
                         [ text "New pizza sale"
                         ]
                     , div [class "columns", class "is-multiline"]
-                          <| List.map REA.Process.view model.processes
+                          <| List.map REA.Process.thumbnail model.processes
                     ]
             Route.SingleProcess uuid ->
                 div [ ]

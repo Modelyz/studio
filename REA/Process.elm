@@ -1,30 +1,47 @@
 module REA.Process exposing (..)
 
-import Html exposing (Html, div, text, a)
-import Html.Attributes exposing (class, href)
+import Html exposing (Html, div, text, a, br)
+import Html.Attributes exposing (class, href, id)
+import Html.Events exposing (onClick)
 import Json.Encode
 import Msg
 import Prng.Uuid
 
 import REA
+import REA.Commitment
 import REA.Contract
+import REA.Event
 
-view : REA.Process -> Html Msg.Msg
-view p =
-    div [class "column", class "is-one-quarter"]
-        [a [href <| "/process/" ++ (Prng.Uuid.toString p.uuid)]
-           [div [class "box"]
-                [text p.name]
-           ]
+thumbnail : REA.Process -> Html Msg.Msg
+thumbnail p =
+    div [ class "column", class "is-one-quarter"]
+        [ a [ href <| "/process/" ++ (Prng.Uuid.toString p.uuid)]
+            [div [ class "box"]
+                [ text <| p.name
+                , br [] []
+                , text <| Prng.Uuid.toString p.uuid
+                ]
+            ]
         ]
+
+fullpage : REA.Process -> Html Msg.Msg
+fullpage p =
+    div [class "section", id "actions"]
+        [ div [class "card", class "action", onClick <| Msg.NewCommitment][text "Order Pizza"]
+        , div [class "card", class "action", onClick <| Msg.NewCommitment][text "Ask payment"]
+        , div [class "card", class "action", onClick <| Msg.NewEvent][text "Receive Cash"]
+        , div [class "card", class "action", onClick <| Msg.NewEvent][text "Deliver Pizza"]
+        ]
+
 
 new : Prng.Uuid.Uuid -> REA.Process
 new uuid =
     { uuid=uuid
     , name="Pizza sale"
-    , contract=REA.Contract.new
---    , commitments=[]
---    , events=[]
+    , contracts=[REA.Contract.new]
+    , commitments=[]
+    , events=[]
+--    , fullfilments=[]
     }
 
 encode : REA.Process -> Json.Encode.Value
@@ -32,6 +49,13 @@ encode p =
     Json.Encode.object
         [ ("uuid", Json.Encode.string <| Prng.Uuid.toString p.uuid)
         , ("name", Json.Encode.string p.name)
-        , ("contract", REA.Contract.encode p.contract)
+        , ("contracts", Json.Encode.list REA.Contract.encode p.contracts)
+        , ("commitments", Json.Encode.list REA.Commitment.encode p.commitments)
+        , ("events", Json.Encode.list REA.Event.encode p.events)
         ]
-    
+
+
+--merge : REA.Process -> REA.Process -> REA.Process
+-- TODO : we start 2 independent sales but the customer pays for both
+-- at the same time : then it's the same process
+-- Looks like a process can have several contracts?

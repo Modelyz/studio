@@ -14,9 +14,9 @@ type Entity =
 --    | RESOURCETYPE ResourceType
 --    | RESOURCE Resource
 --    | EVENTTYPE EventType
---    | EVENT Event
+    | EVENT Event
 --    | AGENTTYPE AgentType
---    | COMMITMENTTYPE CommitmentType
+    | COMMITMENTTYPE CommitmentType
 --    | COMMITMENT Commitment
     
 
@@ -28,13 +28,15 @@ type ProcessType =
     {}
 
 
--- a process is a specific occurence of a process type
+-- a process is the wrapper around other entities
+-- Processes are independant and unrelated one another
+-- if a payment is done for 2 processes, then it's the same process
 type alias Process =
         { uuid: Prng.Uuid.Uuid
         , name: String
-        , contract: Contract
---        , commitments: List Commitment
---        , events: List Event
+        , contracts: List Contract
+        , commitments: List Commitment
+        , events: List Event
         }
 
 
@@ -48,6 +50,7 @@ type ResourceType =
 
 type alias Resource =
     { name: String
+    , uuid: Prng.Uuid.Uuid
     , rtype: ResourceType
     }
 -- EVENT --
@@ -55,32 +58,37 @@ type alias Resource =
 type EventType =
     EventType
     { name: String
+    , uuid: Prng.Uuid.Uuid
     , etype: Maybe EventType
      }
 
 
 type alias Event =
     { name: String
+    , uuid: Prng.Uuid.Uuid
     , etype: EventType
-    , qty: Float
-    , rtype: ResourceType
-    , provider: Agent
-    , receiver: Agent }
+--    , qty: Float
+--    , rtype: ResourceType
+--    , provider: Agent
+--    , receiver: Agent
+    }
 
 
 -- AGENT --
 
 type AgentType =
     AgentType
-        { name: String
-        , atype: Maybe AgentType
-         }
+    { name: String
+    , uuid: Prng.Uuid.Uuid
+    , atype: Maybe AgentType
+    }
 
 
 type alias Agent =
-        { name: String
-        , atype: AgentType
-         }
+    { name: String
+    , uuid: Prng.Uuid.Uuid
+    , atype: AgentType
+     }
 
 
 -- COMMITMENT --
@@ -88,17 +96,20 @@ type alias Agent =
 type CommitmentType =
     CommitmentType
         { name: String
+        , uuid: Prng.Uuid.Uuid
         , ctype: Maybe CommitmentType
-         }
+        }
 
 
 type alias Commitment =
         { name: String
-        , ctype: CommitmentType
-        , qty: Float
-        , rtype: ResourceType
-        , provider: Agent
-        , receiver: Agent }
+        , uuid: Prng.Uuid.Uuid
+--        , ctype: CommitmentType
+--        , qty: Float
+--        , rtype: ResourceType
+--        , provider: Agent
+--        , receiver: Agent
+        }
 
 
 -- CONTRACT --
@@ -113,7 +124,7 @@ type ContractType =
 type alias Contract =
     { name: String
     , ctype: ContractType
-    , parties: List Agent
+--    , parties: List Agent
 --    , clauses: 
 --    , terms: 
     }

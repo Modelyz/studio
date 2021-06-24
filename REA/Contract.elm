@@ -10,7 +10,7 @@ new: REA.Contract
 new=
     { name="Pizza sale"
     , ctype=REA.ContractType.new
-    , parties=[]
+--    , parties=[]
     }
 
 encode : REA.Contract -> Json.Encode.Value
@@ -18,5 +18,5 @@ encode c =
     Json.Encode.object
         [ ("name", Json.Encode.string c.name)
         , ("ctype", REA.ContractType.encode c.ctype)
-        , ("parties", Json.Encode.list REA.Agent.encode c.parties)
+--        , ("parties", Json.Encode.list REA.Agent.encode c.parties)
         ]

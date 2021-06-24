@@ -5,7 +5,9 @@ import Time
 import Url
 
 type Msg
-    = NewEvent
+    = NewProcess
+    | NewEvent
+    | NewCommitment
     | NoOp
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url

@@ -6,6 +6,8 @@ import REA.ContractType
 import REA.Contract
 import REA.Agent
 import REA.Process
+import REA.CommitmentType
+import REA.Event
 
 
 encode : REA.Entity -> Json.Encode.Value
@@ -15,3 +17,5 @@ encode e =
         REA.AGENT c -> REA.Agent.encode c
         REA.CONTRACTTYPE c -> REA.ContractType.encode c
         REA.PROCESS c -> REA.Process.encode c
+        REA.COMMITMENTTYPE c -> REA.CommitmentType.encode c
+        REA.EVENT c -> REA.Event.encode c
