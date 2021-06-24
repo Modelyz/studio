@@ -53,6 +53,8 @@ type alias Resource =
     , uuid: Prng.Uuid.Uuid
     , rtype: ResourceType
     }
+
+
 -- EVENT --
 
 type EventType =

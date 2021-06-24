@@ -27,6 +27,7 @@ import REA.Event
 import REA.ProcessType
 import Route
 import NotFound
+import ErrorPage
 
 ---- MODEL ----
 
@@ -118,7 +119,7 @@ update msg model =
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
                         , name="New " ++ ename ++ " added"
-                        , entityType=ename -- TODO other types?
+                        , entityType=ename
                         , entity=REA.EVENT (REA.Event.new newUuid)
                         }
             in
@@ -218,11 +219,22 @@ view model =
                         [ text "New pizza sale"
                         ]
                     , div [class "columns", class "is-multiline"]
-                          <| List.map REA.Process.thumbnail model.processes
+                          <| List.map REA.Process.viewThumbnail model.processes
                     ]
             Route.SingleProcess uuid ->
-                div [ ]
-                    [ text <| "process" ++ uuid ]
+                let
+                    -- TODO move in the Process module
+                    id = Prng.Uuid.fromString uuid
+                    processes = case id of
+                        Nothing -> []
+                        Just i -> List.filter (\x -> (x.uuid == i)) model.processes
+                in
+                    case List.length processes  of
+                        0 -> NotFound.document
+                        1 -> case List.head model.processes of
+                            Just p -> REA.Process.viewFullpage p
+                            Nothing -> ErrorPage.document
+                        _ -> ErrorPage.document
         ]
     }
 

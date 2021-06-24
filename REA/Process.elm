@@ -12,8 +12,8 @@ import REA.Commitment
 import REA.Contract
 import REA.Event
 
-thumbnail : REA.Process -> Html Msg.Msg
-thumbnail p =
+viewThumbnail : REA.Process -> Html Msg.Msg
+viewThumbnail p =
     div [ class "column", class "is-one-quarter"]
         [ a [ href <| "/process/" ++ (Prng.Uuid.toString p.uuid)]
             [div [ class "box"]
@@ -24,13 +24,13 @@ thumbnail p =
             ]
         ]
 
-fullpage : REA.Process -> Html Msg.Msg
-fullpage p =
-    div [class "section", id "actions"]
-        [ div [class "card", class "action", onClick <| Msg.NewCommitment][text "Order Pizza"]
-        , div [class "card", class "action", onClick <| Msg.NewCommitment][text "Ask payment"]
-        , div [class "card", class "action", onClick <| Msg.NewEvent][text "Receive Cash"]
-        , div [class "card", class "action", onClick <| Msg.NewEvent][text "Deliver Pizza"]
+viewFullpage : REA.Process -> Html Msg.Msg
+viewFullpage p =
+    div [class "section", class "hscroll-container"]
+        [ div [class "card", class "hscroll", onClick <| Msg.NewCommitment][text "Order Pizza"]
+        , div [class "card", class "hscroll", onClick <| Msg.NewCommitment][text "Ask payment"]
+        , div [class "card", class "hscroll", onClick <| Msg.NewEvent][text "Receive Cash"]
+        , div [class "card", class "hscroll", onClick <| Msg.NewEvent][text "Deliver Pizza"]
         ]
 
 
