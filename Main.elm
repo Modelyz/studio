@@ -20,12 +20,11 @@ import Url.Parser
 -- local imports
 import ES
 import Msg
-import REA
-import REA.Process
-import REA.Commitment
-import REA.CommitmentType
-import REA.Event
-import REA.ProcessType
+import REA.Entity as En exposing (Entity)
+import REA.Process as P exposing (Process)
+import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.Event as E
+import REA.ProcessType as PT exposing (ProcessType)
 import Route
 import NotFound
 import ErrorPage
@@ -38,8 +37,8 @@ type alias Model =
     , url: Url.Url
     , route: Route.Route
     , navkey: Nav.Key
-    , processtype: REA.ProcessType
-    , processes: List REA.Process
+    , processtype: ProcessType
+    , processes: List Process
     , posixtime: Time.Posix
     , events: List ES.Event
     , readEventsError: Maybe String
@@ -57,7 +56,7 @@ init ( seed, seedExtension ) url navkey =
       , navkey=navkey
       , url=url
       , route=Route.parseUrl url
-      , processtype=REA.ProcessType.new
+      , processtype=PT.new
       , processes=[]
       , posixtime=Time.millisToPosix 0
       , events=[]
@@ -105,7 +104,7 @@ update msg model =
                         , posixtime=model.posixtime
                         , name="New " ++ ename ++ " added"
                         , entityType=ename
-                        , entity=REA.COMMITMENTTYPE (REA.CommitmentType.new newUuid)
+                        , entity=En.CommitmentType (CT.new newUuid)
                         }
             in
                 ( { model -- FIXME : update the relevant proces with new commitments (to do in agregate function)
@@ -124,7 +123,7 @@ update msg model =
                         , posixtime=model.posixtime
                         , name="New " ++ ename ++ " added"
                         , entityType=ename
-                        , entity=REA.EVENT (REA.Event.new newUuid)
+                        , entity=En.Event (E.new newUuid)
                         }
             in
                 ( { model -- FIXME : update the relevant proces with new event (to do in agregate function)
@@ -143,11 +142,11 @@ update msg model =
                         , posixtime=model.posixtime
                         , name="New " ++ ename ++ " added"
                         , entityType=ename
-                        , entity=REA.PROCESS (REA.Process.new newUuid)
+                        , entity=En.Process (P.new newUuid)
                         }
             in
                 ( { model
-                    | processes=model.processes ++ [REA.Process.new newUuid]
+                    | processes=model.processes ++ [P.new newUuid]
                     , currentUuid = newUuid
                     , currentSeed = newSeed
                     , events = event :: model.events
@@ -182,7 +181,6 @@ update msg model =
                     ( { model
                       | readEventsError=Just (Json.Decode.errorToString error)
                     , events=[]} , Cmd.none)
-
 
 
 ---- VIEW ----
@@ -257,7 +255,7 @@ view model =
                         [ text "New pizza sale"
                         ]
                     , div [class "columns", class "is-multiline"]
-                          <| List.map REA.Process.viewThumbnail model.processes
+                          <| List.map P.viewThumbnail model.processes
                     ]
             Route.SingleProcess uuid ->
                 let
@@ -270,7 +268,7 @@ view model =
                     case List.length processes  of
                         0 -> NotFound.document
                         1 -> case List.head model.processes of
-                            Just p -> REA.Process.viewFullpage p
+                            Just p -> P.viewFullpage p
                             Nothing -> ErrorPage.document
                         _ -> ErrorPage.document
         ]

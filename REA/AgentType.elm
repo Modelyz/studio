@@ -4,10 +4,18 @@ import Maybe exposing (Maybe(..))
 import Json.Encode
 import Json.Decode
 import Maybe exposing (Maybe(..))
-import REA
 import Prng.Uuid
 
-encode : REA.AgentType -> Json.Encode.Value
+
+type AgentType =
+    AgentType
+    { name: String
+    , uuid: Prng.Uuid.Uuid
+    , atype: Maybe AgentType
+    }
+
+
+encode : AgentType -> Json.Encode.Value
 encode at =
     let
         rec = extract at
@@ -21,15 +29,15 @@ encode at =
                 Just x -> encode x)
         ]
 
-extract (REA.AgentType t) = t
+extract (AgentType t) = t
 
 
-construct : String -> Prng.Uuid.Uuid -> Maybe REA.AgentType -> REA.AgentType
+construct : String -> Prng.Uuid.Uuid -> Maybe AgentType -> AgentType
 construct name uuid atype =
-    REA.AgentType { name=name, uuid=uuid, atype=atype }
+    AgentType { name=name, uuid=uuid, atype=atype }
 
 
-decode : Json.Decode.Decoder REA.AgentType
+decode : Json.Decode.Decoder AgentType
 decode =
     Json.Decode.map3 construct
         (Json.Decode.field "name" Json.Decode.string)

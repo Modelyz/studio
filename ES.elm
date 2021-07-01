@@ -4,14 +4,13 @@ import Prng.Uuid
 import Json.Encode
 import Json.Decode exposing (andThen)
 import Time
-import REA
-import REA.Entity
+import REA.Entity as En exposing (Entity)
 
 type alias Event =
     { uuid: Prng.Uuid.Uuid
     , posixtime: Time.Posix
     , name: String
-    , entity: REA.Entity
+    , entity: Entity
     , entityType: String
     }
 
@@ -23,7 +22,7 @@ encode event =
         , ("posixtime", Json.Encode.int <| Time.posixToMillis event.posixtime)
         , ("name", Json.Encode.string event.name)
         , ("entityType", Json.Encode.string event.entityType)
-        , ("entity", REA.Entity.encode event.entity)
+        , ("entity", En.encode event.entity)
         ]
 
 
@@ -34,10 +33,9 @@ decode =
         (Json.Decode.field "posixtime" Json.Decode.int |> andThen intToPosix)
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "entityType" Json.Decode.string
-            |> andThen REA.Entity.decode
+            |> andThen En.decode
         )
         (Json.Decode.field "entityType" Json.Decode.string)
 
 intToPosix : Int -> Json.Decode.Decoder Time.Posix
 intToPosix millis = Json.Decode.succeed <| Time.millisToPosix millis
-

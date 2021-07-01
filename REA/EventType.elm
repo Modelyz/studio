@@ -5,19 +5,25 @@ import Json.Encode
 import Maybe exposing (Maybe(..))
 import Prng.Uuid
 
-import REA
+
+type EventType =
+    EventType
+    { name: String
+    , uuid: Prng.Uuid.Uuid
+    , etype: Maybe EventType
+     }
 
 
-new: Prng.Uuid.Uuid -> REA.EventType
+new: Prng.Uuid.Uuid -> EventType
 new uuid=
-    REA.EventType
+    EventType
     { name="Sale"
     , uuid=uuid
     , etype=Nothing
     }
 
 
-encode : REA.EventType -> Json.Encode.Value
+encode : EventType -> Json.Encode.Value
 encode et =
     let
         rec = extract et
@@ -32,15 +38,15 @@ encode et =
                 Just x -> encode x)
         ]
 
-extract (REA.EventType t) = t
+extract (EventType t) = t
 
 
-construct : String -> Prng.Uuid.Uuid -> Maybe REA.EventType -> REA.EventType
+construct : String -> Prng.Uuid.Uuid -> Maybe EventType -> EventType
 construct name uuid etype =
-    REA.EventType { name=name, uuid=uuid, etype=etype }
+    EventType { name=name, uuid=uuid, etype=etype }
 
 
-decode : Json.Decode.Decoder REA.EventType
+decode : Json.Decode.Decoder EventType
 decode =
     Json.Decode.map3 construct
         (Json.Decode.field "name" Json.Decode.string)

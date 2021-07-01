@@ -3,33 +3,36 @@ module REA.Contract exposing (..)
 import Json.Decode
 import Json.Encode
 
-import REA 
-import REA.Agent
-import REA.ContractType
+import REA.Agent exposing (Agent)
+import REA.ContractType as CT exposing (ContractType)
 
-new: REA.Contract
+
+type alias Contract =
+    { name: String
+    , ctype: ContractType
+--    , parties: List Agent
+--    , clauses: 
+--    , terms: 
+    }
+
+new: Contract
 new=
     { name="Pizza sale"
-    , ctype=REA.ContractType.new
+    , ctype=CT.new
 --    , parties=[]
     }
 
-encode : REA.Contract -> Json.Encode.Value
+encode : Contract -> Json.Encode.Value
 encode c =
     Json.Encode.object
         [ ("name", Json.Encode.string c.name)
-        , ("ctype", REA.ContractType.encode c.ctype)
---        , ("parties", Json.Encode.list REA.Agent.encode c.parties)
+        , ("ctype", CT.encode c.ctype)
+--        , ("parties", Json.Encode.list Agent.encode c.parties)
         ]
 
 
-decode : Json.Decode.Decoder REA.Contract
+decode : Json.Decode.Decoder Contract
 decode =
-    Json.Decode.map2 REA.Contract
+    Json.Decode.map2 Contract
         (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "ctype" REA.ContractType.decode)
-
-        
-entity : REA.Contract -> Json.Decode.Decoder REA.Entity
-entity contract = Json.Decode.succeed <| REA.CONTRACT contract
-
+        (Json.Decode.field "ctype" CT.decode)
