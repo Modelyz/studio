@@ -208,7 +208,7 @@ view model =
           ]
         , case model.route of
             Route.NotFound -> NotFound.document
-            Route.Home -> 
+            Route.Processes -> 
                 div
                     [ class "section"
                     ]

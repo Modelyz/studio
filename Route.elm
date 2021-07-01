@@ -7,14 +7,14 @@ import Prng.Uuid
 
 type Route
     = NotFound
-    | Home
+    | Processes
     | SingleProcess String
 
 
 routeParser : Parser (Route -> a) a
 routeParser =
   oneOf
-    [ map Home              top
+    [ map Processes              top
     , map SingleProcess    (s "process" </> string)
     ]
 
