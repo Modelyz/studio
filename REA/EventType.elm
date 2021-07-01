@@ -1,8 +1,10 @@
 module REA.EventType exposing (..)
 
-import Maybe exposing (Maybe(..))
+import Json.Decode
 import Json.Encode
+import Maybe exposing (Maybe(..))
 import Prng.Uuid
+
 import REA
 
 
@@ -32,4 +34,16 @@ encode et =
 
 extract (REA.EventType t) = t
 
+
+construct : String -> Prng.Uuid.Uuid -> Maybe REA.EventType -> REA.EventType
+construct name uuid etype =
+    REA.EventType { name=name, uuid=uuid, etype=etype }
+
+
+decode : Json.Decode.Decoder REA.EventType
+decode =
+    Json.Decode.map3 construct
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "uuid" Prng.Uuid.decoder)
+        (Json.Decode.field "etype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
 

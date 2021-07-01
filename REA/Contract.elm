@@ -1,5 +1,6 @@
 module REA.Contract exposing (..)
 
+import Json.Decode
 import Json.Encode
 
 import REA 
@@ -20,3 +21,15 @@ encode c =
         , ("ctype", REA.ContractType.encode c.ctype)
 --        , ("parties", Json.Encode.list REA.Agent.encode c.parties)
         ]
+
+
+decode : Json.Decode.Decoder REA.Contract
+decode =
+    Json.Decode.map2 REA.Contract
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "ctype" REA.ContractType.decode)
+
+        
+entity : REA.Contract -> Json.Decode.Decoder REA.Entity
+entity contract = Json.Decode.succeed <| REA.CONTRACT contract
+

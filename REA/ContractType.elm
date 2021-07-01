@@ -1,5 +1,6 @@
 module REA.ContractType exposing (..)
 
+import Json.Decode
 import Json.Encode
 import Maybe exposing (Maybe(..))
 
@@ -27,3 +28,20 @@ encode ct =
 
 
 extract (REA.ContractType t) = t
+
+
+construct : String -> Maybe REA.ContractType -> REA.ContractType
+construct name ctype =
+    REA.ContractType { name=name, ctype=ctype }
+
+
+decode : Json.Decode.Decoder REA.ContractType
+decode =
+    Json.Decode.map2 construct
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+
+
+entity : REA.ContractType -> Json.Decode.Decoder REA.Entity
+entity contractType = Json.Decode.succeed <| REA.CONTRACTTYPE contractType
+

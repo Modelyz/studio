@@ -106,7 +106,7 @@ type CommitmentType =
 type alias Commitment =
         { name: String
         , uuid: Prng.Uuid.Uuid
---        , ctype: CommitmentType
+        , ctype: CommitmentType
 --        , qty: Float
 --        , rtype: ResourceType
 --        , provider: Agent

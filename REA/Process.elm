@@ -3,6 +3,7 @@ module REA.Process exposing (..)
 import Html exposing (Html, div, text, a, br)
 import Html.Attributes exposing (class, href, id)
 import Html.Events exposing (onClick)
+import Json.Decode
 import Json.Encode
 import Msg
 import Prng.Uuid
@@ -59,3 +60,18 @@ encode p =
 -- TODO : we start 2 independent sales but the customer pays for both
 -- at the same time : then it's the same process
 -- Looks like a process can have several contracts?
+
+
+decode : Json.Decode.Decoder REA.Process
+decode =
+    Json.Decode.map5 REA.Process
+        (Json.Decode.field "uuid" Prng.Uuid.decoder)
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "contracts" <| Json.Decode.list REA.Contract.decode)
+        (Json.Decode.field "commitments" <| Json.Decode.list REA.Commitment.decode)
+        (Json.Decode.field "events" <| Json.Decode.list REA.Event.decode)
+
+
+entity : REA.Process -> Json.Decode.Decoder REA.Entity
+entity process = Json.Decode.succeed <| REA.PROCESS process
+

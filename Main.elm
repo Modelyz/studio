@@ -6,6 +6,7 @@ import Html exposing (Html, text, div, span, h1, img, button, a, nav)
 import Html.Attributes exposing (class, src, width, href, attribute)
 import Html.Events exposing (onClick)
 import Json.Encode
+import Json.Decode
 import Maybe exposing (Maybe(..))
 import Prng.Uuid exposing (Uuid, generator)
 import Random.Pcg.Extended exposing (Seed, initialSeed, step)
@@ -41,6 +42,7 @@ type alias Model =
     , processes: List REA.Process
     , posixtime: Time.Posix
     , events: List ES.Event
+    , readEventsError: Maybe String
     }
 
 
@@ -59,15 +61,17 @@ init ( seed, seedExtension ) url navkey =
       , processes=[]
       , posixtime=Time.millisToPosix 0
       , events=[]
+      , readEventsError=Nothing
       }
-    , Cmd.none
+    , getEvents Json.Encode.null
     )
 
 
 -- PORTS --
 
 port storeEvent: Json.Encode.Value -> Cmd msg
-
+port getEvents: Json.Encode.Value -> Cmd msg
+port receiveEvents: (Json.Encode.Value -> msg) -> Sub msg
 
 ---- UPDATE ----
 
@@ -167,9 +171,42 @@ update msg model =
                       }
                     , storeEvent <| ES.encode timedEvent
                     )
+        Msg.EventsReceived events ->
+            case Json.Decode.decodeValue (Json.Decode.list ES.decode) events of
+                Ok data ->
+                    ( { model
+                      | readEventsError=Nothing
+                      , events=data}
+                    , Cmd.none)
+                Err error ->
+                    ( { model
+                      | readEventsError=Just (Json.Decode.errorToString error)
+                    , events=[]} , Cmd.none)
+
 
 
 ---- VIEW ----
+
+viewNotifications : Model -> Html Msg.Msg
+viewNotifications model = 
+    let
+        idbError = case model.readEventsError of
+            Nothing ->
+                text ""
+            Just error ->
+                div
+                    [ class "notification"
+                    , class "is-warning"
+                    ]
+                    [ button [class "delete"] []
+                    , text <| "Could not read events from IDB: " ++ error
+                    ]
+        otherError = text <| String.fromInt <| List.length model.events
+    in
+        div
+            [class "container"]
+            [idbError, otherError]
+    
 
 
 view : Model -> Browser.Document Msg.Msg
@@ -206,6 +243,7 @@ view model =
                     ]
                ]
           ]
+        , viewNotifications model
         , case model.route of
             Route.NotFound -> NotFound.document
             Route.Processes -> 
@@ -247,6 +285,16 @@ onUrlChange : Url.Url -> Msg.Msg
 onUrlChange = Msg.UrlChanged
 
 
+---- SUBSCRIPTIONS ----
+
+
+subscriptions : Model -> Sub Msg.Msg
+subscriptions model =
+    Sub.batch [
+        receiveEvents Msg.EventsReceived
+    ]
+
+
 ---- PROGRAM ----
 
 
@@ -256,7 +304,7 @@ main =
         { init = init
         , onUrlRequest = onUrlRequest
         , onUrlChange = onUrlChange
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         , update = update
         , view = view
         }

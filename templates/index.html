@@ -37,6 +37,7 @@ request.onupgradeneeded = function(e) {
     //idbstore.createIndex('layouts', ['model', 'rel']);
     console.log('Database upgraded')
 };
+
 /**** Random UUID ****/
 const crypto = window.crypto || window.msCrypto;
 const getRandomInts = (n) => {
@@ -44,10 +45,12 @@ const getRandomInts = (n) => {
     crypto.getRandomValues(randInts);
     return Array.from(randInts);
 };
+
 /**** run Elm ****/
 const randInts = getRandomInts(5);
 const flags = [randInts[0], randInts.slice(1)]
 var app = Elm.Main.init({flags:flags});
+
 /**** subscribe to Ports ****/
 app.ports.storeEvent.subscribe(function(event) {
     let request = window.indexedDB.open('eventstore', 1);
@@ -68,6 +71,22 @@ app.ports.storeEvent.subscribe(function(event) {
         }
         addrequest.onerror = (e) => {
             alert("IDB write failed: " + addrequest.error); // FIXME
+        }
+    }
+    request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
+});
+/* read events */
+app.ports.getEvents.subscribe(function() {
+    let request = window.indexedDB.open('eventstore', 1);
+    request.onsuccess = e => {
+        const openCursor = e.target.result.transaction('events', 'readonly')
+                      .objectStore('events').getAll();
+        openCursor.onsuccess = e => {
+            const events = e.target.result;
+            app.ports.receiveEvents.send(events)
+        }
+        openCursor.onerror = () => {
+            alert("transaction error:" + transaction.error) // FIXME
         }
     }
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }

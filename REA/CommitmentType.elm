@@ -1,9 +1,11 @@
 module REA.CommitmentType exposing (..)
 
-import Maybe exposing (Maybe(..))
+import Json.Decode
 import Json.Encode
-import REA
+import Maybe exposing (Maybe(..))
 import Prng.Uuid
+
+import REA
 
 
 new : Prng.Uuid.Uuid -> REA.CommitmentType
@@ -23,7 +25,7 @@ encode ct =
     in
     Json.Encode.object
         [ ("name", Json.Encode.string rec.name)
-        , ("uuid", Json.Encode.string <| Prng.Uuid.toString rec.uuid)
+        , ("uuid", Prng.Uuid.encode rec.uuid)
         , ("ctype",
             case t of
                 Nothing -> Json.Encode.string ""
@@ -31,4 +33,19 @@ encode ct =
         ]
 
 extract (REA.CommitmentType t) = t
+
+construct : String -> Prng.Uuid.Uuid -> Maybe REA.CommitmentType -> REA.CommitmentType
+construct name uuid ctype =
+    REA.CommitmentType { name=name, uuid=uuid, ctype=ctype }
+
+
+decode : Json.Decode.Decoder REA.CommitmentType
+decode =
+    Json.Decode.map3 construct
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "uuid" Prng.Uuid.decoder)
+        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+
+entity : REA.CommitmentType -> Json.Decode.Decoder REA.Entity
+entity commitmentType = Json.Decode.succeed <| REA.COMMITMENTTYPE commitmentType
 
