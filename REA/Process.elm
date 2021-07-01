@@ -47,7 +47,7 @@ new uuid =
 encode : REA.Process -> Json.Encode.Value
 encode p =
     Json.Encode.object
-        [ ("uuid", Json.Encode.string <| Prng.Uuid.toString p.uuid)
+        [ ("uuid", Prng.Uuid.encode p.uuid)
         , ("name", Json.Encode.string p.name)
         , ("contracts", Json.Encode.list REA.Contract.encode p.contracts)
         , ("commitments", Json.Encode.list REA.Commitment.encode p.commitments)

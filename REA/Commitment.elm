@@ -18,7 +18,7 @@ encode : REA.Commitment -> Json.Encode.Value
 encode c =
     Json.Encode.object
         [ ("name", Json.Encode.string c.name)
-        , ("uuid", Json.Encode.string <| Prng.Uuid.toString c.uuid)
+        , ("uuid", Prng.Uuid.encode c.uuid)
 --        , ("ctype", REA.CommitmentType.encode c.ctype)
         ]
 

@@ -18,7 +18,7 @@ encode : REA.Event -> Json.Encode.Value
 encode e =
     Json.Encode.object
         [ ("name", Json.Encode.string e.name)
-        , ("uuid", Json.Encode.string <| Prng.Uuid.toString e.uuid)
+        , ("uuid", Prng.Uuid.encode e.uuid)
         , ("etype", REA.EventType.encode e.etype)
         ]
 

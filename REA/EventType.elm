@@ -23,7 +23,7 @@ encode et =
     in
     Json.Encode.object
         [ ("name", Json.Encode.string rec.name)
-        , ("uuid", Json.Encode.string <| Prng.Uuid.toString rec.uuid)
+        , ("uuid", Prng.Uuid.encode rec.uuid)
         , ("etype",
             case t of
                 Nothing -> Json.Encode.string ""

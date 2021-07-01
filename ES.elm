@@ -18,7 +18,7 @@ type alias Event =
 encode : Event -> Json.Encode.Value
 encode event =
     Json.Encode.object
-        [ ("uuid", Json.Encode.string <| Prng.Uuid.toString event.uuid)
+        [ ("uuid", Prng.Uuid.encode event.uuid)
         , ("posixtime", Json.Encode.int <| Time.posixToMillis event.posixtime)
         , ("name", Json.Encode.string event.name)
         , ("entityType", Json.Encode.string event.entityType)
