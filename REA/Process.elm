@@ -27,10 +27,10 @@ viewThumbnail p =
 viewFullpage : REA.Process -> Html Msg.Msg
 viewFullpage p =
     div [class "section", class "hscroll-container"]
-        [ div [class "card", class "hscroll", onClick <| Msg.NewCommitment][text "Order Pizza"]
-        , div [class "card", class "hscroll", onClick <| Msg.NewCommitment][text "Ask payment"]
-        , div [class "card", class "hscroll", onClick <| Msg.NewEvent][text "Receive Cash"]
-        , div [class "card", class "hscroll", onClick <| Msg.NewEvent][text "Deliver Pizza"]
+        [ div [class "button", class "hscroll", onClick <| Msg.NewCommitment][text "Order Pizza"]
+        , div [class "button", class "hscroll", onClick <| Msg.NewCommitment][text "Ask payment"]
+        , div [class "button", class "hscroll", onClick <| Msg.NewEvent][text "Receive Cash"]
+        , div [class "button", class "hscroll", onClick <| Msg.NewEvent][text "Deliver Pizza"]
         ]
 
 

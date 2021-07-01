@@ -28,8 +28,16 @@ img {
 .hscroll-container {
   display: flex;
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow: -moz-scrollbars-none;
+}
+.hscroll-container::-webkit-scrollbar {
+  width: 0 !important
+  display: none;
 }
 .card {
   flex: 0 0 auto;
+  min-width: 6em;
 }
