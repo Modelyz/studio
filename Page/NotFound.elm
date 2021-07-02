@@ -1,4 +1,4 @@
-module NotFound exposing (..)
+module Page.NotFound exposing (..)
 
 import Msg
 import Html exposing (Html, div, text)

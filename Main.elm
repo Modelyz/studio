@@ -28,8 +28,8 @@ import REA.ProcessType as PT exposing (ProcessType)
 import Route
 import Page.Process
 import Page.Processes
-import NotFound
-import ErrorPage
+import Page.NotFound
+import Page.Error
 
 ---- MODEL ----
 
@@ -262,7 +262,7 @@ view model =
           ]
         , viewNotifications model
         , case model.route of
-            Route.NotFound -> NotFound.document
+            Route.NotFound -> Page.NotFound.document
             Route.Processes -> Page.Processes.view model.processes
             Route.SingleProcess uuid ->
                 let
@@ -272,11 +272,11 @@ view model =
                         Just i -> List.filter (\x -> (x.uuid == i)) model.processes
                 in
                     case List.length processes  of
-                        0 -> NotFound.document
+                        0 -> Page.NotFound.document
                         1 -> case List.head model.processes of
                             Just p -> Page.Process.viewFullpage p
-                            Nothing -> ErrorPage.document
-                        _ -> ErrorPage.document
+                            Nothing -> Page.Error.document
+                        _ -> Page.Error.document
         ]
     }
 

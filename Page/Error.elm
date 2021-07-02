@@ -1,4 +1,4 @@
-module ErrorPage exposing (..)
+module Page.Error exposing (..)
 
 import Msg
 import Html exposing (Html, div, text)
