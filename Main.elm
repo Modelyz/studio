@@ -27,6 +27,7 @@ import REA.Event as E
 import REA.ProcessType as PT exposing (ProcessType)
 import Route
 import Page.Process
+import Page.Processes
 import NotFound
 import ErrorPage
 
@@ -262,22 +263,9 @@ view model =
         , viewNotifications model
         , case model.route of
             Route.NotFound -> NotFound.document
-            Route.Processes -> 
-                div
-                    [ class "section"
-                    ]
-                    [ button
-                        [ onClick <| Msg.NewProcess
-                        , class "button"
-                        ]
-                        [ text "New pizza sale"
-                        ]
-                    , div [class "columns", class "is-multiline"]
-                          <| List.map Page.Process.viewThumbnail model.processes
-                    ]
+            Route.Processes -> Page.Processes.view model.processes
             Route.SingleProcess uuid ->
                 let
-                    -- TODO move in the Process module
                     id = Prng.Uuid.fromString uuid
                     processes = case id of
                         Nothing -> []

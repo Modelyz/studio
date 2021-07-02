@@ -1,12 +1,13 @@
 module Page.Process exposing (..)
 
 import Html exposing (Html, div, text, a, br)
-import Html.Attributes exposing (class, href, id)
+import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Msg
 import Prng.Uuid
 
 import REA.Process exposing (Process)
+
 
 viewThumbnail : Process -> Html Msg.Msg
 viewThumbnail p =
