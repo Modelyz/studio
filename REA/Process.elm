@@ -1,8 +1,5 @@
 module REA.Process exposing (..)
 
-import Html exposing (Html, div, text, a, br)
-import Html.Attributes exposing (class, href, id)
-import Html.Events exposing (onClick)
 import Json.Decode
 import Json.Encode
 import Msg
@@ -22,28 +19,6 @@ type alias Process =
         , commitments: List Commitment
         , events: List Event
         }
-
-
-viewThumbnail : Process -> Html Msg.Msg
-viewThumbnail p =
-    div [ class "column", class "is-one-quarter"]
-        [ a [ href <| "/process/" ++ (Prng.Uuid.toString p.uuid)]
-            [div [ class "box"]
-                [ text <| p.name
-                , br [] []
-                , text <| Prng.Uuid.toString p.uuid
-                ]
-            ]
-        ]
-
-viewFullpage : Process -> Html Msg.Msg
-viewFullpage p =
-    div [class "section", class "hscroll-container"]
-        [ div [class "button", class "hscroll", onClick <| Msg.NewCommitment][text "Order Pizza"]
-        , div [class "button", class "hscroll", onClick <| Msg.NewCommitment][text "Ask payment"]
-        , div [class "button", class "hscroll", onClick <| Msg.NewEvent][text "Receive Cash"]
-        , div [class "button", class "hscroll", onClick <| Msg.NewEvent][text "Deliver Pizza"]
-        ]
 
 
 new : Prng.Uuid.Uuid -> Process

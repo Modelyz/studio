@@ -26,6 +26,7 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.ProcessType as PT exposing (ProcessType)
 import Route
+import Page.Process
 import NotFound
 import ErrorPage
 
@@ -272,7 +273,7 @@ view model =
                         [ text "New pizza sale"
                         ]
                     , div [class "columns", class "is-multiline"]
-                          <| List.map P.viewThumbnail model.processes
+                          <| List.map Page.Process.viewThumbnail model.processes
                     ]
             Route.SingleProcess uuid ->
                 let
@@ -285,7 +286,7 @@ view model =
                     case List.length processes  of
                         0 -> NotFound.document
                         1 -> case List.head model.processes of
-                            Just p -> P.viewFullpage p
+                            Just p -> Page.Process.viewFullpage p
                             Nothing -> ErrorPage.document
                         _ -> ErrorPage.document
         ]
