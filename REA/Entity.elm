@@ -54,3 +54,9 @@ decode entityType =
             |> andThen (\ct -> Json.Decode.succeed <| CommitmentType ct)
         _ -> Json.Decode.fail "error decoding the entityType"
 
+
+toProcess : Entity -> Maybe P.Process
+toProcess entity =
+    case entity of
+        Process p -> Just p
+        _ -> Nothing

@@ -102,7 +102,7 @@ update msg model =
                 ename = "Commitment" -- TODO other types?
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
-                        , name="New " ++ ename ++ " added"
+                        , name=ename ++ " added"
                         , entityType=ename
                         , entity=En.CommitmentType (CT.new newUuid)
                         }
@@ -121,7 +121,7 @@ update msg model =
                 ename = "Event" -- TODO other types?
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
-                        , name="New " ++ ename ++ " added"
+                        , name=ename ++ " added"
                         , entityType=ename
                         , entity=En.Event (E.new newUuid)
                         }
@@ -140,13 +140,13 @@ update msg model =
                 ename = "Process" -- TODO other types?
                 event = { uuid=newUuid
                         , posixtime=model.posixtime
-                        , name="New " ++ ename ++ " added"
+                        , name=ename ++ " added"
                         , entityType=ename
                         , entity=En.Process (P.new newUuid)
                         }
             in
                 ( { model
-                    | processes=model.processes ++ [P.new newUuid]
+                    | processes=P.new newUuid :: model.processes
                     , currentUuid = newUuid
                     , currentSeed = newSeed
                     , events = event :: model.events
@@ -164,23 +164,31 @@ update msg model =
                 Nothing -> (model, Cmd.none)
                 Just event ->
                     let timedEvent = {event | posixtime=time}
-                    in
-                    ( { model
-                      | events= timedEvent :: remaining
-                      }
-                    , storeEvent <| ES.encode timedEvent
-                    )
-        Msg.EventsReceived events ->
-            case Json.Decode.decodeValue (Json.Decode.list ES.decode) events of
-                Ok data ->
-                    ( { model
-                      | readEventsError=Nothing
-                      , events=data}
-                    , Cmd.none)
+                    in ( { model | events= timedEvent :: remaining }
+                         , storeEvent <| ES.encode timedEvent
+                       )
+        Msg.EventsReceived results ->
+            case Json.Decode.decodeValue (Json.Decode.list ES.decode) results of
+                Ok events ->
+                    let updatedmodel = List.foldr aggregate model events
+                    in ( { updatedmodel
+                          | events=events}
+                        , Cmd.none)
                 Err error ->
                     ( { model
                       | readEventsError=Just (Json.Decode.errorToString error)
                     , events=[]} , Cmd.none)
+
+
+-- evolve the state given an event
+aggregate: ES.Event -> Model -> Model
+aggregate event model =
+    case event.name of
+        "Process added" -> -- TODO turn this into a type
+            case En.toProcess event.entity of
+                Nothing -> model
+                Just p -> { model | processes = p :: model.processes }
+        _ -> model
 
 
 ---- VIEW ----
@@ -199,11 +207,10 @@ viewNotifications model =
                     [ button [class "delete"] []
                     , text <| "Could not read events from IDB: " ++ error
                     ]
-        otherError = text <| String.fromInt <| List.length model.events
     in
         div
             [class "container"]
-            [idbError, otherError]
+            [idbError]
     
 
 

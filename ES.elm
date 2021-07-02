@@ -6,6 +6,8 @@ import Json.Decode exposing (andThen)
 import Time
 import REA.Entity as En exposing (Entity)
 
+
+-- business events --
 type alias Event =
     { uuid: Prng.Uuid.Uuid
     , posixtime: Time.Posix
@@ -39,3 +41,5 @@ decode =
 
 intToPosix : Int -> Json.Decode.Decoder Time.Posix
 intToPosix millis = Json.Decode.succeed <| Time.millisToPosix millis
+
+
