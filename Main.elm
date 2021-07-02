@@ -12,7 +12,7 @@ import Prng.Uuid exposing (Uuid, generator)
 import Random.Pcg.Extended exposing (Seed, initialSeed, step)
 import String
 import Task
-import Time
+import Time exposing (millisToPosix, posixToMillis, now)
 import Url
 import Url.Parser
 
@@ -58,7 +58,7 @@ init ( seed, seedExtension ) url navkey =
       , route=Route.parseUrl url
       , processtype=PT.new
       , processes=[]
-      , posixtime=Time.millisToPosix 0
+      , posixtime=millisToPosix 0
       , events=[]
       , readEventsError=Nothing
       }
@@ -112,7 +112,7 @@ update msg model =
                     , currentSeed = newSeed
                     , events = event :: model.events
                   }
-                  , Task.perform Msg.TimestampEvent Time.now
+                  , Task.perform Msg.TimestampEvent now
                 )
         Msg.NewEvent ->
             let
@@ -131,7 +131,7 @@ update msg model =
                     , currentSeed = newSeed
                     , events = event :: model.events
                   }
-                  , Task.perform Msg.TimestampEvent Time.now
+                  , Task.perform Msg.TimestampEvent now
                 )
         Msg.NewProcess ->
             let
@@ -151,7 +151,7 @@ update msg model =
                     , currentSeed = newSeed
                     , events = event :: model.events
                   }
-                  , Task.perform Msg.TimestampEvent Time.now
+                  , Task.perform Msg.TimestampEvent now
                 )
         -- add a timestamp to the event
         Msg.TimestampEvent time ->
@@ -170,14 +170,24 @@ update msg model =
         Msg.EventsReceived results ->
             case Json.Decode.decodeValue (Json.Decode.list ES.decode) results of
                 Ok events ->
-                    let updatedmodel = List.foldr aggregate model events
+                    let sortedEvents = List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
+                        updatedmodel = List.foldr aggregate model sortedEvents
                     in ( { updatedmodel
-                          | events=events}
+                          | events=sortedEvents}
                         , Cmd.none)
                 Err error ->
                     ( { model
                       | readEventsError=Just (Json.Decode.errorToString error)
                     , events=[]} , Cmd.none)
+
+
+timeSort : List Time.Posix -> List Time.Posix
+timeSort times = List.sortWith timeCompare times
+
+
+timeCompare : Time.Posix -> Time.Posix -> Order
+timeCompare t1 t2 = compare (posixToMillis t1) (posixToMillis t2)
+        
 
 
 -- evolve the state given an event
