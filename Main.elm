@@ -104,9 +104,6 @@ update msgtop modeltop =
             in
             ( ProcessesModel modified, Cmd.map ProcessesMsg cmd )
 
-        ( ProcessesMsg msg, _ ) ->
-            ( NotFoundModel, Cmd.none )
-
         ( ProcessMsg msg, ProcessModel model ) ->
             let
                 ( modified, cmd ) =
@@ -175,10 +172,15 @@ onUrlChange =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Sub.map ProcessesMsg (receiveEvents Page.Processes.EventsReceived)
-        , Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)
-        ]
+    case model of
+        ProcessesModel m ->
+            Sub.map ProcessesMsg (receiveEvents Page.Processes.EventsReceived)
+
+        ProcessModel m ->
+            Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)
+
+        _ ->
+            Sub.none
 
 
 main : Program ( Int, List Int ) Model Msg
