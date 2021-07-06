@@ -2,7 +2,6 @@ module REA.Process exposing (..)
 
 import Json.Decode
 import Json.Encode
-import Msg
 import Prng.Uuid
 
 import REA.Commitment as Cm exposing (Commitment)

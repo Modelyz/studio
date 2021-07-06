@@ -11,6 +11,7 @@
     -->
     <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
     <link rel="stylesheet" href="/static/main.css">
     <title>Elm App</title>
 
@@ -79,11 +80,13 @@ app.ports.storeEvent.subscribe(function(event) {
 app.ports.getEvents.subscribe(function() {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
+            console.log("Sending events to Elm...")
         const openCursor = e.target.result.transaction('events', 'readonly')
                       .objectStore('events').getAll();
         openCursor.onsuccess = e => {
             const events = e.target.result;
             app.ports.receiveEvents.send(events)
+            console.log("Successfully sent events to Elm")
         }
         openCursor.onerror = () => {
             alert("transaction error:" + transaction.error) // FIXME

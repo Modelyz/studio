@@ -1,13 +1,13 @@
-module REA.ProcessType exposing (..)
-
+module REA.ProcessType exposing (ProcessType, new)
 
 -- process type is the rea pattern
-type ProcessType =
-    ProcessType
-    {}
+
+
+type ProcessType
+    = ProcessType {}
 
 
 new : ProcessType
 new =
     ProcessType
-    {}
+        {}
