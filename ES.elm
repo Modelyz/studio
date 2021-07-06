@@ -4,7 +4,6 @@ import Json.Decode exposing (andThen)
 import Json.Encode
 import Prng.Uuid
 import REA.Entity as Ent exposing (Entity)
-import REA.Process exposing (Process)
 import Time
 
 

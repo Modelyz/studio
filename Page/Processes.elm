@@ -1,17 +1,16 @@
-module Page.Processes exposing (..)
+module Page.Processes exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
 import ES
-import Html exposing (Html, a, br, button, div, h1, i, img, nav, span, text)
+import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
 import Json.Decode exposing (decodeValue, errorToString)
 import Json.Encode
-import Page.Process
-import Prng.Uuid exposing (Uuid, generator)
-import REA.Entity as Ent exposing (Entity)
+import Prng.Uuid exposing (generator)
+import REA.Entity as Ent
 import REA.Process as P exposing (Process)
-import Random.Pcg.Extended exposing (Seed, initialSeed, step)
+import Random.Pcg.Extended exposing (step)
 import Session exposing (Session)
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
@@ -33,11 +32,6 @@ type alias Model =
     { session : Session
     , processes : Status (List Process)
     }
-
-
-timeSort : List Time.Posix -> List Time.Posix
-timeSort times =
-    List.sortWith timeCompare times
 
 
 timeCompare : Time.Posix -> Time.Posix -> Order
@@ -173,7 +167,7 @@ viewNavbar =
         ]
 
 
-view : Model -> Browser.Document Msg
+view : Model -> Document Msg
 view model =
     { title = "Processes"
     , body =

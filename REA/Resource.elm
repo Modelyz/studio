@@ -1,12 +1,11 @@
-module REA.Resource exposing (..)
+module REA.Resource exposing (Resource)
 
-import Prng.Uuid
+import Prng.Uuid exposing (Uuid)
+import REA.ResourceType exposing (ResourceType)
 
-import ResourceType exposing (ResourceType)
 
 type alias Resource =
-    { name: String
-    , uuid: Prng.Uuid.Uuid
-    , rtype: ResourceType
+    { name : String
+    , uuid : Uuid
+    , rtype : ResourceType
     }
-

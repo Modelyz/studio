@@ -1,10 +1,9 @@
-module Session exposing (..)
+module Session exposing (Session)
 
 import Browser.Navigation as Nav
-import Prng.Uuid exposing (Uuid, generator)
+import Prng.Uuid exposing (Uuid)
 import REA.ProcessType exposing (ProcessType)
-import Random.Pcg.Extended exposing (Seed, initialSeed, step)
-import Time
+import Random.Pcg.Extended exposing (Seed)
 import Url exposing (Url)
 
 

@@ -1,10 +1,9 @@
-module Route exposing (..)
+module Route exposing (Model, Msg(..), Route(..), parseUrl, routeParser, update)
 
 import Browser
 import Browser.Navigation as Nav
-import Prng.Uuid
 import Url
-import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string, top)
+import Url.Parser exposing ((</>), Parser, map, oneOf, s, string, top)
 
 
 type Route

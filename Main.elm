@@ -2,32 +2,22 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import ES
-import Html exposing (Html, a, button, div, h1, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
-import Html.Events exposing (onClick)
-import Json.Decode
+import Html exposing (text)
 import Json.Encode
 import Maybe exposing (Maybe(..))
 import Page.Error
 import Page.NotFound
 import Page.Process
 import Page.Processes
-import Prng.Uuid exposing (Uuid, generator)
-import REA.Entity as En exposing (Entity)
-import REA.Event as E
+import Prng.Uuid exposing (generator)
 import REA.ProcessType as PT
-import Random.Pcg.Extended exposing (Seed, initialSeed, step)
+import Random.Pcg.Extended exposing (initialSeed, step)
 import Route
-import String
-import Time
 import Url exposing (Url)
-import Url.Parser
 
 
 type Msg
-    = NoOp
-    | RouteMsg Route.Msg
+    = RouteMsg Route.Msg
     | ProcessesMsg Page.Processes.Msg
     | ProcessMsg Page.Process.Msg
 
@@ -46,7 +36,7 @@ port receiveEvents : (Json.Encode.Value -> msg) -> Sub msg
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     let
-        ( newUuid, newSeed ) =
+        ( newUuid, _ ) =
             step generator <| initialSeed seed seedExtension
 
         route =
@@ -87,9 +77,6 @@ init ( seed, seedExtension ) url navkey =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgtop modeltop =
     case ( msgtop, modeltop ) of
-        ( NoOp, model ) ->
-            ( model, Cmd.none )
-
         ( RouteMsg msg, RouteModel model ) ->
             let
                 ( modified, cmd ) =
@@ -154,7 +141,7 @@ view model =
             , body = List.map (Html.map ProcessMsg) doc.body
             }
 
-        RouteModel m ->
+        RouteModel _ ->
             { title = "Redirect"
             , body = [ text "FIXME" ]
             }
@@ -173,10 +160,10 @@ onUrlChange =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
-        ProcessesModel m ->
+        ProcessesModel _ ->
             Sub.map ProcessesMsg (receiveEvents Page.Processes.EventsReceived)
 
-        ProcessModel m ->
+        ProcessModel _ ->
             Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)
 
         _ ->

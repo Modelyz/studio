@@ -1,44 +1,50 @@
-module REA.Process exposing (..)
+module REA.Process exposing (Process, decode, encode, new)
 
 import Json.Decode
 import Json.Encode
 import Prng.Uuid
-
 import REA.Commitment as Cm exposing (Commitment)
 import REA.Contract as C exposing (Contract)
 import REA.Event as E exposing (Event)
 
+
+
 -- a process is the wrapper around other entities
 -- Processes are independant and unrelated one another
 -- if a payment is done for 2 processes, then it's the same process
+
+
 type alias Process =
-        { uuid: Prng.Uuid.Uuid
-        , name: String
-        , contracts: List Contract
-        , commitments: List Commitment
-        , events: List Event
-        }
+    { uuid : Prng.Uuid.Uuid
+    , name : String
+    , contracts : List Contract
+    , commitments : List Commitment
+    , events : List Event
+    }
 
 
 new : Prng.Uuid.Uuid -> Process
 new uuid =
-    { uuid=uuid
-    , name="Pizza sale"
-    , contracts=[C.new]
-    , commitments=[]
-    , events=[]
---    , fullfilments=[]
+    { uuid = uuid
+    , name = "Pizza sale"
+    , contracts = [ C.new ]
+    , commitments = []
+    , events = []
+
+    --    , fullfilments=[]
     }
+
 
 encode : Process -> Json.Encode.Value
 encode p =
     Json.Encode.object
-        [ ("uuid", Prng.Uuid.encode p.uuid)
-        , ("name", Json.Encode.string p.name)
-        , ("contracts", Json.Encode.list C.encode p.contracts)
-        , ("commitments", Json.Encode.list Cm.encode p.commitments)
-        , ("events", Json.Encode.list E.encode p.events)
+        [ ( "uuid", Prng.Uuid.encode p.uuid )
+        , ( "name", Json.Encode.string p.name )
+        , ( "contracts", Json.Encode.list C.encode p.contracts )
+        , ( "commitments", Json.Encode.list Cm.encode p.commitments )
+        , ( "events", Json.Encode.list E.encode p.events )
         ]
+
 
 
 --merge : Process -> Process -> Process

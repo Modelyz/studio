@@ -1,9 +1,8 @@
-module Page.Error exposing (..)
+module Page.Error exposing (view)
 
 import Browser
-import Html exposing (Html, a, button, div, h1, img, nav, span, text)
+import Html exposing (Html, a, div, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
-import Html.Events exposing (onClick)
 
 
 viewContent : Html.Html msg

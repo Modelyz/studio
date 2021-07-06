@@ -1,36 +1,37 @@
-module REA.Commitment exposing (..)
+module REA.Commitment exposing (Commitment, decode, encode, new)
 
-import Json.Encode
 import Json.Decode
-import REA.CommitmentType as CT exposing (CommitmentType)
+import Json.Encode
 import Prng.Uuid
+import REA.CommitmentType as CT exposing (CommitmentType)
 
 
 type alias Commitment =
-        { name: String
-        , uuid: Prng.Uuid.Uuid
-        , ctype: CommitmentType
---        , qty: Float
---        , rtype: ResourceType
---        , provider: Agent
---        , receiver: Agent
-        }
+    { name : String
+    , uuid : Prng.Uuid.Uuid
+    , ctype : CommitmentType
+
+    --        , qty: Float
+    --        , rtype: ResourceType
+    --        , provider: Agent
+    --        , receiver: Agent
+    }
 
 
-new: Prng.Uuid.Uuid -> Commitment
+new : Prng.Uuid.Uuid -> Commitment
 new uuid =
-    { name="Pizza order"
-    , uuid=uuid
-    , ctype=CT.new uuid
+    { name = "Pizza order"
+    , uuid = uuid
+    , ctype = CT.new uuid
     }
 
 
 encode : Commitment -> Json.Encode.Value
 encode c =
     Json.Encode.object
-        [ ("name", Json.Encode.string c.name)
-        , ("uuid", Prng.Uuid.encode c.uuid)
-        , ("ctype", CT.encode c.ctype)
+        [ ( "name", Json.Encode.string c.name )
+        , ( "uuid", Prng.Uuid.encode c.uuid )
+        , ( "ctype", CT.encode c.ctype )
         ]
 
 
