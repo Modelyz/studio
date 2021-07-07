@@ -2,7 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (text)
+import Html
 import Json.Encode
 import Maybe exposing (Maybe(..))
 import Page.Error
@@ -12,20 +12,21 @@ import Page.Processes
 import Prng.Uuid exposing (generator)
 import REA.ProcessType as PT
 import Random.Pcg.Extended exposing (initialSeed, step)
-import Route
+import Route exposing (Route, parseUrl)
+import Session exposing (Session)
 import Url exposing (Url)
 
 
 type Msg
-    = RouteMsg Route.Msg
+    = LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
     | ProcessesMsg Page.Processes.Msg
     | ProcessMsg Page.Process.Msg
 
 
 type Model
-    = RouteModel Route.Model
-    | NotFoundModel
-    | ErrorModel
+    = NotFoundModel Session
+    | ErrorModel Session
     | ProcessesModel Page.Processes.Model
     | ProcessModel Page.Process.Model
 
@@ -40,7 +41,7 @@ init ( seed, seedExtension ) url navkey =
             step generator <| initialSeed seed seedExtension
 
         route =
-            Route.parseUrl url
+            parseUrl url
 
         session =
             { currentSeed = initialSeed seed seedExtension
@@ -50,6 +51,11 @@ init ( seed, seedExtension ) url navkey =
             , processType = PT.new
             }
     in
+    toModelCmd route session
+
+
+toModelCmd : Route -> Session -> ( Model, Cmd Msg )
+toModelCmd route session =
     case route of
         Route.Processes ->
             let
@@ -68,59 +74,88 @@ init ( seed, seedExtension ) url navkey =
                     ( ProcessModel model, Cmd.map ProcessMsg cmd )
 
                 Nothing ->
-                    ( NotFoundModel, Cmd.none )
+                    ( NotFoundModel session, Cmd.none )
 
         Route.NotFound ->
-            ( NotFoundModel, Cmd.none )
+            ( NotFoundModel session, Cmd.none )
+
+
+toSession : Model -> Session
+toSession model =
+    case model of
+        NotFoundModel session ->
+            session
+
+        ErrorModel session ->
+            session
+
+        ProcessModel m ->
+            m.session
+
+        ProcessesModel m ->
+            m.session
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgtop modeltop =
+    let
+        session =
+            modeltop |> toSession
+    in
     case ( msgtop, modeltop ) of
-        ( RouteMsg msg, RouteModel model ) ->
-            let
-                ( modified, cmd ) =
-                    Route.update msg model
-            in
-            ( RouteModel modified, Cmd.map RouteMsg cmd )
+        ( LinkClicked urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    let
+                        route =
+                            parseUrl url
+                    in
+                    ( toModelCmd route session |> Tuple.first, Nav.pushUrl session.navkey (Url.toString url) )
 
-        ( ProcessesMsg msg, ProcessesModel model ) ->
+                Browser.External href ->
+                    ( modeltop, Nav.load href )
+
+        -- react to an url change
+        ( UrlChanged url, _ ) ->
+            toModelCmd (parseUrl url) session
+
+        ( ProcessesMsg msg, ProcessesModel m ) ->
             let
                 ( modified, cmd ) =
-                    Page.Processes.update msg model
+                    Page.Processes.update msg m
             in
             ( ProcessesModel modified, Cmd.map ProcessesMsg cmd )
 
-        ( ProcessMsg msg, ProcessModel model ) ->
+        ( ProcessMsg msg, ProcessModel m ) ->
             let
                 ( modified, cmd ) =
-                    Page.Process.update msg model
+                    Page.Process.update msg m
             in
             ( ProcessModel modified, Cmd.map ProcessMsg cmd )
 
         ( _, _ ) ->
-            ( ErrorModel, Cmd.none )
+            ( ErrorModel session, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
 view model =
     case model of
-        NotFoundModel ->
+        NotFoundModel _ ->
             let
                 doc =
                     Page.NotFound.view
             in
             { doc
-                | body = List.map (Html.map RouteMsg) doc.body
+                | body = doc.body
             }
 
-        ErrorModel ->
+        ErrorModel _ ->
             let
                 doc =
                     Page.Error.view
             in
             { doc
-                | body = List.map (Html.map RouteMsg) doc.body
+                | body = doc.body
             }
 
         ProcessesModel m ->
@@ -141,20 +176,15 @@ view model =
             , body = List.map (Html.map ProcessMsg) doc.body
             }
 
-        RouteModel _ ->
-            { title = "Redirect"
-            , body = [ text "FIXME" ]
-            }
-
 
 onUrlRequest : Browser.UrlRequest -> Msg
 onUrlRequest =
-    RouteMsg << Route.LinkClicked
+    LinkClicked
 
 
 onUrlChange : Url -> Msg
 onUrlChange =
-    RouteMsg << Route.UrlChanged
+    UrlChanged
 
 
 subscriptions : Model -> Sub Msg

@@ -1,7 +1,8 @@
-module Route exposing (Model, Msg(..), Route(..), parseUrl, routeParser, update)
+module Route exposing (Msg(..), Route(..), parseUrl, routeParser, update)
 
 import Browser
 import Browser.Navigation as Nav
+import Session exposing (Session)
 import Url
 import Url.Parser exposing ((</>), Parser, map, oneOf, s, string, top)
 
@@ -10,12 +11,6 @@ type Route
     = NotFound
     | Processes
     | Process String
-
-
-type alias Model =
-    { route : Route
-    , navkey : Nav.Key
-    }
 
 
 type Msg
@@ -45,17 +40,17 @@ parseUrl url =
             r
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Msg -> Session -> ( Session, Cmd Msg )
+update msg session =
     case msg of
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( { model | route = parseUrl url }, Nav.pushUrl model.navkey (Url.toString url) )
+                    ( { session | url = url }, Nav.pushUrl session.navkey (Url.toString url) )
 
                 Browser.External href ->
-                    ( model, Nav.load href )
+                    ( session, Nav.load href )
 
         -- react to an url change
         UrlChanged url ->
-            ( { model | route = parseUrl url }, Cmd.none )
+            ( { session | url = url }, Cmd.none )
