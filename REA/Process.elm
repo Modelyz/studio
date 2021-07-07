@@ -27,7 +27,7 @@ new : Prng.Uuid.Uuid -> Process
 new uuid =
     { uuid = uuid
     , name = "Pizza sale"
-    , contracts = [ C.new ]
+    , contracts = []
     , commitments = []
     , events = []
 

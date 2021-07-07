@@ -1,8 +1,9 @@
-module REA.Entity exposing (Entity(..), decode, encode, toProcess)
+module REA.Entity exposing (Entity(..), decode, encode, toCommitment, toProcess)
 
 import Json.Decode exposing (andThen)
 import Json.Encode
 import REA.Agent as A
+import REA.Commitment as Cm
 import REA.CommitmentType as CmT
 import REA.Contract as C
 import REA.ContractType as CT
@@ -22,10 +23,7 @@ type Entity
     | Event E.Event
       --    | AgentType ET.AgentType
     | CommitmentType CmT.CommitmentType
-
-
-
---    | Commitment Cm.Commitment
+    | Commitment Cm.Commitment
 
 
 encode : Entity -> Json.Encode.Value
@@ -42,6 +40,9 @@ encode e =
 
         Process c ->
             P.encode c
+
+        Commitment c ->
+            Cm.encode c
 
         CommitmentType c ->
             CmT.encode c
@@ -77,6 +78,10 @@ decode entityType =
             Json.Decode.field "entity" CmT.decode
                 |> andThen (\ct -> Json.Decode.succeed <| CommitmentType ct)
 
+        "Commitment" ->
+            Json.Decode.field "entity" Cm.decode
+                |> andThen (\c -> Json.Decode.succeed <| Commitment c)
+
         _ ->
             Json.Decode.fail "error decoding the entityType"
 
@@ -86,6 +91,16 @@ toProcess entity =
     case entity of
         Process p ->
             Just p
+
+        _ ->
+            Nothing
+
+
+toCommitment : Entity -> Maybe Cm.Commitment
+toCommitment entity =
+    case entity of
+        Commitment c ->
+            Just c
 
         _ ->
             Nothing

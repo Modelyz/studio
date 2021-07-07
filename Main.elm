@@ -200,7 +200,10 @@ subscriptions model =
                 ]
 
         ProcessModel _ ->
-            Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)
+            Sub.batch
+                [ Sub.map ProcessMsg (eventStored Page.Process.EventStored)
+                , Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)
+                ]
 
         _ ->
             Sub.none

@@ -7,10 +7,10 @@ import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
 import Json.Decode exposing (decodeValue, errorToString)
 import Json.Encode
-import Prng.Uuid exposing (generator)
+import Prng.Uuid as Uuid
 import REA.Entity as Ent
 import REA.Process as P exposing (Process)
-import Random.Pcg.Extended exposing (step)
+import Random.Pcg.Extended as Random
 import Session exposing (Session)
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
@@ -98,7 +98,7 @@ update msg model =
         NewProcess ->
             let
                 ( newUuid, newSeed ) =
-                    step generator model.session.currentSeed
+                    Random.step Uuid.generator model.session.currentSeed
 
                 ename =
                     "Process"
@@ -222,11 +222,11 @@ viewContent model =
 viewThumbnail : Process -> Html Msg
 viewThumbnail p =
     div [ class "column is-one-quarter" ]
-        [ a [ href <| "/process/" ++ Prng.Uuid.toString p.uuid ]
+        [ a [ href <| "/process/" ++ Uuid.toString p.uuid ]
             [ div [ class "box" ]
                 [ text <| p.name
                 , br [] []
-                , text <| Prng.Uuid.toString p.uuid
+                , text <| Uuid.toString p.uuid
                 ]
             ]
         ]
