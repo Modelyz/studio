@@ -79,7 +79,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TimestampEvent event ->
-            ( model, ES.storeEvent <| ES.encode event )
+            ( model, Cmd.batch [ ES.encode event |> ES.storeEvent, ES.getEvents Json.Encode.null ] )
 
         EventsReceived results ->
             case decodeValue (Json.Decode.list ES.decode) results of
@@ -205,7 +205,15 @@ viewContent model =
                     ]
 
             Failed error ->
-                div [ class "section" ] [ span [ class "fa-spinner" ] [ text <| "Failed: " ++ error ] ]
+                div [ class "section" ]
+                    [ span [ class "icon-text" ]
+                        [ span [ class "icon" ]
+                            [ i [ class "fas fa-bug" ]
+                                []
+                            ]
+                        ]
+                    , span [] [ text <| " Error : " ++ error ]
+                    ]
         ]
 
 
