@@ -68,10 +68,9 @@ aggregate event model =
 init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
-      , processes = Loaded []
+      , processes = Loading
       }
     , ES.getEvents Json.Encode.null
-      --  andThen ... redirect
       --    , getSnapshot
     )
 
@@ -79,12 +78,6 @@ init session =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        TimestampEvent event ->
-            ( model, ES.encode event |> ES.storeEvent )
-
-        EventStored _ ->
-            ( model, ES.getEvents Json.Encode.null )
-
         EventsReceived results ->
             case decodeValue (Json.Decode.list ES.decode) results of
                 Ok events ->
@@ -133,6 +126,12 @@ update msg model =
             , Task.perform TimestampEvent <|
                 Task.map (\t -> { event | posixtime = t }) now
             )
+
+        TimestampEvent event ->
+            ( model, ES.encode event |> ES.storeEvent )
+
+        EventStored _ ->
+            ( model, ES.getEvents Json.Encode.null )
 
 
 viewNavbar : Html Msg
