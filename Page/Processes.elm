@@ -20,6 +20,7 @@ type Msg
     = NewProcess
     | TimestampEvent ES.Event
     | EventsReceived Json.Encode.Value
+    | EventStored Json.Encode.Value
 
 
 type Status a
@@ -67,7 +68,7 @@ aggregate event model =
 init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
-      , processes = Loading
+      , processes = Loaded []
       }
     , ES.getEvents Json.Encode.null
       --  andThen ... redirect
@@ -79,7 +80,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TimestampEvent event ->
-            ( model, Cmd.batch [ ES.encode event |> ES.storeEvent, ES.getEvents Json.Encode.null ] )
+            ( model, ES.encode event |> ES.storeEvent )
+
+        EventStored _ ->
+            ( model, ES.getEvents Json.Encode.null )
 
         EventsReceived results ->
             case decodeValue (Json.Decode.list ES.decode) results of
@@ -89,7 +93,7 @@ update msg model =
                             List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
 
                         updatedmodel =
-                            List.foldr aggregate model sortedEvents
+                            List.foldr aggregate { model | processes = Loaded [] } sortedEvents
                     in
                     ( updatedmodel, Cmd.none )
 
@@ -125,7 +129,6 @@ update msg model =
                         | currentUuid = newUuid
                         , currentSeed = newSeed
                     }
-                , processes = Loading
               }
             , Task.perform TimestampEvent <|
                 Task.map (\t -> { event | posixtime = t }) now

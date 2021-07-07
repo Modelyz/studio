@@ -34,6 +34,9 @@ type Model
 port receiveEvents : (Json.Encode.Value -> msg) -> Sub msg
 
 
+port eventStored : (Json.Encode.Value -> msg) -> Sub msg
+
+
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     let
@@ -191,7 +194,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         ProcessesModel _ ->
-            Sub.map ProcessesMsg (receiveEvents Page.Processes.EventsReceived)
+            Sub.batch
+                [ Sub.map ProcessesMsg (eventStored Page.Processes.EventStored)
+                , Sub.map ProcessesMsg (receiveEvents Page.Processes.EventsReceived)
+                ]
 
         ProcessModel _ ->
             Sub.map ProcessMsg (receiveEvents Page.Process.EventsReceived)

@@ -69,6 +69,8 @@ app.ports.storeEvent.subscribe(function(event) {
         addrequest.onsuccess = (e) => {
             console.log('Event successfully added to IDB')
             db.close()
+            app.ports.eventStored.send("")
+            console.log("Stored info successfully sent back to Elm")
         }
         addrequest.onerror = (e) => {
             alert("IDB write failed: " + addrequest.error); // FIXME
