@@ -1,7 +1,7 @@
 module Page.Processes exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
-import ES
+import ES exposing (State)
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
@@ -11,7 +11,6 @@ import Prng.Uuid as Uuid
 import REA.Entity as Ent
 import REA.Process as P exposing (Process)
 import Random.Pcg.Extended as Random
-import Session exposing (Session)
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
 
@@ -30,7 +29,7 @@ type Status a
 
 
 type alias Model =
-    { session : Session
+    { state : ES.State
     , processes : Status (List Process)
     }
 
@@ -65,9 +64,9 @@ aggregate event model =
             model
 
 
-init : Session -> ( Model, Cmd Msg )
-init session =
-    ( { session = session
+init : ES.State -> ( Model, Cmd Msg )
+init state =
+    ( { state = state
       , processes = Loading
       }
     , ES.getEvents Json.Encode.null
@@ -86,7 +85,7 @@ update msg model =
                             List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
 
                         updatedmodel =
-                            List.foldr aggregate { model | processes = Loaded [] } sortedEvents
+                            List.foldr aggregate { model | processes = Loading } sortedEvents
                     in
                     ( updatedmodel, Cmd.none )
 
@@ -98,7 +97,7 @@ update msg model =
         NewProcess ->
             let
                 ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.session.currentSeed
+                    Random.step Uuid.generator model.state.currentSeed
 
                 ename =
                     "Process"
@@ -113,10 +112,10 @@ update msg model =
                     }
             in
             ( { model
-                | session =
+                | state =
                     let
                         s =
-                            model.session
+                            model.state
                     in
                     { s
                         | currentUuid = newUuid

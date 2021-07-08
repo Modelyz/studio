@@ -1,16 +1,35 @@
-port module ES exposing (Event, decode, encode, getEvents, intToPosix, storeEvent)
+port module ES exposing (Event, State, decode, encode, getEvents, intToPosix, storeEvent)
 
+import Browser.Navigation as Nav
 import Json.Decode exposing (andThen)
 import Json.Encode
-import Prng.Uuid
+import Prng.Uuid exposing (Uuid)
 import REA.Entity as Ent exposing (Entity)
+import REA.Process exposing (Process)
+import REA.ProcessType exposing (ProcessType)
+import Random.Pcg.Extended exposing (Seed)
 import Time
+import Url exposing (Url)
 
 
 port getEvents : Json.Encode.Value -> Cmd msg
 
 
 port storeEvent : Json.Encode.Value -> Cmd msg
+
+
+
+-- global application state --
+
+
+type alias State =
+    { currentSeed : Seed
+    , currentUuid : Uuid
+    , navkey : Nav.Key
+    , url : Url
+    , processes : List Process
+    , processType : ProcessType
+    }
 
 
 

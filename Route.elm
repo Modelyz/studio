@@ -2,7 +2,6 @@ module Route exposing (Route(..), parseUrl, routeParser)
 
 import Browser
 import Browser.Navigation as Nav
-import Session exposing (Session)
 import Url
 import Url.Parser exposing ((</>), Parser, map, oneOf, s, string, top)
 

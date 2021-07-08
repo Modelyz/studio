@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import ES exposing (State)
 import Html
 import Json.Encode
 import Maybe exposing (Maybe(..))
@@ -13,7 +14,6 @@ import Prng.Uuid exposing (generator)
 import REA.ProcessType as PT
 import Random.Pcg.Extended exposing (initialSeed, step)
 import Route exposing (Route, parseUrl)
-import Session exposing (Session)
 import Url exposing (Url)
 
 
@@ -25,8 +25,8 @@ type Msg
 
 
 type Model
-    = NotFoundModel Session
-    | ErrorModel Session
+    = NotFoundModel ES.State
+    | ErrorModel ES.State
     | ProcessesModel Page.Processes.Model
     | ProcessModel Page.Process.Model
 
@@ -43,27 +43,25 @@ init ( seed, seedExtension ) url navkey =
         ( newUuid, _ ) =
             step generator <| initialSeed seed seedExtension
 
-        route =
-            parseUrl url
-
-        session =
+        state =
             { currentSeed = initialSeed seed seedExtension
             , currentUuid = newUuid
             , navkey = navkey
             , url = url
             , processType = PT.new
+            , processes = []
             }
     in
-    toModelCmd route session
+    toModelCmd (parseUrl url) state
 
 
-toModelCmd : Route -> Session -> ( Model, Cmd Msg )
-toModelCmd route session =
+toModelCmd : Route -> ES.State -> ( Model, Cmd Msg )
+toModelCmd route state =
     case route of
         Route.Processes ->
             let
                 ( model, cmd ) =
-                    Page.Processes.init session
+                    Page.Processes.init state
             in
             ( ProcessesModel model, Cmd.map ProcessesMsg cmd )
 
@@ -72,37 +70,37 @@ toModelCmd route session =
                 Just uuid ->
                     let
                         ( model, cmd ) =
-                            Page.Process.init uuid session
+                            Page.Process.init uuid state
                     in
                     ( ProcessModel model, Cmd.map ProcessMsg cmd )
 
                 Nothing ->
-                    ( NotFoundModel session, Cmd.none )
+                    ( NotFoundModel state, Cmd.none )
 
         Route.NotFound ->
-            ( NotFoundModel session, Cmd.none )
+            ( NotFoundModel state, Cmd.none )
 
 
-toSession : Model -> Session
+toSession : Model -> ES.State
 toSession model =
     case model of
-        NotFoundModel session ->
-            session
+        NotFoundModel state ->
+            state
 
-        ErrorModel session ->
-            session
+        ErrorModel state ->
+            state
 
         ProcessModel m ->
-            m.session
+            m.state
 
         ProcessesModel m ->
-            m.session
+            m.state
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msgtop modeltop =
     let
-        session =
+        state =
             modeltop |> toSession
     in
     case ( msgtop, modeltop ) of
@@ -113,14 +111,14 @@ update msgtop modeltop =
                         route =
                             parseUrl url
                     in
-                    ( toModelCmd route session |> Tuple.first, Nav.pushUrl session.navkey (Url.toString url) )
+                    ( toModelCmd route state |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
 
                 Browser.External href ->
                     ( modeltop, Nav.load href )
 
         -- react to an url change
         ( UrlChanged url, _ ) ->
-            toModelCmd (parseUrl url) session
+            toModelCmd (parseUrl url) state
 
         ( ProcessesMsg msg, ProcessesModel m ) ->
             let
@@ -137,7 +135,7 @@ update msgtop modeltop =
             ( ProcessModel modified, Cmd.map ProcessMsg cmd )
 
         ( _, _ ) ->
-            ( ErrorModel session, Cmd.none )
+            ( ErrorModel state, Cmd.none )
 
 
 view : Model -> Browser.Document Msg

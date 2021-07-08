@@ -1,7 +1,7 @@
 module Page.Process exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
-import ES
+import ES exposing (State)
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
@@ -12,16 +12,15 @@ import REA.Commitment as C exposing (Commitment)
 import REA.Entity as Ent
 import REA.Process exposing (Process)
 import Random.Pcg.Extended as Random
-import Session exposing (Session)
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
 
 
 type Msg
-    = TimestampEvent ES.Event
-    | EventsReceived Json.Encode.Value
-    | NewEvent
+    = NewEvent
     | NewCommitment
+    | TimestampEvent ES.Event
+    | EventsReceived Json.Encode.Value
     | EventStored Json.Encode.Value
 
 
@@ -32,15 +31,15 @@ type Status a
 
 
 type alias Model =
-    { session : Session
+    { state : ES.State
     , uuid : Uuid
     , process : Status Process
     }
 
 
-init : Uuid -> Session -> ( Model, Cmd Msg )
-init uuid session =
-    ( { session = session
+init : Uuid -> ES.State -> ( Model, Cmd Msg )
+init uuid state =
+    ( { state = state
       , uuid = uuid
       , process = Loading
       }
@@ -119,7 +118,7 @@ update msg model =
         NewCommitment ->
             let
                 ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.session.currentSeed
+                    Random.step Uuid.generator model.state.currentSeed
 
                 ename =
                     "Commitment"
@@ -134,10 +133,10 @@ update msg model =
                     }
             in
             ( { model
-                | session =
+                | state =
                     let
                         s =
-                            model.session
+                            model.state
                     in
                     { s
                         | currentUuid = newUuid
