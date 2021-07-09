@@ -111,7 +111,7 @@ update msgtop modeltop =
                         route =
                             parseUrl url
                     in
-                    ( toModelCmd route state |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
+                    ( toModelCmd route { state | url = url } |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
 
                 Browser.External href ->
                     ( modeltop, Nav.load href )

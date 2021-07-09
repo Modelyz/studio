@@ -1,7 +1,7 @@
 module Page.Process exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
-import ES exposing (State)
+import ES exposing (State, aggregate, getProcess)
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
@@ -12,6 +12,7 @@ import REA.Commitment as C exposing (Commitment)
 import REA.Entity as Ent
 import REA.Process exposing (Process)
 import Random.Pcg.Extended as Random
+import Status exposing (Status(..))
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
 
@@ -22,12 +23,6 @@ type Msg
     | TimestampEvent ES.Event
     | EventsReceived Json.Encode.Value
     | EventStored Json.Encode.Value
-
-
-type Status a
-    = Loading
-    | Failed String
-    | Loaded a
 
 
 type alias Model =
@@ -52,47 +47,17 @@ timeCompare t1 t2 =
     compare (posixToMillis t1) (posixToMillis t2)
 
 
-
---- evolve the state given an event
-
-
-aggregate : ES.Event -> Model -> Model
-aggregate event model =
-    case event.name of
-        "Process added" ->
-            -- TODO turn this into a type
-            case Ent.toProcess event.entity of
-                Nothing ->
-                    model
-
+syncModel : Model -> Model
+syncModel model =
+    { model
+        | process =
+            case getProcess model.state of
                 Just p ->
-                    if p.uuid == model.uuid then
-                        case model.process of
-                            Loaded ps ->
-                                { model | process = Loaded p }
+                    Loaded p
 
-                            _ ->
-                                { model | process = Loaded p }
-
-                    else
-                        model
-
-        "Commitment added" ->
-            -- TODO turn this into a type
-            case Ent.toCommitment event.entity of
                 Nothing ->
-                    model
-
-                Just c ->
-                    case model.process of
-                        Loaded p ->
-                            { model | process = Loaded { p | commitments = c :: p.commitments } }
-
-                        _ ->
-                            model
-
-        _ ->
-            model
+                    Failed "Unknown error"
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -105,10 +70,16 @@ update msg model =
                         sortedEvents =
                             List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
 
-                        updatedmodel =
-                            List.foldr aggregate { model | process = Loading } sortedEvents
+                        state =
+                            model.state
+
+                        newState =
+                            List.foldr aggregate { state | processes = [] } sortedEvents
+
+                        newmodel =
+                            syncModel { model | state = newState }
                     in
-                    ( updatedmodel, Cmd.none )
+                    ( newmodel, Cmd.none )
 
                 Err error ->
                     ( { model | process = Failed (errorToString error) }

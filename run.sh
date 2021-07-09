@@ -1,2 +1,2 @@
 #!/bin/bash
-uvicorn server:app
+pipenv run uvicorn server:app

@@ -1,7 +1,7 @@
 module Page.Processes exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
-import ES exposing (State)
+import ES exposing (State, aggregate)
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
@@ -11,6 +11,7 @@ import Prng.Uuid as Uuid
 import REA.Entity as Ent
 import REA.Process as P exposing (Process)
 import Random.Pcg.Extended as Random
+import Status exposing (Status(..))
 import Task
 import Time exposing (millisToPosix, now, posixToMillis)
 
@@ -20,12 +21,6 @@ type Msg
     | TimestampEvent ES.Event
     | EventsReceived Json.Encode.Value
     | EventStored Json.Encode.Value
-
-
-type Status a
-    = Loading
-    | Failed String
-    | Loaded a
 
 
 type alias Model =
@@ -39,31 +34,6 @@ timeCompare t1 t2 =
     compare (posixToMillis t1) (posixToMillis t2)
 
 
-
---- evolve the state given an event
-
-
-aggregate : ES.Event -> Model -> Model
-aggregate event model =
-    case event.name of
-        "Process added" ->
-            -- TODO turn this into a type
-            case Ent.toProcess event.entity of
-                Nothing ->
-                    model
-
-                Just p ->
-                    case model.processes of
-                        Loaded ps ->
-                            { model | processes = Loaded (p :: ps) }
-
-                        _ ->
-                            { model | processes = Loaded [ p ] }
-
-        _ ->
-            model
-
-
 init : ES.State -> ( Model, Cmd Msg )
 init state =
     ( { state = state
@@ -72,6 +42,11 @@ init state =
     , ES.getEvents Json.Encode.null
       --    , getSnapshot
     )
+
+
+syncModel : Model -> Model
+syncModel model =
+    { model | processes = Loaded model.state.processes }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,10 +59,16 @@ update msg model =
                         sortedEvents =
                             List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
 
-                        updatedmodel =
-                            List.foldr aggregate { model | processes = Loading } sortedEvents
+                        state =
+                            model.state
+
+                        newState =
+                            List.foldr aggregate { state | processes = [] } sortedEvents
+
+                        newmodel =
+                            syncModel { model | state = newState }
                     in
-                    ( updatedmodel, Cmd.none )
+                    ( newmodel, Cmd.none )
 
                 Err error ->
                     ( { model | processes = Failed (errorToString error) }
