@@ -47,17 +47,17 @@ init ( seed, seedExtension ) url navkey =
             { currentSeed = initialSeed seed seedExtension
             , currentUuid = newUuid
             , navkey = navkey
-            , url = url
+            , route = parseUrl url
             , processType = PT.new
             , processes = []
             }
     in
-    toModelCmd (parseUrl url) state
+    toModelCmd state
 
 
-toModelCmd : Route -> ES.State -> ( Model, Cmd Msg )
-toModelCmd route state =
-    case route of
+toModelCmd : ES.State -> ( Model, Cmd Msg )
+toModelCmd state =
+    case state.route of
         Route.Processes ->
             let
                 ( model, cmd ) =
@@ -81,8 +81,8 @@ toModelCmd route state =
             ( NotFoundModel state, Cmd.none )
 
 
-toSession : Model -> ES.State
-toSession model =
+toState : Model -> ES.State
+toState model =
     case model of
         NotFoundModel state ->
             state
@@ -101,24 +101,20 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msgtop modeltop =
     let
         state =
-            modeltop |> toSession
+            modeltop |> toState
     in
     case ( msgtop, modeltop ) of
         ( LinkClicked urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
-                    let
-                        route =
-                            parseUrl url
-                    in
-                    ( toModelCmd route { state | url = url } |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
+                    ( toModelCmd { state | route = parseUrl url } |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
 
                 Browser.External href ->
                     ( modeltop, Nav.load href )
 
         -- react to an url change
         ( UrlChanged url, _ ) ->
-            toModelCmd (parseUrl url) state
+            toModelCmd { state | route = parseUrl url }
 
         ( ProcessesMsg msg, ProcessesModel m ) ->
             let

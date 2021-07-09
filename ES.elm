@@ -8,7 +8,7 @@ import REA.Entity as Ent exposing (Entity)
 import REA.Process exposing (Process)
 import REA.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended exposing (Seed)
-import Route exposing (parseUrl)
+import Route exposing (Route, parseUrl)
 import Status exposing (Status(..))
 import Time
 import Url exposing (Url)
@@ -28,7 +28,7 @@ type alias State =
     { currentSeed : Seed
     , currentUuid : Uuid
     , navkey : Nav.Key
-    , url : Url
+    , route : Route
     , processes : List Process
     , processType : ProcessType
     }
@@ -49,7 +49,7 @@ type alias Event =
 
 getProcess : State -> Maybe Process
 getProcess state =
-    case parseUrl state.url of
+    case state.route of
         Route.Process str ->
             case Uuid.fromString str of
                 Just uuid ->
@@ -73,7 +73,7 @@ getProcess state =
 
 getUuid : State -> Maybe Uuid
 getUuid state =
-    case parseUrl state.url of
+    case state.route of
         Route.Process str ->
             Uuid.fromString str
 
