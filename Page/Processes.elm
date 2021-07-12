@@ -24,7 +24,7 @@ type Msg
 
 
 type alias Model =
-    { state : ES.State
+    { state : State
     , processes : Status (List Process)
     }
 
@@ -34,7 +34,7 @@ timeCompare t1 t2 =
     compare (posixToMillis t1) (posixToMillis t2)
 
 
-init : ES.State -> ( Model, Cmd Msg )
+init : State -> ( Model, Cmd Msg )
 init state =
     ( { state = state
       , processes = Loading

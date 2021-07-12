@@ -8,10 +8,9 @@ import REA.Entity as Ent exposing (Entity)
 import REA.Process exposing (Process)
 import REA.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended exposing (Seed)
-import Route exposing (Route, parseUrl)
+import Route exposing (Route)
 import Status exposing (Status(..))
 import Time
-import Url exposing (Url)
 
 
 port getEvents : Json.Encode.Value -> Cmd msg

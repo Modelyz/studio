@@ -26,13 +26,13 @@ type Msg
 
 
 type alias Model =
-    { state : ES.State
+    { state : State
     , uuid : Uuid
     , process : Status Process
     }
 
 
-init : Uuid -> ES.State -> ( Model, Cmd Msg )
+init : Uuid -> State -> ( Model, Cmd Msg )
 init uuid state =
     ( { state = state
       , uuid = uuid

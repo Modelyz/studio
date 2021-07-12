@@ -13,7 +13,7 @@ import Page.Processes
 import Prng.Uuid exposing (generator)
 import REA.ProcessType as PT
 import Random.Pcg.Extended exposing (initialSeed, step)
-import Route exposing (Route, parseUrl)
+import Route exposing (parseUrl)
 import Url exposing (Url)
 
 
@@ -25,8 +25,8 @@ type Msg
 
 
 type Model
-    = NotFoundModel ES.State
-    | ErrorModel ES.State
+    = NotFoundModel State
+    | ErrorModel State
     | ProcessesModel Page.Processes.Model
     | ProcessModel Page.Process.Model
 
@@ -52,11 +52,6 @@ init ( seed, seedExtension ) url navkey =
             , processes = []
             }
     in
-    toModelCmd state
-
-
-toModelCmd : ES.State -> ( Model, Cmd Msg )
-toModelCmd state =
     case state.route of
         Route.Processes ->
             let
@@ -81,7 +76,7 @@ toModelCmd state =
             ( NotFoundModel state, Cmd.none )
 
 
-toState : Model -> ES.State
+toState : Model -> State
 toState model =
     case model of
         NotFoundModel state ->
@@ -107,14 +102,39 @@ update msgtop modeltop =
         ( LinkClicked urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( toModelCmd { state | route = parseUrl url } |> Tuple.first, Nav.pushUrl state.navkey (Url.toString url) )
+                    ( modeltop, Nav.pushUrl state.navkey (Url.toString url) )
 
                 Browser.External href ->
                     ( modeltop, Nav.load href )
 
         -- react to an url change
         ( UrlChanged url, _ ) ->
-            toModelCmd { state | route = parseUrl url }
+            let
+                newstate =
+                    { state | route = parseUrl url }
+            in
+            case newstate.route of
+                Route.Processes ->
+                    let
+                        ( model, cmd ) =
+                            Page.Processes.init newstate
+                    in
+                    ( ProcessesModel model, Cmd.map ProcessesMsg cmd )
+
+                Route.Process path ->
+                    case Prng.Uuid.fromString path of
+                        Just uuid ->
+                            let
+                                ( model, cmd ) =
+                                    Page.Process.init uuid newstate
+                            in
+                            ( ProcessModel model, Cmd.map ProcessMsg cmd )
+
+                        Nothing ->
+                            ( NotFoundModel newstate, Cmd.none )
+
+                Route.NotFound ->
+                    ( NotFoundModel newstate, Cmd.none )
 
         ( ProcessesMsg msg, ProcessesModel m ) ->
             let
