@@ -13,7 +13,7 @@ import Page.Processes
 import Prng.Uuid exposing (generator)
 import REA.ProcessType as PT
 import Random.Pcg.Extended exposing (initialSeed, step)
-import Route exposing (parseUrl)
+import Route exposing (Route, parseUrl)
 import Url exposing (Url)
 
 
@@ -109,32 +109,7 @@ update msgtop modeltop =
 
         -- react to an url change
         ( UrlChanged url, _ ) ->
-            let
-                newstate =
-                    { state | route = parseUrl url }
-            in
-            case newstate.route of
-                Route.Processes ->
-                    let
-                        ( model, cmd ) =
-                            Page.Processes.init newstate
-                    in
-                    ( ProcessesModel model, Cmd.map ProcessesMsg cmd )
-
-                Route.Process path ->
-                    case Prng.Uuid.fromString path of
-                        Just uuid ->
-                            let
-                                ( model, cmd ) =
-                                    Page.Process.init uuid newstate
-                            in
-                            ( ProcessModel model, Cmd.map ProcessMsg cmd )
-
-                        Nothing ->
-                            ( NotFoundModel newstate, Cmd.none )
-
-                Route.NotFound ->
-                    ( NotFoundModel newstate, Cmd.none )
+            redirect { state | route = parseUrl url } (parseUrl url)
 
         ( ProcessesMsg msg, ProcessesModel m ) ->
             let
@@ -192,6 +167,32 @@ view model =
             { title = doc.title
             , body = List.map (Html.map ProcessMsg) doc.body
             }
+
+
+redirect : State -> Route -> ( Model, Cmd Msg )
+redirect state route =
+    case state.route of
+        Route.Processes ->
+            let
+                ( model, cmd ) =
+                    Page.Processes.init state
+            in
+            ( ProcessesModel model, Cmd.map ProcessesMsg cmd )
+
+        Route.Process path ->
+            case Prng.Uuid.fromString path of
+                Just uuid ->
+                    let
+                        ( model, cmd ) =
+                            Page.Process.init uuid state
+                    in
+                    ( ProcessModel model, Cmd.map ProcessMsg cmd )
+
+                Nothing ->
+                    ( NotFoundModel state, Cmd.none )
+
+        Route.NotFound ->
+            ( NotFoundModel state, Cmd.none )
 
 
 onUrlRequest : Browser.UrlRequest -> Msg
