@@ -1,22 +1,23 @@
-port module ES exposing (Event, State, aggregate, decode, encode, getEvents, getProcess, intToPosix, storeEvent)
+port module ES exposing (Event, EventType(..), State, aggregate, decode, encode, getEvents, getProcess, intToPosix, storeEvent)
 
 import Browser.Navigation as Nav
-import Json.Decode exposing (andThen)
-import Json.Encode
+import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Entity as Ent exposing (Entity)
 import REA.Process exposing (Process)
 import REA.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended exposing (Seed)
+import Result exposing (Result(..))
 import Route exposing (Route)
 import Status exposing (Status(..))
 import Time
 
 
-port getEvents : Json.Encode.Value -> Cmd msg
+port getEvents : Encode.Value -> Cmd msg
 
 
-port storeEvent : Json.Encode.Value -> Cmd msg
+port storeEvent : Encode.Value -> Cmd msg
 
 
 
@@ -37,10 +38,16 @@ type alias State =
 -- business events --
 
 
+type EventType
+    = CommitmentAdded
+    | ProcessAdded
+    | EventAdded
+
+
 type alias Event =
     { uuid : Uuid.Uuid
     , posixtime : Time.Posix
-    , name : String
+    , etype : EventType
     , entity : Entity
     , entityType : String
     }
@@ -86,9 +93,8 @@ getUuid state =
 
 aggregate : Event -> State -> State
 aggregate event state =
-    case event.name of
-        "Process added" ->
-            -- TODO turn this into a type
+    case event.etype of
+        ProcessAdded ->
             case Ent.toProcess event.entity of
                 Nothing ->
                     state
@@ -96,8 +102,7 @@ aggregate event state =
                 Just p ->
                     { state | processes = p :: state.processes }
 
-        "Commitment added" ->
-            -- TODO turn this into a type
+        CommitmentAdded ->
             case Ent.toCommitment event.entity of
                 Just c ->
                     let
@@ -124,29 +129,62 @@ aggregate event state =
             state
 
 
-encode : Event -> Json.Encode.Value
+eventTypeEncode : EventType -> Encode.Value
+eventTypeEncode etype =
+    case etype of
+        ProcessAdded ->
+            Encode.string "ProcessAdded"
+
+        CommitmentAdded ->
+            Encode.string "CommitmentAdded"
+
+        EventAdded ->
+            Encode.string "EventAdded"
+
+
+eventTypeDecoder : Decoder EventType
+eventTypeDecoder =
+    Decode.string
+        |> andThen
+            (\s ->
+                case s of
+                    "ProcessAdded" ->
+                        Decode.succeed ProcessAdded
+
+                    "CommitmentAdded" ->
+                        Decode.succeed CommitmentAdded
+
+                    "EventAdded" ->
+                        Decode.succeed EventAdded
+
+                    _ ->
+                        Decode.fail "Unknown Event type"
+            )
+
+
+encode : Event -> Encode.Value
 encode event =
-    Json.Encode.object
+    Encode.object
         [ ( "uuid", Uuid.encode event.uuid )
-        , ( "posixtime", Json.Encode.int <| Time.posixToMillis event.posixtime )
-        , ( "name", Json.Encode.string event.name )
-        , ( "entityType", Json.Encode.string event.entityType )
+        , ( "posixtime", Encode.int <| Time.posixToMillis event.posixtime )
+        , ( "etype", eventTypeEncode event.etype )
+        , ( "entityType", Encode.string event.entityType )
         , ( "entity", Ent.encode event.entity )
         ]
 
 
-decode : Json.Decode.Decoder Event
+decode : Decoder Event
 decode =
-    Json.Decode.map5 Event
-        (Json.Decode.field "uuid" Uuid.decoder)
-        (Json.Decode.field "posixtime" Json.Decode.int |> andThen intToPosix)
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "entityType" Json.Decode.string
+    Decode.map5 Event
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "posixtime" Decode.int |> andThen intToPosix)
+        (Decode.field "etype" eventTypeDecoder)
+        (Decode.field "entityType" Decode.string
             |> andThen Ent.decode
         )
-        (Json.Decode.field "entityType" Json.Decode.string)
+        (Decode.field "entityType" Decode.string)
 
 
-intToPosix : Int -> Json.Decode.Decoder Time.Posix
+intToPosix : Int -> Decode.Decoder Time.Posix
 intToPosix millis =
-    Json.Decode.succeed <| Time.millisToPosix millis
+    Decode.succeed <| Time.millisToPosix millis

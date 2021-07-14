@@ -1,7 +1,7 @@
 module Page.Process exposing (Model, Msg(..), init, update, view)
 
 import Browser exposing (Document)
-import ES exposing (State, aggregate, getProcess)
+import ES exposing (EventType(..), State, aggregate, getProcess)
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
@@ -98,7 +98,7 @@ update msg model =
                 event =
                     { uuid = newUuid
                     , posixtime = millisToPosix 0
-                    , name = ename ++ " added"
+                    , etype = CommitmentAdded
                     , entityType = ename
                     , entity = Ent.Commitment (C.new newUuid)
                     }
