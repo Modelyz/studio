@@ -1,4 +1,4 @@
-module REA.Agent exposing (Agent, decode, encode)
+module REA.Agent exposing (Agent, decoder, encode)
 
 import Json.Decode
 import Json.Encode
@@ -22,9 +22,9 @@ encode a =
         ]
 
 
-decode : Json.Decode.Decoder Agent
-decode =
+decoder : Json.Decode.Decoder Agent
+decoder =
     Json.Decode.map3 Agent
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "atype" AT.decode)
+        (Json.Decode.field "atype" AT.decoder)

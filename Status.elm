@@ -1,7 +1,7 @@
 module Status exposing (Status(..))
 
 
-type Status a
+type Status
     = Loading
     | Failed String
-    | Loaded a
+    | Loaded

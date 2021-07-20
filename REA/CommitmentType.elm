@@ -1,4 +1,4 @@
-module REA.CommitmentType exposing (CommitmentType, decode, encode, new)
+module REA.CommitmentType exposing (CommitmentType, decoder, encode, new)
 
 import Json.Decode
 import Json.Encode
@@ -56,9 +56,9 @@ construct name uuid ctype =
     CommitmentType { name = name, uuid = uuid, ctype = ctype }
 
 
-decode : Json.Decode.Decoder CommitmentType
-decode =
+decoder : Json.Decode.Decoder CommitmentType
+decoder =
     Json.Decode.map3 construct
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decoder))

@@ -1,4 +1,4 @@
-module REA.ContractType exposing (ContractType, decode, encode, new)
+module REA.ContractType exposing (ContractType, decoder, encode, new)
 
 import Json.Decode
 import Json.Encode
@@ -53,8 +53,8 @@ construct name ctype =
     ContractType { name = name, ctype = ctype }
 
 
-decode : Json.Decode.Decoder ContractType
-decode =
+decoder : Json.Decode.Decoder ContractType
+decoder =
     Json.Decode.map2 construct
         (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+        (Json.Decode.field "ctype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decoder))

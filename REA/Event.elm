@@ -1,14 +1,14 @@
-module REA.Event exposing (Event, decode, encode, new)
+module REA.Event exposing (Event, compare, decoder, encode, new)
 
 import Json.Decode
 import Json.Encode
-import Prng.Uuid
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.EventType as ET exposing (EventType)
 
 
 type alias Event =
     { name : String
-    , uuid : Prng.Uuid.Uuid
+    , uuid : Uuid
     , etype : EventType
 
     --    , qty: Float
@@ -18,7 +18,7 @@ type alias Event =
     }
 
 
-new : Prng.Uuid.Uuid -> Event
+new : Uuid -> Event
 new uuid =
     { name = "Pizza order"
     , uuid = uuid
@@ -30,14 +30,19 @@ encode : Event -> Json.Encode.Value
 encode e =
     Json.Encode.object
         [ ( "name", Json.Encode.string e.name )
-        , ( "uuid", Prng.Uuid.encode e.uuid )
+        , ( "uuid", Uuid.encode e.uuid )
         , ( "etype", ET.encode e.etype )
         ]
 
 
-decode : Json.Decode.Decoder Event
-decode =
+decoder : Json.Decode.Decoder Event
+decoder =
     Json.Decode.map3 Event
         (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "etype" ET.decode)
+        (Json.Decode.field "uuid" Uuid.decoder)
+        (Json.Decode.field "etype" ET.decoder)
+
+
+compare : Event -> String
+compare e =
+    Uuid.toString e.uuid

@@ -1,4 +1,4 @@
-module REA.AgentType exposing (AgentType, decode, encode)
+module REA.AgentType exposing (AgentType, decoder, encode)
 
 import Json.Decode
 import Json.Encode
@@ -46,9 +46,9 @@ construct name uuid atype =
     AgentType { name = name, uuid = uuid, atype = atype }
 
 
-decode : Json.Decode.Decoder AgentType
-decode =
+decoder : Json.Decode.Decoder AgentType
+decoder =
     Json.Decode.map3 construct
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "atype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+        (Json.Decode.field "atype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decoder))

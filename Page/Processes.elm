@@ -1,117 +1,19 @@
-module Page.Processes exposing (Model, Msg(..), init, update, view)
+module Page.Processes exposing (Model, view)
 
 import Browser exposing (Document)
-import ES exposing (EventType(..), State, aggregate)
+import DictSet
+import ES
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
-import Json.Decode exposing (decodeValue, errorToString)
-import Json.Encode
+import Msg exposing (Msg(..))
 import Prng.Uuid as Uuid
-import REA.Entity as Ent
 import REA.Process as P exposing (Process)
-import Random.Pcg.Extended as Random
 import Status exposing (Status(..))
-import Task
-import Time exposing (millisToPosix, now, posixToMillis)
-
-
-type Msg
-    = NewProcess
-    | TimestampEvent ES.Event
-    | EventsReceived Json.Encode.Value
-    | EventStored Json.Encode.Value
 
 
 type alias Model =
-    { state : State
-    , processes : Status (List Process)
-    }
-
-
-timeCompare : Time.Posix -> Time.Posix -> Order
-timeCompare t1 t2 =
-    compare (posixToMillis t1) (posixToMillis t2)
-
-
-init : State -> ( Model, Cmd Msg )
-init state =
-    ( { state = state
-      , processes = Loading
-      }
-    , ES.getEvents Json.Encode.null
-      --    , getSnapshot
-    )
-
-
-syncModel : Model -> Model
-syncModel model =
-    { model | processes = Loaded model.state.processes }
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        EventsReceived results ->
-            case decodeValue (Json.Decode.list ES.decode) results of
-                Ok events ->
-                    let
-                        sortedEvents =
-                            List.sortWith (\e1 e2 -> timeCompare e2.posixtime e1.posixtime) events
-
-                        state =
-                            model.state
-
-                        newState =
-                            List.foldr aggregate { state | processes = [] } sortedEvents
-
-                        newmodel =
-                            syncModel { model | state = newState }
-                    in
-                    ( newmodel, Cmd.none )
-
-                Err error ->
-                    ( { model | processes = Failed (errorToString error) }
-                    , Cmd.none
-                    )
-
-        NewProcess ->
-            let
-                ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.state.currentSeed
-
-                ename =
-                    "Process"
-
-                -- TODO other types?
-                event =
-                    { uuid = newUuid
-                    , posixtime = millisToPosix 0
-                    , etype = ProcessAdded
-                    , entityType = ename
-                    , entity = Ent.Process (P.new newUuid)
-                    }
-            in
-            ( { model
-                | state =
-                    let
-                        s =
-                            model.state
-                    in
-                    { s
-                        | currentUuid = newUuid
-                        , currentSeed = newSeed
-                    }
-              }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> { event | posixtime = t }) now
-            )
-
-        TimestampEvent event ->
-            ( model, ES.encode event |> ES.storeEvent )
-
-        EventStored _ ->
-            ( model, ES.getEvents Json.Encode.null )
+    ES.State
 
 
 viewNavbar : Html Msg
@@ -165,15 +67,18 @@ viewContent model =
         [ class "section"
         ]
         [ button
-            [ onClick <| NewProcess
+            [ onClick NewProcess
             , class "button"
             ]
             [ text "New pizza sale"
             ]
-        , case model.processes of
-            Loaded ps ->
-                div [ class "columns is-multiline" ] <|
-                    List.map viewThumbnail ps
+        , case model.status of
+            Loaded ->
+                div [ class "columns is-multiline" ]
+                    (DictSet.toList model.processes
+                        |> List.sortBy P.compare
+                        |> List.map viewThumbnail
+                    )
 
             Loading ->
                 div [ class "section" ]

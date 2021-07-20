@@ -1,4 +1,4 @@
-module REA.EventType exposing (EventType, decode, encode, new)
+module REA.EventType exposing (EventType, decoder, encode, new)
 
 import Json.Decode
 import Json.Encode
@@ -56,9 +56,9 @@ construct name uuid etype =
     EventType { name = name, uuid = uuid, etype = etype }
 
 
-decode : Json.Decode.Decoder EventType
-decode =
+decoder : Json.Decode.Decoder EventType
+decoder =
     Json.Decode.map3 construct
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "etype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decode))
+        (Json.Decode.field "etype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decoder))

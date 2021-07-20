@@ -1,11 +1,8 @@
-module REA.Process exposing (Process, decode, encode, new)
+module REA.Process exposing (Process, compare, decoder, encode, new)
 
 import Json.Decode
 import Json.Encode
-import Prng.Uuid
-import REA.Commitment as Cm exposing (Commitment)
-import REA.Contract as C exposing (Contract)
-import REA.Event as E exposing (Event)
+import Prng.Uuid as Uuid exposing (Uuid)
 
 
 
@@ -15,21 +12,20 @@ import REA.Event as E exposing (Event)
 
 
 type alias Process =
-    { uuid : Prng.Uuid.Uuid
+    { uuid : Uuid
     , name : String
-    , contracts : List Contract
-    , commitments : List Commitment
-    , events : List Event
     }
 
 
-new : Prng.Uuid.Uuid -> Process
+compare : Process -> String
+compare process =
+    Uuid.toString process.uuid
+
+
+new : Uuid -> Process
 new uuid =
     { uuid = uuid
     , name = "Pizza sale"
-    , contracts = []
-    , commitments = []
-    , events = []
 
     --    , fullfilments=[]
     }
@@ -38,11 +34,8 @@ new uuid =
 encode : Process -> Json.Encode.Value
 encode p =
     Json.Encode.object
-        [ ( "uuid", Prng.Uuid.encode p.uuid )
+        [ ( "uuid", Uuid.encode p.uuid )
         , ( "name", Json.Encode.string p.name )
-        , ( "contracts", Json.Encode.list C.encode p.contracts )
-        , ( "commitments", Json.Encode.list Cm.encode p.commitments )
-        , ( "events", Json.Encode.list E.encode p.events )
         ]
 
 
@@ -53,11 +46,8 @@ encode p =
 -- Looks like a process can have several contracts?
 
 
-decode : Json.Decode.Decoder Process
-decode =
-    Json.Decode.map5 Process
-        (Json.Decode.field "uuid" Prng.Uuid.decoder)
+decoder : Json.Decode.Decoder Process
+decoder =
+    Json.Decode.map2 Process
+        (Json.Decode.field "uuid" Uuid.decoder)
         (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "contracts" <| Json.Decode.list C.decode)
-        (Json.Decode.field "commitments" <| Json.Decode.list Cm.decode)
-        (Json.Decode.field "events" <| Json.Decode.list E.decode)
