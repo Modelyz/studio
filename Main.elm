@@ -83,15 +83,12 @@ update msg model =
             let
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
-
-                commitment =
-                    C.new newUuid
             in
             ( { model
                 | currentSeed = newSeed
               }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = commitment }) now
+                Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new newUuid t }) now
             )
 
         NewEvent process ->

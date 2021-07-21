@@ -8,7 +8,7 @@ import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Prng.Uuid as Uuid
-import REA.Commitment exposing (Commitment)
+import REA.Commitment as C exposing (Commitment)
 import REA.Process exposing (Process)
 import Status exposing (Status(..))
 
@@ -77,6 +77,8 @@ viewContent model process =
         , div [ class "columns is-multiline" ]
             (getCommitments model process
                 |> Set.toList
+                |> List.sortBy C.compare
+                |> List.reverse
                 |> List.map viewThumbnail
             )
         ]

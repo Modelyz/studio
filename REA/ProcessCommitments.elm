@@ -3,6 +3,7 @@ module REA.ProcessCommitments exposing (ProcessCommitments, compare)
 import Prng.Uuid as Uuid exposing (toString)
 import REA.Commitment exposing (Commitment)
 import REA.Process exposing (Process)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 
@@ -15,6 +16,6 @@ type alias ProcessCommitments =
     }
 
 
-compare : ProcessCommitments -> String
+compare : ProcessCommitments -> Int
 compare pc =
-    Uuid.toString pc.commitment.uuid
+    posixToMillis pc.commitment.posixtime

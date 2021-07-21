@@ -58,9 +58,9 @@ type alias State =
     , status : Status
     , eventstore : DictSet Int Event
     , processes : DictSet Int Process
-    , commitments : DictSet String Commitment
+    , commitments : DictSet Int Commitment
     , events : DictSet String E.Event
-    , process_commitments : DictSet String ProcessCommitments
+    , process_commitments : DictSet Int ProcessCommitments
     , process_events : DictSet String ProcessEvents
     }
 
@@ -106,7 +106,7 @@ getProcess state str =
             )
 
 
-getCommitments : State -> Process -> DictSet String Commitment
+getCommitments : State -> Process -> DictSet Int Commitment
 getCommitments state process =
     Set.filter (\pc -> pc.process.uuid == process.uuid) state.process_commitments
         |> Set.map C.compare (\pc -> pc.commitment)

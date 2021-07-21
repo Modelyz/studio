@@ -1,14 +1,16 @@
 module REA.Commitment exposing (Commitment, compare, decoder, encode, new)
 
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.CommitmentType as CT exposing (CommitmentType)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Commitment =
     { name : String
     , uuid : Uuid
+    , posixtime : Time.Posix
     , ctype : CommitmentType
 
     --        , qty: Float
@@ -18,31 +20,34 @@ type alias Commitment =
     }
 
 
-new : Uuid -> Commitment
-new uuid =
+new : Uuid -> Time.Posix -> Commitment
+new uuid posixtime =
     { name = "Pizza order"
     , uuid = uuid
+    , posixtime = posixtime
     , ctype = CT.new uuid
     }
 
 
-encode : Commitment -> Json.Encode.Value
+encode : Commitment -> Encode.Value
 encode c =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string c.name )
+    Encode.object
+        [ ( "name", Encode.string c.name )
         , ( "uuid", Uuid.encode c.uuid )
+        , ( "posixtime", Encode.int <| posixToMillis c.posixtime )
         , ( "ctype", CT.encode c.ctype )
         ]
 
 
-decoder : Json.Decode.Decoder Commitment
+decoder : Decode.Decoder Commitment
 decoder =
-    Json.Decode.map3 Commitment
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "uuid" Uuid.decoder)
-        (Json.Decode.field "ctype" CT.decoder)
+    Decode.map4 Commitment
+        (Decode.field "name" Decode.string)
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "posixtime" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "ctype" CT.decoder)
 
 
-compare : Commitment -> String
+compare : Commitment -> Int
 compare commitment =
-    Uuid.toString commitment.uuid
+    posixToMillis commitment.posixtime
