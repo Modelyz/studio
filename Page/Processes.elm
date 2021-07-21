@@ -77,6 +77,7 @@ viewContent model =
                 div [ class "columns is-multiline" ]
                     (DictSet.toList model.processes
                         |> List.sortBy P.compare
+                        |> List.reverse
                         |> List.map viewThumbnail
                     )
 
