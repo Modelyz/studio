@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getProcess, intToPosix, new, storeEvent)
+port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getProcess, new, storeEvent)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -14,7 +14,7 @@ import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
 import Route exposing (Route)
 import Status exposing (Status(..))
-import Time exposing (posixToMillis)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 port getEvents : Encode.Value -> Cmd msg
@@ -57,7 +57,7 @@ type alias State =
     , route : Route
     , status : Status
     , eventstore : DictSet Int Event
-    , processes : DictSet String Process
+    , processes : DictSet Int Process
     , commitments : DictSet String Commitment
     , events : DictSet String E.Event
     , process_commitments : DictSet String ProcessCommitments
@@ -196,6 +196,10 @@ eventAdded uuid posixtime process event =
 
 decoder : Decoder Event
 decoder =
+    let
+        toPosix t =
+            millisToPosix t |> Decode.succeed
+    in
     Decode.field "type" Decode.string
         |> andThen
             (\s ->
@@ -203,28 +207,23 @@ decoder =
                     "ProcessAdded" ->
                         Decode.map3 processAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen intToPosix)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
 
                     "CommitmentAdded" ->
                         Decode.map4 commitmentAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen intToPosix)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
                             (Decode.field "commitment" C.decoder)
 
                     "EventAdded" ->
                         Decode.map4 eventAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen intToPosix)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
                             (Decode.field "event" E.decoder)
 
                     _ ->
                         Decode.fail "Unknown Event type"
             )
-
-
-intToPosix : Int -> Decode.Decoder Time.Posix
-intToPosix millis =
-    Decode.succeed <| Time.millisToPosix millis

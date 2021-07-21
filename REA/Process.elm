@@ -1,8 +1,9 @@
 module REA.Process exposing (Process, compare, decoder, encode, new)
 
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 
@@ -13,29 +14,32 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Process =
     { uuid : Uuid
+    , posixtime : Time.Posix
     , name : String
     }
 
 
-compare : Process -> String
+compare : Process -> Int
 compare process =
-    Uuid.toString process.uuid
+    posixToMillis process.posixtime
 
 
-new : Uuid -> Process
-new uuid =
+new : Uuid -> Time.Posix -> Process
+new uuid posixtime =
     { uuid = uuid
+    , posixtime = posixtime
     , name = "Pizza sale"
 
     --    , fullfilments=[]
     }
 
 
-encode : Process -> Json.Encode.Value
+encode : Process -> Encode.Value
 encode p =
-    Json.Encode.object
+    Encode.object
         [ ( "uuid", Uuid.encode p.uuid )
-        , ( "name", Json.Encode.string p.name )
+        , ( "posixtime", Encode.int <| posixToMillis p.posixtime )
+        , ( "name", Encode.string p.name )
         ]
 
 
@@ -46,8 +50,9 @@ encode p =
 -- Looks like a process can have several contracts?
 
 
-decoder : Json.Decode.Decoder Process
+decoder : Decode.Decoder Process
 decoder =
-    Json.Decode.map2 Process
-        (Json.Decode.field "uuid" Uuid.decoder)
-        (Json.Decode.field "name" Json.Decode.string)
+    Decode.map3 Process
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "posixtime" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "name" Decode.string)
