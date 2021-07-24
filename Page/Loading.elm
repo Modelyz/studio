@@ -14,11 +14,11 @@ type alias Model =
     ES.State
 
 
-wrapper : (Model -> Html Msg) -> Model -> Html Msg
-wrapper viewContent model =
+wrapper : Model -> Html Msg -> Html Msg
+wrapper model content =
     case model.status of
         Loaded ->
-            viewContent model
+            content
 
         Loading ->
             div [ class "section" ]

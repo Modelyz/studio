@@ -6,6 +6,7 @@ import Json.Decode as Decode exposing (Decoder, andThen)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Commitment as C exposing (Commitment)
+import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
@@ -33,6 +34,11 @@ type Event
         , posixtime : Time.Posix
         , process : Process
         }
+    | CommitmentTypeAdded
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , commitmentType : CommitmentType
+        }
     | CommitmentAdded
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
@@ -59,9 +65,11 @@ type alias State =
     , eventstore : DictSet Int Event
     , processes : DictSet Int Process
     , commitments : DictSet Int Commitment
+    , commitmentTypes : DictSet String CommitmentType
     , events : DictSet String E.Event
     , process_commitments : DictSet Int ProcessCommitments
     , process_events : DictSet String ProcessEvents
+    , inputCommitmentType : String
     }
 
 
@@ -75,8 +83,10 @@ new seed key route =
     , commitments = Set.empty C.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
+    , commitmentTypes = Set.empty CT.compare
     , process_events = Set.empty PE.compare
     , events = Set.empty E.compare
+    , inputCommitmentType = ""
     }
 
 
@@ -85,6 +95,9 @@ compare event =
     case event of
         ProcessAdded p ->
             posixToMillis p.posixtime
+
+        CommitmentTypeAdded ct ->
+            posixToMillis ct.posixtime
 
         CommitmentAdded c ->
             posixToMillis c.posixtime
@@ -122,6 +135,11 @@ aggregate event state =
         ProcessAdded e ->
             { state | processes = Set.insert e.process state.processes }
 
+        CommitmentTypeAdded e ->
+            { state
+                | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
+            }
+
         CommitmentAdded e ->
             { state
                 | commitments = Set.insert e.commitment state.commitments
@@ -144,6 +162,14 @@ encode event =
                 , ( "type", Encode.string "ProcessAdded" )
                 , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
                 , ( "process", P.encode e.process )
+                ]
+
+        CommitmentTypeAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "CommitmentTypeAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "commitmentType", CT.encode e.commitmentType )
                 ]
 
         CommitmentAdded e ->
@@ -171,6 +197,19 @@ processAdded uuid posixtime process =
         { uuid = uuid
         , posixtime = posixtime
         , process = process
+        }
+
+
+
+-- Event constructors
+
+
+commitmentTypeAdded : Uuid -> Time.Posix -> CommitmentType -> Event
+commitmentTypeAdded uuid posixtime commitmentType =
+    CommitmentTypeAdded
+        { uuid = uuid
+        , posixtime = posixtime
+        , commitmentType = commitmentType
         }
 
 
@@ -209,6 +248,12 @@ decoder =
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
+
+                    "CommitmentTypeAdded" ->
+                        Decode.map3 commitmentTypeAdded
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "commitmentType" CT.decoder)
 
                     "CommitmentAdded" ->
                         Decode.map4 commitmentAdded

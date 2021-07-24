@@ -14,5 +14,7 @@ type Msg
     | EventsReceived Json.Encode.Value
     | TimestampEvent ES.Event
     | NewEvent Process
-    | NewCommitment Process
+    | NewCommitment Process String
+    | NewCommitmentType String
     | NewProcess
+    | InputCommitmentType String

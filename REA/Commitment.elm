@@ -20,12 +20,12 @@ type alias Commitment =
     }
 
 
-new : Uuid -> Time.Posix -> Commitment
-new uuid posixtime =
-    { name = "Pizza order"
+new : String -> Uuid -> Time.Posix -> CommitmentType -> Commitment
+new name uuid posixtime ctype =
+    { name = name
     , uuid = uuid
     , posixtime = posixtime
-    , ctype = CT.new uuid
+    , ctype = ctype
     }
 
 

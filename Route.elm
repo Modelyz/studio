@@ -8,6 +8,7 @@ type Route
     = NotFound
     | Processes
     | Process String
+    | CommitmentTypes
 
 
 routeParser : Parser (Route -> a) a
@@ -15,18 +16,11 @@ routeParser =
     oneOf
         [ map Processes top
         , map Process (s "process" </> string)
+        , map CommitmentTypes (s "commitment-types")
         ]
 
 
 parseUrl : Url.Url -> Route
 parseUrl url =
-    let
-        route =
-            Url.Parser.parse routeParser url
-    in
-    case route of
-        Nothing ->
-            NotFound
-
-        Just r ->
-            r
+    Url.Parser.parse routeParser url
+        |> Maybe.withDefault NotFound

@@ -41,3 +41,10 @@ img {
   flex: 0 0 auto;
   min-width: 6em;
 }
+
+.navbar { background: #a8520f; }
+.navbar .navbar-item { color: white; }
+.navbar a.current { color: black; background: white; }
+.navbar a.navbar-item:hover { color: black; background: white; }
+.navbar a.navbar-item:focus { color: black; background: white; }
+.form { text-align: left; }

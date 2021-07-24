@@ -2,16 +2,19 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
+import DictSet as Set
 import ES exposing (Event(..), getProcess)
 import Json.Decode exposing (decodeValue, errorToString)
 import Json.Encode
 import Maybe exposing (Maybe(..))
 import Msg exposing (Msg(..))
+import Page.CommitmentTypes
 import Page.NotFound
 import Page.Process
 import Page.Processes
 import Prng.Uuid as Uuid exposing (generator)
 import REA.Commitment as C
+import REA.CommitmentType as CT
 import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
 import Route exposing (parseUrl)
@@ -79,16 +82,37 @@ update msg model =
                 Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, process = P.new newUuid t }) now
             )
 
-        NewCommitment process ->
+        NewCommitment process ctype ->
             let
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
+
+                commitmentType =
+                    model.commitmentTypes
+                        |> Set.toList
+                        |> List.filter (\ct -> ct.name == ctype)
+                        |> List.head
             in
             ( { model
                 | currentSeed = newSeed
               }
+            , case commitmentType of
+                Just ct ->
+                    Task.perform TimestampEvent <|
+                        Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) now
+
+                Nothing ->
+                    Cmd.none
+            )
+
+        NewCommitmentType name ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model | inputCommitmentType = "", currentSeed = newSeed }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new newUuid t }) now
+                Task.map (\t -> CommitmentTypeAdded { uuid = newUuid, posixtime = t, commitmentType = CT.new name }) now
             )
 
         NewEvent process ->
@@ -99,6 +123,9 @@ update msg model =
 
         EventStored _ ->
             ( model, ES.getEvents Json.Encode.null )
+
+        InputCommitmentType ctype ->
+            ( { model | inputCommitmentType = ctype }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -121,6 +148,9 @@ view model =
 
                 Nothing ->
                     Page.NotFound.view
+
+        Route.CommitmentTypes ->
+            Page.CommitmentTypes.view model
 
 
 onUrlRequest : Browser.UrlRequest -> Msg
