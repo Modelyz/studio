@@ -48,3 +48,6 @@ img {
 .navbar a.navbar-item:hover { color: black; background: white; }
 .navbar a.navbar-item:focus { color: black; background: white; }
 .form { text-align: left; }
+.box .delete { position: absolute; right: .5rem; top; .5rem; display: none}
+.box:hover .delete { display: inline-block}
+

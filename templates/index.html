@@ -33,7 +33,7 @@ request.onupgradeneeded = function(e) {
         db.deleteObjectStore('events');
         console.log('Deleted the old database!')
     } catch(e) {}
-    let idbstore = db.createObjectStore('events', {keyPath: 'uuid'});
+    let idbstore = db.createObjectStore('events', {keyPath: 'posixtime'});
     idbstore.createIndex('uuid', 'uuid', { unique: true });
     //idbstore.createIndex('layouts', ['model', 'rel']);
     console.log('Database upgraded')
@@ -53,6 +53,7 @@ const flags = [randInts[0], randInts.slice(1)]
 var app = Elm.Main.init({flags:flags});
 
 /**** subscribe to Ports ****/
+/* store an event */
 app.ports.storeEvent.subscribe(function(event) {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = function(e) {

@@ -51,7 +51,7 @@ update msg model =
                         emptymodel =
                             ES.new model.currentSeed model.navkey model.route
                     in
-                    ( List.foldr ES.aggregate { emptymodel | status = Loaded } events, Cmd.none )
+                    ( List.foldr ES.aggregate { emptymodel | status = Loaded } (List.reverse events), Cmd.none )
 
                 Err str ->
                     ( { model | status = Failed (errorToString str) }, Cmd.none )
@@ -126,6 +126,16 @@ update msg model =
 
         InputCommitmentType ctype ->
             ( { model | inputCommitmentType = ctype }, Cmd.none )
+
+        DeleteCommitmentType ctype ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model | currentSeed = newSeed }
+            , Task.perform TimestampEvent <|
+                Task.map (\t -> CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) now
+            )
 
 
 view : Model -> Browser.Document Msg

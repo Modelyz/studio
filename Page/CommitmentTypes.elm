@@ -3,9 +3,10 @@ module Page.CommitmentTypes exposing (..)
 import Browser exposing (Document)
 import DictSet as Set
 import ES
-import Html exposing (Html, a, br, button, div, h1, h2, i, img, input, label, nav, p, span, text)
-import Html.Attributes exposing (attribute, class, href, placeholder, src, type_, value, width)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (Attribute, Html, a, br, button, div, form, h1, h2, i, img, input, label, nav, p, span, text)
+import Html.Attributes exposing (attribute, class, href, placeholder, src, style, type_, value, width)
+import Html.Events exposing (keyCode, on, onClick, onInput, onSubmit)
+import Json.Decode as Decode
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
 import Page.Navbar as Navbar
@@ -29,8 +30,19 @@ view model =
 viewThumbnail : CommitmentType -> Html Msg
 viewThumbnail ct =
     div
-        [ class "box" ]
-        [ text ct.name ]
+        [ class "container"
+        , style "background" "yellow"
+        ]
+        [ div
+            [ class "box" ]
+            [ text ct.name
+            , button
+                [ class "delete is-large"
+                , onClick <| DeleteCommitmentType ct
+                ]
+                []
+            ]
+        ]
 
 
 viewContent : Model -> Html Msg
@@ -64,8 +76,10 @@ viewContent model =
                     [ class "label" ]
                     [ text "Add a new Commitment type:" ]
                 , div [ class "field" ]
-                    [ div
-                        [ class "control" ]
+                    [ form
+                        [ class "control"
+                        , onSubmit <| NewCommitmentType model.inputCommitmentType
+                        ]
                         [ input
                             [ type_ "text"
                             , value model.inputCommitmentType
