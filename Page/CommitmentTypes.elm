@@ -64,7 +64,12 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ([ h1 [] [ text "Current types:" ] ]
+                ([ if Set.size model.commitmentTypes > 0 then
+                    h1 [] [ text "Current types:" ]
+
+                   else
+                    span [] []
+                 ]
                     ++ (model.commitmentTypes
                             |> Set.toList
                             |> List.map viewThumbnail
@@ -102,7 +107,6 @@ viewContent model =
                             ]
                         ]
                     ]
-                , text model.inputCommitmentType
                 ]
             ]
         ]
