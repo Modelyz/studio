@@ -2,8 +2,8 @@ module Page.Process exposing (Model, view)
 
 import Browser exposing (Document)
 import DictSet as Set
-import ES exposing (getCommitments)
-import Html exposing (Html, a, br, div, img, nav, span, text)
+import ES exposing (getCommitments, getEvents)
+import Html exposing (Html, a, br, div, h1, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
@@ -12,6 +12,8 @@ import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.Event as E exposing (Event)
+import REA.EventType as ET exposing (EventType)
 import REA.Process exposing (Process)
 import Status exposing (Status(..))
 
@@ -41,13 +43,25 @@ newCommitmentButton process ct =
         ]
 
 
+newEventButton : Process -> EventType -> Html Msg
+newEventButton process et =
+    div
+        [ class "button"
+        , class "hscroll"
+        , onClick <| NewEvent process et.name
+        ]
+        [ text et.name
+        ]
+
+
 viewContent : Model -> Process -> Html Msg
 viewContent model process =
     div []
         [ div [ class "section", class "hscroll-container" ]
             [ span
                 []
-                [ text <| "Pizza sale # " ++ Uuid.toString process.uuid ]
+                [ h1 [] [ text <| "Pizza sale # " ++ Uuid.toString process.uuid ]
+                ]
             ]
         , div
             [ class "section", class "hscroll-container" ]
@@ -60,16 +74,44 @@ viewContent model process =
                 |> Set.toList
                 |> List.sortBy C.compare
                 |> List.reverse
-                |> List.map viewThumbnail
+                |> List.map viewCommitmentThumbnail
+            )
+        , div
+            [ class "section", class "hscroll-container" ]
+          <|
+            List.map
+                (newEventButton process)
+                (model.eventTypes |> Set.toList)
+        , div [ class "columns is-multiline" ]
+            (getEvents model process
+                |> Set.toList
+                |> List.sortBy E.compare
+                |> List.reverse
+                |> List.map viewEventThumbnail
             )
         ]
 
 
-viewThumbnail : Commitment -> Html Msg
-viewThumbnail c =
+viewCommitmentThumbnail : Commitment -> Html Msg
+viewCommitmentThumbnail c =
     div [ class "column is-one-quarter" ]
         [ a
             [ href <| "/commitment/" ++ Uuid.toString c.uuid ]
+            [ div
+                [ class "box" ]
+                [ text c.name
+                , br [] []
+                , text <| Uuid.toString c.uuid
+                ]
+            ]
+        ]
+
+
+viewEventThumbnail : Event -> Html Msg
+viewEventThumbnail c =
+    div [ class "column is-one-quarter" ]
+        [ a
+            [ href <| "/event/" ++ Uuid.toString c.uuid ]
             [ div
                 [ class "box" ]
                 [ text c.name

@@ -9,6 +9,7 @@ type Route
     | Processes
     | Process String
     | CommitmentTypes
+    | EventTypes
 
 
 routeParser : Parser (Route -> a) a
@@ -17,6 +18,7 @@ routeParser =
         [ map Processes top
         , map Process (s "process" </> string)
         , map CommitmentTypes (s "commitment-types")
+        , map EventTypes (s "event-types")
         ]
 
 

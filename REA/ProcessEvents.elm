@@ -3,6 +3,7 @@ module REA.ProcessEvents exposing (ProcessEvents, compare)
 import Prng.Uuid as Uuid exposing (toString)
 import REA.Event exposing (Event)
 import REA.Process exposing (Process)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 
@@ -15,6 +16,6 @@ type alias ProcessEvents =
     }
 
 
-compare : ProcessEvents -> String
-compare pc =
-    Uuid.toString pc.event.uuid
+compare : ProcessEvents -> Int
+compare pe =
+    posixToMillis pe.event.posixtime

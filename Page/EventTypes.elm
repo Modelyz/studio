@@ -1,4 +1,4 @@
-module Page.CommitmentTypes exposing (..)
+module Page.EventTypes exposing (..)
 
 import Browser exposing (Document)
 import DictSet as Set
@@ -10,7 +10,7 @@ import Json.Decode as Decode
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
 import Page.Navbar as Navbar
-import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.EventType exposing (EventType)
 
 
 type alias Model =
@@ -19,7 +19,7 @@ type alias Model =
 
 view : Model -> Document Msg
 view model =
-    { title = "Commitment Types"
+    { title = "Event Types"
     , body =
         [ Navbar.view model
         , Loading.wrapper model (viewContent model)
@@ -27,18 +27,18 @@ view model =
     }
 
 
-viewThumbnail : CommitmentType -> Html Msg
-viewThumbnail ct =
+viewThumbnail : EventType -> Html Msg
+viewThumbnail et =
     div
         [ class "container"
         , style "background" "yellow"
         ]
         [ div
             [ class "box" ]
-            [ text ct.name
+            [ text et.name
             , button
                 [ class "delete is-large"
-                , onClick <| DeleteCommitmentType ct
+                , onClick <| DeleteEventType et
                 ]
                 []
             ]
@@ -54,9 +54,9 @@ viewContent model =
             ]
             [ div [ class "hero-body" ]
                 [ p [ class "title" ]
-                    [ text "Commitment Types"
+                    [ text "Event Types"
                     ]
-                , p [ class "subtitle" ] [ text "What kind of events are expected to happen in the future" ]
+                , p [ class "subtitle" ] [ text "What kind of events may have occured in the past" ]
                 ]
             ]
         , div
@@ -64,13 +64,13 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ([ if Set.size model.commitmentTypes > 0 then
+                ([ if Set.size model.eventTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                    else
                     span [] []
                  ]
-                    ++ (model.commitmentTypes
+                    ++ (model.eventTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
@@ -79,20 +79,20 @@ viewContent model =
                 [ class "column is-one-third" ]
                 [ label
                     [ class "label" ]
-                    [ text "Add a new Commitment type:" ]
+                    [ text "Add a new Event type:" ]
                 , div [ class "field" ]
                     [ form
                         [ class "control"
-                        , onSubmit <| NewCommitmentType model.inputCommitmentType
+                        , onSubmit <| NewEventType model.inputEventType
                         ]
                         [ input
                             [ type_ "text"
-                            , value model.inputCommitmentType
+                            , value model.inputEventType
                             , class "input"
-                            , onInput InputCommitmentType
-                            , placeholder "Enter the name of a new commitment type"
+                            , onInput InputEventType
+                            , placeholder "Enter the name of a new event type"
                             ]
-                            [ text "Load default Commitment Types"
+                            [ text "Load default Event Types"
                             ]
                         ]
                     ]
@@ -101,7 +101,7 @@ viewContent model =
                         [ class "control" ]
                         [ button
                             [ class "button is-link"
-                            , onClick <| NewCommitmentType model.inputCommitmentType
+                            , onClick <| NewEventType model.inputEventType
                             ]
                             [ text "Add"
                             ]

@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getProcess, new, storeEvent)
+port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, new, storeEvent)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -8,6 +8,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
+import REA.EventType as ET exposing (EventType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -18,7 +19,7 @@ import Status exposing (Status(..))
 import Time exposing (millisToPosix, posixToMillis)
 
 
-port getEvents : Encode.Value -> Cmd msg
+port getEventstore : Encode.Value -> Cmd msg
 
 
 port storeEvent : Encode.Value -> Cmd msg
@@ -50,6 +51,16 @@ type Event
         , process : Process
         , commitment : Commitment
         }
+    | EventTypeAdded
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , eventType : EventType
+        }
+    | EventTypeRemoved
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , eventType : EventType
+        }
     | EventAdded
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
@@ -68,12 +79,14 @@ type alias State =
     , route : Route
     , status : Status
     , processes : DictSet Int Process
-    , commitments : DictSet Int Commitment
-    , commitmentTypes : DictSet String CommitmentType
-    , events : DictSet String E.Event
-    , process_commitments : DictSet Int ProcessCommitments
-    , process_events : DictSet String ProcessEvents
     , inputCommitmentType : String
+    , commitmentTypes : DictSet String CommitmentType
+    , commitments : DictSet Int Commitment
+    , process_commitments : DictSet Int ProcessCommitments
+    , inputEventType : String
+    , eventTypes : DictSet String EventType
+    , events : DictSet Int E.Event
+    , process_events : DictSet Int ProcessEvents
     }
 
 
@@ -83,13 +96,15 @@ new seed key route =
     , navkey = key
     , route = route
     , status = Loading
+    , inputCommitmentType = ""
+    , commitmentTypes = Set.empty CT.compare
     , commitments = Set.empty C.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
-    , commitmentTypes = Set.empty CT.compare
-    , process_events = Set.empty PE.compare
+    , inputEventType = ""
+    , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
-    , inputCommitmentType = ""
+    , process_events = Set.empty PE.compare
     }
 
 
@@ -107,6 +122,12 @@ compare event =
 
         CommitmentAdded c ->
             posixToMillis c.posixtime
+
+        EventTypeAdded et ->
+            posixToMillis et.posixtime
+
+        EventTypeRemoved et ->
+            posixToMillis et.posixtime
 
         EventAdded e ->
             posixToMillis e.posixtime
@@ -129,6 +150,12 @@ getCommitments : State -> Process -> DictSet Int Commitment
 getCommitments state process =
     Set.filter (\pc -> pc.process.uuid == process.uuid) state.process_commitments
         |> Set.map C.compare (\pc -> pc.commitment)
+
+
+getEvents : State -> Process -> DictSet Int E.Event
+getEvents state process =
+    Set.filter (\pe -> pe.process.uuid == process.uuid) state.process_events
+        |> Set.map E.compare (\pe -> pe.event)
 
 
 
@@ -155,6 +182,16 @@ aggregate event state =
             { state
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process, commitment = e.commitment } state.process_commitments
+            }
+
+        EventTypeAdded e ->
+            { state
+                | eventTypes = Set.insert e.eventType state.eventTypes
+            }
+
+        EventTypeRemoved e ->
+            { state
+                | eventTypes = Set.remove e.eventType state.eventTypes
             }
 
         EventAdded e ->
@@ -200,6 +237,22 @@ encode event =
                 , ( "commitment", C.encode e.commitment )
                 ]
 
+        EventTypeAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "EventTypeAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "eventType", ET.encode e.eventType )
+                ]
+
+        EventTypeRemoved e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "EventTypeRemoved" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "eventType", ET.encode e.eventType )
+                ]
+
         EventAdded e ->
             Encode.object
                 [ ( "uuid", Uuid.encode e.uuid )
@@ -210,6 +263,10 @@ encode event =
                 ]
 
 
+
+-- Event constructors
+
+
 processAdded : Uuid -> Time.Posix -> Process -> Event
 processAdded uuid posixtime process =
     ProcessAdded
@@ -217,10 +274,6 @@ processAdded uuid posixtime process =
         , posixtime = posixtime
         , process = process
         }
-
-
-
--- Event constructors
 
 
 commitmentTypeRemoved : Uuid -> Time.Posix -> CommitmentType -> Event
@@ -248,6 +301,24 @@ commitmentAdded uuid posixtime process commitment =
         , posixtime = posixtime
         , commitment = commitment
         , process = process
+        }
+
+
+eventTypeRemoved : Uuid -> Time.Posix -> EventType -> Event
+eventTypeRemoved uuid posixtime eventType =
+    EventTypeRemoved
+        { uuid = uuid
+        , posixtime = posixtime
+        , eventType = eventType
+        }
+
+
+eventTypeAdded : Uuid -> Time.Posix -> EventType -> Event
+eventTypeAdded uuid posixtime eventType =
+    EventTypeAdded
+        { uuid = uuid
+        , posixtime = posixtime
+        , eventType = eventType
         }
 
 
@@ -295,6 +366,18 @@ decoder =
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
                             (Decode.field "commitment" C.decoder)
+
+                    "EventTypeAdded" ->
+                        Decode.map3 eventTypeAdded
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "eventType" ET.decoder)
+
+                    "EventTypeRemoved" ->
+                        Decode.map3 eventTypeRemoved
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "eventType" ET.decoder)
 
                     "EventAdded" ->
                         Decode.map4 eventAdded

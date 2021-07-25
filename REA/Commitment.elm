@@ -49,5 +49,5 @@ decoder =
 
 
 compare : Commitment -> Int
-compare commitment =
-    posixToMillis commitment.posixtime
+compare c =
+    posixToMillis c.posixtime

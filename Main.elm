@@ -9,12 +9,15 @@ import Json.Encode
 import Maybe exposing (Maybe(..))
 import Msg exposing (Msg(..))
 import Page.CommitmentTypes
+import Page.EventTypes
 import Page.NotFound
 import Page.Process
 import Page.Processes
 import Prng.Uuid as Uuid exposing (generator)
 import REA.Commitment as C
 import REA.CommitmentType as CT
+import REA.Event as E
+import REA.EventType as ET
 import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
 import Route exposing (parseUrl)
@@ -37,7 +40,7 @@ port eventStored : (Json.Encode.Value -> msg) -> Sub msg
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
-    , ES.getEvents Json.Encode.null
+    , ES.getEventstore Json.Encode.null
     )
 
 
@@ -105,6 +108,16 @@ update msg model =
                     Cmd.none
             )
 
+        NewEventType name ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model | inputEventType = "", currentSeed = newSeed }
+            , Task.perform TimestampEvent <|
+                Task.map (\t -> EventTypeAdded { uuid = newUuid, posixtime = t, eventType = ET.new name }) now
+            )
+
         NewCommitmentType name ->
             let
                 ( newUuid, newSeed ) =
@@ -115,14 +128,47 @@ update msg model =
                 Task.map (\t -> CommitmentTypeAdded { uuid = newUuid, posixtime = t, commitmentType = CT.new name }) now
             )
 
-        NewEvent process ->
-            ( model, Cmd.none )
+        NewEvent process etype ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+
+                eventType =
+                    model.eventTypes
+                        |> Set.toList
+                        |> List.filter (\et -> et.name == etype)
+                        |> List.head
+            in
+            ( { model
+                | currentSeed = newSeed
+              }
+            , case eventType of
+                Just et ->
+                    Task.perform TimestampEvent <|
+                        Task.map (\t -> EventAdded { uuid = newUuid, posixtime = t, process = process, event = E.new et.name newUuid t et }) now
+
+                Nothing ->
+                    Cmd.none
+            )
 
         TimestampEvent event ->
             ( model, ES.encode event |> ES.storeEvent )
 
         EventStored _ ->
-            ( model, ES.getEvents Json.Encode.null )
+            ( model, ES.getEventstore Json.Encode.null )
+
+        InputEventType etype ->
+            ( { model | inputEventType = etype }, Cmd.none )
+
+        DeleteEventType etype ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model | currentSeed = newSeed }
+            , Task.perform TimestampEvent <|
+                Task.map (\t -> EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) now
+            )
 
         InputCommitmentType ctype ->
             ( { model | inputCommitmentType = ctype }, Cmd.none )
@@ -161,6 +207,9 @@ view model =
 
         Route.CommitmentTypes ->
             Page.CommitmentTypes.view model
+
+        Route.EventTypes ->
+            Page.EventTypes.view model
 
 
 onUrlRequest : Browser.UrlRequest -> Msg

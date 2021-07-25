@@ -1,64 +1,38 @@
-module REA.EventType exposing (EventType, decoder, encode, new)
+module REA.EventType exposing (EventType, compare, decoder, encode, new)
 
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
-import Prng.Uuid
 
 
-type EventType
-    = EventType
-        { name : String
-        , uuid : Prng.Uuid.Uuid
-        , etype : Maybe EventType
-        }
+type alias EventType =
+    { name : String
+    , etype : Maybe String
+    }
 
 
-new : Prng.Uuid.Uuid -> EventType
-new uuid =
-    EventType
-        { name = "Sale"
-        , uuid = uuid
-        , etype = Nothing
-        }
+new : String -> EventType
+new name =
+    { name = name
+    , etype = Nothing
+    }
 
 
-encode : EventType -> Json.Encode.Value
+encode : EventType -> Encode.Value
 encode et =
-    let
-        rec =
-            extract et
-
-        t =
-            rec.etype
-    in
-    Json.Encode.object
-        [ ( "name", Json.Encode.string rec.name )
-        , ( "uuid", Prng.Uuid.encode rec.uuid )
-        , ( "etype"
-          , case t of
-                Nothing ->
-                    Json.Encode.string ""
-
-                Just x ->
-                    encode x
-          )
+    Encode.object
+        [ ( "name", Encode.string et.name )
+        , ( "etype", Encode.string et.name )
         ]
 
 
-extract : EventType -> { name : String, uuid : Prng.Uuid.Uuid, etype : Maybe EventType }
-extract (EventType t) =
-    t
-
-
-construct : String -> Prng.Uuid.Uuid -> Maybe EventType -> EventType
-construct name uuid etype =
-    EventType { name = name, uuid = uuid, etype = etype }
-
-
-decoder : Json.Decode.Decoder EventType
+decoder : Decoder EventType
 decoder =
-    Json.Decode.map3 construct
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "etype" <| Json.Decode.maybe <| Json.Decode.lazy (\_ -> decoder))
+    Decode.map2 EventType
+        (Decode.field "name" Decode.string)
+        (Decode.maybe <| Decode.field "etype" Decode.string)
+
+
+compare : EventType -> String
+compare et =
+    et.name

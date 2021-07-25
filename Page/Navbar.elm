@@ -48,6 +48,15 @@ view model =
             , a
                 [ classList
                     [ ( "navbar-item", True )
+                    , ( "active", isActive model Route.EventTypes )
+                    ]
+                , href "/event-types"
+                ]
+                [ text "Event Types"
+                ]
+            , a
+                [ classList
+                    [ ( "navbar-item", True )
                     , ( "active", isActive model Route.CommitmentTypes )
                     ]
                 , href "/commitment-types"

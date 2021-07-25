@@ -1,14 +1,16 @@
 module REA.Event exposing (Event, compare, decoder, encode, new)
 
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.EventType as ET exposing (EventType)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Event =
     { name : String
     , uuid : Uuid
+    , posixtime : Time.Posix
     , etype : EventType
 
     --    , qty: Float
@@ -18,31 +20,34 @@ type alias Event =
     }
 
 
-new : Uuid -> Event
-new uuid =
-    { name = "Pizza order"
+new : String -> Uuid -> Time.Posix -> EventType -> Event
+new name uuid posixtime etype =
+    { name = name
     , uuid = uuid
-    , etype = ET.new uuid -- FIXME select the type
+    , posixtime = posixtime
+    , etype = etype
     }
 
 
-encode : Event -> Json.Encode.Value
+encode : Event -> Encode.Value
 encode e =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string e.name )
+    Encode.object
+        [ ( "name", Encode.string e.name )
         , ( "uuid", Uuid.encode e.uuid )
+        , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
         , ( "etype", ET.encode e.etype )
         ]
 
 
-decoder : Json.Decode.Decoder Event
+decoder : Decode.Decoder Event
 decoder =
-    Json.Decode.map3 Event
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "uuid" Uuid.decoder)
-        (Json.Decode.field "etype" ET.decoder)
+    Decode.map4 Event
+        (Decode.field "name" Decode.string)
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "posixtime" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "etype" ET.decoder)
 
 
-compare : Event -> String
+compare : Event -> Int
 compare e =
-    Uuid.toString e.uuid
+    posixToMillis e.posixtime

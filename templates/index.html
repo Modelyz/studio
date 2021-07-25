@@ -80,7 +80,7 @@ app.ports.storeEvent.subscribe(function(event) {
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
 });
 /* read events */
-app.ports.getEvents.subscribe(function() {
+app.ports.getEventstore.subscribe(function() {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
             console.log("Sending events to Elm...")

@@ -56,7 +56,7 @@ viewContent model =
                 [ p [ class "title" ]
                     [ text "Commitment Types"
                     ]
-                , p [ class "subtitle" ] [ text "What kind of events are expected to happen in the future" ]
+                , p [ class "subtitle" ] [ text "What kind of events may be expected to happen in the future" ]
                 ]
             ]
         , div
