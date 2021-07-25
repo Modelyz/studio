@@ -37,7 +37,7 @@ viewThumbnail ct =
             [ class "box" ]
             [ text ct.name
             , button
-                [ class "delete is-large"
+                [ class "delete is-medium"
                 , onClick <| DeleteCommitmentType ct
                 ]
                 []

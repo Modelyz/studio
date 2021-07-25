@@ -3,8 +3,8 @@ module Page.Process exposing (Model, view)
 import Browser exposing (Document)
 import DictSet as Set
 import ES exposing (getCommitments, getEvents)
-import Html exposing (Html, a, br, div, h1, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
+import Html exposing (Html, a, br, div, h1, h2, img, nav, p, span, text)
+import Html.Attributes exposing (attribute, class, href, src, style, width)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
@@ -57,38 +57,51 @@ newEventButton process et =
 viewContent : Model -> Process -> Html Msg
 viewContent model process =
     div []
-        [ div [ class "section", class "hscroll-container" ]
-            [ span
-                []
-                [ h1 [] [ text <| "Pizza sale # " ++ Uuid.toString process.uuid ]
+        [ div
+            [ class "hero is-medium"
+            ]
+            [ div [ class "hero-body" ]
+                [ p [ class "title" ]
+                    [ text <| "Pizza sale # " ++ Uuid.toString process.uuid
+                    ]
                 ]
             ]
-        , div
-            [ class "section", class "hscroll-container" ]
-          <|
-            List.map
-                (newCommitmentButton process)
-                (model.commitmentTypes |> Set.toList)
-        , div [ class "columns is-multiline" ]
-            (getCommitments model process
-                |> Set.toList
-                |> List.sortBy C.compare
-                |> List.reverse
-                |> List.map viewCommitmentThumbnail
-            )
-        , div
-            [ class "section", class "hscroll-container" ]
-          <|
-            List.map
-                (newEventButton process)
-                (model.eventTypes |> Set.toList)
-        , div [ class "columns is-multiline" ]
-            (getEvents model process
-                |> Set.toList
-                |> List.sortBy E.compare
-                |> List.reverse
-                |> List.map viewEventThumbnail
-            )
+        , div [ class "columns" ]
+            [ nav [ class "panel", style "margin" "0.5rem" ]
+                [ p [ class "panel-heading" ]
+                    [ text "Commitments" ]
+                , div [ class "panel-block hscroll-container" ] <|
+                    List.map
+                        (newCommitmentButton process)
+                        (model.commitmentTypes |> Set.toList)
+                , div [ class "panel-block" ]
+                    [ div [ class "columns is-multiline" ]
+                        (getCommitments model process
+                            |> Set.toList
+                            |> List.sortBy C.compare
+                            |> List.reverse
+                            |> List.map viewCommitmentThumbnail
+                        )
+                    ]
+                ]
+            , nav [ class "panel", style "margin" "0.5rem" ]
+                [ p [ class "panel-heading" ]
+                    [ text "Events" ]
+                , div [ class "panel-block hscroll-container" ] <|
+                    List.map
+                        (newEventButton process)
+                        (model.eventTypes |> Set.toList)
+                , div [ class "panel-block" ]
+                    [ div [ class "columns is-multiline" ]
+                        (getEvents model process
+                            |> Set.toList
+                            |> List.sortBy E.compare
+                            |> List.reverse
+                            |> List.map viewEventThumbnail
+                        )
+                    ]
+                ]
+            ]
         ]
 
 
@@ -98,7 +111,7 @@ viewCommitmentThumbnail c =
         [ a
             [ href <| "/commitment/" ++ Uuid.toString c.uuid ]
             [ div
-                [ class "box" ]
+                [ class "card" ]
                 [ text c.name
                 , br [] []
                 , text <| Uuid.toString c.uuid
@@ -113,7 +126,7 @@ viewEventThumbnail c =
         [ a
             [ href <| "/event/" ++ Uuid.toString c.uuid ]
             [ div
-                [ class "box" ]
+                [ class "card" ]
                 [ text c.name
                 , br [] []
                 , text <| Uuid.toString c.uuid
