@@ -24,11 +24,11 @@ compare process =
     posixToMillis process.posixtime
 
 
-new : Uuid -> Time.Posix -> Process
-new uuid posixtime =
+new : Uuid -> Time.Posix -> String -> Process
+new uuid posixtime ptname =
     { uuid = uuid
     , posixtime = posixtime
-    , name = "Pizza sale"
+    , name = ptname
 
     --    , fullfilments=[]
     }

@@ -6,6 +6,7 @@ import Url.Parser exposing ((</>), Parser, map, oneOf, s, string, top)
 
 type Route
     = NotFound
+    | ProcessType
     | Processes
     | Process String
     | CommitmentTypes
@@ -15,7 +16,8 @@ type Route
 routeParser : Parser (Route -> a) a
 routeParser =
     oneOf
-        [ map Processes top
+        [ map ProcessType (s "process-type")
+        , map Processes top
         , map Process (s "process" </> string)
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")

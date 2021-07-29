@@ -12,6 +12,7 @@ import REA.EventType as ET exposing (EventType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
+import REA.ProcessType as PT exposing (ProcessType)
 import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
 import Route exposing (Route)
@@ -30,7 +31,12 @@ port storeEvent : Encode.Value -> Cmd msg
 
 
 type Event
-    = ProcessAdded
+    = ProcessTypeChanged
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , processType : ProcessType
+        }
+    | ProcessAdded
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
         , process : Process
@@ -71,6 +77,7 @@ type Event
 
 
 -- global application state --
+-- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
 
 
 type alias State =
@@ -78,12 +85,14 @@ type alias State =
     , navkey : Nav.Key
     , route : Route
     , status : Status
-    , processes : DictSet Int Process
+    , inputProcessType : ProcessType
     , inputCommitmentType : String
+    , inputEventType : String
+    , processType : ProcessType
+    , processes : DictSet Int Process
     , commitmentTypes : DictSet String CommitmentType
     , commitments : DictSet Int Commitment
     , process_commitments : DictSet Int ProcessCommitments
-    , inputEventType : String
     , eventTypes : DictSet String EventType
     , events : DictSet Int E.Event
     , process_events : DictSet Int ProcessEvents
@@ -96,11 +105,13 @@ new seed key route =
     , navkey = key
     , route = route
     , status = Loading
+    , inputProcessType = PT.new
+    , processType = PT.new
+    , processes = Set.empty P.compare
+    , process_commitments = Set.empty PC.compare
     , inputCommitmentType = ""
     , commitmentTypes = Set.empty CT.compare
     , commitments = Set.empty C.compare
-    , processes = Set.empty P.compare
-    , process_commitments = Set.empty PC.compare
     , inputEventType = ""
     , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
@@ -111,6 +122,9 @@ new seed key route =
 compare : Event -> Int
 compare event =
     case event of
+        ProcessTypeChanged pt ->
+            posixToMillis pt.posixtime
+
         ProcessAdded p ->
             posixToMillis p.posixtime
 
@@ -165,6 +179,9 @@ getEvents state process =
 aggregate : Event -> State -> State
 aggregate event state =
     case event of
+        ProcessTypeChanged e ->
+            { state | processType = e.processType, inputProcessType = e.processType }
+
         ProcessAdded e ->
             { state | processes = Set.insert e.process state.processes }
 
@@ -201,70 +218,17 @@ aggregate event state =
             }
 
 
-encode : Event -> Encode.Value
-encode event =
-    case event of
-        ProcessAdded e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "ProcessAdded" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "process", P.encode e.process )
-                ]
-
-        CommitmentTypeAdded e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "CommitmentTypeAdded" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "commitmentType", CT.encode e.commitmentType )
-                ]
-
-        CommitmentTypeRemoved e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "CommitmentTypeRemoved" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "commitmentType", CT.encode e.commitmentType )
-                ]
-
-        CommitmentAdded e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "CommitmentAdded" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "process", P.encode e.process )
-                , ( "commitment", C.encode e.commitment )
-                ]
-
-        EventTypeAdded e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "EventTypeAdded" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "eventType", ET.encode e.eventType )
-                ]
-
-        EventTypeRemoved e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "EventTypeRemoved" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "eventType", ET.encode e.eventType )
-                ]
-
-        EventAdded e ->
-            Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "type", Encode.string "EventAdded" )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "process", P.encode e.process )
-                , ( "event", E.encode e.event )
-                ]
-
-
 
 -- Event constructors
+
+
+processTypeChanged : Uuid -> Time.Posix -> ProcessType -> Event
+processTypeChanged uuid posixtime ptype =
+    ProcessTypeChanged
+        { uuid = uuid
+        , posixtime = posixtime
+        , processType = ptype
+        }
 
 
 processAdded : Uuid -> Time.Posix -> Process -> Event
@@ -332,6 +296,76 @@ eventAdded uuid posixtime process event =
         }
 
 
+encode : Event -> Encode.Value
+encode event =
+    case event of
+        ProcessTypeChanged e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "ProcessTypeChanged" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "processType", PT.encode e.processType )
+                ]
+
+        ProcessAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "ProcessAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "process", P.encode e.process )
+                ]
+
+        CommitmentTypeAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "CommitmentTypeAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "commitmentType", CT.encode e.commitmentType )
+                ]
+
+        CommitmentTypeRemoved e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "CommitmentTypeRemoved" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "commitmentType", CT.encode e.commitmentType )
+                ]
+
+        CommitmentAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "CommitmentAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "process", P.encode e.process )
+                , ( "commitment", C.encode e.commitment )
+                ]
+
+        EventTypeAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "EventTypeAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "eventType", ET.encode e.eventType )
+                ]
+
+        EventTypeRemoved e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "EventTypeRemoved" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "eventType", ET.encode e.eventType )
+                ]
+
+        EventAdded e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "EventAdded" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "process", P.encode e.process )
+                , ( "event", E.encode e.event )
+                ]
+
+
 decoder : Decoder Event
 decoder =
     let
@@ -342,6 +376,12 @@ decoder =
         |> andThen
             (\s ->
                 case s of
+                    "ProcessTypeChanged" ->
+                        Decode.map3 processTypeChanged
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "processType" PT.decoder)
+
                     "ProcessAdded" ->
                         Decode.map3 processAdded
                             (Decode.field "uuid" Uuid.decoder)

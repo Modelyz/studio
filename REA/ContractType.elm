@@ -12,10 +12,10 @@ type ContractType
         }
 
 
-new : ContractType
-new =
+new : String -> ContractType
+new ctname =
     ContractType
-        { name = "Pizza Sale"
+        { name = ctname
         , ctype = Nothing
         }
 

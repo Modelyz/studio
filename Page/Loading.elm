@@ -2,11 +2,10 @@ module Page.Loading exposing (wrapper)
 
 import Browser exposing (Document)
 import ES
-import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
+import Html exposing (..)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
-import Page.Navbar as Navbar
 import Status exposing (Status(..))
 
 

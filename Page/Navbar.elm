@@ -1,8 +1,8 @@
 module Page.Navbar exposing (view)
 
 import ES
-import Html exposing (Attribute, Html, a, br, div, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, classList, href, src, width)
+import Html exposing (..)
+import Html.Attributes exposing (attribute, class, classList, href)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
 
@@ -27,14 +27,24 @@ view model =
             [ class "navbar-brand"
             ]
             [ a
+                [ classList
+                    [ ( "navbar-item", True )
+                    , ( "active", isActive model Route.ProcessType )
+                    ]
+                , href "/process-type"
+                ]
+                [ text "Process Type"
+                ]
+            , a
                 [ class "navbar-item"
                 , href "/"
                 ]
-                [ img
+                [{- img
                     [ src "/static/logo.svg"
                     , width 50
                     ]
                     []
+                 -}
                 ]
             , a
                 [ classList

@@ -1,9 +1,9 @@
-module Page.Process exposing (Model, view)
+module Page.Process exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
 import ES exposing (getCommitments, getEvents)
-import Html exposing (Html, a, br, div, h1, h2, img, nav, p, span, text)
+import Html exposing (..)
 import Html.Attributes exposing (attribute, class, href, src, style, width)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
@@ -11,9 +11,9 @@ import Page.Loading as Loading
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
-import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.CommitmentType exposing (CommitmentType)
 import REA.Event as E exposing (Event)
-import REA.EventType as ET exposing (EventType)
+import REA.EventType exposing (EventType)
 import REA.Process exposing (Process)
 import Status exposing (Status(..))
 
@@ -62,7 +62,7 @@ viewContent model process =
             ]
             [ div [ class "hero-body" ]
                 [ p [ class "title" ]
-                    [ text <| "Pizza sale # " ++ Uuid.toString process.uuid
+                    [ text <| model.processType.processName ++ " # " ++ Uuid.toString process.uuid
                     ]
                 ]
             ]

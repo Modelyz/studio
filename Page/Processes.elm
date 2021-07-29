@@ -37,7 +37,7 @@ viewContent model =
             [ onClick NewProcess
             , class "button"
             ]
-            [ text "New pizza sale"
+            [ text <| "New " ++ model.processType.processName
             ]
         , div [ class "columns is-multiline" ]
             (DictSet.toList model.processes

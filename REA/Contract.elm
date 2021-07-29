@@ -15,9 +15,9 @@ type alias Contract =
     }
 
 
-new : Contract
-new =
-    { name = "Pizza sale"
+new : String -> Contract
+new cname =
+    { name = cname
     , ctype = CT.new
 
     --    , parties=[]
