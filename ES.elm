@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, new, storeEvent)
+port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, new, storeEvent, currentProcessType, getProcessType)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -36,10 +36,15 @@ type Event
         , posixtime : Time.Posix
         , processType : ProcessType
         }
+    | ProcessTypeRemoved
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , processType : ProcessType
+        }
     | ProcessAdded
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
-        , process : Process
+        , type_ : String
         }
     | CommitmentTypeAdded
         { uuid : Uuid.Uuid
@@ -81,14 +86,16 @@ type Event
 
 
 type alias State =
+    -- model related
     { currentSeed : Seed
     , navkey : Nav.Key
     , route : Route
     , status : Status
+    -- state related
     , inputProcessType : ProcessType
     , inputCommitmentType : String
     , inputEventType : String
-    , processType : ProcessType
+    , processTypes : DictSet String ProcessType
     , processes : DictSet Int Process
     , commitmentTypes : DictSet String CommitmentType
     , commitments : DictSet Int Commitment
@@ -105,8 +112,8 @@ new seed key route =
     , navkey = key
     , route = route
     , status = Loading
-    , inputProcessType = PT.new
-    , processType = PT.new
+    , inputProcessType = {name=""}
+    , processTypes = Set.empty PT.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
     , inputCommitmentType = ""
@@ -123,6 +130,9 @@ compare : Event -> Int
 compare event =
     case event of
         ProcessTypeChanged pt ->
+            posixToMillis pt.posixtime
+
+        ProcessTypeRemoved pt ->
             posixToMillis pt.posixtime
 
         ProcessAdded p ->
@@ -149,6 +159,7 @@ compare event =
 
 getProcess : State -> String -> Maybe Process
 getProcess state str =
+    -- TODO : move to Page/Process?
     Uuid.fromString str
         |> Maybe.andThen
             (\uuid ->
@@ -180,10 +191,17 @@ aggregate : Event -> State -> State
 aggregate event state =
     case event of
         ProcessTypeChanged e ->
-            { state | processType = e.processType, inputProcessType = e.processType }
+            { state
+                | processTypes = Set.insert e.processType state.processTypes
+            }
+
+        ProcessTypeRemoved e ->
+            { state
+                | processTypes = Set.remove e.processType state.processTypes
+            }
 
         ProcessAdded e ->
-            { state | processes = Set.insert e.process state.processes }
+            { state | processes = Set.insert e state.processes }
 
         CommitmentTypeAdded e ->
             { state
@@ -231,12 +249,21 @@ processTypeChanged uuid posixtime ptype =
         }
 
 
-processAdded : Uuid -> Time.Posix -> Process -> Event
-processAdded uuid posixtime process =
+processTypeRemoved : Uuid -> Time.Posix -> ProcessType -> Event
+processTypeRemoved uuid posixtime processType =
+    ProcessTypeRemoved
+        { uuid = uuid
+        , posixtime = posixtime
+        , processType = processType
+        }
+
+
+processAdded : Uuid -> Time.Posix -> String -> Event
+processAdded uuid posixtime ptype =
     ProcessAdded
         { uuid = uuid
         , posixtime = posixtime
-        , process = process
+        , type_ = ptype
         }
 
 
@@ -307,12 +334,20 @@ encode event =
                 , ( "processType", PT.encode e.processType )
                 ]
 
+        ProcessTypeRemoved e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "ProcessTypeRemoved" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "processType", PT.encode e.processType )
+                ]
+
         ProcessAdded e ->
             Encode.object
                 [ ( "uuid", Uuid.encode e.uuid )
                 , ( "type", Encode.string "ProcessAdded" )
                 , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "process", P.encode e.process )
+                , ( "type_", Encode.string e.type_ )
                 ]
 
         CommitmentTypeAdded e ->
@@ -382,11 +417,17 @@ decoder =
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "processType" PT.decoder)
 
+                    "ProcessTypeRemoved" ->
+                        Decode.map3 processTypeRemoved
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "processType" PT.decoder)
+
                     "ProcessAdded" ->
                         Decode.map3 processAdded
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
-                            (Decode.field "process" P.decoder)
+                            (Decode.field "type_" Decode.string)
 
                     "CommitmentTypeAdded" ->
                         Decode.map3 commitmentTypeAdded
@@ -429,3 +470,19 @@ decoder =
                     _ ->
                         Decode.fail "Unknown Event type"
             )
+
+
+currentProcessType : State -> Maybe ProcessType
+currentProcessType state =
+    case state.route of
+        Route.Processes maybetype -> getProcessType state (Maybe.withDefault "" maybetype)
+        _ -> Nothing
+
+
+getProcessType : State -> String -> Maybe ProcessType
+getProcessType state type_str =
+            Set.filter
+                (\pt -> pt.name == type_str)
+                state.processTypes
+                |> Set.values
+                |> List.head

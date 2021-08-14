@@ -2,6 +2,8 @@ module Page.ProcessType exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
+import Route
+import Maybe exposing (andThen)
 import ES
 import Html exposing (..)
 import Html.Attributes exposing (class, disabled, placeholder, style, type_, value)
@@ -15,19 +17,21 @@ import REA.ProcessType exposing (ProcessType)
 type alias Model =
     ES.State
 
+    
 
-view : Model -> Document Msg
-view model =
+
+view : Model -> ProcessType -> Document Msg
+view model ptype =
     { title = "Process Type"
     , body =
         [ Navbar.view model
-        , Loading.wrapper model (viewContent model)
+        , Loading.wrapper model (viewContent model ptype)
         ]
     }
 
 
-viewContent : Model -> Html Msg
-viewContent model =
+viewContent : Model -> ProcessType -> Html Msg
+viewContent model ptype =
     div
         []
         [ div
@@ -55,7 +59,7 @@ viewContent model =
                         ]
                         [ input
                             [ type_ "text"
-                            , value model.inputProcessType.processName
+                            , value model.inputProcessType.name
                             , class "input"
                             , onInput InputProcessName
                             , placeholder "Enter the name of the processes to create"
@@ -69,7 +73,7 @@ viewContent model =
                         [ button
                             [ class "button is-link"
                             , disabled
-                                (if model.inputProcessType == model.processType then
+                                (if model.inputProcessType == ptype then
                                     True
 
                                  else

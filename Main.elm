@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
-import ES exposing (Event(..), getProcess)
+import ES exposing (Event(..), getProcess, getProcessType)
 import Json.Decode exposing (decodeValue, errorToString)
 import Json.Encode
 import Maybe exposing (Maybe(..))
@@ -13,6 +13,7 @@ import Page.EventTypes
 import Page.NotFound
 import Page.Process
 import Page.ProcessType
+import Page.ProcessTypes
 import Page.Processes
 import Prng.Uuid as Uuid exposing (generator)
 import REA.Commitment as C
@@ -82,15 +83,13 @@ update msg model =
                 ptype =
                     model.inputProcessType
             in
-            ( { model | inputProcessType = { ptype | processName = name } }, Cmd.none )
+            ( { model | inputProcessType = { ptype | name = name } }, Cmd.none )
 
         Msg.ProcessTypeChanged ptype ->
             let
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            case model.processType == model.inputProcessType of
-                False ->
                     ( { model
                         | currentSeed = newSeed
                       }
@@ -98,10 +97,17 @@ update msg model =
                         Task.map (\t -> ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) now
                     )
 
-                True ->
-                    ( model, Cmd.none )
 
-        Msg.NewProcess ->
+        Msg.DeleteProcessType ptype ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model | currentSeed = newSeed }
+            , Task.perform TimestampEvent <|
+                Task.map (\t -> ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) now
+            )
+        Msg.NewProcess ptype ->
             let
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
@@ -110,7 +116,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, process = P.new newUuid t model.processType.processName }) now
+                Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name}) now
             )
 
         Msg.NewCommitment process ctype ->
@@ -216,25 +222,33 @@ view : Model -> Browser.Document Msg
 view model =
     case model.route of
         Route.NotFound ->
-            Page.NotFound.view
+            Page.NotFound.view model
 
-        Route.ProcessType ->
-            Page.ProcessType.view model
+        Route.ProcessTypes ->
+            Page.ProcessTypes.view model
 
-        Route.Processes ->
-            Page.Processes.view model
+        Route.ProcessType ptype ->
+            getProcessType model ptype
+                |> Maybe.map (Page.ProcessType.view model)
+                |> Maybe.withDefault (Page.NotFound.view model)
 
-        Route.Process str ->
+        Route.Processes ptype_str ->
+                Maybe.map (getProcessType model) ptype_str
+                |> Maybe.andThen (\pt -> Maybe.map (Page.Processes.view model) pt)
+                |> Maybe.withDefault (Page.NotFound.view model)
+
+        Route.Process pname ->
             let
                 process =
-                    getProcess model str
+                    getProcess model pname
+
             in
             case process of
                 Just p ->
                     Page.Process.view model p
 
                 Nothing ->
-                    Page.NotFound.view
+                    Page.NotFound.view model
 
         Route.CommitmentTypes ->
             Page.CommitmentTypes.view model

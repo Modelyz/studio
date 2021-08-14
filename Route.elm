@@ -1,13 +1,15 @@
 module Route exposing (Route(..), parseUrl, routeParser)
 
 import Url
-import Url.Parser exposing ((</>), Parser, map, oneOf, s, string, top)
+import Url.Parser exposing ((</>), Parser, map, (<?>), oneOf, s, string, top)
+import Url.Parser.Query as Query
 
 
 type Route
     = NotFound
-    | ProcessType
-    | Processes
+    | ProcessTypes
+    | ProcessType String
+    | Processes (Maybe String)
     | Process String
     | CommitmentTypes
     | EventTypes
@@ -16,8 +18,9 @@ type Route
 routeParser : Parser (Route -> a) a
 routeParser =
     oneOf
-        [ map ProcessType (s "process-type")
-        , map Processes top
+        [ map ProcessTypes (s "process-types")
+        , map ProcessType (s "process-type" </> string)
+        , map Processes (s "processes" <?> Query.string "type")
         , map Process (s "process" </> string)
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")

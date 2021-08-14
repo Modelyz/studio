@@ -1,4 +1,4 @@
-module Page.CommitmentTypes exposing (view)
+module Page.ProcessTypes exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
@@ -9,7 +9,7 @@ import Html.Events exposing (onClick, onInput, onSubmit)
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
 import Page.Navbar as Navbar
-import REA.CommitmentType exposing (CommitmentType)
+import REA.ProcessType exposing (ProcessType)
 
 
 type alias Model =
@@ -18,7 +18,7 @@ type alias Model =
 
 view : Model -> Document Msg
 view model =
-    { title = "Commitment Types"
+    { title = "Process Types"
     , body =
         [ Navbar.view model
         , Loading.wrapper model (viewContent model)
@@ -26,18 +26,18 @@ view model =
     }
 
 
-viewThumbnail : CommitmentType -> Html Msg
-viewThumbnail ct =
+viewThumbnail : ProcessType -> Html Msg
+viewThumbnail pt =
     div
         [ class "container"
         , style "background" "yellow"
         ]
         [ div
             [ class "box" ]
-            [ text ct.name
+            [ text pt.name
             , button
                 [ class "delete is-medium"
-                , onClick <| DeleteCommitmentType ct
+                , onClick <| DeleteProcessType pt
                 ]
                 []
             ]
@@ -53,9 +53,9 @@ viewContent model =
             ]
             [ div [ class "hero-body" ]
                 [ p [ class "title" ]
-                    [ text "Commitment Types"
+                    [ text "Process Types"
                     ]
-                , p [ class "subtitle" ] [ text "What kind of events may be expected to happen in the future" ]
+                , p [ class "subtitle" ] [ text "What kind of processes may be created" ]
                 ]
             ]
         , div
@@ -63,13 +63,13 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size model.commitmentTypes > 0 then
+                ((if Set.size model.processTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (model.commitmentTypes
+                    :: (model.processTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
@@ -78,18 +78,18 @@ viewContent model =
                 [ class "column is-one-third" ]
                 [ label
                     [ class "label" ]
-                    [ text "Add a new Commitment type:" ]
+                    [ text "Add a new Process type:" ]
                 , div [ class "field" ]
                     [ form
                         [ class "control"
-                        , onSubmit <| NewCommitmentType model.inputCommitmentType
+                        , onSubmit <| ProcessTypeChanged model.inputProcessType
                         ]
                         [ input
                             [ type_ "text"
-                            , value model.inputCommitmentType
+                            , value model.inputProcessType.name
                             , class "input"
-                            , onInput InputCommitmentType
-                            , placeholder "Enter the name of a new commitment type"
+                            , onInput InputProcessName
+                            , placeholder "Enter the name of a new process type"
                             ]
                             []
                         ]
@@ -99,7 +99,7 @@ viewContent model =
                         [ class "control" ]
                         [ button
                             [ class "button is-link"
-                            , onClick <| NewCommitmentType model.inputCommitmentType
+                            , onClick <| ProcessTypeChanged model.inputProcessType
                             ]
                             [ text "Add"
                             ]

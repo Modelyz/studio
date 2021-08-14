@@ -19,7 +19,8 @@ type Msg
     | TimestampEvent ES.Event
     | InputProcessName String
     | ProcessTypeChanged ProcessType
-    | NewProcess
+    | DeleteProcessType ProcessType
+    | NewProcess ProcessType
     | InputCommitmentType String
     | NewCommitmentType String
     | NewCommitment Process String

@@ -3,53 +3,24 @@ module Page.Error exposing (view)
 import Browser
 import Html exposing (Html, a, div, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, src, width)
+import ES
+import Page.Navbar as Navbar
+import Msg exposing (Msg(..))
+
+type alias Model =
+    ES.State
 
 
-viewContent : Html.Html msg
-viewContent =
+viewContent : Model -> Html.Html Msg
+viewContent _ =
     div [] [ text "Error" ]
 
 
-viewNavbar : Html msg
-viewNavbar =
-    nav
-        [ class "navbar"
-        , attribute "role" "navigation"
-        , attribute "aria-label" "main navigation"
-        ]
-        [ div
-            [ class "navbar-brand"
-            ]
-            [ a
-                [ class "navbar-item"
-                , href "/"
-                ]
-                [ img
-                    [ src "/static/logo.svg"
-                    , width 50
-                    ]
-                    []
-                ]
-            , a
-                [ attribute "role" "button"
-                , class "navbar-burger"
-                , attribute "aria-label" "menu"
-                , attribute "aria-expanded" "false"
-                , attribute "dat-target" "navBar"
-                ]
-                [ span [ attribute "aria-hidden" "true" ] []
-                , span [ attribute "aria-hidden" "true" ] []
-                , span [ attribute "aria-hidden" "true" ] []
-                ]
-            ]
-        ]
-
-
-view : Browser.Document msg
-view =
+view : Model -> Browser.Document Msg
+view model =
     { title = "Error"
     , body =
-        [ viewNavbar
-        , viewContent
+        [ Navbar.view model
+        , viewContent model
         ]
     }

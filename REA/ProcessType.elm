@@ -1,4 +1,4 @@
-module REA.ProcessType exposing (ProcessType, decoder, encode, new)
+module REA.ProcessType exposing (ProcessType, compare, decoder, encode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -9,27 +9,22 @@ import Json.Encode as Encode
 
 
 type alias ProcessType =
-    { processName : String }
-
-
-new : ProcessType
-new =
-    { processName = "Sale" }
+    { name : String }
 
 
 encode : ProcessType -> Encode.Value
 encode pt =
     Encode.object
-        [ ( "processName", Encode.string pt.processName )
+        [ ( "name", Encode.string pt.name )
         ]
 
 
 decoder : Decoder ProcessType
 decoder =
     Decode.map ProcessType
-        (Decode.field "processName" Decode.string)
+        (Decode.field "name" Decode.string)
 
 
 compare : ProcessType -> String
 compare pt =
-    pt.processName
+    pt.name

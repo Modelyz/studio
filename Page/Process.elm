@@ -14,9 +14,9 @@ import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType exposing (CommitmentType)
 import REA.Event as E exposing (Event)
 import REA.EventType exposing (EventType)
+import REA.ProcessType exposing (ProcessType)
 import REA.Process exposing (Process)
 import Status exposing (Status(..))
-
 
 type alias Model =
     ES.State
@@ -62,7 +62,7 @@ viewContent model process =
             ]
             [ div [ class "hero-body" ]
                 [ p [ class "title" ]
-                    [ text <| model.processType.processName ++ " # " ++ Uuid.toString process.uuid
+                    [ text <| process.type_ ++ " # " ++ Uuid.toString process.uuid
                     ]
                 ]
             ]
