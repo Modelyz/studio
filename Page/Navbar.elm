@@ -25,8 +25,8 @@ view model =
         , attribute "aria-label" "main navigation"
         ]
         [ div [ class "navbar-brand" ]
-            [ div [class "navbar-item", class "has-dropdown", class "is-hoverable"]
-                <| [a [class "navbar-item"]
+            <| [ div [class "navbar-item", class "has-dropdown", class "is-hoverable"]
+                [a [class "navbar-item"]
                     [ text "Configuration"
                     , div [class "navbar-dropdown"]
                         [ a
@@ -58,6 +58,7 @@ view model =
                             ]
                         ]
                     ]
+                    ]
             ] ++ case DictSet.size model.processTypes > 0 of
                     True -> 
                         model.processTypes
@@ -76,5 +77,4 @@ view model =
                 , span [ attribute "aria-hidden" "true" ] []
                 , span [ attribute "aria-hidden" "true" ] []
                 ]
-            ]
                 ]
