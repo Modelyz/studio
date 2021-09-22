@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, new, storeEvent, currentProcessType, getProcessType)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, getProcessType, new, storeEvent)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -13,6 +13,8 @@ import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
 import REA.ProcessType as PT exposing (ProcessType)
+import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
+import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
 import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
 import Route exposing (Route)
@@ -81,6 +83,12 @@ type Event
 
 
 
+--    | LinkedEventTypeToProcessType
+--        { uuid : Uuid.Uuid
+--        , posixtime : Time.Posix
+--        , etype : String
+--        , ptype : String
+--        }
 -- global application state --
 -- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
 
@@ -91,10 +99,15 @@ type alias State =
     , navkey : Nav.Key
     , route : Route
     , status : Status
-    -- state related
+
+    -- input related
     , inputProcessType : ProcessType
     , inputCommitmentType : String
+    , inputCommitmentTypeProcessTypes : DictSet String String
     , inputEventType : String
+    , inputEventTypeProcessTypes : DictSet String String
+
+    -- state related
     , processTypes : DictSet String ProcessType
     , processes : DictSet Int Process
     , commitmentTypes : DictSet String CommitmentType
@@ -103,6 +116,8 @@ type alias State =
     , eventTypes : DictSet String EventType
     , events : DictSet Int E.Event
     , process_events : DictSet Int ProcessEvents
+    , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
+    , processType_eventTypes : DictSet String ProcessTypeEventType
     }
 
 
@@ -112,17 +127,21 @@ new seed key route =
     , navkey = key
     , route = route
     , status = Loading
-    , inputProcessType = {name=""}
+    , inputProcessType = { name = "" }
+    , inputCommitmentType = ""
+    , inputEventType = ""
+    , inputCommitmentTypeProcessTypes = Set.empty identity
+    , inputEventTypeProcessTypes = Set.empty identity
     , processTypes = Set.empty PT.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
-    , inputCommitmentType = ""
     , commitmentTypes = Set.empty CT.compare
     , commitments = Set.empty C.compare
-    , inputEventType = ""
     , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
     , process_events = Set.empty PE.compare
+    , processType_commitmentTypes = Set.empty PTCT.compare
+    , processType_eventTypes = Set.empty PTET.compare
     }
 
 
@@ -475,14 +494,17 @@ decoder =
 currentProcessType : State -> Maybe ProcessType
 currentProcessType state =
     case state.route of
-        Route.Processes maybetype -> getProcessType state (Maybe.withDefault "" maybetype)
-        _ -> Nothing
+        Route.Processes maybetype ->
+            getProcessType state (Maybe.withDefault "" maybetype)
+
+        _ ->
+            Nothing
 
 
 getProcessType : State -> String -> Maybe ProcessType
 getProcessType state type_str =
-            Set.filter
-                (\pt -> pt.name == type_str)
-                state.processTypes
-                |> Set.values
-                |> List.head
+    Set.filter
+        (\pt -> pt.name == type_str)
+        state.processTypes
+        |> Set.values
+        |> List.head

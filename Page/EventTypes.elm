@@ -10,6 +10,7 @@ import Msg exposing (Msg(..))
 import Page.Loading as Loading
 import Page.Navbar as Navbar
 import REA.EventType exposing (EventType)
+import REA.ProcessType as PT
 
 
 type alias Model =
@@ -76,15 +77,15 @@ viewContent model =
                 )
             , div
                 [ class "column is-one-third" ]
-                [ label
-                    [ class "label" ]
-                    [ text "Add a new Event type:" ]
-                , div [ class "field" ]
+                [ div [ class "field" ]
                     [ form
                         [ class "control"
                         , onSubmit <| NewEventType model.inputEventType
                         ]
-                        [ input
+                        [ label
+                            [ class "label" ]
+                            [ text "Add a new Event type:" ]
+                        , input
                             [ type_ "text"
                             , value model.inputEventType
                             , class "input"
@@ -94,15 +95,39 @@ viewContent model =
                             [ text "Load default Event Types"
                             ]
                         ]
-                    ]
-                , div [ class "field" ]
-                    [ div
-                        [ class "control" ]
-                        [ button
-                            [ class "button is-link"
-                            , onClick <| NewEventType model.inputEventType
-                            ]
-                            [ text "Add"
+                    , div [ class "fielset" ]
+                        [ label
+                            [ class "label" ]
+                            [ text "This event type is usable from the following process types:" ]
+                        , div [ class "field" ]
+                            (model.processTypes
+                                |> Set.toList
+                                |> List.sortBy PT.compare
+                                |> List.map
+                                    (\pt ->
+                                        div [ class "control" ]
+                                            [ label [ class "checkbox" ]
+                                                [ input
+                                                    [ type_ "checkbox"
+                                                    , onInput InputEventTypeProcessType
+                                                    , value pt.name
+                                                    ]
+                                                    []
+                                                , span [] [ text pt.name ]
+                                                ]
+                                            ]
+                                    )
+                            )
+                        ]
+                    , div [ class "field" ]
+                        [ div
+                            [ class "control" ]
+                            [ button
+                                [ class "button is-link"
+                                , onClick <| NewEventType model.inputEventType
+                                ]
+                                [ text "Add"
+                                ]
                             ]
                         ]
                     ]

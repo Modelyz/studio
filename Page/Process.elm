@@ -11,12 +11,15 @@ import Page.Loading as Loading
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
-import REA.CommitmentType exposing (CommitmentType)
+import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E exposing (Event)
-import REA.EventType exposing (EventType)
-import REA.ProcessType exposing (ProcessType)
+import REA.EventType as ET exposing (EventType)
 import REA.Process exposing (Process)
+import REA.ProcessType exposing (ProcessType)
+import REA.ProcessTypeCommitmentType as PTCT
+import REA.ProcessTypeEventType as PTET
 import Status exposing (Status(..))
+
 
 type alias Model =
     ES.State
@@ -56,6 +59,17 @@ newEventButton process et =
 
 viewContent : Model -> Process -> Html Msg
 viewContent model process =
+    let
+        commitmentTypes =
+            model.processType_commitmentTypes
+                |> Set.filter (\ptct -> ptct.ptype.name == process.type_)
+                |> Set.map CT.compare .ctype
+
+        eventTypes =
+            model.processType_eventTypes
+                |> Set.filter (\ptet -> ptet.ptype.name == process.type_)
+                |> Set.map ET.compare .etype
+    in
     div []
         [ div
             [ class "hero is-medium"
@@ -73,7 +87,10 @@ viewContent model process =
                 , div [ class "panel-block hscroll-container" ] <|
                     List.map
                         (newCommitmentButton process)
-                        (model.commitmentTypes |> Set.toList)
+                        (model.commitmentTypes
+                            |> Set.filter (\ct -> Set.member ct commitmentTypes)
+                            |> Set.toList
+                        )
                 , div [ class "panel-block" ]
                     [ div [ class "columns is-multiline" ]
                         (getCommitments model process
@@ -90,7 +107,10 @@ viewContent model process =
                 , div [ class "panel-block hscroll-container" ] <|
                     List.map
                         (newEventButton process)
-                        (model.eventTypes |> Set.toList)
+                        (model.eventTypes
+                            |> Set.filter (\et -> Set.member et eventTypes)
+                            |> Set.toList
+                        )
                 , div [ class "panel-block" ]
                     [ div [ class "columns is-multiline" ]
                         (getEvents model process

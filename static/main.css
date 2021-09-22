@@ -52,4 +52,5 @@ img {
 .form { text-align: left; }
 .box .delete { position: absolute; right: .5rem; top; .5rem; display: none}
 .box:hover .delete { display: inline-block}
+span.checkbox { margin-left: 0.5em; }
 

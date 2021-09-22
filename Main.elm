@@ -25,7 +25,7 @@ import Random.Pcg.Extended as Random exposing (initialSeed, step)
 import Route exposing (parseUrl)
 import Status exposing (Status(..))
 import Task
-import Time exposing (now)
+import Time
 import Url exposing (Url)
 
 
@@ -90,13 +90,12 @@ update msg model =
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-                    ( { model
-                        | currentSeed = newSeed
-                      }
-                    , Task.perform TimestampEvent <|
-                        Task.map (\t -> ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) now
-                    )
-
+            ( { model
+                | currentSeed = newSeed
+              }
+            , Task.perform TimestampEvent <|
+                Task.map (\t -> ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
+            )
 
         Msg.DeleteProcessType ptype ->
             let
@@ -105,8 +104,9 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) now
+                Task.map (\t -> ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
             )
+
         Msg.NewProcess ptype ->
             let
                 ( newUuid, newSeed ) =
@@ -116,7 +116,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name}) now
+                Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name }) Time.now
             )
 
         Msg.NewCommitment process ctype ->
@@ -136,7 +136,7 @@ update msg model =
             , case commitmentType of
                 Just ct ->
                     Task.perform TimestampEvent <|
-                        Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) now
+                        Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
 
                 Nothing ->
                     Cmd.none
@@ -147,9 +147,21 @@ update msg model =
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            ( { model | inputEventType = "", currentSeed = newSeed }
+            ( { model
+                | inputEventType = ""
+                , inputEventTypeProcessTypes = Set.empty identity
+                , currentSeed = newSeed
+              }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> EventTypeAdded { uuid = newUuid, posixtime = t, eventType = ET.new name }) now
+                Task.map
+                    (\t ->
+                        EventTypeAdded
+                            { uuid = newUuid
+                            , posixtime = t
+                            , eventType = ET.new name
+                            }
+                    )
+                    Time.now
             )
 
         Msg.NewCommitmentType name ->
@@ -157,9 +169,21 @@ update msg model =
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            ( { model | inputCommitmentType = "", currentSeed = newSeed }
+            ( { model
+                | inputCommitmentType = ""
+                , inputCommitmentTypeProcessTypes = Set.empty identity
+                , currentSeed = newSeed
+              }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> CommitmentTypeAdded { uuid = newUuid, posixtime = t, commitmentType = CT.new name }) now
+                Task.map
+                    (\t ->
+                        CommitmentTypeAdded
+                            { uuid = newUuid
+                            , posixtime = t
+                            , commitmentType = CT.new name
+                            }
+                    )
+                    Time.now
             )
 
         Msg.NewEvent process etype ->
@@ -179,7 +203,16 @@ update msg model =
             , case eventType of
                 Just et ->
                     Task.perform TimestampEvent <|
-                        Task.map (\t -> EventAdded { uuid = newUuid, posixtime = t, process = process, event = E.new et.name newUuid t et }) now
+                        Task.map
+                            (\t ->
+                                EventAdded
+                                    { uuid = newUuid
+                                    , posixtime = t
+                                    , process = process
+                                    , event = E.new et.name newUuid t et
+                                    }
+                            )
+                            Time.now
 
                 Nothing ->
                     Cmd.none
@@ -201,7 +234,7 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) now
+                Task.map (\t -> EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) Time.now
             )
 
         Msg.InputCommitmentType ctype ->
@@ -214,8 +247,14 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform TimestampEvent <|
-                Task.map (\t -> CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) now
+                Task.map (\t -> CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) Time.now
             )
+
+        Msg.InputCommitmentTypeProcessType pt ->
+            ( { model | inputCommitmentTypeProcessTypes = Set.insert pt model.inputCommitmentTypeProcessTypes }, Cmd.none )
+
+        Msg.InputEventTypeProcessType pt ->
+            ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -233,7 +272,7 @@ view model =
                 |> Maybe.withDefault (Page.NotFound.view model)
 
         Route.Processes ptype_str ->
-                Maybe.map (getProcessType model) ptype_str
+            Maybe.map (getProcessType model) ptype_str
                 |> Maybe.andThen (\pt -> Maybe.map (Page.Processes.view model) pt)
                 |> Maybe.withDefault (Page.NotFound.view model)
 
@@ -241,7 +280,6 @@ view model =
             let
                 process =
                     getProcess model pname
-
             in
             case process of
                 Just p ->

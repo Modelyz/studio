@@ -3,8 +3,8 @@ module REA.Process exposing (Process, compare, decoder, encode)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Time exposing (millisToPosix, posixToMillis)
 import REA.ProcessType exposing (ProcessType)
+import Time exposing (millisToPosix, posixToMillis)
 
 
 
@@ -23,7 +23,6 @@ type alias Process =
 compare : Process -> Int
 compare process =
     posixToMillis process.posixtime
-
 
 
 encode : Process -> Encode.Value

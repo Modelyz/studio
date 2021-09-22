@@ -22,10 +22,12 @@ type Msg
     | DeleteProcessType ProcessType
     | NewProcess ProcessType
     | InputCommitmentType String
+    | InputCommitmentTypeProcessType String
     | NewCommitmentType String
     | NewCommitment Process String
     | DeleteCommitmentType CommitmentType
     | InputEventType String
+    | InputEventTypeProcessType String
     | NewEventType String
     | DeleteEventType EventType
     | NewEvent Process String
