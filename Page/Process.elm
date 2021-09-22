@@ -67,8 +67,8 @@ viewContent model process =
 
         eventTypes =
             model.processType_eventTypes
-                |> Set.filter (\ptet -> ptet.ptype.name == process.type_)
-                |> Set.map ET.compare .etype
+                |> Set.filter (\ptet -> ptet.ptype == process.type_)
+                |> Set.map identity .etype
     in
     div []
         [ div
@@ -108,7 +108,7 @@ viewContent model process =
                     List.map
                         (newEventButton process)
                         (model.eventTypes
-                            |> Set.filter (\et -> Set.member et eventTypes)
+                            |> Set.filter (\et -> Set.member et.name eventTypes)
                             |> Set.toList
                         )
                 , div [ class "panel-block" ]

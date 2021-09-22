@@ -33,9 +33,7 @@ request.onupgradeneeded = function(e) {
         db.deleteObjectStore('events');
         console.log('Deleted the old database!')
     } catch(e) {}
-    let idbstore = db.createObjectStore('events', {keyPath: 'posixtime'});
-    idbstore.createIndex('uuid', 'uuid', { unique: true });
-    //idbstore.createIndex('layouts', ['model', 'rel']);
+    let idbstore = db.createObjectStore('events', {autoIncrement:true});
     console.log('Database upgraded')
 };
 
@@ -54,7 +52,7 @@ var app = Elm.Main.init({flags:flags});
 
 /**** subscribe to Ports ****/
 /* store an event */
-app.ports.storeEvent.subscribe(function(event) {
+app.ports.storeEvent.subscribe(function(events) {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = function(e) {
         console.log("open IDB successful");
@@ -66,16 +64,19 @@ app.ports.storeEvent.subscribe(function(event) {
         transaction.onerror = function(e) {
             alert("transaction error:" + transaction.error) // FIXME
         }
-        const addrequest = transaction.objectStore('events').add(event)
-        addrequest.onsuccess = (e) => {
-            console.log('Event successfully added to IDB')
-            db.close()
-            app.ports.eventStored.send("")
-            console.log("Stored info successfully sent back to Elm")
-        }
-        addrequest.onerror = (e) => {
-            alert("IDB write failed: " + addrequest.error); // FIXME
-        }
+        events.forEach(function(event) {
+            const addrequest = transaction.objectStore('events').add(event)
+            addrequest.onsuccess = (e) => {
+                console.log('Event successfully added to IDB')
+                app.ports.eventStored.send("")
+                console.log("Stored info successfully sent back to Elm")
+            }
+            addrequest.onerror = (e) => {
+                addrequest.transaction.abort()
+                alert("IDB write failed: " + addrequest.error); // FIXME
+            }
+        })
+        db.close()
     }
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
 });

@@ -80,15 +80,15 @@ type Event
         , process : Process
         , event : E.Event
         }
+    | LinkedEventTypeToProcessType
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , etype : String
+        , ptype : String
+        }
 
 
 
---    | LinkedEventTypeToProcessType
---        { uuid : Uuid.Uuid
---        , posixtime : Time.Posix
---        , etype : String
---        , ptype : String
---        }
 -- global application state --
 -- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
 
@@ -175,6 +175,9 @@ compare event =
         EventAdded e ->
             posixToMillis e.posixtime
 
+        LinkedEventTypeToProcessType e ->
+            posixToMillis e.posixtime
+
 
 getProcess : State -> String -> Maybe Process
 getProcess state str =
@@ -241,6 +244,15 @@ aggregate event state =
         EventTypeAdded e ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
+            }
+
+        LinkedEventTypeToProcessType e ->
+            let
+                ptet =
+                    { etype = e.etype, ptype = e.ptype }
+            in
+            { state
+                | processType_eventTypes = Set.insert ptet state.processType_eventTypes
             }
 
         EventTypeRemoved e ->
@@ -323,6 +335,16 @@ eventTypeRemoved uuid posixtime eventType =
         }
 
 
+linkedEventTypeToProcessType : Uuid -> Time.Posix -> String -> String -> Event
+linkedEventTypeToProcessType uuid posixtime etype ptype =
+    LinkedEventTypeToProcessType
+        { uuid = uuid
+        , posixtime = posixtime
+        , etype = etype
+        , ptype = ptype
+        }
+
+
 eventTypeAdded : Uuid -> Time.Posix -> EventType -> Event
 eventTypeAdded uuid posixtime eventType =
     EventTypeAdded
@@ -402,6 +424,15 @@ encode event =
                 , ( "eventType", ET.encode e.eventType )
                 ]
 
+        LinkedEventTypeToProcessType e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "LinkedEventTypeToProcessType" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "etype", Encode.string e.etype )
+                , ( "ptype", Encode.string e.ptype )
+                ]
+
         EventTypeRemoved e ->
             Encode.object
                 [ ( "uuid", Uuid.encode e.uuid )
@@ -472,6 +503,13 @@ decoder =
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "eventType" ET.decoder)
+
+                    "LinkedEventTypeToProcessType" ->
+                        Decode.map4 linkedEventTypeToProcessType
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "etype" Decode.string)
+                            (Decode.field "ptype" Decode.string)
 
                     "EventTypeRemoved" ->
                         Decode.map3 eventTypeRemoved

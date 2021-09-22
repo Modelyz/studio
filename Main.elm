@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import DictSet as Set
 import ES exposing (Event(..), getProcess, getProcessType)
 import Json.Decode exposing (decodeValue, errorToString)
-import Json.Encode
+import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Msg exposing (Msg(..))
 import Page.CommitmentTypes
@@ -33,16 +33,16 @@ type alias Model =
     ES.State
 
 
-port receiveEvents : (Json.Encode.Value -> msg) -> Sub msg
+port receiveEvents : (Encode.Value -> msg) -> Sub msg
 
 
-port eventStored : (Json.Encode.Value -> msg) -> Sub msg
+port eventStored : (Encode.Value -> msg) -> Sub msg
 
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
-    , ES.getEventstore Json.Encode.null
+    , ES.getEventstore Encode.null
     )
 
 
@@ -93,8 +93,8 @@ update msg model =
             ( { model
                 | currentSeed = newSeed
               }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
+            , Task.perform StoreEvents <|
+                Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
             )
 
         Msg.DeleteProcessType ptype ->
@@ -103,8 +103,8 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
             in
             ( { model | currentSeed = newSeed }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
+            , Task.perform StoreEvents <|
+                Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
             )
 
         Msg.NewProcess ptype ->
@@ -115,8 +115,8 @@ update msg model =
             ( { model
                 | currentSeed = newSeed
               }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name }) Time.now
+            , Task.perform StoreEvents <|
+                Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name }) Time.now
             )
 
         Msg.NewCommitment process ctype ->
@@ -135,14 +135,14 @@ update msg model =
               }
             , case commitmentType of
                 Just ct ->
-                    Task.perform TimestampEvent <|
-                        Task.map (\t -> CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
+                    Task.perform StoreEvents <|
+                        Task.map (\t -> List.singleton <| CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
 
                 Nothing ->
                     Cmd.none
             )
 
-        Msg.NewEventType name ->
+        Msg.NewEventType ->
             let
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
@@ -152,14 +152,24 @@ update msg model =
                 , inputEventTypeProcessTypes = Set.empty identity
                 , currentSeed = newSeed
               }
-            , Task.perform TimestampEvent <|
+            , Task.perform StoreEvents <|
                 Task.map
                     (\t ->
                         EventTypeAdded
                             { uuid = newUuid
                             , posixtime = t
-                            , eventType = ET.new name
+                            , eventType = ET.new model.inputEventType
                             }
+                            :: List.map
+                                (\pt ->
+                                    LinkedEventTypeToProcessType
+                                        { uuid = newUuid
+                                        , posixtime = t
+                                        , etype = model.inputEventType
+                                        , ptype = pt
+                                        }
+                                )
+                                (Set.toList model.inputEventTypeProcessTypes)
                     )
                     Time.now
             )
@@ -174,14 +184,15 @@ update msg model =
                 , inputCommitmentTypeProcessTypes = Set.empty identity
                 , currentSeed = newSeed
               }
-            , Task.perform TimestampEvent <|
+            , Task.perform StoreEvents <|
                 Task.map
                     (\t ->
-                        CommitmentTypeAdded
-                            { uuid = newUuid
-                            , posixtime = t
-                            , commitmentType = CT.new name
-                            }
+                        List.singleton <|
+                            CommitmentTypeAdded
+                                { uuid = newUuid
+                                , posixtime = t
+                                , commitmentType = CT.new name
+                                }
                     )
                     Time.now
             )
@@ -202,15 +213,16 @@ update msg model =
               }
             , case eventType of
                 Just et ->
-                    Task.perform TimestampEvent <|
+                    Task.perform StoreEvents <|
                         Task.map
                             (\t ->
-                                EventAdded
-                                    { uuid = newUuid
-                                    , posixtime = t
-                                    , process = process
-                                    , event = E.new et.name newUuid t et
-                                    }
+                                List.singleton <|
+                                    EventAdded
+                                        { uuid = newUuid
+                                        , posixtime = t
+                                        , process = process
+                                        , event = E.new et.name newUuid t et
+                                        }
                             )
                             Time.now
 
@@ -218,11 +230,11 @@ update msg model =
                     Cmd.none
             )
 
-        Msg.TimestampEvent event ->
-            ( model, ES.encode event |> ES.storeEvent )
+        Msg.StoreEvents events ->
+            ( model, ES.storeEvent (Encode.list ES.encode events) )
 
         Msg.EventStored _ ->
-            ( model, ES.getEventstore Json.Encode.null )
+            ( model, ES.getEventstore Encode.null )
 
         Msg.InputEventType etype ->
             ( { model | inputEventType = etype }, Cmd.none )
@@ -233,8 +245,8 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
             in
             ( { model | currentSeed = newSeed }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) Time.now
+            , Task.perform StoreEvents <|
+                Task.map (\t -> List.singleton <| EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) Time.now
             )
 
         Msg.InputCommitmentType ctype ->
@@ -246,8 +258,8 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
             in
             ( { model | currentSeed = newSeed }
-            , Task.perform TimestampEvent <|
-                Task.map (\t -> CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) Time.now
+            , Task.perform StoreEvents <|
+                Task.map (\t -> List.singleton <| CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) Time.now
             )
 
         Msg.InputCommitmentTypeProcessType pt ->

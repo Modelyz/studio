@@ -4,7 +4,7 @@ import Browser exposing (Document)
 import DictSet as Set
 import ES
 import Html exposing (..)
-import Html.Attributes exposing (class, placeholder, style, type_, value)
+import Html.Attributes exposing (checked, class, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
@@ -80,7 +80,7 @@ viewContent model =
                 [ div [ class "field" ]
                     [ form
                         [ class "control"
-                        , onSubmit <| NewEventType model.inputEventType
+                        , onSubmit <| NewEventType
                         ]
                         [ label
                             [ class "label" ]
@@ -111,6 +111,7 @@ viewContent model =
                                                     [ type_ "checkbox"
                                                     , onInput InputEventTypeProcessType
                                                     , value pt.name
+                                                    , checked (Set.member pt.name model.inputEventTypeProcessTypes)
                                                     ]
                                                     []
                                                 , span [] [ text pt.name ]
@@ -124,7 +125,7 @@ viewContent model =
                             [ class "control" ]
                             [ button
                                 [ class "button is-link"
-                                , onClick <| NewEventType model.inputEventType
+                                , onClick <| NewEventType
                                 ]
                                 [ text "Add"
                                 ]

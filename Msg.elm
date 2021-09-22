@@ -14,9 +14,9 @@ type Msg
     = None
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
+    | StoreEvents (List ES.Event)
     | EventStored Json.Encode.Value
     | EventsReceived Json.Encode.Value
-    | TimestampEvent ES.Event
     | InputProcessName String
     | ProcessTypeChanged ProcessType
     | DeleteProcessType ProcessType
@@ -28,6 +28,6 @@ type Msg
     | DeleteCommitmentType CommitmentType
     | InputEventType String
     | InputEventTypeProcessType String
-    | NewEventType String
+    | NewEventType
     | DeleteEventType EventType
     | NewEvent Process String
