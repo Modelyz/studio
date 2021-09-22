@@ -22,7 +22,14 @@ encode : EventType -> Encode.Value
 encode et =
     Encode.object
         [ ( "name", Encode.string et.name )
-        , ( "etype", Encode.string et.name )
+        , ( "etype"
+          , case et.etype of
+                Nothing ->
+                    Encode.null
+
+                Just t ->
+                    Encode.string t
+          )
         ]
 
 
