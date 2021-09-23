@@ -465,13 +465,13 @@ decoder =
                         Decode.map3 processTypeChanged
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
-                            (Decode.field "processType" PT.decoder)
+                            (Decode.field "ptype" PT.decoder)
 
                     "ProcessTypeRemoved" ->
                         Decode.map3 processTypeRemoved
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
-                            (Decode.field "processType" Decode.string)
+                            (Decode.field "ptype" Decode.string)
 
                     "ProcessAdded" ->
                         Decode.map3 processAdded
