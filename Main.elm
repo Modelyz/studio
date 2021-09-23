@@ -94,7 +94,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform StoreEvents <|
-                Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
+                Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now
             )
 
         Msg.DeleteProcessType ptype ->
@@ -104,7 +104,7 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform StoreEvents <|
-                Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, processType = ptype }) Time.now
+                Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, ptype = ptype.name }) Time.now
             )
 
         Msg.NewProcess ptype ->

@@ -36,12 +36,12 @@ type Event
     = ProcessTypeChanged
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
-        , processType : ProcessType
+        , ptype : ProcessType
         }
     | ProcessTypeRemoved
         { uuid : Uuid.Uuid
         , posixtime : Time.Posix
-        , processType : ProcessType
+        , ptype : String
         }
     | ProcessAdded
         { uuid : Uuid.Uuid
@@ -214,12 +214,12 @@ aggregate event state =
     case event of
         ProcessTypeChanged e ->
             { state
-                | processTypes = Set.insert e.processType state.processTypes
+                | processTypes = Set.insert e.ptype state.processTypes
             }
 
         ProcessTypeRemoved e ->
             { state
-                | processTypes = Set.remove e.processType state.processTypes
+                | processTypes = Set.filter (\pt -> pt.name == e.ptype) state.processTypes
             }
 
         ProcessAdded e ->
@@ -276,16 +276,16 @@ processTypeChanged uuid posixtime ptype =
     ProcessTypeChanged
         { uuid = uuid
         , posixtime = posixtime
-        , processType = ptype
+        , ptype = ptype
         }
 
 
-processTypeRemoved : Uuid -> Time.Posix -> ProcessType -> Event
-processTypeRemoved uuid posixtime processType =
+processTypeRemoved : Uuid -> Time.Posix -> String -> Event
+processTypeRemoved uuid posixtime ptype =
     ProcessTypeRemoved
         { uuid = uuid
         , posixtime = posixtime
-        , processType = processType
+        , ptype = ptype
         }
 
 
@@ -372,7 +372,7 @@ encode event =
                 [ ( "uuid", Uuid.encode e.uuid )
                 , ( "type", Encode.string "ProcessTypeChanged" )
                 , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "processType", PT.encode e.processType )
+                , ( "ptype", PT.encode e.ptype )
                 ]
 
         ProcessTypeRemoved e ->
@@ -380,7 +380,7 @@ encode event =
                 [ ( "uuid", Uuid.encode e.uuid )
                 , ( "type", Encode.string "ProcessTypeRemoved" )
                 , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "processType", PT.encode e.processType )
+                , ( "ptype", Encode.string e.ptype )
                 ]
 
         ProcessAdded e ->
@@ -471,7 +471,7 @@ decoder =
                         Decode.map3 processTypeRemoved
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
-                            (Decode.field "processType" PT.decoder)
+                            (Decode.field "processType" Decode.string)
 
                     "ProcessAdded" ->
                         Decode.map3 processAdded
