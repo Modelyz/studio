@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Network.Wai ( responseLBS, Application, Request (requestBody), responseFile, pathInfo )
+import Network.Wai ( responseLBS, Application, Request (requestBody), responseFile, pathInfo, rawPathInfo )
 import Network.HTTP.Types ( status200, status404 )
 import Network.Wai.Handler.Warp (run)
 import Data.Maybe (Maybe(Nothing))
-import qualified Data.Text as T (unpack, pack, Text, split)
+import qualified Data.Text as T (unpack, pack, Text, split, append)
 import Data.List ()
 import qualified Data.ByteString as BS (pack, ByteString, append)
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import Data.Function ((&))
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (=='.') filename of
@@ -18,7 +19,11 @@ contentType filename = case reverse $ T.split (=='.') filename of
 
 app :: Application
 app request respond = do
-    putStrLn "Request received"
+    rawPathInfo request
+        & decodeUtf8
+        & T.append "Request "
+        & T.unpack
+        & putStrLn
     respond $ case pathInfo request of
         "static":pathtail -> case pathtail of
                 filename:othertail ->
