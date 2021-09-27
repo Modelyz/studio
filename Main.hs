@@ -6,11 +6,13 @@ import Network.Wai.Handler.Warp (run)
 import Data.Maybe (Maybe(Nothing))
 import qualified Data.Text as T (unpack, pack, Text, split, append)
 import Data.List ()
-import qualified Data.ByteString as BS (pack, ByteString, append)
+import qualified Data.ByteString as BS (pack, unpack, ByteString, append)
+import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.Function ((&))
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions)
+import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary))
+import Control.Monad (forever)
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (=='.') filename of
@@ -19,10 +21,21 @@ contentType filename = case reverse $ T.split (=='.') filename of
     _ -> "raw"
 
 
+handleMessage :: DataMessage -> IO ()
+handleMessage msg = do
+    putStrLn (case msg of
+            Text bs (Just text) -> LBS.unpack bs
+            Text bs Nothing -> LBS.unpack bs
+            Binary bs -> LBS.unpack bs)
+
+
 wsApp :: ServerApp
 wsApp pending_conn = do
         conn <- acceptRequest pending_conn
         sendTextData conn ("Hello, client!" :: T.Text)
+        forever $ do
+            msg <- receiveDataMessage conn
+            handleMessage msg
 
 
 httpApp :: Application
