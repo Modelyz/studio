@@ -18,7 +18,7 @@ import REA.Process exposing (Process)
 import REA.ProcessType exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT
 import REA.ProcessTypeEventType as PTET
-import Status exposing (Status(..))
+import Status exposing (ESStatus(..))
 
 
 type alias Model =

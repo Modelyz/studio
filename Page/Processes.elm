@@ -12,7 +12,7 @@ import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Process as P exposing (Process)
 import REA.ProcessType exposing (ProcessType)
-import Status exposing (Status(..))
+import Status exposing (ESStatus(..))
 
 
 type alias Model =
@@ -32,23 +32,23 @@ view model ptype =
 
 viewContent : Model -> ProcessType -> Html Msg
 viewContent model ptype =
-        div
-            [ class "section"
+    div
+        [ class "section"
+        ]
+        [ button
+            [ onClick (NewProcess ptype)
+            , class "button"
             ]
-            [ button
-                [ onClick (NewProcess ptype)
-                , class "button"
-                ]
-                [ text <| "New " ++ ptype.name
-                ]
-            , div [ class "columns is-multiline" ]
-                (DictSet.filter (\p -> p.type_ == ptype.name) model.processes
-                    |> DictSet.toList
-                    |> List.sortBy P.compare
-                    |> List.reverse
-                    |> List.map viewThumbnail
-                )
+            [ text <| "New " ++ ptype.name
             ]
+        , div [ class "columns is-multiline" ]
+            (DictSet.filter (\p -> p.type_ == ptype.name) model.processes
+                |> DictSet.toList
+                |> List.sortBy P.compare
+                |> List.reverse
+                |> List.map viewThumbnail
+            )
+        ]
 
 
 viewThumbnail : Process -> Html Msg

@@ -51,8 +51,9 @@ const flags = [randInts[0], randInts.slice(1)]
 var app = Elm.Main.init({flags:flags});
 
 /**** subscribe to Ports ****/
-/* store an event */
-app.ports.storeEvent.subscribe(function(events) {
+
+/* store an event to IDB */
+app.ports.storeEvents.subscribe(function(events) {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = function(e) {
         console.log("open IDB successful");
@@ -65,11 +66,12 @@ app.ports.storeEvent.subscribe(function(events) {
             alert("transaction error:" + transaction.error) // FIXME
         }
         events.forEach(function(event) {
+            console.log("addding to IDB : " + event)
             const addrequest = transaction.objectStore('events').add(event)
             addrequest.onsuccess = (e) => {
                 console.log('Event successfully added to IDB')
-                app.ports.eventStored.send("")
-                console.log("Stored info successfully sent back to Elm")
+                app.ports.eventsStored.send(event)
+                console.log("Stored information successfully sent back to Elm")
             }
             addrequest.onerror = (e) => {
                 addrequest.transaction.abort()
@@ -80,8 +82,9 @@ app.ports.storeEvent.subscribe(function(events) {
     }
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
 });
-/* read events */
-app.ports.getEventstore.subscribe(function() {
+
+/* read events from IDB */
+app.ports.readEvents.subscribe(function() {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
             console.log("Sending events to Elm...")
@@ -89,7 +92,7 @@ app.ports.getEventstore.subscribe(function() {
                       .objectStore('events').getAll();
         openCursor.onsuccess = e => {
             const events = e.target.result;
-            app.ports.receiveEvents.send(events)
+            app.ports.eventsReader.send(events)
             console.log("Successfully sent events to Elm")
         }
         openCursor.onerror = () => {
@@ -98,6 +101,26 @@ app.ports.getEventstore.subscribe(function() {
     }
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
 });
+
+/**** Websocket ****/
+var socket = new WebSocket('ws://localhost:8080/');
+
+/* send events to WS */
+app.ports.sendEvents.subscribe(function(message) {
+    try {
+        console.log("Sending evnt to WS")
+        socket.send(message);
+        app.ports.sendStatus.send("OK");
+        console.log("Sent evnt to WS")
+
+    } catch(error) { app.ports.sendStatus.send(error); }
+});
+
+/* get events from WS */
+//socket.addEventListener("message", function(event) {
+//    app.ports.eventsReceiver.send(event.data);
+//});
+
     </script>
 </body>
 </html>

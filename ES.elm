@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getEventstore, getProcess, getProcessType, new, storeEvent)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, new, readEvents, sendEvents, storeEvents)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -18,14 +18,25 @@ import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
 import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
 import Route exposing (Route)
-import Status exposing (Status(..))
+import Status exposing (ESStatus(..), WSStatus(..))
 import Time exposing (millisToPosix, posixToMillis)
 
 
-port getEventstore : Encode.Value -> Cmd msg
+port readEvents :
+    -- from IDB
+    Encode.Value -> Cmd msg
 
 
-port storeEvent : Encode.Value -> Cmd msg
+port storeEvents :
+    -- to IDB
+    Encode.Value
+    -> Cmd msg
+
+
+port sendEvents :
+    -- to WS
+    String
+    -> Cmd msg
 
 
 
@@ -94,11 +105,12 @@ type Event
 
 
 type alias State =
-    -- model related
+    -- ui model related
     { currentSeed : Seed
     , navkey : Nav.Key
     , route : Route
-    , status : Status
+    , esstatus : ESStatus
+    , wsstatus : WSStatus -- TODO temporary. What if offline?
 
     -- input related
     , inputProcessType : ProcessType
@@ -126,7 +138,8 @@ new seed key route =
     { currentSeed = seed
     , navkey = key
     , route = route
-    , status = Loading
+    , esstatus = ESLoading
+    , wsstatus = WSIdle
     , inputProcessType = { name = "" }
     , inputCommitmentType = ""
     , inputEventType = ""

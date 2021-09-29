@@ -4,7 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
 import ES exposing (Event(..), getProcess, getProcessType)
-import Json.Decode exposing (decodeValue, errorToString)
+import Json.Decode as Decode exposing (decodeValue, errorToString)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Msg exposing (Msg(..))
@@ -23,7 +23,7 @@ import REA.EventType as ET
 import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
 import Route exposing (parseUrl)
-import Status exposing (Status(..))
+import Status exposing (ESStatus(..), WSStatus(..))
 import Task
 import Time
 import Url exposing (Url)
@@ -33,16 +33,22 @@ type alias Model =
     ES.State
 
 
-port receiveEvents : (Encode.Value -> msg) -> Sub msg
+port eventsReader : (Encode.Value -> msg) -> Sub msg
 
 
-port eventStored : (Encode.Value -> msg) -> Sub msg
+port eventsStored : (Encode.Value -> msg) -> Sub msg
+
+
+port eventsReceiver : (Encode.Value -> msg) -> Sub msg
+
+
+port sendStatus : (Encode.Value -> msg) -> Sub msg
 
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
-    , ES.getEventstore Encode.null
+    , ES.readEvents Encode.null
     )
 
 
@@ -52,17 +58,17 @@ update msg model =
         Msg.None ->
             ( model, Cmd.none )
 
-        Msg.EventsReceived results ->
-            case decodeValue (Json.Decode.list ES.decoder) results of
+        Msg.EventsRead results ->
+            case decodeValue (Decode.list ES.decoder) results of
                 Ok events ->
                     let
                         emptymodel =
                             ES.new model.currentSeed model.navkey model.route
                     in
-                    ( List.foldr ES.aggregate { emptymodel | status = Loaded } (List.reverse events), Cmd.none )
+                    ( List.foldr ES.aggregate { emptymodel | esstatus = ESLoaded } (List.reverse events), Cmd.none )
 
                 Err str ->
-                    ( { model | status = Failed (errorToString str) }, Cmd.none )
+                    ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
 
         Msg.LinkClicked urlRequest ->
             case urlRequest of
@@ -231,10 +237,22 @@ update msg model =
             )
 
         Msg.StoreEvents events ->
-            ( model, ES.storeEvent (Encode.list ES.encode events) )
+            ( model, ES.storeEvents (Encode.list ES.encode events) )
 
-        Msg.EventStored _ ->
-            ( model, ES.getEventstore Encode.null )
+        Msg.EventsStored event ->
+            ( model, ES.sendEvents <| Encode.encode 0 event )
+
+        Msg.EventsSent status ->
+            case decodeValue Decode.string status of
+                Ok str ->
+                    if str == "OK" then
+                        ( model, ES.readEvents Encode.null )
+
+                    else
+                        ( { model | wsstatus = WSSendFailed str }, Cmd.none )
+
+                Err err ->
+                    ( { model | wsstatus = WSSendFailed <| errorToString err }, Cmd.none )
 
         Msg.InputEventType etype ->
             ( { model | inputEventType = etype }, Cmd.none )
@@ -320,8 +338,11 @@ onUrlChange =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ eventStored EventStored
-        , receiveEvents EventsReceived
+        [ eventsStored Msg.EventsStored
+        , eventsReader Msg.EventsRead
+        , sendStatus Msg.EventsSent
+
+        --        , eventsReceiver Msg.EventsReceived
         ]
 
 

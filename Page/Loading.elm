@@ -6,7 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
-import Status exposing (Status(..))
+import Status exposing (ESStatus(..))
 
 
 type alias Model =
@@ -15,11 +15,11 @@ type alias Model =
 
 wrapper : Model -> Html Msg -> Html Msg
 wrapper model content =
-    case model.status of
-        Loaded ->
+    case model.esstatus of
+        ESLoaded ->
             content
 
-        Loading ->
+        ESLoading ->
             div [ class "section" ]
                 [ span [ class "icon-text" ]
                     [ span [ class "icon" ]
@@ -30,7 +30,7 @@ wrapper model content =
                 , span [] [ text " Loading..." ]
                 ]
 
-        Failed error ->
+        ESReadFailed error ->
             div [ class "section" ]
                 [ span [ class "icon-text" ]
                     [ span [ class "icon" ]

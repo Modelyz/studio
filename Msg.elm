@@ -15,8 +15,8 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
     | StoreEvents (List ES.Event)
-    | EventStored Json.Encode.Value
-    | EventsReceived Json.Encode.Value
+    | EventsStored Json.Encode.Value
+    | EventsRead Json.Encode.Value
     | InputProcessName String
     | ProcessTypeChanged ProcessType
     | DeleteProcessType ProcessType
@@ -31,3 +31,8 @@ type Msg
     | NewEventType
     | DeleteEventType EventType
     | NewEvent Process String
+    | EventsSent Json.Encode.Value
+
+
+
+--     | EventsReceived Json.Encode.Value
