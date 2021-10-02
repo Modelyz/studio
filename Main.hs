@@ -23,10 +23,10 @@ contentType filename = case reverse $ T.split (=='.') filename of
 
 handleMessage :: DataMessage -> IO ()
 handleMessage msg = do
-    putStrLn (case msg of
+    appendFile "eventstore.txt" $ (case msg of
             Text bs (Just text) -> LBS.unpack bs
             Text bs Nothing -> LBS.unpack bs
-            Binary bs -> LBS.unpack bs)
+            Binary bs -> LBS.unpack bs) ++ "\n"
 
 
 wsApp :: ServerApp
@@ -36,6 +36,15 @@ wsApp pending_conn = do
         forever $ do
             msg <- receiveDataMessage conn
             handleMessage msg
+
+
+-- réagir à une arrivée d'un Event depuis Elm
+--  → stocker l'Event
+--  → le passer dans un agrégateur pour màj un state
+--  → décider de générer de nouveaux Events
+--  → transmetre ces Events ?
+-- le front est associé à un ms unique, donc pas d'abonnement ni rien à ce niveau.
+-- scenario : créer des trucs dans l'UI. Supprimer l'idb, recharger, constater que les Events sont revenus.
 
 
 httpApp :: Application
