@@ -44,13 +44,12 @@ getValue key _ = Error ""
 
 
 sendLatestMessages :: String -> IO()
-sendLatestMessages msg = do
-    let val = do
-            jsv <- decode msg
-            getValue "type" jsv
-        in case val of
-            Ok str -> putStrLn str
-            Error str -> putStrLn ("Error" ++ str)
+sendLatestMessages msg =
+    case decode msg >>= getValue "type" of
+        Ok str -> if str == "ConnectionInitiated"
+                    then putStrLn str
+                    else putStrLn "other"
+        Error str -> putStrLn ("Error" ++ str)
 
 
 wsApp :: ServerApp
