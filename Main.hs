@@ -12,10 +12,11 @@ import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.Function ((&))
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send)
-import Control.Monad (forever)
+import Control.Monad (forever, when)
 import Text.JSON
+    ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.Text
-import GHC.Generics
+import GHC.Generics ()
 import System.Posix.Internals (puts)
 
 
@@ -46,9 +47,7 @@ getValue key _ = Error ""
 sendLatestMessages :: String -> IO()
 sendLatestMessages msg =
     case decode msg >>= getValue "type" of
-        Ok str -> if str == "ConnectionInitiated"
-                    then putStrLn str
-                    else putStrLn "other"
+        Ok str -> Control.Monad.when (str == "ConnectionInitiated") $ putStrLn str
         Error str -> putStrLn ("Error" ++ str)
 
 
