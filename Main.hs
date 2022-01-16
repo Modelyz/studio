@@ -16,6 +16,7 @@ import Control.Monad (forever)
 import Text.JSON
 import qualified Data.Text
 import GHC.Generics
+import System.Posix.Internals (puts)
 
 
 
@@ -43,10 +44,13 @@ getValue key _ = Error ""
 
 
 sendLatestMessages :: String -> IO()
-sendLatestMessages msg =
-    case fmap (getValue "type") (decode msg) of
-        Ok (Ok "ConnectionInitiated") -> putStrLn "CCC"
-        _ -> putStrLn "plop"
+sendLatestMessages msg = do
+    let val = do
+            jsv <- decode msg
+            getValue "type" jsv
+        in case val of
+            Ok str -> putStrLn str
+            Error str -> putStrLn ("Error" ++ str)
 
 
 wsApp :: ServerApp
