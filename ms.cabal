@@ -29,5 +29,6 @@ executable ms
     , wai-websockets
     , warp
     , websockets
+    , json
   -- hs-source-dirs:
   default-language:    Haskell2010

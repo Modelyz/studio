@@ -11,8 +11,13 @@ import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.Function ((&))
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary))
+import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send)
 import Control.Monad (forever)
+import Text.JSON
+import qualified Data.Text
+import GHC.Generics
+
+
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (=='.') filename of
@@ -21,12 +26,27 @@ contentType filename = case reverse $ T.split (=='.') filename of
     _ -> "raw"
 
 
-handleMessage :: DataMessage -> IO ()
+handleMessage :: String -> IO ()
 handleMessage msg = do
-    appendFile "eventstore.txt" $ (case msg of
-            Text bs (Just text) -> LBS.unpack bs
-            Text bs Nothing -> LBS.unpack bs
-            Binary bs -> LBS.unpack bs) ++ "\n"
+    sendLatestMessages msg
+    -- first store the msg in the event store
+    appendFile "eventstore.txt" msg
+    -- then if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
+    -- otherwise, send the msg back to the central event store so that it be handled by other microservices.
+
+
+
+
+getValue :: String -> JSValue -> Result String
+getValue key (JSObject obj) = valFromObj key obj
+getValue key _ = Error ""
+
+
+sendLatestMessages :: String -> IO()
+sendLatestMessages msg =
+    case fmap (getValue "type") (decode msg) of
+        Ok (Ok "ConnectionInitiated") -> putStrLn "CCC"
+        _ -> putStrLn "plop"
 
 
 wsApp :: ServerApp
@@ -35,16 +55,12 @@ wsApp pending_conn = do
         sendTextData conn ("Hello, client!" :: T.Text)
         forever $ do
             msg <- receiveDataMessage conn
-            handleMessage msg
+            let message = (case msg of
+                    Text bs (Just text) -> LBS.unpack bs
+                    Text bs Nothing -> LBS.unpack bs
+                    Binary bs -> LBS.unpack bs) ++ "\n"
+                in handleMessage message
 
-
--- réagir à une arrivée d'un Event depuis Elm
---  → stocker l'Event
---  → le passer dans un agrégateur pour màj un state
---  → décider de générer de nouveaux Events
---  → transmetre ces Events ?
--- le front est associé à un ms unique, donc pas d'abonnement ni rien à ce niveau.
--- scenario : créer des trucs dans l'UI. Supprimer l'idb, recharger, constater que les Events sont revenus.
 
 
 httpApp :: Application
@@ -66,7 +82,7 @@ httpApp request respond = do
                     Nothing
                 _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
         _ -> responseFile status200 [("Content-Type", "text/html")] ("../pwa/src/templates/index.html"::String) Nothing
-        
+
 
 app :: Application
 app = websocketsOr defaultConnectionOptions wsApp httpApp
