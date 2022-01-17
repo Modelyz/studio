@@ -13,3 +13,5 @@ type WSStatus
     | WSSent
     | WSAcknowledged
     | WSSendFailed String
+    | WSLoading -- for instance, reading the ES from the MS through WS
+    | WSConnecting

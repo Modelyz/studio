@@ -1,8 +1,8 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, new, readEvents, sendEvents, storeEvents)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
-import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Commitment as C exposing (Commitment)
@@ -97,6 +97,14 @@ type Event
         , etype : String
         , ptype : String
         }
+    | ConnectionInitiated
+        { uuid : Uuid.Uuid
+        , posixtime : Time.Posix
+        , lastEventTime : Time.Posix
+        , sessionUuid : Uuid.Uuid
+
+        -- TODO add auth here
+        }
 
 
 
@@ -119,7 +127,13 @@ type alias State =
     , inputEventType : String
     , inputEventTypeProcessTypes : DictSet String String
 
-    -- state related
+    -- ES related
+    , lastEventTime : Time.Posix
+
+    -- session related
+    , sessionUuid : Maybe Uuid
+
+    -- REA state related
     , processTypes : DictSet String ProcessType
     , processes : DictSet Int Process
     , commitmentTypes : DictSet String CommitmentType
@@ -152,6 +166,8 @@ new seed key route =
     , commitments = Set.empty C.compare
     , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
+    , lastEventTime = millisToPosix 0
+    , sessionUuid = Nothing
     , process_events = Set.empty PE.compare
     , processType_commitmentTypes = Set.empty PTCT.compare
     , processType_eventTypes = Set.empty PTET.compare
@@ -191,6 +207,52 @@ compare event =
         LinkedEventTypeToProcessType e ->
             posixToMillis e.posixtime
 
+        ConnectionInitiated e ->
+            posixToMillis e.posixtime
+
+
+getTime : Decode.Value -> Time.Posix
+getTime event =
+    -- Maybe we could avoid redecoding after storing??
+    case decodeValue decoder event of
+        Ok ev ->
+            case ev of
+                ProcessTypeChanged pt ->
+                    pt.posixtime
+
+                ProcessTypeRemoved pt ->
+                    pt.posixtime
+
+                ProcessAdded p ->
+                    p.posixtime
+
+                CommitmentTypeAdded ct ->
+                    ct.posixtime
+
+                CommitmentTypeRemoved ct ->
+                    ct.posixtime
+
+                CommitmentAdded c ->
+                    c.posixtime
+
+                EventTypeAdded et ->
+                    et.posixtime
+
+                EventTypeRemoved et ->
+                    et.posixtime
+
+                EventAdded e ->
+                    e.posixtime
+
+                LinkedEventTypeToProcessType e ->
+                    e.posixtime
+
+                ConnectionInitiated e ->
+                    e.posixtime
+
+        Err err ->
+            millisToPosix 0
+
 
 getProcess : State -> String -> Maybe Process
 getProcess state str =
@@ -228,35 +290,44 @@ aggregate event state =
         ProcessTypeChanged e ->
             { state
                 | processTypes = Set.insert e.ptype state.processTypes
+                , lastEventTime = e.posixtime
             }
 
         ProcessTypeRemoved e ->
             { state
                 | processTypes = Set.filter (\pt -> pt.name == e.ptype) state.processTypes
+                , lastEventTime = e.posixtime
             }
 
         ProcessAdded e ->
-            { state | processes = Set.insert e state.processes }
+            { state
+                | processes = Set.insert e state.processes
+                , lastEventTime = e.posixtime
+            }
 
         CommitmentTypeAdded e ->
             { state
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
+                , lastEventTime = e.posixtime
             }
 
         CommitmentTypeRemoved e ->
             { state
                 | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
+                , lastEventTime = e.posixtime
             }
 
         CommitmentAdded e ->
             { state
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process, commitment = e.commitment } state.process_commitments
+                , lastEventTime = e.posixtime
             }
 
         EventTypeAdded e ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
+                , lastEventTime = e.posixtime
             }
 
         LinkedEventTypeToProcessType e ->
@@ -266,17 +337,25 @@ aggregate event state =
             in
             { state
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
+                , lastEventTime = e.posixtime
             }
 
         EventTypeRemoved e ->
             { state
                 | eventTypes = Set.remove e.eventType state.eventTypes
+                , lastEventTime = e.posixtime
             }
 
         EventAdded e ->
             { state
                 | events = Set.insert e.event state.events
                 , process_events = Set.insert { process = e.process, event = e.event } state.process_events
+                , lastEventTime = e.posixtime
+            }
+
+        ConnectionInitiated e ->
+            { state
+                | sessionUuid = Just e.sessionUuid
             }
 
 
@@ -377,6 +456,16 @@ eventAdded uuid posixtime process event =
         }
 
 
+connectionInitiated : Uuid -> Time.Posix -> Time.Posix -> Uuid -> Event
+connectionInitiated uuid posixtime lastEventTime sessionUuid =
+    ConnectionInitiated
+        { uuid = uuid
+        , posixtime = posixtime
+        , lastEventTime = lastEventTime
+        , sessionUuid = sessionUuid
+        }
+
+
 encode : Event -> Encode.Value
 encode event =
     case event of
@@ -463,6 +552,15 @@ encode event =
                 , ( "event", E.encode e.event )
                 ]
 
+        ConnectionInitiated e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "ConnectionInitiated" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
+                , ( "sessionUuid", Uuid.encode e.sessionUuid )
+                ]
+
 
 decoder : Decoder Event
 decoder =
@@ -536,6 +634,13 @@ decoder =
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "process" P.decoder)
                             (Decode.field "event" E.decoder)
+
+                    "ConnectionInitiated" ->
+                        Decode.map4 connectionInitiated
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
+                            (Decode.field "sessionUuid" Uuid.decoder)
 
                     _ ->
                         Decode.fail "Unknown Event type"

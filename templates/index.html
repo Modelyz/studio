@@ -71,7 +71,7 @@ app.ports.storeEvents.subscribe(function(events) {
             addrequest.onsuccess = (e) => {
                 console.log('Event successfully added to IDB')
                 app.ports.eventsStored.send(event)
-                console.log("Stored information successfully sent back to Elm")
+                console.log("Success message sent back from JS to Elm")
             }
             addrequest.onerror = (e) => {
                 addrequest.transaction.abort()
@@ -87,13 +87,13 @@ app.ports.storeEvents.subscribe(function(events) {
 app.ports.readEvents.subscribe(function() {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
-            console.log("Sending events to Elm...")
+            console.log("Sending events from JS to Elm...")
         const openCursor = e.target.result.transaction('events', 'readonly')
                       .objectStore('events').getAll();
         openCursor.onsuccess = e => {
             const events = e.target.result;
             app.ports.eventsReader.send(events)
-            console.log("Successfully sent events to Elm")
+            console.log("Successfully sent events from JS to Elm")
         }
         openCursor.onerror = () => {
             alert("transaction error:" + transaction.error) // FIXME

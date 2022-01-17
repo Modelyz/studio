@@ -1,11 +1,13 @@
 module Page.Navbar exposing (view)
 
+import DictSet
 import ES
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, href)
-import DictSet
+import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
+import Time exposing (posixToMillis)
 
 
 type alias Model =
@@ -24,11 +26,11 @@ view model =
         , attribute "role" "navigation"
         , attribute "aria-label" "main navigation"
         ]
-        [ div [ class "navbar-brand" ]
-            <| [ div [class "navbar-item", class "has-dropdown", class "is-hoverable"]
-                [a [class "navbar-item"]
+        [ div [ class "navbar-brand" ] <|
+            [ div [ class "navbar-item", class "has-dropdown", class "is-hoverable" ]
+                [ a [ class "navbar-item" ]
                     [ text "Configuration"
-                    , div [class "navbar-dropdown"]
+                    , div [ class "navbar-dropdown" ]
                         [ a
                             [ classList
                                 [ ( "navbar-item", True )
@@ -58,23 +60,27 @@ view model =
                             ]
                         ]
                     ]
-                    ]
-            ] ++ case DictSet.size model.processTypes > 0 of
-                    True -> 
-                        model.processTypes
-                            |> DictSet.toList
-                            |> List.map (\pt -> a [class "navbar-item", href <| "/processes?type=" ++ pt.name] [text pt.name])
-                        
-                    False -> []
-            , a
-                [ attribute "role" "button"
-                , class "navbar-burger"
-                , attribute "aria-label" "menu"
-                , attribute "aria-expanded" "false"
-                , attribute "dat-target" "navBar"
                 ]
-                [ span [ attribute "aria-hidden" "true" ] []
-                , span [ attribute "aria-hidden" "true" ] []
-                , span [ attribute "aria-hidden" "true" ] []
-                ]
-                ]
+            ]
+                ++ (case DictSet.size model.processTypes > 0 of
+                        True ->
+                            model.processTypes
+                                |> DictSet.toList
+                                |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
+
+                        False ->
+                            []
+                   )
+        , button [ onClick InitiateConnection, class "button" ] [ text "Cnx" ] -- TODO remove and replace with an automatic connection
+        , a
+            [ attribute "role" "button"
+            , class "navbar-burger"
+            , attribute "aria-label" "menu"
+            , attribute "aria-expanded" "false"
+            , attribute "dat-target" "navBar"
+            ]
+            [ span [ attribute "aria-hidden" "true" ] []
+            , span [ attribute "aria-hidden" "true" ] []
+            , span [ attribute "aria-hidden" "true" ] []
+            ]
+        ]

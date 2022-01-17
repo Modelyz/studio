@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
-import ES exposing (Event(..), getProcess, getProcessType)
+import ES exposing (Event(..), getProcess, getProcessType, getTime)
 import Json.Decode as Decode exposing (decodeValue, errorToString)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
@@ -39,16 +39,17 @@ port eventsReader : (Encode.Value -> msg) -> Sub msg
 port eventsStored : (Encode.Value -> msg) -> Sub msg
 
 
-port eventsReceiver : (Encode.Value -> msg) -> Sub msg
-
-
 port sendStatus : (Encode.Value -> msg) -> Sub msg
+
+
+port eventsReceiver : (Encode.Value -> msg) -> Sub msg
 
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
     , ES.readEvents Encode.null
+      -- TODO also connect to WS
     )
 
 
@@ -61,11 +62,7 @@ update msg model =
         Msg.EventsRead results ->
             case decodeValue (Decode.list ES.decoder) results of
                 Ok events ->
-                    let
-                        emptymodel =
-                            ES.new model.currentSeed model.navkey model.route
-                    in
-                    ( List.foldr ES.aggregate { emptymodel | esstatus = ESLoaded } (List.reverse events), Cmd.none )
+                    ( List.foldr ES.aggregate { model | esstatus = ESLoaded } (List.reverse events), Cmd.none )
 
                 Err str ->
                     ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
@@ -240,7 +237,11 @@ update msg model =
             ( model, ES.storeEvents (Encode.list ES.encode events) )
 
         Msg.EventsStored event ->
-            ( model, ES.sendEvents <| Encode.encode 0 event )
+            let
+                lastEventTime =
+                    getTime event
+            in
+            ( { model | lastEventTime = getTime event }, ES.sendEvents <| Encode.encode 0 event )
 
         Msg.EventsSent status ->
             case decodeValue Decode.string status of
@@ -285,6 +286,33 @@ update msg model =
 
         Msg.InputEventTypeProcessType pt ->
             ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Cmd.none )
+
+        Msg.InitiateConnection ->
+            let
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
+            ( { model
+                | wsstatus = WSLoading
+                , sessionUuid = Just newUuid
+              }
+            , Task.perform StoreEvents <|
+                Task.map
+                    (\t ->
+                        List.singleton <|
+                            ConnectionInitiated
+                                { uuid = newUuid
+                                , posixtime = t
+                                , lastEventTime = model.lastEventTime
+                                , sessionUuid = newUuid
+                                }
+                    )
+                    Time.now
+            )
+
+
+
+-- TODO get or create a session uuid, retrieve the last event time, send to haskell )
 
 
 view : Model -> Browser.Document Msg
@@ -338,11 +366,11 @@ onUrlChange =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ eventsStored Msg.EventsStored
+        [ sendStatus Msg.EventsSent
         , eventsReader Msg.EventsRead
-        , sendStatus Msg.EventsSent
+        , eventsStored Msg.EventsStored
 
-        --        , eventsReceiver Msg.EventsReceived
+        --, eventsReceiver Msg.EventsReceived
         ]
 
 
