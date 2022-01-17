@@ -11,15 +11,15 @@ import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.Function ((&))
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send)
+import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, Connection)
 import Control.Monad (forever, when)
 import Text.JSON
     ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.Text
-import GHC.Generics ()
 import System.Posix.Internals (puts)
 
-
+eventstorepath :: FilePath
+eventstorepath = "eventstore.txt"
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (=='.') filename of
@@ -28,27 +28,55 @@ contentType filename = case reverse $ T.split (=='.') filename of
     _ -> "raw"
 
 
-handleMessage :: String -> IO ()
-handleMessage msg = do
-    sendLatestMessages msg
+handleMessage :: Connection ->  String -> IO ()
+handleMessage conn msg = do
+    sendLatestMessages conn msg
     -- first store the msg in the event store
-    appendFile "eventstore.txt" msg
+    appendFile eventstorepath msg
     -- then if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
     -- otherwise, send the msg back to the central event store so that it be handled by other microservices.
 
 
+getStringVal :: String -> JSValue -> Result String
+getStringVal key (JSObject obj) = valFromObj key obj
+getStringVal key _ = Error "Error: JSON message is not an object"
+
+getIntegerVal :: String -> JSValue -> Result Integer
+getIntegerVal key (JSObject obj) = valFromObj key obj
+getIntegerVal key _ = Error "Error: JSON message is not an object"
 
 
-getValue :: String -> JSValue -> Result String
-getValue key (JSObject obj) = valFromObj key obj
-getValue key _ = Error ""
+skipUntil :: Integer -> [String] -> [String]
+skipUntil limit =
+    filter (\m -> getIntegerValue "posixtime" m >= limit )
+
+getIntegerValue :: String -> String -> Integer
+getIntegerValue key msg =
+    case decode msg >>= getIntegerVal key of
+      Ok n -> n
+      Error s -> 0
+
+getStringValue :: String -> String -> String
+getStringValue key msg =
+    case decode msg >>= getStringVal key of
+      Ok v -> v
+      Error s -> "Error: " ++ s
 
 
-sendLatestMessages :: String -> IO()
-sendLatestMessages msg =
-    case decode msg >>= getValue "type" of
-        Ok str -> Control.Monad.when (str == "ConnectionInitiated") $ putStrLn str
-        Error str -> putStrLn ("Error" ++ str)
+-- read the event store from the specified date
+-- and send all messages to the websocket connection
+sendMessagesFrom :: Connection -> Integer -> IO ()
+sendMessagesFrom conn date = do
+            ms <- fmap (skipUntil date . lines) (readFile eventstorepath)
+            sendTextData conn $ T.pack (unlines ms)
+
+
+
+sendLatestMessages :: Connection ->  String -> IO()
+sendLatestMessages conn msg = do
+    case decode msg >>= getStringVal "type" of
+        Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn (getIntegerValue "lastEventTime" msg)
+        Error str -> putStrLn ("Error: " ++ str)
 
 
 wsApp :: ServerApp
@@ -61,7 +89,7 @@ wsApp pending_conn = do
                     Text bs (Just text) -> LBS.unpack bs
                     Text bs Nothing -> LBS.unpack bs
                     Binary bs -> LBS.unpack bs) ++ "\n"
-                in handleMessage message
+                in handleMessage conn message
 
 
 
