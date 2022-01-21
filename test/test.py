@@ -7,6 +7,15 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
+import subprocess
+import pytest
+
+
+@pytest.fixture
+def run_backend():
+    backend = subprocess.run(["./run.sh"], cwd="../back")
+    yield backend
+
 
 def test_chrome():
     service = ChromeService(executable_path=ChromeDriverManager().install())
