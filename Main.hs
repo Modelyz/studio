@@ -17,6 +17,7 @@ import Text.JSON
     ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.Text
 import System.Posix.Internals (puts)
+import qualified GHC.Num as String
 
 eventstorepath :: FilePath
 eventstorepath = "eventstore.txt"
@@ -48,7 +49,7 @@ getIntegerVal key _ = Error "Error: JSON message is not an object"
 
 skipUntil :: Integer -> [String] -> [String]
 skipUntil limit =
-    filter (\m -> getIntegerValue "posixtime" m >= limit )
+    filter (\m -> getIntegerValue "posixtime" m >= limit && getStringValue "type" m /= "ConnectionInitiated")
 
 getIntegerValue :: String -> String -> Integer
 getIntegerValue key msg =
@@ -69,20 +70,26 @@ sendMessagesFrom :: Connection -> Integer -> IO ()
 sendMessagesFrom conn date = do
             ms <- fmap (skipUntil date . lines) (readFile eventstorepath)
             sendTextData conn $ T.pack (unlines ms)
+            putStrLn $ unlines ms
 
 
 
 sendLatestMessages :: Connection ->  String -> IO()
-sendLatestMessages conn msg = do
-    case decode msg >>= getStringVal "type" of
-        Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn (getIntegerValue "lastEventTime" msg)
-        Error str -> putStrLn ("Error: " ++ str)
+sendLatestMessages conn msg =
+    let lastEventTime = getIntegerValue "lastEventTime" msg
+    in do
+        case decode msg >>= getStringVal "type" of
+            Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn lastEventTime
+            Error str -> putStrLn ("Error: " ++ str)
+        putStr "LastEventTime="
+        print lastEventTime
+
 
 
 wsApp :: ServerApp
 wsApp pending_conn = do
         conn <- acceptRequest pending_conn
-        sendTextData conn ("Hello, client!" :: T.Text)
+        --sendTextData conn ("Hello, client!" :: T.Text)
         forever $ do
             msg <- receiveDataMessage conn
             let message = (case msg of
