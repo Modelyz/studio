@@ -1,2 +1,29 @@
+# elm build
 front/static/app.js
+
+# vim temporary files
 .*\.swp
+
+# haskell build
+back/dist-newstyle/
+
+# Event Store
+back/eventstore.txt
+
+# Distribution
+front/build/
+
+# elm-package generated files
+front/elm-stuff
+
+# elm-repl generated files
+front/repl-temp-*
+
+# Dependency directories
+front/node_modules
+
+# dependency lock file
+front/package-lock.json
+
+# Desktop Services Store on macOS
+.DS_Store
