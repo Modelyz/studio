@@ -299,7 +299,7 @@ aggregate event state =
 
         ProcessTypeRemoved e ->
             { state
-                | processTypes = Set.filter (\pt -> pt.name == e.ptype) state.processTypes
+                | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
                 , lastEventTime = e.posixtime
             }
 
