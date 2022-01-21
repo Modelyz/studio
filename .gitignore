@@ -3,7 +3,8 @@
 
 # build
 build/
-
+test/Pipfile.lock
+test/geckodriver.log
 
 ### BACK ###
 
@@ -13,6 +14,8 @@ back/dist-newstyle/
 # Event Store
 back/eventstore.txt
 
+# cabam
+back/cabal.project.local
 
 ### FRONT ###
 

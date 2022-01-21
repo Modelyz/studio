@@ -115,10 +115,10 @@ httpApp request respond = do
                     responseFile
                     status200
                     [("Content-Type", ct)]
-                    ("../front/build/" ++ T.unpack filename)
+                    ("../build/" ++ T.unpack filename)
                     Nothing
                 _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
-        _ -> responseFile status200 [("Content-Type", "text/html")] ("../front/build/index.html"::String) Nothing
+        _ -> responseFile status200 [("Content-Type", "text/html")] ("../build/index.html"::String) Nothing
 
 
 app :: Application
