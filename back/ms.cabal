@@ -17,7 +17,7 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
 executable ms
-  main-is:             Main.hs
+  main-is:             src/Main.hs
   -- other-modules:
   -- other-extensions:
   build-depends:
