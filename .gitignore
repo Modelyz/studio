@@ -1,6 +1,9 @@
 # vim temporary files
 .*\.swp
 
+# build
+build/
+
 
 ### BACK ###
 
@@ -12,9 +15,6 @@ back/eventstore.txt
 
 
 ### FRONT ###
-
-# build
-front/build/
 
 # elm-package generated files
 front/elm-stuff
