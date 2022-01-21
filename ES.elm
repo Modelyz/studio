@@ -22,21 +22,25 @@ import Status exposing (ESStatus(..), WSStatus(..))
 import Time exposing (millisToPosix, posixToMillis)
 
 
-port readEvents :
-    -- from IDB
-    Encode.Value -> Cmd msg
+
+-- read events from IDB
 
 
-port storeEvents :
-    -- to IDB
-    Encode.Value
-    -> Cmd msg
+port readEvents : Encode.Value -> Cmd msg
 
 
-port sendEvents :
-    -- to WS
-    String
-    -> Cmd msg
+
+-- store events to IDB
+
+
+port storeEvents : Encode.Value -> Cmd msg
+
+
+
+-- send events through WS
+
+
+port sendEvents : String -> Cmd msg
 
 
 

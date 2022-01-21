@@ -33,7 +33,4 @@ type Msg
     | NewEvent Process String
     | EventsSent Json.Encode.Value
     | InitiateConnection
-
-
-
---     | EventsReceived Json.Encode.Value
+    | EventsReceived String

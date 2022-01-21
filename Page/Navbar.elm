@@ -7,6 +7,7 @@ import Html.Attributes exposing (attribute, class, classList, href)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
+import Status exposing (wsstatus2text)
 import Time exposing (posixToMillis)
 
 
@@ -72,6 +73,8 @@ view model =
                             []
                    )
         , button [ onClick InitiateConnection, class "button" ] [ text "Cnx" ] -- TODO remove and replace with an automatic connection
+        , div [ class "navbar-item" ] [ text <| "WSStatus=" ++ wsstatus2text model.wsstatus ]
+        , div [ class "navbar-item" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
         , a
             [ attribute "role" "button"
             , class "navbar-burger"

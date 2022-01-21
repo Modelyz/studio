@@ -4,7 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
 import ES exposing (Event(..), getProcess, getProcessType, getTime)
-import Json.Decode as Decode exposing (decodeValue, errorToString)
+import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Msg exposing (Msg(..))
@@ -22,6 +22,7 @@ import REA.Event as E
 import REA.EventType as ET
 import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
+import Result
 import Route exposing (parseUrl)
 import Status exposing (ESStatus(..), WSStatus(..))
 import Task
@@ -42,7 +43,7 @@ port eventsStored : (Encode.Value -> msg) -> Sub msg
 port sendStatus : (Encode.Value -> msg) -> Sub msg
 
 
-port eventsReceiver : (Encode.Value -> msg) -> Sub msg
+port eventsReceiver : (String -> msg) -> Sub msg
 
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -310,6 +311,17 @@ update msg model =
                     Time.now
             )
 
+        Msg.EventsReceived ms ->
+            case decodeString (Decode.list ES.decoder) <| "[" ++ (ms |> String.trim |> String.split "\n" |> String.join ",") ++ "]" of
+                Ok messages ->
+                    ( { model | wsstatus = WSReceiving }
+                    , ES.storeEvents <|
+                        Encode.list ES.encode messages
+                    )
+
+                Err err ->
+                    ( { model | wsstatus = WSReceiveFailed <| errorToString err }, Cmd.none )
+
 
 
 -- TODO get or create a session uuid, retrieve the last event time, send to haskell )
@@ -369,8 +381,7 @@ subscriptions _ =
         [ sendStatus Msg.EventsSent
         , eventsReader Msg.EventsRead
         , eventsStored Msg.EventsStored
-
-        --, eventsReceiver Msg.EventsReceived
+        , eventsReceiver Msg.EventsReceived
         ]
 
 

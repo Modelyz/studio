@@ -108,18 +108,19 @@ var socket = new WebSocket('ws://localhost:8080/');
 /* send events to WS */
 app.ports.sendEvents.subscribe(function(message) {
     try {
-        console.log("Sending evnt to WS")
+        console.log("Sending event to WS...")
         socket.send(message);
         app.ports.sendStatus.send("OK");
-        console.log("Sent evnt to WS")
+        console.log("...sent event to WS")
 
     } catch(error) { app.ports.sendStatus.send(error); }
 });
 
 /* get events from WS */
-//socket.addEventListener("message", function(event) {
-//    app.ports.eventsReceiver.send(event.data);
-//});
+socket.addEventListener("message", function(event) {
+    console.log(event.data);
+    app.ports.eventsReceiver.send(event.data);
+});
 
     </script>
 </body>
