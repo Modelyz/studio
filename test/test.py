@@ -9,15 +9,20 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 import subprocess
 import pytest
+import time
 
 
 @pytest.fixture
-def run_backend():
-    backend = subprocess.run(["./run.sh"], cwd="../back")
+def backend():
+    backend = subprocess.Popen(["../build/ms"])
+    time.sleep(0.2)
     yield backend
+    backend.terminate()
+    backend.wait()
 
 
-def test_chrome():
+def test_chrome(backend):
+    assert backend.poll() is None, "Backend is not running"
     service = ChromeService(executable_path=ChromeDriverManager().install())
 
     driver = webdriver.Chrome(service=service)
@@ -25,7 +30,8 @@ def test_chrome():
     driver.quit()
 
 
-def test_firefox():
+def test_firefox(backend):
+    assert backend.poll() is None, "Backend is not running"
     service = FirefoxService(executable_path=GeckoDriverManager().install())
 
     driver = webdriver.Firefox(service=service)
