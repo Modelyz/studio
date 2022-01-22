@@ -96,6 +96,7 @@ update msg model =
             in
             ( { model
                 | currentSeed = newSeed
+                , inputProcessType = { name = "" }
               }
             , Task.perform StoreEvents <|
                 Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now

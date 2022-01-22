@@ -41,18 +41,20 @@ def test(backend):
     chrome = driver("chrome")
     chrome.implicitly_wait(5)
 
-    assert backend.is_running(), "Backend stopped"
+    assert backend.is_running(), "Backend is stopped"
     chrome.get("http://localhost:8080/process-types")
     assert chrome.title == "Process Types"
 
-    assert backend.is_running(), "Backend stopped"
-    chrome.find_element(By.CLASS_NAME, "input").send_keys("New PT" + Keys.ENTER)
+    assert backend.is_running(), "Backend is stopped"
+    input_ = chrome.find_element(By.CLASS_NAME, "input")
+    input_.send_keys("New PT" + Keys.ENTER)
     box = chrome.find_element(By.CLASS_NAME, "box")
-    assert box.text == "New PT"
+    assert box.text == "New PT", "The Process Type has not been created"
+    assert input_.get_attribute("value") == "", "Form was not cleared after submit"
 
     chrome.quit()
 
-    assert backend.is_running(), "Backend stopped"
+    assert backend.is_running(), "Backend is stopped"
     firefox = driver("firefox")
     firefox.implicitly_wait(5)
     firefox.get("http://localhost:8080/process-types")
