@@ -13,11 +13,13 @@ import Data.Function ((&))
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, Connection)
 import Control.Monad (forever, when)
+import Control.Exception (fromException, SomeException (SomeException), catch)
 import Text.JSON
     ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.Text
 import System.Posix.Internals (puts)
 import qualified GHC.Num as String
+--import Data.ByteString (putStrLn)
 
 eventstorepath :: FilePath
 eventstorepath = "eventstore.txt"
@@ -64,13 +66,22 @@ getStringValue key msg =
       Error s -> "Error: " ++ s
 
 
+
+
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
-sendMessagesFrom :: Connection -> Integer -> IO ()
+sendMessagesFrom :: Connection -> Integer -> IO()
 sendMessagesFrom conn date = do
-            ms <- fmap (skipUntil date . lines) (readFile eventstorepath)
-            sendTextData conn $ T.pack (unlines ms)
-            putStrLn $ unlines ms
+    str <- catch (readFile eventstorepath) handleMissing
+    let msgs = (unlines . skipUntil date . lines) str
+        in do
+            sendTextData conn (T.pack msgs :: T.Text)
+            putStrLn msgs
+    where
+        handleMissing :: SomeException -> IO String
+        handleMissing (SomeException e) = 
+            return ""
+    
 
 
 

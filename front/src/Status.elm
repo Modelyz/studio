@@ -1,4 +1,4 @@
-module Status exposing (ESStatus(..), WSStatus(..), wsstatus2text)
+module Status exposing (ESStatus(..), WSStatus(..), esstatus2text, wsstatus2text)
 
 
 type ESStatus
@@ -15,20 +15,33 @@ type WSStatus
     | WSReceiving
 
 
+esstatus2text : ESStatus -> String
+esstatus2text status =
+    case status of
+        ESLoading ->
+            "ESLoading"
+
+        ESReadFailed err ->
+            "ESReadFailed " ++ err
+
+        ESLoaded ->
+            "ESLoaded"
+
+
 wsstatus2text : WSStatus -> String
 wsstatus2text status =
     case status of
         WSIdle ->
-            "idle"
+            "WSIdle"
 
         WSSendFailed s ->
-            "send failed" ++ s
+            "WSSendFailed" ++ s
 
         WSLoading ->
-            "loading"
+            "WSLoading"
 
         WSReceiving ->
-            "receiving"
+            "WSReceiving"
 
         WSReceiveFailed err ->
-            "receive failed: " ++ err
+            "WSReceiveFailed" ++ err

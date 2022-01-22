@@ -26,7 +26,7 @@ import Result
 import Route exposing (parseUrl)
 import Status exposing (ESStatus(..), WSStatus(..))
 import Task
-import Time
+import Time exposing (millisToPosix, posixToMillis)
 import Url exposing (Url)
 
 
@@ -50,8 +50,23 @@ init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
     ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
     , ES.readEvents Encode.null
-      -- TODO also connect to WS
     )
+
+
+initiateConnection : Uuid.Uuid -> Model -> Cmd Msg
+initiateConnection uuid model =
+    Task.perform StoreEvents <|
+        Task.map
+            (\t ->
+                List.singleton <|
+                    ConnectionInitiated
+                        { uuid = uuid
+                        , posixtime = t
+                        , lastEventTime = model.lastEventTime
+                        , sessionUuid = uuid
+                        }
+            )
+            Time.now
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -61,9 +76,22 @@ update msg model =
             ( model, Cmd.none )
 
         Msg.EventsRead results ->
+            let
+                firstRead =
+                    posixToMillis model.lastEventTime == 0
+
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+            in
             case decodeValue (Decode.list ES.decoder) results of
                 Ok events ->
-                    ( List.foldr ES.aggregate { model | esstatus = ESLoaded } (List.reverse events), Cmd.none )
+                    ( List.foldr ES.aggregate { model | esstatus = ESLoaded } (List.reverse events)
+                    , if firstRead then
+                        initiateConnection newUuid model
+
+                      else
+                        Cmd.none
+                    )
 
                 Err str ->
                     ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
@@ -298,18 +326,7 @@ update msg model =
                 | wsstatus = WSLoading
                 , sessionUuid = Just newUuid
               }
-            , Task.perform StoreEvents <|
-                Task.map
-                    (\t ->
-                        List.singleton <|
-                            ConnectionInitiated
-                                { uuid = newUuid
-                                , posixtime = t
-                                , lastEventTime = model.lastEventTime
-                                , sessionUuid = newUuid
-                                }
-                    )
-                    Time.now
+            , initiateConnection newUuid model
             )
 
         Msg.EventsReceived ms ->

@@ -12,7 +12,7 @@ test/geckodriver.log
 back/dist-newstyle/
 
 # Event Store
-back/eventstore.txt
+build/eventstore.txt
 test/eventstore.txt
 
 # cabam
