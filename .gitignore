@@ -13,6 +13,7 @@ back/dist-newstyle/
 
 # Event Store
 back/eventstore.txt
+test/eventstore.txt
 
 # cabam
 back/cabal.project.local
