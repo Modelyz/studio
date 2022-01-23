@@ -60,27 +60,27 @@ app.ports.storeEvents.subscribe(function(events) {
         const db = e.target.result;
         const transaction = db.transaction(['events'], 'readwrite');
         transaction.oncomplete = function(e) {
-            console.log("transaction complete")
+            console.log("...transaction complete")
         }
         transaction.onerror = function(e) {
             alert("transaction error:" + transaction.error) // FIXME
         }
         events.forEach(function(event) {
-            console.log("addding to IDB : " + event)
+            console.log("Adding event to IDB : " + event)
             const addrequest = transaction.objectStore('events').add(event)
             addrequest.onsuccess = (e) => {
-                console.log('Event successfully added to IDB')
+                console.log('...event successfully added to IDB...')
                 app.ports.eventsStored.send(event)
-                console.log("Success message sent back from JS to Elm")
+                console.log("...Success message sent back from JS to Elm")
             }
             addrequest.onerror = (e) => {
                 addrequest.transaction.abort()
-                alert("IDB write failed: " + addrequest.error); // FIXME
+                alert("...IDB write failed: " + addrequest.error); // FIXME
             }
         })
         db.close()
     }
-    request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
+    request.onerror = (e) => { alert("Open IDB failed: " + request.error); /* FIXME */ }
 });
 
 /* read events from IDB */
@@ -93,10 +93,10 @@ app.ports.readEvents.subscribe(function() {
         openCursor.onsuccess = e => {
             const events = e.target.result;
             app.ports.eventsReader.send(events)
-            console.log("Successfully sent events from JS to Elm")
+            console.log("...successfully sent all events from JS to Elm")
         }
         openCursor.onerror = () => {
-            alert("transaction error:" + transaction.error) // FIXME
+            alert("...transaction error:" + transaction.error) // FIXME
         }
     }
     request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
@@ -118,7 +118,7 @@ app.ports.sendEvents.subscribe(function(message) {
 
 /* get events from WS */
 socket.addEventListener("message", function(event) {
-    console.log(event.data);
+    console.log("JS receiving events from WS and transmitting to Elm: " + event);
     app.ports.eventsReceiver.send(event.data);
 });
 

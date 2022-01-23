@@ -16,10 +16,10 @@ type alias Model =
 wrapper : Model -> Html Msg -> Html Msg
 wrapper model content =
     case model.esstatus of
-        ESLoaded ->
+        ESIdle ->
             content
 
-        ESLoading ->
+        ESReading ->
             div [ class "section" ]
                 [ span [ class "icon-text" ]
                     [ span [ class "icon" ]
@@ -27,7 +27,7 @@ wrapper model content =
                             []
                         ]
                     ]
-                , span [] [ text " Loading..." ]
+                , span [] [ text " Reading from IDB..." ]
                 ]
 
         ESReadFailed error ->
@@ -39,4 +39,15 @@ wrapper model content =
                         ]
                     ]
                 , span [] [ text <| " Error : " ++ error ]
+                ]
+
+        ESStoring ->
+            div [ class "section" ]
+                [ span [ class "icon-text" ]
+                    [ span [ class "icon" ]
+                        [ i [ class "fas fa-spinner fa-pulse" ]
+                            []
+                        ]
+                    ]
+                , span [] [ text <| " Storing..." ]
                 ]

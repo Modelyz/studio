@@ -85,13 +85,19 @@ update msg model =
             in
             case decodeValue (Decode.list ES.decoder) results of
                 Ok events ->
-                    ( List.foldr ES.aggregate { model | esstatus = ESLoaded } (List.reverse events)
-                    , if firstRead then
-                        initiateConnection newUuid model
+                    let
+                        newmodel =
+                            List.foldr ES.aggregate model (List.reverse events)
+                    in
+                    if firstRead then
+                        ( { newmodel | wsstatus = WSConnecting, esstatus = ESIdle }
+                        , initiateConnection newUuid model
+                        )
 
-                      else
-                        Cmd.none
-                    )
+                    else
+                        ( { newmodel | esstatus = ESIdle }
+                        , Cmd.none
+                        )
 
                 Err str ->
                     ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
@@ -135,7 +141,9 @@ update msg model =
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            ( { model | currentSeed = newSeed }
+            ( { model
+                | currentSeed = newSeed
+              }
             , Task.perform StoreEvents <|
                 Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, ptype = ptype.name }) Time.now
             )
@@ -163,17 +171,19 @@ update msg model =
                         |> List.filter (\ct -> ct.name == ctype)
                         |> List.head
             in
-            ( { model
-                | currentSeed = newSeed
-              }
-            , case commitmentType of
+            case commitmentType of
                 Just ct ->
-                    Task.perform StoreEvents <|
+                    ( { model
+                        | currentSeed = newSeed
+                      }
+                    , Task.perform StoreEvents <|
                         Task.map (\t -> List.singleton <| CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
+                    )
 
                 Nothing ->
-                    Cmd.none
-            )
+                    ( model
+                    , Cmd.none
+                    )
 
         Msg.NewEventType ->
             let
@@ -241,12 +251,12 @@ update msg model =
                         |> List.filter (\et -> et.name == etype)
                         |> List.head
             in
-            ( { model
-                | currentSeed = newSeed
-              }
-            , case eventType of
+            case eventType of
                 Just et ->
-                    Task.perform StoreEvents <|
+                    ( { model
+                        | currentSeed = newSeed
+                      }
+                    , Task.perform StoreEvents <|
                         Task.map
                             (\t ->
                                 List.singleton <|
@@ -258,26 +268,22 @@ update msg model =
                                         }
                             )
                             Time.now
+                    )
 
                 Nothing ->
-                    Cmd.none
-            )
+                    ( model, Cmd.none )
 
         Msg.StoreEvents events ->
-            ( model, ES.storeEvents (Encode.list ES.encode events) )
+            ( { model | esstatus = ESStoring }, ES.storeEvents (Encode.list ES.encode events) )
 
         Msg.EventsStored event ->
-            let
-                lastEventTime =
-                    getTime event
-            in
-            ( { model | lastEventTime = getTime event }, ES.sendEvents <| Encode.encode 0 event )
+            ( { model | lastEventTime = getTime event, esstatus = ESIdle }, ES.sendEvents <| Encode.encode 0 event )
 
         Msg.EventsSent status ->
             case decodeValue Decode.string status of
                 Ok str ->
                     if str == "OK" then
-                        ( model, ES.readEvents Encode.null )
+                        ( { model | esstatus = ESReading }, ES.readEvents Encode.null )
 
                     else
                         ( { model | wsstatus = WSSendFailed str }, Cmd.none )
@@ -332,7 +338,7 @@ update msg model =
         Msg.EventsReceived ms ->
             case decodeString (Decode.list ES.decoder) <| "[" ++ (ms |> String.trim |> String.split "\n" |> String.join ",") ++ "]" of
                 Ok messages ->
-                    ( { model | wsstatus = WSReceiving }
+                    ( { model | wsstatus = WSIdle, esstatus = ESStoring }
                     , ES.storeEvents <|
                         Encode.list ES.encode messages
                     )

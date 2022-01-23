@@ -2,9 +2,10 @@ module Status exposing (ESStatus(..), WSStatus(..), esstatus2text, wsstatus2text
 
 
 type ESStatus
-    = ESLoading
+    = ESIdle
+    | ESReading
     | ESReadFailed String
-    | ESLoaded
+    | ESStoring
 
 
 type WSStatus
@@ -12,20 +13,23 @@ type WSStatus
     | WSSendFailed String
     | WSReceiveFailed String
     | WSLoading -- for instance, reading the ES from the MS through WS
-    | WSReceiving
+    | WSConnecting
 
 
 esstatus2text : ESStatus -> String
 esstatus2text status =
     case status of
-        ESLoading ->
-            "ESLoading"
+        ESReading ->
+            "ESReading"
 
         ESReadFailed err ->
             "ESReadFailed " ++ err
 
-        ESLoaded ->
-            "ESLoaded"
+        ESIdle ->
+            "ESIdle"
+
+        ESStoring ->
+            "ESStoring"
 
 
 wsstatus2text : WSStatus -> String
@@ -40,8 +44,8 @@ wsstatus2text status =
         WSLoading ->
             "WSLoading"
 
-        WSReceiving ->
-            "WSReceiving"
-
         WSReceiveFailed err ->
             "WSReceiveFailed" ++ err
+
+        WSConnecting ->
+            "WSConnecting"

@@ -156,7 +156,7 @@ new seed key route =
     { currentSeed = seed
     , navkey = key
     , route = route
-    , esstatus = ESLoading
+    , esstatus = ESReading
     , wsstatus = WSIdle
     , inputProcessType = { name = "" }
     , inputCommitmentType = ""
