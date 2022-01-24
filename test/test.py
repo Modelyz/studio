@@ -52,6 +52,7 @@ def test_sync_process_type(backend):
     input_.send_keys("New PT" + Keys.ENTER)
     box = chrome.find_element(By.CLASS_NAME, "box")
     assert box.text == "New PT", "The Process Type has not been created"
+    input_ = chrome.find_element(By.CLASS_NAME, "input")
     assert input_.get_attribute("value") == "", "Form was not cleared after submit"
     WebDriverWait(chrome, 2).until(lambda _: os.path.exists(ES))
     with open(ES) as es:
