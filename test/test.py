@@ -47,17 +47,16 @@ def test_sync_process_type(backend):
     chrome.get("http://localhost:8080/process-types")
     assert chrome.title == "Process Types"
 
-    # Create a process type and check it is stored in the backend
+    # Create an event and check it is stored in the backend
     input_ = chrome.find_element(By.CLASS_NAME, "input")
-    input_.send_keys("New PT" + Keys.ENTER)
-    box = chrome.find_element(By.CLASS_NAME, "box")
-    assert box.text == "New PT", "The Process Type has not been created"
+    input_.send_keys("AAAAAA" + Keys.ENTER)
+    box = chrome.find_element(By.ID, "AAAAAA")
+    assert box.text == "AAAAAA", "The Process Type has not been created"
     input_ = chrome.find_element(By.CLASS_NAME, "input")
     assert input_.get_attribute("value") == "", "Form was not cleared after submit"
     WebDriverWait(chrome, 2).until(lambda _: os.path.exists(ES))
     with open(ES) as es:
-        assert es.read().find("New PT") > 0, "Event not stored in the backend"
-    chrome.quit()
+        assert es.read().find("AAAAAA") > 0, "Event not stored in the backend"
 
     # Check we get the process type from another browser
     firefox = driver("firefox")
@@ -65,6 +64,16 @@ def test_sync_process_type(backend):
     firefox.get("http://localhost:8080/process-types")
     assert firefox.title == "Process Types"
 
-    box = firefox.find_element(By.CLASS_NAME, "box")
-    assert box.text == "New PT", "The Process Type has not been created"
+    box = firefox.find_element(By.ID, "AAAAAA")
+    assert box.text == "AAAAAA", "The Process Type has not been created"
+
+    # Create another event from chrome and check it appears on firefox w/o reloading
+    input_ = chrome.find_element(By.CLASS_NAME, "input")
+    input_.send_keys("BBBBBB" + Keys.ENTER)
+    box = chrome.find_element(By.ID, "BBBBBB")
+    assert box.text == "BBBBBB", "The Process Type has not been created on Chrome"
+    box = firefox.find_element(By.ID, "BBBBBB")
+    assert box.text == "BBBBBB", "The Process Type has not been created on Firefox"
+
     firefox.quit()
+    chrome.quit()

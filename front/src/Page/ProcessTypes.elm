@@ -4,7 +4,7 @@ import Browser exposing (Document)
 import DictSet as Set
 import ES
 import Html exposing (..)
-import Html.Attributes exposing (class, placeholder, style, type_, value)
+import Html.Attributes exposing (class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
@@ -33,7 +33,7 @@ viewThumbnail pt =
         , style "background" "yellow"
         ]
         [ div
-            [ class "box" ]
+            [ class "box", id pt.name ]
             [ text pt.name
             , button
                 [ class "delete is-medium"

@@ -40,6 +40,9 @@ port eventsReader : (Encode.Value -> msg) -> Sub msg
 port eventsStored : (Encode.Value -> msg) -> Sub msg
 
 
+port eventsStoredToSend : (Encode.Value -> msg) -> Sub msg
+
+
 port sendStatus : (Encode.Value -> msg) -> Sub msg
 
 
@@ -55,7 +58,7 @@ init ( seed, seedExtension ) url navkey =
 
 initiateConnection : Uuid.Uuid -> Model -> Cmd Msg
 initiateConnection uuid model =
-    Task.perform StoreEvents <|
+    Task.perform StoreEventsToSend <|
         Task.map
             (\t ->
                 List.singleton <|
@@ -132,7 +135,7 @@ update msg model =
                 | currentSeed = newSeed
                 , inputProcessType = { name = "" }
               }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now
             )
 
@@ -144,7 +147,7 @@ update msg model =
             ( { model
                 | currentSeed = newSeed
               }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, ptype = ptype.name }) Time.now
             )
 
@@ -156,7 +159,7 @@ update msg model =
             ( { model
                 | currentSeed = newSeed
               }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name }) Time.now
             )
 
@@ -176,7 +179,7 @@ update msg model =
                     ( { model
                         | currentSeed = newSeed
                       }
-                    , Task.perform StoreEvents <|
+                    , Task.perform StoreEventsToSend <|
                         Task.map (\t -> List.singleton <| CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
                     )
 
@@ -195,7 +198,7 @@ update msg model =
                 , inputEventTypeProcessTypes = Set.empty identity
                 , currentSeed = newSeed
               }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map
                     (\t ->
                         EventTypeAdded
@@ -227,7 +230,7 @@ update msg model =
                 , inputCommitmentTypeProcessTypes = Set.empty identity
                 , currentSeed = newSeed
               }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map
                     (\t ->
                         List.singleton <|
@@ -256,7 +259,7 @@ update msg model =
                     ( { model
                         | currentSeed = newSeed
                       }
-                    , Task.perform StoreEvents <|
+                    , Task.perform StoreEventsToSend <|
                         Task.map
                             (\t ->
                                 List.singleton <|
@@ -273,11 +276,40 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        Msg.StoreEvents events ->
-            ( { model | esstatus = ESStoring }, ES.storeEvents (Encode.list ES.encode events) )
+        Msg.StoreEventsToSend events ->
+            ( { model | esstatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
 
-        Msg.EventsStored event ->
-            ( { model | lastEventTime = getTime event, esstatus = ESIdle }, ES.sendEvents <| Encode.encode 0 event )
+        Msg.EventsStoredTosend events ->
+            ( { model
+                -- Maybe unuseful
+                | lastEventTime =
+                    events
+                        |> ES.decodelist
+                        |> List.map (getTime >> posixToMillis)
+                        |> List.maximum
+                        -- FIXME why 1?
+                        |> Maybe.withDefault 1
+                        |> millisToPosix
+                , esstatus = ESIdle
+              }
+            , ES.sendEvents <| Encode.encode 0 events
+            )
+
+        Msg.EventsStored events ->
+            ( { model
+                -- Maybe unuseful
+                | lastEventTime =
+                    events
+                        |> ES.decodelist
+                        |> List.map (getTime >> posixToMillis)
+                        |> List.maximum
+                        -- FIXME why 1?
+                        |> Maybe.withDefault 1
+                        |> millisToPosix
+                , esstatus = ESIdle
+              }
+            , ES.readEvents Encode.null
+            )
 
         Msg.EventsSent status ->
             case decodeValue Decode.string status of
@@ -300,7 +332,7 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
             in
             ( { model | currentSeed = newSeed }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map (\t -> List.singleton <| EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) Time.now
             )
 
@@ -313,7 +345,7 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
             in
             ( { model | currentSeed = newSeed }
-            , Task.perform StoreEvents <|
+            , Task.perform StoreEventsToSend <|
                 Task.map (\t -> List.singleton <| CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) Time.now
             )
 
@@ -404,6 +436,7 @@ subscriptions _ =
     Sub.batch
         [ sendStatus Msg.EventsSent
         , eventsReader Msg.EventsRead
+        , eventsStoredToSend Msg.EventsStoredTosend
         , eventsStored Msg.EventsStored
         , eventsReceiver Msg.EventsReceived
         ]

@@ -1,23 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Network.Wai ( responseLBS, Application, Request (requestBody), responseFile, pathInfo, rawPathInfo )
-import Network.HTTP.Types ( status200, status404 )
-import Network.Wai.Handler.Warp (run)
-import Data.Maybe (Maybe(Nothing))
-import qualified Data.Text as T (unpack, pack, Text, split, append)
+import Control.Concurrent (forkIO, newChan, Chan, writeChan, readChan, dupChan, MVar, newMVar, takeMVar, putMVar)
+import Control.Exception (fromException, SomeException (SomeException), catch)
+import Control.Monad (forever, when)
+import Control.Monad.Fix (fix)
+import Data.Function ((&))
 import Data.List ()
+import Data.Maybe (Maybe(Nothing))
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import Network.HTTP.Types ( status200, status404 )
+import Network.Wai ( responseLBS, Application, Request (requestBody), responseFile, pathInfo, rawPathInfo )
+import Network.Wai.Handler.Warp (run)
+import Network.Wai.Handler.WebSockets (websocketsOr)
+import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, PendingConnection, Connection)
+import System.Posix.Internals (puts)
+import Text.JSON ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.ByteString as BS (pack, unpack, ByteString, append)
 import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import Data.Function ((&))
-import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, Connection)
-import Control.Monad (forever, when)
-import Control.Exception (fromException, SomeException (SomeException), catch)
-import Text.JSON
-    ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.Text
-import System.Posix.Internals (puts)
+import qualified Data.Text as T (unpack, pack, Text, split, append)
 import qualified GHC.Num as String
 --import Data.ByteString (putStrLn)
 
@@ -31,13 +32,18 @@ contentType filename = case reverse $ T.split (=='.') filename of
     _ -> "raw"
 
 
-handleMessage :: Connection ->  String -> IO ()
-handleMessage conn msg = do
-    sendLatestMessages conn msg
+handleMessage :: Connection ->  Chan Msg -> Msg -> IO ()
+-- handle incoming message
+handleMessage conn chan msg = do
+    let (numClient, message) = msg
     -- first store the msg in the event store
-    appendFile eventstorepath msg
-    -- then if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-    -- otherwise, send the msg back to the central event store so that it be handled by other microservices.
+    appendFile eventstorepath message
+    -- if the message is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
+    sendLatestMessages conn message
+    -- send the message to other connected clients
+    print $ "Writing to the chan as client " ++ (show numClient)
+    writeChan chan msg
+    -- TODO send the msg back to the central event store so that it be handled by other microservices.
 
 
 getStringVal :: String -> JSValue -> Result String
@@ -96,18 +102,39 @@ sendLatestMessages conn msg =
         print lastEventTime
 
 
+type Msg = (Int, String)
 
-wsApp :: ServerApp
-wsApp pending_conn = do
-        conn <- acceptRequest pending_conn
-        --sendTextData conn ("Hello, client!" :: T.Text)
-        forever $ do
-            msg <- receiveDataMessage conn
-            let message = (case msg of
-                    Text bs (Just text) -> LBS.unpack bs
-                    Text bs Nothing -> LBS.unpack bs
-                    Binary bs -> LBS.unpack bs) ++ "\n"
-                in handleMessage conn message
+
+type WSState = MVar Int
+
+
+wsApp :: Chan Msg -> WSState -> ServerApp
+wsApp chan wsstate pending_conn = do
+    chan <- dupChan chan
+    -- accept a new connexion
+    conn <- acceptRequest pending_conn
+    -- increment the sequence of clients
+    numClient <- takeMVar wsstate
+    putMVar wsstate (numClient + 1)
+    print $ "Client " ++ (show numClient) ++ " connecting"
+    -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
+    forkIO $ fix $ (\loop -> do
+        (num, msg) <- readChan chan
+        when (num/=numClient && (getStringValue "type" msg) /= "ConnectionInitiated")
+            $ print $ "Read msg on channel from client " ++ (show num) ++ "... sending to client " ++ (show numClient) ++ " through WS"
+        when (num/=numClient && (getStringValue "type" msg) /= "ConnectionInitiated")
+            $ sendTextData conn (T.pack msg :: T.Text)
+        loop)
+    -- loop on the handling of messages incoming through websocket
+    forever $ do
+        message <- receiveDataMessage conn
+        print $ "Received string from WS from client " ++ (show numClient) ++ ". Handling it"
+        let msg = (case message of
+                Text bs (Just text) -> LBS.unpack bs
+                Text bs Nothing -> LBS.unpack bs
+                Binary bs -> LBS.unpack bs) ++ "\n"
+            in handleMessage conn chan (numClient, msg)
+
 
 
 
@@ -132,11 +159,14 @@ httpApp request respond = do
         _ -> responseFile status200 [("Content-Type", "text/html")] ("../build/index.html"::String) Nothing
 
 
-app :: Application
-app = websocketsOr defaultConnectionOptions wsApp httpApp
+
+app :: Chan Msg -> WSState -> Application
+app chan wsstate = websocketsOr defaultConnectionOptions (wsApp chan wsstate) httpApp
 
 
 main :: IO ()
 main = do
     putStrLn "http://localhost:8080/"
-    run 8080 app
+    wsstate <- newMVar 0
+    chan <- newChan
+    run 8080 $ app chan wsstate

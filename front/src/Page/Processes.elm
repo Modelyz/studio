@@ -4,7 +4,7 @@ import Browser exposing (Document)
 import DictSet
 import ES
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
+import Html.Attributes exposing (attribute, class, href, id, src, width)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Page.Loading as Loading
@@ -55,7 +55,7 @@ viewThumbnail : Process -> Html Msg
 viewThumbnail p =
     div [ class "column is-one-quarter" ]
         [ a [ href <| "/process/" ++ Uuid.toString p.uuid ]
-            [ div [ class "box" ]
+            [ div [ class "box", id <| Uuid.toString p.uuid ]
                 [ text "process"
                 , br [] []
                 , text <| Uuid.toString p.uuid

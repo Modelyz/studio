@@ -47,59 +47,77 @@ const getRandomInts = (n) => {
 
 /**** run Elm ****/
 const randInts = getRandomInts(5);
-const flags = [randInts[0], randInts.slice(1)]
+const flags = [randInts[0], randInts.slice(1)];
 var app = Elm.Main.init({flags:flags});
 
 /**** subscribe to Ports ****/
 
+
+
+
 /* store an event to IDB */
-app.ports.storeEvents.subscribe(function(events) {
-    let request = window.indexedDB.open('eventstore', 1);
-    request.onsuccess = function(e) {
-        console.log("open IDB successful");
-        const db = e.target.result;
-        const transaction = db.transaction(['events'], 'readwrite');
-        transaction.oncomplete = function(e) {
-            console.log("...transaction complete")
-        }
-        transaction.onerror = function(e) {
-            alert("transaction error:" + transaction.error) // FIXME
-        }
-        events.forEach(function(event) {
-            console.log("Adding event to IDB : " + event)
-            const addrequest = transaction.objectStore('events').add(event)
-            addrequest.onsuccess = (e) => {
-                console.log('...event successfully added to IDB...')
-                app.ports.eventsStored.send(event)
-                console.log("...Success message sent back from JS to Elm")
+const store = function(send) {
+    console.log("Storing events, send= " + send)
+    return function(events) {
+        let request = window.indexedDB.open('eventstore', 1);
+        request.onsuccess = function(e) {
+            console.log("open IDB successful");
+            const db = e.target.result;
+            const transaction = db.transaction(['events'],'readwrite');
+            transaction.oncomplete = function(e) {
+                console.log("...transaction complete")
             }
-            addrequest.onerror = (e) => {
-                addrequest.transaction.abort()
-                alert("...IDB write failed: " + addrequest.error); // FIXME
+            transaction.onerror = function(e) {
+                alert("IndexedDB transaction error while storing events:" + transaction.error) // FIXME send error to elm
             }
-        })
-        db.close()
-    }
-    request.onerror = (e) => { alert("Open IDB failed: " + request.error); /* FIXME */ }
-});
+            events.forEach(function(event) {
+                console.log("Adding event to IDB : " + event)
+                const addrequest = transaction.objectStore('events').add(event)
+                addrequest.onsuccess = (e) => {
+                    console.log('...event successfully added to IDB...')
+                    if (send) {
+                        app.ports.eventsStoredToSend.send(event);
+                        console.log("...Success message (with send) sent back from JS to Elm")
+                    } else {
+                        app.ports.eventsStored.send(event);
+                        console.log("...Success message sent back from JS to Elm")
+                    }
+                }
+                addrequest.onerror = (e) => {
+                    addrequest.transaction.abort()
+                    alert("IndexedDB store request error: " + addrequest.error); // FIXME
+                }
+            })
+            db.close()
+        }
+        request.onerror = (e) => {
+            alert("IndexedDB could not be opened to store events: " + request.error); // FIXME
+        }
+    };
+};
+/* store an event to IDB */
+app.ports.storeEvents.subscribe(store(false));
+/* store events to IDB then tell to send them */
+app.ports.storeEventsToSend.subscribe(store(true));
 
 /* read events from IDB */
 app.ports.readEvents.subscribe(function() {
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
-            console.log("Sending events from JS to Elm...")
-        const openCursor = e.target.result.transaction('events', 'readonly')
-                      .objectStore('events').getAll();
+            console.log("Sending events from JS to Elm...");
+        const openCursor = e.target.result.transaction('events','readonly').objectStore('events').getAll();
         openCursor.onsuccess = e => {
             const events = e.target.result;
-            app.ports.eventsReader.send(events)
-            console.log("...successfully sent all events from JS to Elm")
+            app.ports.eventsReader.send(events);
+            console.log("...successfully sent all events from JS to Elm");
         }
         openCursor.onerror = () => {
-            alert("...transaction error:" + transaction.error) // FIXME
+            alert("IndexedDB transaction error while reading events:" + transaction.error); // FIXME
         }
     }
-    request.onerror = (e) => { alert("open IDB failed: " + request.error); /* FIXME */ }
+    request.onerror = (e) => {
+        alert("IndexedDB could not be opened to read events: " + request.error); // FIXME
+    }
 });
 
 /**** Websocket ****/
@@ -116,7 +134,7 @@ app.ports.sendEvents.subscribe(function(message) {
     } catch(error) { app.ports.sendStatus.send(error); }
 });
 
-/* get events from WS */
+/* receive events from WS */
 socket.addEventListener("message", function(event) {
     console.log("JS receiving events from WS and transmitting to Elm: " + event);
     app.ports.eventsReceiver.send(event.data);

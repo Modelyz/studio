@@ -1,9 +1,8 @@
 #!/bin/bash
 
-pushd front
-./build.sh $1
-popd
+pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-pushd back
-./build.sh $1
+front/build.sh
+back/build.sh
+
 popd

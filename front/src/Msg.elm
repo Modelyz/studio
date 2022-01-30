@@ -14,8 +14,9 @@ type Msg
     = None
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
-    | StoreEvents (List ES.Event)
+    | StoreEventsToSend (List ES.Event)
     | EventsStored Json.Encode.Value
+    | EventsStoredTosend Json.Encode.Value
     | EventsRead Json.Encode.Value
     | InputProcessName String
     | ProcessTypeChanged ProcessType

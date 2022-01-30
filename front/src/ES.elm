@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents, storeEventsToSend)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -30,10 +30,17 @@ port readEvents : Encode.Value -> Cmd msg
 
 
 
--- store events to IDB
+-- store events to IDB then send to WS
 
 
 port storeEvents : Encode.Value -> Cmd msg
+
+
+
+-- only store to IDB
+
+
+port storeEventsToSend : Encode.Value -> Cmd msg
 
 
 
@@ -215,47 +222,42 @@ compare event =
             posixToMillis e.posixtime
 
 
-getTime : Decode.Value -> Time.Posix
+getTime : Event -> Time.Posix
 getTime event =
     -- Maybe we could avoid redecoding after storing??
-    case decodeValue decoder event of
-        Ok ev ->
-            case ev of
-                ProcessTypeChanged pt ->
-                    pt.posixtime
+    case event of
+        ProcessTypeChanged pt ->
+            pt.posixtime
 
-                ProcessTypeRemoved pt ->
-                    pt.posixtime
+        ProcessTypeRemoved pt ->
+            pt.posixtime
 
-                ProcessAdded p ->
-                    p.posixtime
+        ProcessAdded p ->
+            p.posixtime
 
-                CommitmentTypeAdded ct ->
-                    ct.posixtime
+        CommitmentTypeAdded ct ->
+            ct.posixtime
 
-                CommitmentTypeRemoved ct ->
-                    ct.posixtime
+        CommitmentTypeRemoved ct ->
+            ct.posixtime
 
-                CommitmentAdded c ->
-                    c.posixtime
+        CommitmentAdded c ->
+            c.posixtime
 
-                EventTypeAdded et ->
-                    et.posixtime
+        EventTypeAdded et ->
+            et.posixtime
 
-                EventTypeRemoved et ->
-                    et.posixtime
+        EventTypeRemoved et ->
+            et.posixtime
 
-                EventAdded e ->
-                    e.posixtime
+        EventAdded e ->
+            e.posixtime
 
-                LinkedEventTypeToProcessType e ->
-                    e.posixtime
+        LinkedEventTypeToProcessType e ->
+            e.posixtime
 
-                ConnectionInitiated e ->
-                    e.posixtime
-
-        Err err ->
-            millisToPosix 0
+        ConnectionInitiated e ->
+            e.posixtime
 
 
 getProcess : State -> String -> Maybe Process
@@ -564,6 +566,11 @@ encode event =
                 , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
                 , ( "sessionUuid", Uuid.encode e.sessionUuid )
                 ]
+
+
+decodelist : Decode.Value -> List Event
+decodelist =
+    Result.withDefault [] << decodeValue (Decode.list decoder)
 
 
 decoder : Decoder Event
