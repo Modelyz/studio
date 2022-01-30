@@ -39,7 +39,7 @@ handleMessage conn chan msg = do
     -- first store the msg in the event store
     appendFile eventstorepath message
     -- if the message is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-    sendLatestMessages conn message
+    sendLatestMessages conn message numClient
     -- send the message to other connected clients
     print $ "Writing to the chan as client " ++ (show numClient)
     writeChan chan msg
@@ -91,15 +91,14 @@ sendMessagesFrom conn date = do
 
 
 
-sendLatestMessages :: Connection ->  String -> IO()
-sendLatestMessages conn msg =
+sendLatestMessages :: Connection ->  String -> Int -> IO()
+sendLatestMessages conn msg numClient =
     let lastEventTime = getIntegerValue "lastEventTime" msg
     in do
         case decode msg >>= getStringVal "type" of
             Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn lastEventTime
             Error str -> putStrLn ("Error: " ++ str)
-        putStr "LastEventTime="
-        print lastEventTime
+        print $ "Sent all latest messages to client " ++ (show numClient) ++ " from LastEventTime=" ++ (show lastEventTime)
 
 
 type Msg = (Int, String)

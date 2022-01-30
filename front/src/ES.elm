@@ -362,6 +362,7 @@ aggregate event state =
         ConnectionInitiated e ->
             { state
                 | sessionUuid = Just e.sessionUuid
+                , lastEventTime = e.posixtime
             }
 
 

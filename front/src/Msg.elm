@@ -33,5 +33,4 @@ type Msg
     | DeleteEventType EventType
     | NewEvent Process String
     | EventsSent Json.Encode.Value
-    | InitiateConnection
     | EventsReceived String

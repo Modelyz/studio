@@ -93,12 +93,23 @@ update msg model =
                             List.foldr ES.aggregate model (List.reverse events)
                     in
                     if firstRead then
-                        ( { newmodel | wsstatus = WSConnecting, esstatus = ESIdle }
+                        ( { newmodel
+                            | wsstatus = WSConnecting
+                            , esstatus = ESIdle
+                          }
                         , initiateConnection newUuid model
                         )
 
                     else
-                        ( { newmodel | esstatus = ESIdle }
+                        ( { newmodel
+                            | esstatus = ESIdle
+                            , lastEventTime =
+                                events
+                                    |> List.map (getTime >> posixToMillis)
+                                    |> List.maximum
+                                    |> Maybe.withDefault 0
+                                    |> millisToPosix
+                          }
                         , Cmd.none
                         )
 
@@ -281,32 +292,14 @@ update msg model =
 
         Msg.EventsStoredTosend events ->
             ( { model
-                -- Maybe unuseful
-                | lastEventTime =
-                    events
-                        |> ES.decodelist
-                        |> List.map (getTime >> posixToMillis)
-                        |> List.maximum
-                        -- FIXME why 1?
-                        |> Maybe.withDefault 1
-                        |> millisToPosix
-                , esstatus = ESIdle
+                | esstatus = ESIdle
               }
             , ES.sendEvents <| Encode.encode 0 events
             )
 
         Msg.EventsStored events ->
             ( { model
-                -- Maybe unuseful
-                | lastEventTime =
-                    events
-                        |> ES.decodelist
-                        |> List.map (getTime >> posixToMillis)
-                        |> List.maximum
-                        -- FIXME why 1?
-                        |> Maybe.withDefault 1
-                        |> millisToPosix
-                , esstatus = ESIdle
+                | esstatus = ESIdle
               }
             , ES.readEvents Encode.null
             )
@@ -354,18 +347,6 @@ update msg model =
 
         Msg.InputEventTypeProcessType pt ->
             ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Cmd.none )
-
-        Msg.InitiateConnection ->
-            let
-                ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.currentSeed
-            in
-            ( { model
-                | wsstatus = WSLoading
-                , sessionUuid = Just newUuid
-              }
-            , initiateConnection newUuid model
-            )
 
         Msg.EventsReceived ms ->
             case decodeString (Decode.list ES.decoder) <| "[" ++ (ms |> String.trim |> String.split "\n" |> String.join ",") ++ "]" of

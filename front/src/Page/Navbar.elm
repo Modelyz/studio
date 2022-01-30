@@ -72,7 +72,6 @@ view model =
                         False ->
                             []
                    )
-        , button [ onClick InitiateConnection, class "button" ] [ text "Cnx" ] -- TODO remove and replace with an automatic connection
         , div [ class "navbar-item" ] [ text <| "WSStatus=" ++ wsstatus2text model.wsstatus ]
         , div [ class "navbar-item" ] [ text <| "ESStatus=" ++ esstatus2text model.esstatus ]
         , div [ class "navbar-item" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
