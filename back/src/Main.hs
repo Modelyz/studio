@@ -12,7 +12,7 @@ import Network.HTTP.Types ( status200, status404 )
 import Network.Wai ( responseLBS, Application, Request (requestBody), responseFile, pathInfo, rawPathInfo )
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, PendingConnection, Connection)
+import Network.WebSockets (withPingThread, ServerApp, acceptRequest, sendTextData, defaultConnectionOptions, receiveDataMessage, DataMessage(Text, Binary), send, PendingConnection, Connection)
 import System.Posix.Internals (puts)
 import Text.JSON ( decode, valFromObj, Result(..), JSValue(JSObject) )
 import qualified Data.ByteString as BS (pack, unpack, ByteString, append)
@@ -111,7 +111,7 @@ wsApp chan wsstate pending_conn = do
             $ sendTextData conn (T.pack msg :: T.Text)
         loop)
     -- loop on the handling of messages incoming through websocket
-    forever $ do
+    withPingThread conn 30 (return ()) $ forever $ do
         message <- receiveDataMessage conn
         print $ "Received string from WS from client " ++ (show numClient) ++ ". Handling it"
         let msg = (case message of
