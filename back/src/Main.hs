@@ -32,20 +32,6 @@ contentType filename = case reverse $ T.split (=='.') filename of
     _ -> "raw"
 
 
-handleMessage :: Connection ->  Chan Msg -> Msg -> IO ()
--- handle incoming message
-handleMessage conn chan msg = do
-    let (numClient, message) = msg
-    -- first store the msg in the event store
-    appendFile eventstorepath message
-    -- if the message is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-    sendLatestMessages conn message numClient
-    -- send the message to other connected clients
-    print $ "Writing to the chan as client " ++ (show numClient)
-    writeChan chan msg
-    -- TODO send the msg back to the central event store so that it be handled by other microservices.
-
-
 getStringVal :: String -> JSValue -> Result String
 getStringVal key (JSObject obj) = valFromObj key obj
 getStringVal key _ = Error "Error: JSON message is not an object"
@@ -129,10 +115,17 @@ wsApp chan wsstate pending_conn = do
         message <- receiveDataMessage conn
         print $ "Received string from WS from client " ++ (show numClient) ++ ". Handling it"
         let msg = (case message of
-                Text bs (Just text) -> LBS.unpack bs
-                Text bs Nothing -> LBS.unpack bs
+                Text bs _ -> LBS.unpack bs
                 Binary bs -> LBS.unpack bs) ++ "\n"
-            in handleMessage conn chan (numClient, msg)
+          in do
+                -- first store the msg in the event store
+                appendFile eventstorepath msg
+                -- if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
+                sendLatestMessages conn msg numClient
+                -- send the msg to other connected clients
+                print $ "Writing to the chan as client " ++ (show numClient)
+                writeChan chan (numClient, msg)
+                -- TODO send the msg back to the central event store so that it be handled by other microservices.
 
 
 
@@ -158,14 +151,9 @@ httpApp request respond = do
         _ -> responseFile status200 [("Content-Type", "text/html")] ("../build/index.html"::String) Nothing
 
 
-
-app :: Chan Msg -> WSState -> Application
-app chan wsstate = websocketsOr defaultConnectionOptions (wsApp chan wsstate) httpApp
-
-
 main :: IO ()
 main = do
     putStrLn "http://localhost:8080/"
     wsstate <- newMVar 0
     chan <- newChan
-    run 8080 $ app chan wsstate
+    run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan wsstate) httpApp
