@@ -2,17 +2,17 @@
 
 import           Control.Concurrent             (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVar, readChan,
                                                  takeMVar, writeChan)
-import           Control.Exception          (SomeException (SomeException), catch, fromException)
-import           Control.Monad              (forever, when)
-import           Control.Monad.Fix          (fix)
-import qualified Data.ByteString            as BS (ByteString, append, pack, unpack)
-import qualified Data.ByteString.Lazy.Char8 as LBS (unpack)
-import           Data.Function              ((&))
+import           Control.Exception              (SomeException (SomeException), catch, fromException)
+import           Control.Monad                  (forever, when)
+import           Control.Monad.Fix              (fix)
+import qualified Data.ByteString                as BS (append, intercalate, pack, unpack)
+import qualified Data.ByteString.Lazy.Char8     as LBS (intercalate, unpack)
+import           Data.Function                  ((&))
 import           Data.List                      ()
 import           Data.Maybe                     (Maybe (Nothing))
 import qualified Data.Text
-import qualified Data.Text                      as T (Text, append, pack, split, unpack)
-import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
+import qualified Data.Text                      as T (Text, append, intercalate, pack, split, unpack)
+import           Data.Text.Encoding             (decodeUtf8, encodeUtf8, streamDecodeUtf8)
 import qualified GHC.Num                        as String
 import           Network.HTTP.Types             (status200, status404)
 import           Network.Wai                    (Application, Request (requestBody), pathInfo, rawPathInfo,
@@ -20,11 +20,10 @@ import           Network.Wai                    (Application, Request (requestBo
 import           Network.Wai.Handler.Warp       (run)
 import           Network.Wai.Handler.WebSockets (websocketsOr)
 import           Network.WebSockets             (Connection, DataMessage (Binary, Text), PendingConnection, ServerApp,
-                                                 acceptRequest, defaultConnectionOptions, receiveDataMessage, send,
-                                                 sendTextData, withPingThread)
+                                                 acceptRequest, defaultConnectionOptions, fromLazyByteString,
+                                                 receiveDataMessage, send, sendTextData, withPingThread)
 import           System.Posix.Internals         (puts)
 import           Text.JSON                      (JSValue (JSObject), Result (..), decode, valFromObj)
---import Data.ByteString (putStrLn)
 
 eventstorepath :: FilePath
 eventstorepath = "eventstore.txt"
@@ -69,10 +68,9 @@ getStringValue key msg =
 sendMessagesFrom :: Connection -> Integer -> IO()
 sendMessagesFrom conn date = do
     str <- catch (readFile eventstorepath) handleMissing
-    let msgs = (unlines . skipUntil date . lines) str
+    let msgs = ((T.intercalate "\n") . (fmap T.pack) . skipUntil date . lines) str
         in do
-            sendTextData conn (T.pack msgs :: T.Text)
-            putStrLn msgs
+            sendTextData conn msgs
     where
         handleMissing :: SomeException -> IO String
         handleMissing (SomeException e) =
@@ -105,30 +103,32 @@ wsApp chan wsstate pending_conn = do
     -- increment the sequence of clients
     numClient <- takeMVar wsstate
     putMVar wsstate (numClient + 1)
-    print $ "Client " ++ (show numClient) ++ " connecting"
+    print $ "Client " ++ show numClient ++ " connecting"
     -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
     forkIO $ fix $ (\loop -> do
         (num, msg) <- readChan chan
-        when (num/=numClient && (getStringValue "type" msg) /= "ConnectionInitiated")
-            $ print $ "Read msg on channel from client " ++ (show num) ++ "... sending to client " ++ (show numClient) ++ " through WS"
-        when (num/=numClient && (getStringValue "type" msg) /= "ConnectionInitiated")
+        when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated")
+            $ print $ "Read msg on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
+        when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated")
             $ sendTextData conn (T.pack msg :: T.Text)
         loop)
     -- loop on the handling of messages incoming through websocket
     withPingThread conn 30 (return ()) $ forever $ do
         message <- receiveDataMessage conn
-        print $ "Received string from WS from client " ++ (show numClient) ++ ". Handling it"
-        let msg = (case message of
-                Text bs _ -> LBS.unpack bs
-                Binary bs -> LBS.unpack bs) ++ "\n"
+        print $ "Received string from WS from client " ++ show numClient ++ ". Handling it : " ++ show message
+        let
+            msg = (case message of
+                Text bs _ -> (fromLazyByteString bs::T.Text)
+                Binary bs -> (fromLazyByteString bs::T.Text)
+                ) `T.append` "\n"
           in do
                 -- first store the msg in the event store
-                appendFile eventstorepath msg
+                appendFile eventstorepath $ T.unpack msg
                 -- if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-                sendLatestMessages conn msg numClient
+                sendLatestMessages conn (T.unpack msg) numClient
                 -- send the msg to other connected clients
                 print $ "Writing to the chan as client " ++ (show numClient)
-                writeChan chan (numClient, msg)
+                writeChan chan (numClient, T.unpack msg)
                 -- TODO send the msg back to the central event store so that it be handled by other microservices.
 
 
@@ -137,7 +137,7 @@ wsApp chan wsstate pending_conn = do
 httpApp :: Application
 httpApp request respond = do
     rawPathInfo request
-        & decodeUtf8 
+        & decodeUtf8
         & T.append "Request "
         & T.unpack
         & putStrLn

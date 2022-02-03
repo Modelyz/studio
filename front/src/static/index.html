@@ -126,7 +126,7 @@ var socket = new WebSocket('ws://localhost:8080/');
 /* send events to WS */
 app.ports.sendEvents.subscribe(function(message) {
     try {
-        console.log("Sending event to WS...")
+        console.log("Sending event to WS... : " + message)
         socket.send(message);
         app.ports.sendStatus.send("OK");
         console.log("...sent event to WS")

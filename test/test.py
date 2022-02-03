@@ -69,11 +69,11 @@ def test_sync_process_type(backend):
 
     # Create another event from chrome and check it appears on firefox w/o reloading
     input_ = chrome.find_element(By.CLASS_NAME, "input")
-    input_.send_keys("BBBBBB" + Keys.ENTER)
-    box = chrome.find_element(By.ID, "BBBBBB")
-    assert box.text == "BBBBBB", "The Process Type has not been created on Chrome"
-    box = firefox.find_element(By.ID, "BBBBBB")
-    assert box.text == "BBBBBB", "The Process Type has not been created on Firefox"
+    input_.send_keys("Bééé" + Keys.ENTER)
+    box = chrome.find_element(By.ID, "Bééé")
+    assert box.text == "Bééé", "The Process Type has not been created on Chrome"
+    box = firefox.find_element(By.ID, "Bééé")
+    assert box.text == "Bééé", "The Process Type has not been created on Firefox"
 
     firefox.quit()
     chrome.quit()
