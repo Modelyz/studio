@@ -9,11 +9,15 @@ type ESStatus
 
 
 type WSStatus
-    = WSIdle
+    = WSOnline -- readyState 1: OPEN
+    | WSOffline -- readyState 3: CLOSED
+    | WSDisconnecting -- readyState 2: CLOSING
+    | WSConnecting -- readyState 0: CONNECTING
     | WSSendFailed String
     | WSReceiveFailed String
-    | WSLoading -- for instance, reading the ES from the MS through WS
-    | WSConnecting
+    | WSReceiving -- for instance, reading the ES from the MS through WS
+    | WSInit
+    | WSUnexpected
 
 
 esstatus2text : ESStatus -> String
@@ -23,7 +27,7 @@ esstatus2text status =
             "ESReading"
 
         ESReadFailed err ->
-            "ESReadFailed " ++ err
+            "ESReadFailed: " ++ err
 
         ESIdle ->
             "ESIdle"
@@ -35,17 +39,29 @@ esstatus2text status =
 wsstatus2text : WSStatus -> String
 wsstatus2text status =
     case status of
-        WSIdle ->
-            "WSIdle"
+        WSOnline ->
+            "WSOnline"
 
-        WSSendFailed s ->
-            "WSSendFailed" ++ s
+        WSOffline ->
+            "WSOffline: "
 
-        WSLoading ->
-            "WSLoading"
+        WSSendFailed err ->
+            "WSSendFailed: " ++ err
+
+        WSDisconnecting ->
+            "WSDisconnecting"
+
+        WSInit ->
+            "WSInit"
+
+        WSUnexpected ->
+            "WSUnexpected"
+
+        WSReceiving ->
+            "WSReceiving"
 
         WSReceiveFailed err ->
-            "WSReceiveFailed" ++ err
+            "WSReceiveFailed: " ++ err
 
         WSConnecting ->
             "WSConnecting"

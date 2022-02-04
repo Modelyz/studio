@@ -1,4 +1,4 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents, storeEventsToSend)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents, storeEventsToSend, wsConnect)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -48,6 +48,9 @@ port storeEventsToSend : Encode.Value -> Cmd msg
 
 
 port sendEvents : String -> Cmd msg
+
+
+port wsConnect : () -> Cmd msg
 
 
 
@@ -129,7 +132,8 @@ type alias State =
     , navkey : Nav.Key
     , route : Route
     , esstatus : ESStatus
-    , wsstatus : WSStatus -- TODO temporary. What if offline?
+    , wsstatus : WSStatus
+    , timeoutReconnect : Int
 
     -- input related
     , inputProcessType : ProcessType
@@ -164,7 +168,8 @@ new seed key route =
     , navkey = key
     , route = route
     , esstatus = ESReading
-    , wsstatus = WSIdle
+    , wsstatus = WSInit
+    , timeoutReconnect = 1
     , inputProcessType = { name = "" }
     , inputCommitmentType = ""
     , inputEventType = ""

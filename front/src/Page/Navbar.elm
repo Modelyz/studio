@@ -3,7 +3,7 @@ module Page.Navbar exposing (view)
 import DictSet
 import ES
 import Html exposing (..)
-import Html.Attributes exposing (attribute, class, classList, href)
+import Html.Attributes exposing (attribute, class, classList, href, id)
 import Html.Events exposing (onClick)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
@@ -72,9 +72,10 @@ view model =
                         False ->
                             []
                    )
-        , div [ class "navbar-item" ] [ text <| "WSStatus=" ++ wsstatus2text model.wsstatus ]
-        , div [ class "navbar-item" ] [ text <| "ESStatus=" ++ esstatus2text model.esstatus ]
-        , div [ class "navbar-item" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
+        , div [ class "navbar-item", id "WSStatus" ] [ text <| wsstatus2text model.wsstatus ]
+        , div [ class "navbar-item", id "ESStatus" ] [ text <| esstatus2text model.esstatus ]
+        , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
+        , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
         , a
             [ attribute "role" "button"
             , class "navbar-burger"

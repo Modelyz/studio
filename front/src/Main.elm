@@ -16,6 +16,7 @@ import Page.ProcessType
 import Page.ProcessTypes
 import Page.Processes
 import Prng.Uuid as Uuid exposing (generator)
+import Process
 import REA.Commitment as C
 import REA.CommitmentType as CT
 import REA.Event as E
@@ -34,6 +35,10 @@ type alias Model =
     ES.State
 
 
+
+-- TODO gather ports in a single typed one
+
+
 port eventsReader : (Encode.Value -> msg) -> Sub msg
 
 
@@ -43,7 +48,16 @@ port eventsStored : (Encode.Value -> msg) -> Sub msg
 port eventsStoredToSend : (Encode.Value -> msg) -> Sub msg
 
 
-port sendStatus : (Encode.Value -> msg) -> Sub msg
+port wsSendStatus : (Encode.Value -> msg) -> Sub msg
+
+
+port wsClose : (Encode.Value -> msg) -> Sub msg
+
+
+port wsError : (Encode.Value -> msg) -> Sub msg
+
+
+port wsOpened : (Encode.Value -> msg) -> Sub msg
 
 
 port eventsReceiver : (String -> msg) -> Sub msg
@@ -72,17 +86,80 @@ initiateConnection uuid model =
             Time.now
 
 
+wsReadyState2Status : Decode.Value -> WSStatus
+wsReadyState2Status value =
+    let
+        s =
+            decodeValue Decode.int value
+                |> Result.withDefault 9
+    in
+    case s of
+        0 ->
+            WSConnecting
+
+        1 ->
+            WSOnline
+
+        2 ->
+            WSDisconnecting
+
+        3 ->
+            WSOffline
+
+        _ ->
+            WSUnexpected
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Msg.None ->
             ( model, Cmd.none )
 
+        Msg.WSConnect _ ->
+            ( { model | wsstatus = WSConnecting }, ES.wsConnect () )
+
+        Msg.WSConnected st ->
+            let
+                wsstatus =
+                    wsReadyState2Status st
+
+                timeoutReconnect =
+                    if wsstatus == WSOnline then
+                        max 1 <| remainderBy 4 (posixToMillis model.lastEventTime)
+
+                    else
+                        model.timeoutReconnect
+
+                ( newUuid, newSeed ) =
+                    Random.step Uuid.generator model.currentSeed
+
+                cmd =
+                    if wsstatus == WSOnline then
+                        initiateConnection newUuid model
+
+                    else
+                        Cmd.none
+            in
+            ( { model | wsstatus = wsstatus, timeoutReconnect = timeoutReconnect }, cmd )
+
+        Msg.WSError err ->
+            ( { model
+                | wsstatus = WSOffline
+              }
+            , Cmd.none
+            )
+
+        Msg.WSDisconnected err ->
+            ( { model
+                | timeoutReconnect = min 30 (model.timeoutReconnect + 1)
+                , wsstatus = WSOffline
+              }
+            , Task.perform WSConnect (Process.sleep <| toFloat <| 1000 * model.timeoutReconnect)
+            )
+
         Msg.EventsRead results ->
             let
-                firstRead =
-                    posixToMillis model.lastEventTime == 0
-
                 ( newUuid, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
@@ -92,26 +169,29 @@ update msg model =
                         newmodel =
                             List.foldr ES.aggregate model (List.reverse events)
                     in
-                    if firstRead then
-                        ( { newmodel
-                            | wsstatus = WSConnecting
-                            , esstatus = ESIdle
-                          }
-                        , initiateConnection newUuid model
-                        )
+                    ( { newmodel
+                        | esstatus = ESIdle
+                        , wsstatus =
+                            case model.wsstatus of
+                                WSInit ->
+                                    WSConnecting
 
-                    else
-                        ( { newmodel
-                            | esstatus = ESIdle
-                            , lastEventTime =
-                                events
-                                    |> List.map (getTime >> posixToMillis)
-                                    |> List.maximum
-                                    |> Maybe.withDefault 0
-                                    |> millisToPosix
-                          }
-                        , Cmd.none
-                        )
+                                _ ->
+                                    model.wsstatus
+                        , lastEventTime =
+                            events
+                                |> List.map (getTime >> posixToMillis)
+                                |> List.maximum
+                                |> Maybe.withDefault 0
+                                |> millisToPosix
+                      }
+                    , case model.wsstatus of
+                        WSInit ->
+                            ES.wsConnect ()
+
+                        _ ->
+                            Cmd.none
+                    )
 
                 Err str ->
                     ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
@@ -351,7 +431,7 @@ update msg model =
         Msg.EventsReceived ms ->
             case decodeString (Decode.list ES.decoder) <| "[" ++ (ms |> String.trim |> String.split "\n" |> String.join ",") ++ "]" of
                 Ok messages ->
-                    ( { model | wsstatus = WSIdle, esstatus = ESStoring }
+                    ( { model | wsstatus = WSOnline, esstatus = ESStoring }
                     , ES.storeEvents <|
                         Encode.list ES.encode messages
                     )
@@ -415,11 +495,14 @@ onUrlChange =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ sendStatus Msg.EventsSent
+        [ wsSendStatus Msg.EventsSent
         , eventsReader Msg.EventsRead
         , eventsStoredToSend Msg.EventsStoredTosend
         , eventsStored Msg.EventsStored
         , eventsReceiver Msg.EventsReceived
+        , wsOpened Msg.WSConnected
+        , wsClose Msg.WSDisconnected
+        , wsError Msg.WSError
         ]
 
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 BUILD="cabal build"
+DEVEL='--ghc-options="-Wall"'
 OPTIMIZE=" -O2 --enable-split-objs --enable-executable-stripping --enable-library-stripping --enable-executable-dynamic"
 DIR="dist-newstyle/build/x86_64-linux/ghc-8.8.4/ms-0.1.0.0/x/ms/"
 
@@ -18,7 +19,7 @@ elif [ "$1" == "-o" ]; then
     EXEC="$DIR/opt/build/ms/ms"
     cp -af $EXEC ../build/
 else
-    $BUILD
+    $BUILD $DEVEL
     EXEC="$DIR/build/ms/ms"
     cp -af $EXEC ../build/
 fi

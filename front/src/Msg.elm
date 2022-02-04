@@ -12,6 +12,10 @@ import Url exposing (Url)
 
 type Msg
     = None
+    | WSDisconnected Json.Encode.Value
+    | WSError Json.Encode.Value
+    | WSConnect ()
+    | WSConnected Json.Encode.Value
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
     | StoreEventsToSend (List ES.Event)
