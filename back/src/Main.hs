@@ -18,7 +18,7 @@ import Control.Monad.Fix (fix)
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import Data.List ()
-import qualified Data.Text as T (Text, append, intercalate, pack, split, unpack)
+import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Event (Event, getIntegerValue, getStringVal, getStringValue, skipUntil)
 import Network.HTTP.Types (status200)
@@ -64,9 +64,9 @@ contentType filename = case reverse $ T.split (== '.') filename of
 sendMessagesFrom :: Connection -> NumClient -> IO ()
 sendMessagesFrom conn date = do
   str <- catch (readFile es) handleMissing
-  let msgs = ((T.intercalate "\n") . (fmap T.pack) . skipUntil date . lines) str
+  let evs = ((T.intercalate "\n") . skipUntil date . T.lines) (T.pack str)
    in do
-        sendTextData conn msgs
+        sendTextData conn evs
   where
     handleMissing :: SomeException -> IO String
     handleMissing (SomeException _) =
@@ -76,7 +76,7 @@ sendLatestMessages :: Connection -> Event -> NumClient -> IO ()
 sendLatestMessages conn ev nc =
   let t = getIntegerValue "lastEventTime" ev
    in do
-        case decode ev >>= getStringVal "type" of
+        case decode (T.unpack ev) >>= getStringVal "type" of
           Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn t
           Error e -> putStrLn ("Error: " ++ e)
         print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show t)
@@ -99,7 +99,7 @@ wsApp chan st pending_conn = do
             when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
               print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
             when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
-              sendTextData conn (T.pack ev :: T.Text)
+              sendTextData conn ev
             loop
         )
   -- loop on the handling of messages incoming through websocket
@@ -117,10 +117,10 @@ wsApp chan st pending_conn = do
             -- first store the event in the event store
             appendFile es $ T.unpack ev
             -- if the event is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-            sendLatestMessages conn (T.unpack ev) nc
+            sendLatestMessages conn ev nc
             -- send the msg to other connected clients
             print $ "Writing to the chan as client " ++ (show nc)
-            writeChan chan' (nc, T.unpack ev)
+            writeChan chan' (nc, ev)
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.
 
