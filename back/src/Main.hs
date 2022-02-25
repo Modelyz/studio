@@ -20,6 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Event (getIntegerValue, getStringVal, getStringValue, skipUntil)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -51,30 +52,6 @@ contentType filename = case reverse $ T.split (== '.') filename of
   "css" : _ -> "css"
   "js" : _ -> "javascript"
   _ -> "raw"
-
-getStringVal :: String -> JSValue -> Result String
-getStringVal key (JSObject obj) = valFromObj key obj
-getStringVal _ _ = Error "Error: JSON message is not an object"
-
-getIntegerVal :: String -> JSValue -> Result Integer
-getIntegerVal key (JSObject obj) = valFromObj key obj
-getIntegerVal _ _ = Error "Error: JSON message is not an object"
-
-skipUntil :: Integer -> [String] -> [String]
-skipUntil limit =
-  filter (\m -> getIntegerValue "posixtime" m >= limit && getStringValue "type" m /= "ConnectionInitiated")
-
-getIntegerValue :: String -> String -> Integer
-getIntegerValue key msg =
-  case decode msg >>= getIntegerVal key of
-    Ok n -> n
-    Error _ -> 0
-
-getStringValue :: String -> String -> String
-getStringValue key msg =
-  case decode msg >>= getStringVal key of
-    Ok v -> v
-    Error s -> "Error: " ++ s
 
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
