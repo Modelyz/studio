@@ -44,6 +44,10 @@ import Network.WebSockets
   )
 import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
 
+type Msg = (Int, String)
+
+type WSState = MVar Int
+
 eventstorepath :: FilePath
 eventstorepath = "eventstore.txt"
 
@@ -74,10 +78,6 @@ sendLatestMessages conn msg numClient =
           Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn lastEventTime
           Error str -> putStrLn ("Error: " ++ str)
         print $ "Sent all latest messages to client " ++ (show numClient) ++ " from LastEventTime=" ++ (show lastEventTime)
-
-type Msg = (Int, String)
-
-type WSState = MVar Int
 
 wsApp :: Chan Msg -> WSState -> ServerApp
 wsApp chan wsstate pending_conn = do
