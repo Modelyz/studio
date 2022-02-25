@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (Event, getIntegerValue, getStringVal, getStringValue, skipUntil)
+import Event (Event, getIntegerValue, getStringVal, getStringValue, isAfter, isConnInit)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -64,7 +64,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 sendMessagesFrom :: Connection -> NumClient -> IO ()
 sendMessagesFrom conn date = do
   str <- catch (readFile es) handleMissing
-  let evs = ((T.intercalate "\n") . skipUntil date . T.lines) (T.pack str)
+  let evs = ((T.intercalate "\n") . filter (\ev -> isConnInit ev && isAfter date ev) . T.lines) (T.pack str)
    in do
         sendTextData conn evs
   where
@@ -74,12 +74,14 @@ sendMessagesFrom conn date = do
 
 sendLatestMessages :: Connection -> Event -> NumClient -> IO ()
 sendLatestMessages conn ev nc =
-  let t = getIntegerValue "lastEventTime" ev
-   in do
+  case getIntegerValue "lastEventTime" ev of
+    Just time ->
+      do
         case decode (T.unpack ev) >>= getStringVal "type" of
-          Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn t
+          Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn time
           Error e -> putStrLn ("Error: " ++ e)
-        print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show t)
+        print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show time)
+    Nothing -> do return ()
 
 wsApp :: Chan Msg -> WSState -> ServerApp
 wsApp chan st pending_conn = do
@@ -96,7 +98,7 @@ wsApp chan st pending_conn = do
       fix $
         ( \loop -> do
             (n, ev) <- readChan chan'
-            when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
+            when (n /= nc && not (isConnInit ev)) $
               print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
             when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
               sendTextData conn ev

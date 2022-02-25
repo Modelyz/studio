@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (Event, getIntegerValue, getStringVal, getStringValue, skipUntil) where
+module Event (Event, getIntegerValue, getStringVal, getStringValue, isConnInit, isAfter) where
 
 import qualified Data.Text as T (Text, unpack)
 import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
@@ -15,15 +15,14 @@ getIntegerVal :: String -> JSValue -> Result Int
 getIntegerVal key (JSObject o) = valFromObj key o
 getIntegerVal _ _ = Error "Error: JSON message is not an object"
 
-skipUntil :: Int -> [Event] -> [Event]
-skipUntil t =
-  filter
-    ( \ev ->
-        case getIntegerValue "posixtime" ev of
-          Just et -> et >= t
-          Nothing -> False
-          && getStringValue "type" ev /= "ConnectionInitiated"
-    )
+isConnInit :: Event -> Bool
+isConnInit ev = getStringValue "type" ev == "ConnectionInitiated"
+
+isAfter :: Int -> Event -> Bool
+isAfter t ev =
+  case getIntegerValue "posixtime" ev of
+    Just et -> et >= t
+    Nothing -> False
 
 getIntegerValue :: String -> Event -> Maybe Int
 getIntegerValue key ev =
