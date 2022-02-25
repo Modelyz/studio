@@ -12,22 +12,17 @@ import Control.Concurrent
     takeMVar,
     writeChan,
   )
-import Control.Exception (SomeException (SomeException), catch, fromException)
+import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, when)
 import Control.Monad.Fix (fix)
-import qualified Data.ByteString as BS (append, intercalate, pack, unpack)
-import qualified Data.ByteString.Lazy.Char8 as LBS (intercalate, unpack)
+import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import Data.List ()
-import Data.Maybe (Maybe (Nothing))
-import qualified Data.Text
 import qualified Data.Text as T (Text, append, intercalate, pack, split, unpack)
-import Data.Text.Encoding (decodeUtf8, encodeUtf8, streamDecodeUtf8)
-import qualified GHC.Num as String
-import Network.HTTP.Types (status200, status404)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
-    Request (requestBody),
     pathInfo,
     rawPathInfo,
     responseFile,
@@ -38,17 +33,14 @@ import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets
   ( Connection,
     DataMessage (Binary, Text),
-    PendingConnection,
     ServerApp,
     acceptRequest,
     defaultConnectionOptions,
     fromLazyByteString,
     receiveDataMessage,
-    send,
     sendTextData,
     withPingThread,
   )
-import System.Posix.Internals (puts)
 import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
 
 eventstorepath :: FilePath
@@ -62,11 +54,11 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 getStringVal :: String -> JSValue -> Result String
 getStringVal key (JSObject obj) = valFromObj key obj
-getStringVal key _ = Error "Error: JSON message is not an object"
+getStringVal _ _ = Error "Error: JSON message is not an object"
 
 getIntegerVal :: String -> JSValue -> Result Integer
 getIntegerVal key (JSObject obj) = valFromObj key obj
-getIntegerVal key _ = Error "Error: JSON message is not an object"
+getIntegerVal _ _ = Error "Error: JSON message is not an object"
 
 skipUntil :: Integer -> [String] -> [String]
 skipUntil limit =
@@ -76,7 +68,7 @@ getIntegerValue :: String -> String -> Integer
 getIntegerValue key msg =
   case decode msg >>= getIntegerVal key of
     Ok n -> n
-    Error s -> 0
+    Error _ -> 0
 
 getStringValue :: String -> String -> String
 getStringValue key msg =
@@ -94,7 +86,7 @@ sendMessagesFrom conn date = do
         sendTextData conn msgs
   where
     handleMissing :: SomeException -> IO String
-    handleMissing (SomeException e) =
+    handleMissing (SomeException _) =
       return ""
 
 sendLatestMessages :: Connection -> String -> Int -> IO ()
@@ -112,7 +104,7 @@ type WSState = MVar Int
 
 wsApp :: Chan Msg -> WSState -> ServerApp
 wsApp chan wsstate pending_conn = do
-  chan <- dupChan chan
+  chan' <- dupChan chan
   -- accept a new connexion
   conn <- acceptRequest pending_conn
   -- increment the sequence of clients
@@ -120,16 +112,17 @@ wsApp chan wsstate pending_conn = do
   putMVar wsstate (numClient + 1)
   print $ "Client " ++ show numClient ++ " connecting"
   -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
-  forkIO $
-    fix $
-      ( \loop -> do
-          (num, msg) <- readChan chan
-          when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
-            print $ "Read msg on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
-          when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
-            sendTextData conn (T.pack msg :: T.Text)
-          loop
-      )
+  _ <-
+    forkIO $
+      fix $
+        ( \loop -> do
+            (num, msg) <- readChan chan'
+            when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
+              print $ "Read msg on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
+            when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
+              sendTextData conn (T.pack msg :: T.Text)
+            loop
+        )
   -- loop on the handling of messages incoming through websocket
   withPingThread conn 30 (return ()) $
     forever $ do
@@ -148,7 +141,7 @@ wsApp chan wsstate pending_conn = do
             sendLatestMessages conn (T.unpack msg) numClient
             -- send the msg to other connected clients
             print $ "Writing to the chan as client " ++ (show numClient)
-            writeChan chan (numClient, T.unpack msg)
+            writeChan chan' (numClient, T.unpack msg)
 
 -- TODO send the msg back to the central event store so that it be handled by other microservices.
 
@@ -161,7 +154,7 @@ httpApp request respond = do
     & putStrLn
   respond $ case pathInfo request of
     "static" : pathtail -> case pathtail of
-      filename : othertail ->
+      filename : _ ->
         let ct = BS.append "text/" (encodeUtf8 (contentType filename))
          in responseFile status200 [("Content-Type", ct)] ("../build/" ++ T.unpack filename) Nothing
       _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
