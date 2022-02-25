@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (RawEvent, getIntegerValue, getStringVal, getStringValue, isAfter, isConnInit)
+import Event (RawEvent, getIntValue, getStringValue, isAfter, isConnInit)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -42,7 +42,9 @@ import Network.WebSockets
     sendTextData,
     withPingThread,
   )
-import Text.JSON (Result (..), decode)
+import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
+
+type Date = Int
 
 type NumClient = Int
 
@@ -61,7 +63,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
-sendMessagesFrom :: Connection -> NumClient -> IO ()
+sendMessagesFrom :: Connection -> Date -> IO ()
 sendMessagesFrom conn date = do
   str <- catch (readFile es) handleMissing
   let evs = ((T.intercalate "\n") . filter (\ev -> isConnInit ev && isAfter date ev) . T.lines) (T.pack str)
@@ -74,10 +76,10 @@ sendMessagesFrom conn date = do
 
 sendLatestMessages :: Connection -> RawEvent -> NumClient -> IO ()
 sendLatestMessages conn ev nc =
-  case getIntegerValue "lastEventTime" ev of
+  case getIntValue "lastEventTime" ev of
     Just time ->
       do
-        case decode (T.unpack ev) >>= getStringVal "type" of
+        case decode (T.unpack ev) >>= (\(JSObject o) -> (valFromObj "type" o) :: Result String) of
           Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn time
           Error e -> putStrLn ("Error: " ++ e)
         print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show time)
