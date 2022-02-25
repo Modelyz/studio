@@ -17,13 +17,19 @@ getIntegerVal _ _ = Error "Error: JSON message is not an object"
 
 skipUntil :: Int -> [Event] -> [Event]
 skipUntil t =
-  filter (\m -> getIntegerValue "posixtime" m >= t && getStringValue "type" m /= "ConnectionInitiated")
+  filter
+    ( \ev ->
+        case getIntegerValue "posixtime" ev of
+          Just et -> et >= t
+          Nothing -> False
+          && getStringValue "type" ev /= "ConnectionInitiated"
+    )
 
-getIntegerValue :: String -> Event -> Int
+getIntegerValue :: String -> Event -> Maybe Int
 getIntegerValue key ev =
   case decode (T.unpack ev) >>= getIntegerVal key of
-    Ok n -> n
-    Error _ -> 0
+    Ok n -> Just n
+    Error _ -> Nothing
 
 getStringValue :: String -> Event -> String
 getStringValue key ev =
