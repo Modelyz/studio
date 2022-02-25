@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (Event, getIntegerValue, getStringVal, getStringValue, isAfter, isConnInit)
+import Event (RawEvent, getIntegerValue, getStringVal, getStringValue, isAfter, isConnInit)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -46,7 +46,7 @@ import Text.JSON (Result (..), decode)
 
 type NumClient = Int
 
-type Msg = (NumClient, Event)
+type Msg = (NumClient, RawEvent)
 
 type WSState = MVar NumClient
 
@@ -72,7 +72,7 @@ sendMessagesFrom conn date = do
     handleMissing (SomeException _) =
       return ""
 
-sendLatestMessages :: Connection -> Event -> NumClient -> IO ()
+sendLatestMessages :: Connection -> RawEvent -> NumClient -> IO ()
 sendLatestMessages conn ev nc =
   case getIntegerValue "lastEventTime" ev of
     Just time ->
@@ -100,8 +100,12 @@ wsApp chan st pending_conn = do
             (n, ev) <- readChan chan'
             when (n /= nc && not (isConnInit ev)) $
               print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
-            when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
-              sendTextData conn ev
+            when
+              ( n /= nc && case getStringValue "type" ev of
+                  Just typ -> typ /= "ConnectionInitiated"
+                  Nothing -> False
+              )
+              $ sendTextData conn ev
             loop
         )
   -- loop on the handling of messages incoming through websocket
