@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (getIntegerValue, getStringVal, getStringValue, skipUntil)
+import Event (Event, getIntegerValue, getStringVal, getStringValue, skipUntil)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -42,13 +42,13 @@ import Network.WebSockets
     sendTextData,
     withPingThread,
   )
-import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
+import Text.JSON (Result (..), decode)
 
 type NumClient = Int
 
-type Msg = (Int, String)
+type Msg = (NumClient, Event)
 
-type WSState = MVar Int
+type WSState = MVar NumClient
 
 eventstorepath :: FilePath
 eventstorepath = "eventstore.txt"
@@ -61,7 +61,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
-sendMessagesFrom :: Connection -> Int -> IO ()
+sendMessagesFrom :: Connection -> NumClient -> IO ()
 sendMessagesFrom conn date = do
   str <- catch (readFile eventstorepath) handleMissing
   let msgs = ((T.intercalate "\n") . (fmap T.pack) . skipUntil date . lines) str
@@ -72,11 +72,11 @@ sendMessagesFrom conn date = do
     handleMissing (SomeException _) =
       return ""
 
-sendLatestMessages :: Connection -> String -> Int -> IO ()
-sendLatestMessages conn msg numClient =
-  let lastEventTime = getIntegerValue "lastEventTime" msg
+sendLatestMessages :: Connection -> Event -> NumClient -> IO ()
+sendLatestMessages conn e numClient =
+  let lastEventTime = getIntegerValue "lastEventTime" e
    in do
-        case decode msg >>= getStringVal "type" of
+        case decode e >>= getStringVal "type" of
           Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn lastEventTime
           Error str -> putStrLn ("Error: " ++ str)
         print $ "Sent all latest messages to client " ++ (show numClient) ++ " from LastEventTime=" ++ (show lastEventTime)
@@ -95,11 +95,11 @@ wsApp chan wsstate pending_conn = do
     forkIO $
       fix $
         ( \loop -> do
-            (num, msg) <- readChan chan'
-            when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
-              print $ "Read msg on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
-            when (num /= numClient && getStringValue "type" msg /= "ConnectionInitiated") $
-              sendTextData conn (T.pack msg :: T.Text)
+            (num, e) <- readChan chan'
+            when (num /= numClient && getStringValue "type" e /= "ConnectionInitiated") $
+              print $ "Read event on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
+            when (num /= numClient && getStringValue "type" e /= "ConnectionInitiated") $
+              sendTextData conn (T.pack e :: T.Text)
             loop
         )
   -- loop on the handling of messages incoming through websocket
@@ -107,22 +107,22 @@ wsApp chan wsstate pending_conn = do
     forever $ do
       message <- receiveDataMessage conn
       print $ "Received string from WS from client " ++ show numClient ++ ". Handling it : " ++ show message
-      let msg =
+      let e =
             ( case message of
                 Text bs _ -> (fromLazyByteString bs :: T.Text)
                 Binary bs -> (fromLazyByteString bs :: T.Text)
             )
               `T.append` "\n"
        in do
-            -- first store the msg in the event store
-            appendFile eventstorepath $ T.unpack msg
-            -- if the msg is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-            sendLatestMessages conn (T.unpack msg) numClient
+            -- first store the event in the event store
+            appendFile eventstorepath $ T.unpack e
+            -- if the event is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
+            sendLatestMessages conn (T.unpack e) numClient
             -- send the msg to other connected clients
             print $ "Writing to the chan as client " ++ (show numClient)
-            writeChan chan' (numClient, T.unpack msg)
+            writeChan chan' (numClient, T.unpack e)
 
--- TODO send the msg back to the central event store so that it be handled by other microservices.
+-- TODO send the event back to the central event store so that it be handled by other microservices.
 
 httpApp :: Application
 httpApp request respond = do
