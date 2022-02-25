@@ -50,8 +50,8 @@ type Msg = (NumClient, Event)
 
 type WSState = MVar NumClient
 
-eventstorepath :: FilePath
-eventstorepath = "eventstore.txt"
+es :: FilePath
+es = "eventstore.txt"
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -63,7 +63,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 -- and send all messages to the websocket connection
 sendMessagesFrom :: Connection -> NumClient -> IO ()
 sendMessagesFrom conn date = do
-  str <- catch (readFile eventstorepath) handleMissing
+  str <- catch (readFile es) handleMissing
   let msgs = ((T.intercalate "\n") . (fmap T.pack) . skipUntil date . lines) str
    in do
         sendTextData conn msgs
@@ -73,41 +73,41 @@ sendMessagesFrom conn date = do
       return ""
 
 sendLatestMessages :: Connection -> Event -> NumClient -> IO ()
-sendLatestMessages conn e numClient =
-  let lastEventTime = getIntegerValue "lastEventTime" e
+sendLatestMessages conn ev nc =
+  let t = getIntegerValue "lastEventTime" ev
    in do
-        case decode e >>= getStringVal "type" of
-          Ok str -> when (str == "ConnectionInitiated") $ sendMessagesFrom conn lastEventTime
-          Error str -> putStrLn ("Error: " ++ str)
-        print $ "Sent all latest messages to client " ++ (show numClient) ++ " from LastEventTime=" ++ (show lastEventTime)
+        case decode ev >>= getStringVal "type" of
+          Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn t
+          Error e -> putStrLn ("Error: " ++ e)
+        print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show t)
 
 wsApp :: Chan Msg -> WSState -> ServerApp
-wsApp chan wsstate pending_conn = do
+wsApp chan st pending_conn = do
   chan' <- dupChan chan
   -- accept a new connexion
   conn <- acceptRequest pending_conn
   -- increment the sequence of clients
-  numClient <- takeMVar wsstate
-  putMVar wsstate (numClient + 1)
-  print $ "Client " ++ show numClient ++ " connecting"
+  nc <- takeMVar st
+  putMVar st (nc + 1)
+  print $ "Client " ++ show nc ++ " connecting"
   -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
   _ <-
     forkIO $
       fix $
         ( \loop -> do
-            (num, e) <- readChan chan'
-            when (num /= numClient && getStringValue "type" e /= "ConnectionInitiated") $
-              print $ "Read event on channel from client " ++ show num ++ "... sending to client " ++ show numClient ++ " through WS"
-            when (num /= numClient && getStringValue "type" e /= "ConnectionInitiated") $
-              sendTextData conn (T.pack e :: T.Text)
+            (n, ev) <- readChan chan'
+            when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
+              print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
+            when (n /= nc && getStringValue "type" ev /= "ConnectionInitiated") $
+              sendTextData conn (T.pack ev :: T.Text)
             loop
         )
   -- loop on the handling of messages incoming through websocket
   withPingThread conn 30 (return ()) $
     forever $ do
       message <- receiveDataMessage conn
-      print $ "Received string from WS from client " ++ show numClient ++ ". Handling it : " ++ show message
-      let e =
+      print $ "Received string from WS from client " ++ show nc ++ ". Handling it : " ++ show message
+      let ev =
             ( case message of
                 Text bs _ -> (fromLazyByteString bs :: T.Text)
                 Binary bs -> (fromLazyByteString bs :: T.Text)
@@ -115,12 +115,12 @@ wsApp chan wsstate pending_conn = do
               `T.append` "\n"
        in do
             -- first store the event in the event store
-            appendFile eventstorepath $ T.unpack e
+            appendFile es $ T.unpack ev
             -- if the event is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-            sendLatestMessages conn (T.unpack e) numClient
+            sendLatestMessages conn (T.unpack ev) nc
             -- send the msg to other connected clients
-            print $ "Writing to the chan as client " ++ (show numClient)
-            writeChan chan' (numClient, T.unpack e)
+            print $ "Writing to the chan as client " ++ (show nc)
+            writeChan chan' (nc, T.unpack ev)
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.
 
@@ -142,6 +142,6 @@ httpApp request respond = do
 main :: IO ()
 main = do
   putStrLn "http://localhost:8080/"
-  wsstate <- newMVar 0
+  st <- newMVar 0
   chan <- newChan
-  run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan wsstate) httpApp
+  run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan st) httpApp

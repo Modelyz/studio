@@ -7,16 +7,16 @@ import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
 type Event = String
 
 getStringVal :: String -> JSValue -> Result String
-getStringVal key (JSObject obj) = valFromObj key obj
+getStringVal key (JSObject o) = valFromObj key o
 getStringVal _ _ = Error "Error: JSON message is not an object"
 
 getIntegerVal :: String -> JSValue -> Result Int
-getIntegerVal key (JSObject obj) = valFromObj key obj
+getIntegerVal key (JSObject o) = valFromObj key o
 getIntegerVal _ _ = Error "Error: JSON message is not an object"
 
 skipUntil :: Int -> [Event] -> [Event]
-skipUntil limit =
-  filter (\m -> getIntegerValue "posixtime" m >= limit && getStringValue "type" m /= "ConnectionInitiated")
+skipUntil t =
+  filter (\m -> getIntegerValue "posixtime" m >= t && getStringValue "type" m /= "ConnectionInitiated")
 
 getIntegerValue :: String -> Event -> Int
 getIntegerValue key msg =
