@@ -8,15 +8,15 @@ getStringVal :: String -> JSValue -> Result String
 getStringVal key (JSObject obj) = valFromObj key obj
 getStringVal _ _ = Error "Error: JSON message is not an object"
 
-getIntegerVal :: String -> JSValue -> Result Integer
+getIntegerVal :: String -> JSValue -> Result Int
 getIntegerVal key (JSObject obj) = valFromObj key obj
 getIntegerVal _ _ = Error "Error: JSON message is not an object"
 
-skipUntil :: Integer -> [String] -> [String]
+skipUntil :: Int -> [String] -> [String]
 skipUntil limit =
   filter (\m -> getIntegerValue "posixtime" m >= limit && getStringValue "type" m /= "ConnectionInitiated")
 
-getIntegerValue :: String -> String -> Integer
+getIntegerValue :: String -> String -> Int
 getIntegerValue key msg =
   case decode msg >>= getIntegerVal key of
     Ok n -> n

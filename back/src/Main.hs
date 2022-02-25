@@ -44,6 +44,8 @@ import Network.WebSockets
   )
 import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
 
+type NumClient = Int
+
 type Msg = (Int, String)
 
 type WSState = MVar Int
@@ -59,7 +61,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
-sendMessagesFrom :: Connection -> Integer -> IO ()
+sendMessagesFrom :: Connection -> Int -> IO ()
 sendMessagesFrom conn date = do
   str <- catch (readFile eventstorepath) handleMissing
   let msgs = ((T.intercalate "\n") . (fmap T.pack) . skipUntil date . lines) str
