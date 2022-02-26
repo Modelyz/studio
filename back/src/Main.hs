@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (RawEvent, getIntValue, getStringValue, isAfter, isConnInit)
+import Event (RawEvent, excludeType, getIntValue, isAfter, isType)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -32,8 +32,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets
-  ( Connection,
-    DataMessage (Binary, Text),
+  ( DataMessage (Binary, Text),
     ServerApp,
     acceptRequest,
     defaultConnectionOptions,
@@ -42,9 +41,7 @@ import Network.WebSockets
     sendTextData,
     withPingThread,
   )
-import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
-
-type Date = Int
+import Text.JSON (Result (..))
 
 type NumClient = Int
 
@@ -52,8 +49,8 @@ type Msg = (NumClient, RawEvent)
 
 type WSState = MVar NumClient
 
-es :: FilePath
-es = "eventstore.txt"
+eventStore :: FilePath
+eventStore = "eventstore.txt"
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -63,27 +60,16 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 -- read the event store from the specified date
 -- and send all messages to the websocket connection
-sendMessagesFrom :: Connection -> Date -> IO ()
-sendMessagesFrom conn date = do
-  str <- catch (readFile es) handleMissing
-  let evs = ((T.intercalate "\n") . filter (\ev -> isConnInit ev && isAfter date ev) . T.lines) (T.pack str)
-   in do
-        sendTextData conn evs
+--
+readES :: IO [RawEvent]
+readES =
+  do
+    raw <- catch (readFile eventStore) handleMissing
+    return (T.lines (T.pack raw))
   where
     handleMissing :: SomeException -> IO String
     handleMissing (SomeException _) =
-      return ""
-
-sendLatestMessages :: Connection -> RawEvent -> NumClient -> IO ()
-sendLatestMessages conn ev nc =
-  case getIntValue "lastEventTime" ev of
-    Just time ->
-      do
-        case decode (T.unpack ev) >>= (\(JSObject o) -> (valFromObj "type" o) :: Result String) of
-          Ok ty -> when (ty == "ConnectionInitiated") $ sendMessagesFrom conn time
-          Error e -> putStrLn ("Error: " ++ e)
-        print $ "Sent all latest messages to client " ++ (show nc) ++ " from LastEventTime=" ++ (show time)
-    Nothing -> do return ()
+      return []
 
 wsApp :: Chan Msg -> WSState -> ServerApp
 wsApp chan st pending_conn = do
@@ -100,14 +86,9 @@ wsApp chan st pending_conn = do
       fix $
         ( \loop -> do
             (n, ev) <- readChan chan'
-            when (n /= nc && not (isConnInit ev)) $
+            when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
               print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
-            when
-              ( n /= nc && case getStringValue "type" ev of
-                  Just typ -> typ /= "ConnectionInitiated"
-                  Nothing -> False
-              )
-              $ sendTextData conn ev
+              sendTextData conn ev
             loop
         )
   -- loop on the handling of messages incoming through websocket
@@ -123,9 +104,16 @@ wsApp chan st pending_conn = do
               `T.append` "\n"
        in do
             -- first store the event in the event store
-            appendFile es $ T.unpack ev
+            appendFile eventStore $ T.unpack ev
             -- if the event is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
-            sendLatestMessages conn ev nc
+            when
+              (isType "ConnectionInitiated" ev)
+              ( case getIntValue "lastEventTime" ev of
+                  Ok time -> do
+                    evs <- fmap (excludeType "ConnectionInitiated" . filter (isAfter time)) readES
+                    sendTextData conn ((T.intercalate "\n") evs)
+                  Error _ -> return ()
+              )
             -- send the msg to other connected clients
             print $ "Writing to the chan as client " ++ (show nc)
             writeChan chan' (nc, ev)

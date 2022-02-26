@@ -1,29 +1,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (RawEvent, getIntValue, getStringValue, isConnInit, isAfter) where
+module Event (RawEvent, getIntValue, getStringValue, excludeType, isType, isAfter) where
 
 import qualified Data.Text as T (Text, unpack)
 import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
 
 type RawEvent = T.Text
 
-isConnInit :: RawEvent -> Bool
-isConnInit ev = getStringValue "type" ev == Just "ConnectionInitiated"
+type Date = Int
+
+isType :: String -> RawEvent -> Bool
+isType t ev = getStringValue "type" ev == Ok t
+
+excludeType :: String -> [RawEvent] -> [RawEvent]
+excludeType t = filter (\ev -> getStringValue "type" ev /= Ok t)
 
 isAfter :: Int -> RawEvent -> Bool
 isAfter t ev =
   case getIntValue "posixtime" ev of
-    Just et -> et >= t
-    Nothing -> False
+    Ok et -> et >= t
+    Error _ -> False
 
-getIntValue :: String -> RawEvent -> Maybe Int
+getIntValue :: String -> RawEvent -> Result Int
 getIntValue key ev =
-  case decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o) of
-    Ok n -> Just n
-    Error _ -> Nothing
+  decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o)
 
-getStringValue :: String -> RawEvent -> Maybe String
+getStringValue :: String -> RawEvent -> Result String
 getStringValue key ev =
-  case decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o) of
-    Ok v -> Just v
-    Error s -> Nothing
+  decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o)
