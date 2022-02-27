@@ -20,7 +20,9 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (RawEvent, excludeType, getIntValue, isAfter, isType)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.UUID.V4 (nextRandom)
+import Event (RawEvent, ack, excludeType, getIntValue, getStringValue, isAfter, isType)
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -79,7 +81,7 @@ wsApp chan st pending_conn = do
   -- increment the sequence of clients
   nc <- takeMVar st
   putMVar st (nc + 1)
-  print $ "Client " ++ show nc ++ " connecting"
+  putStrLn $ "Client " ++ show nc ++ " connecting"
   -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
   _ <-
     forkIO $
@@ -87,7 +89,7 @@ wsApp chan st pending_conn = do
         ( \loop -> do
             (n, ev) <- readChan chan'
             when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
-              print $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
+              putStrLn $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
               sendTextData conn ev
             loop
         )
@@ -95,7 +97,7 @@ wsApp chan st pending_conn = do
   withPingThread conn 30 (return ()) $
     forever $ do
       message <- receiveDataMessage conn
-      print $ "Received string from WS from client " ++ show nc ++ ". Handling it : " ++ show message
+      putStrLn $ "Received string from websocket from client " ++ show nc ++ ". Handling it : " ++ show message
       let ev =
             ( case message of
                 Text bs _ -> (fromLazyByteString bs :: T.Text)
@@ -105,7 +107,17 @@ wsApp chan st pending_conn = do
        in do
             -- first store the event in the event store
             appendFile eventStore $ T.unpack ev
-            -- if the event is a InitiateConnection, get the lastEventTime from it and send back all the events from that time.
+            -- Send back an ACK to let the client the message has been handled
+            posixtime <- getPOSIXTime
+            uuid <- nextRandom
+            case getStringValue "uuid" ev of
+              Ok origin -> do
+                let a = ack uuid (floor $ posixtime * 1000) origin
+                sendTextData conn $ a
+                putStrLn $ "Sent ACK to client " ++ show nc ++ " : " ++ T.unpack a
+              Error _ -> return ()
+            -- if the event is a InitiateConnection, get the lastEventTime from it
+            -- and send back all the events from that time (with an ack)
             when
               (isType "ConnectionInitiated" ev)
               ( case getIntValue "lastEventTime" ev of
@@ -115,7 +127,7 @@ wsApp chan st pending_conn = do
                   Error _ -> return ()
               )
             -- send the msg to other connected clients
-            print $ "Writing to the chan as client " ++ (show nc)
+            putStrLn $ "Writing to the chan as client " ++ (show nc)
             writeChan chan' (nc, ev)
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.

@@ -1,6 +1,6 @@
 module Page.Navbar exposing (view)
 
-import DictSet
+import DictSet as Set
 import ES
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, href, id)
@@ -63,10 +63,10 @@ view model =
                     ]
                 ]
             ]
-                ++ (case DictSet.size model.processTypes > 0 of
+                ++ (case Set.size model.processTypes > 0 of
                         True ->
                             model.processTypes
-                                |> DictSet.toList
+                                |> Set.toList
                                 |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
 
                         False ->
@@ -76,6 +76,7 @@ view model =
         , div [ class "navbar-item", id "ESStatus" ] [ text <| esstatus2text model.esstatus ]
         , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
         , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
+        , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]
         , a
             [ attribute "role" "button"
             , class "navbar-burger"

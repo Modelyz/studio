@@ -49,5 +49,5 @@ decoder =
 
 
 compare : Event -> Int
-compare e =
-    posixToMillis e.posixtime
+compare =
+    .posixtime >> posixToMillis

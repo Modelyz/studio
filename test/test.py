@@ -43,6 +43,11 @@ def driver(nav):
     return driver
 
 
+def check_in_backend(string):
+    with open(ES) as es:
+        return es.read().find(string) > 0
+
+
 def test_sync_process_type(backends):
     """Basic test to check event sync between two browsers"""
 
@@ -54,16 +59,15 @@ def test_sync_process_type(backends):
     assert chrome.title == "Process Types"
 
     # Create an event and check it is stored in the backend
-    input_ = chrome.find_element(By.CLASS_NAME, "input")
-    input_.send_keys("AAAAAA" + Keys.ENTER)
+    chrome.find_element(By.CLASS_NAME, "input").send_keys("AAAAAA" + Keys.ENTER)
     assert (
         chrome.find_element(By.ID, "AAAAAA").text == "AAAAAA"
     ), "The Process Type has not been created"
-    input_ = chrome.find_element(By.CLASS_NAME, "input")
-    assert input_.get_attribute("value") == "", "Form was not cleared after submit"
+    assert (
+        chrome.find_element(By.CLASS_NAME, "input").get_attribute("value") == ""
+    ), "Form was not cleared after submit"
     WebDriverWait(chrome, 2).until(lambda _: os.path.exists(ES))
-    with open(ES) as es:
-        assert es.read().find("AAAAAA") > 0, "Event not stored in the backend"
+    assert check_in_backend("AAAAAA"), "Event not stored in the backend"
 
     # Check we get the process type from another browser
     firefox = driver("firefox")
@@ -76,8 +80,7 @@ def test_sync_process_type(backends):
     ), "The Process Type has not been created"
 
     # Create another event from chrome and check it appears on firefox w/o reloading
-    input_ = chrome.find_element(By.CLASS_NAME, "input")
-    input_.send_keys("Bééé" + Keys.ENTER)
+    chrome.find_element(By.CLASS_NAME, "input").send_keys("Bééé" + Keys.ENTER)
     assert (
         chrome.find_element(By.ID, "Bééé").text == "Bééé"
     ), "The Process Type has not been created on Chrome"
@@ -86,8 +89,14 @@ def test_sync_process_type(backends):
     ), "The Process Type has not been created on Firefox"
 
     # stop the backend to cut the connection,
-    # restart it, check the sync still works
+    # create and event offline,
+    # restart it, check the sync still works for new events
+    # and the event created offline is in the backend
     backends[-1].terminate()
+    time.sleep(0.5)
+    chrome.find_element(By.CLASS_NAME, "input").send_keys(
+        "EventCreatedWithoutBackend" + Keys.ENTER
+    )
     time.sleep(0.5)
     backends.append(subprocess.Popen(["../build/ms"]))
     chromestatus = chrome.find_element(By.ID, "WSStatus")
@@ -98,12 +107,21 @@ def test_sync_process_type(backends):
     assert (
         chrome.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Chrome"
-    with open(ES) as es:
-        assert es.read().find("Cééé") > 0, "Event not stored in the backend"
+    assert check_in_backend("Cééé"), "Event not stored in the backend"
     assert (
         firefox.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Firefox"
-    backends[-1].terminate()
+
+    # stop the backend, send an event, reconnect the backend,
+    # check the event is stored in the backend
+    # backends[-1].terminate()
+    # input_ = chrome.find_element(By.CLASS_NAME, "input")
+    # input_.send_keys("Dééé" + Keys.ENTER)
+    # assert (
+    #    chrome.find_element(By.ID, "Dééé").text == "Dééé"
+    # ), "The Process Type has not been created on Chrome"
+    # backends.append(subprocess.Popen(["../build/ms"]))
+    # WebDriverWait(chrome, 10).until(lambda _: check_in_backend("Dééé"))
 
     firefox.quit()
     chrome.quit()

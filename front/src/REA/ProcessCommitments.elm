@@ -17,5 +17,5 @@ type alias ProcessCommitments =
 
 
 compare : ProcessCommitments -> Int
-compare pc =
-    posixToMillis pc.commitment.posixtime
+compare =
+    .commitment >> .posixtime >> posixToMillis

@@ -21,8 +21,8 @@ type alias Process =
 
 
 compare : Process -> Int
-compare process =
-    posixToMillis process.posixtime
+compare =
+    .posixtime >> posixToMillis
 
 
 encode : Process -> Encode.Value

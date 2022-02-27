@@ -34,5 +34,5 @@ decoder =
 
 
 compare : CommitmentType -> String
-compare ct =
-    ct.name
+compare =
+    .name

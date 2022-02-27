@@ -88,6 +88,7 @@ initiateConnection uuid model =
 
 wsReadyState2Status : Decode.Value -> WSStatus
 wsReadyState2Status value =
+    -- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
     let
         s =
             decodeValue Decode.int value
@@ -371,10 +372,19 @@ update msg model =
             ( { model | esstatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
 
         Msg.EventsStoredTosend events ->
+            let
+                storedEvents =
+                    case decodeValue (Decode.list ES.decoder) events of
+                        Ok es ->
+                            es
+
+                        Err _ ->
+                            []
+            in
             ( { model
                 | esstatus = ESIdle
               }
-            , ES.sendEvents <| Encode.encode 0 events
+            , ES.sendEvents <| Encode.encode 0 <| Encode.list ES.encode <| List.append (Set.toList model.pendingEvents) storedEvents
             )
 
         Msg.EventsStored events ->

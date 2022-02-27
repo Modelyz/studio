@@ -17,5 +17,5 @@ type alias ProcessEvents =
 
 
 compare : ProcessEvents -> Int
-compare pe =
-    posixToMillis pe.event.posixtime
+compare =
+    .event >> .posixtime >> posixToMillis

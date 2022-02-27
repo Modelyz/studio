@@ -5,6 +5,7 @@ type ESStatus
     = ESIdle
     | ESReading
     | ESReadFailed String
+      --    | ESStoredFailed String
     | ESStoring
 
 

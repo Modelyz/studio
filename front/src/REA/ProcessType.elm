@@ -26,5 +26,5 @@ decoder =
 
 
 compare : ProcessType -> String
-compare pt =
-    pt.name
+compare =
+    .name

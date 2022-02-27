@@ -1,13 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (RawEvent, getIntValue, getStringValue, excludeType, isType, isAfter) where
+module Event (RawEvent, getIntValue, ack, getStringValue, excludeType, isType, isAfter) where
 
-import qualified Data.Text as T (Text, unpack)
-import Text.JSON (JSValue (JSObject), Result (..), decode, valFromObj)
+import qualified Data.Text as T (Text, pack, unpack)
+import Data.UUID (UUID)
+import Text.JSON (JSValue (JSObject, JSString), Result (..), decode, encode, makeObj, showJSON, toJSString, valFromObj)
 
 type RawEvent = T.Text
 
-type Date = Int
+type Time = Int
+
+type Uuid = String -- uuid as a string generated in Elm
 
 isType :: String -> RawEvent -> Bool
 isType t ev = getStringValue "type" ev == Ok t
@@ -28,3 +31,14 @@ getIntValue key ev =
 getStringValue :: String -> RawEvent -> Result String
 getStringValue key ev =
   decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o)
+
+ack :: UUID -> Time -> Uuid -> RawEvent
+ack uuid time origin =
+  T.pack $
+    encode $
+      makeObj
+        [ ("type", JSString $ toJSString "AckReceived"),
+          ("uuid", JSString $ toJSString $ show uuid),
+          ("posixtime", showJSON time),
+          ("origin", JSString $ toJSString $ origin)
+        ]

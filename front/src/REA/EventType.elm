@@ -41,5 +41,5 @@ decoder =
 
 
 compare : EventType -> String
-compare et =
-    et.name
+compare =
+    .name

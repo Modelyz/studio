@@ -59,71 +59,79 @@ port wsConnect : () -> Cmd msg
 
 type Event
     = ProcessTypeChanged
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , ptype : ProcessType
         }
     | ProcessTypeRemoved
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , ptype : String
         }
     | ProcessAdded
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , type_ : String
         }
     | CommitmentTypeAdded
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , commitmentType : CommitmentType
         }
     | CommitmentTypeRemoved
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , commitmentType : CommitmentType
         }
     | CommitmentAdded
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , process : Process
         , commitment : Commitment
         }
     | EventTypeAdded
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , eventType : EventType
         }
     | EventTypeRemoved
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , eventType : EventType
         }
     | EventAdded
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , process : Process
         , event : E.Event
         }
     | LinkedEventTypeToProcessType
-        { uuid : Uuid.Uuid
+        { uuid : Uuid
         , posixtime : Time.Posix
         , etype : String
         , ptype : String
         }
     | ConnectionInitiated
-        { uuid : Uuid.Uuid
+        -- A new connection occured from the frontend
+        { uuid : Uuid
         , posixtime : Time.Posix
         , lastEventTime : Time.Posix
-        , sessionUuid : Uuid.Uuid
+        , sessionUuid : Uuid
 
-        -- TODO add auth here
+        -- TODO add auth here?
+        }
+    | AckReceived
+        -- Ack from the backend that the message has been stored
+        { uuid : Uuid
+        , posixtime : Time.Posix
+        , origin : Uuid
         }
 
 
 
 -- global application state --
 -- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
+-- → switch to elm-spa
 
 
 type alias State =
@@ -144,6 +152,7 @@ type alias State =
 
     -- ES related
     , lastEventTime : Time.Posix
+    , pendingEvents : DictSet Int Event
 
     -- session related
     , sessionUuid : Maybe Uuid
@@ -183,6 +192,7 @@ new seed key route =
     , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
     , lastEventTime = millisToPosix 0
+    , pendingEvents = Set.empty compare
     , sessionUuid = Nothing
     , process_events = Set.empty PE.compare
     , processType_commitmentTypes = Set.empty PTCT.compare
@@ -226,6 +236,9 @@ compare event =
         ConnectionInitiated e ->
             posixToMillis e.posixtime
 
+        AckReceived e ->
+            posixToMillis e.posixtime
+
 
 getTime : Event -> Time.Posix
 getTime event =
@@ -262,6 +275,9 @@ getTime event =
             e.posixtime
 
         ConnectionInitiated e ->
+            e.posixtime
+
+        AckReceived e ->
             e.posixtime
 
 
@@ -302,30 +318,35 @@ aggregate event state =
             { state
                 | processTypes = Set.insert e.ptype state.processTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         ProcessTypeRemoved e ->
             { state
                 | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         ProcessAdded e ->
             { state
                 | processes = Set.insert e state.processes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         CommitmentTypeAdded e ->
             { state
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         CommitmentTypeRemoved e ->
             { state
                 | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         CommitmentAdded e ->
@@ -333,12 +354,14 @@ aggregate event state =
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process, commitment = e.commitment } state.process_commitments
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         EventTypeAdded e ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         LinkedEventTypeToProcessType e ->
@@ -349,12 +372,14 @@ aggregate event state =
             { state
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         EventTypeRemoved e ->
             { state
                 | eventTypes = Set.remove e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         EventAdded e ->
@@ -362,11 +387,19 @@ aggregate event state =
                 | events = Set.insert e.event state.events
                 , process_events = Set.insert { process = e.process, event = e.event } state.process_events
                 , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
             }
 
         ConnectionInitiated e ->
             { state
                 | sessionUuid = Just e.sessionUuid
+                , lastEventTime = e.posixtime
+                , pendingEvents = Set.insert event state.pendingEvents
+            }
+
+        AckReceived e ->
+            { state
+                | pendingEvents = Set.filter (\x -> getUuid x /= e.origin) state.pendingEvents
                 , lastEventTime = e.posixtime
             }
 
@@ -478,6 +511,15 @@ connectionInitiated uuid posixtime lastEventTime sessionUuid =
         }
 
 
+ackReceived : Uuid -> Time.Posix -> Uuid -> Event
+ackReceived uuid posixtime origin =
+    AckReceived
+        { uuid = uuid
+        , posixtime = posixtime
+        , origin = origin
+        }
+
+
 encode : Event -> Encode.Value
 encode event =
     case event of
@@ -573,6 +615,14 @@ encode event =
                 , ( "sessionUuid", Uuid.encode e.sessionUuid )
                 ]
 
+        AckReceived e ->
+            Encode.object
+                [ ( "uuid", Uuid.encode e.uuid )
+                , ( "type", Encode.string "AckReceived" )
+                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "origin", Uuid.encode e.origin )
+                ]
+
 
 decodelist : Decode.Value -> List Event
 decodelist =
@@ -659,6 +709,12 @@ decoder =
                             (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
                             (Decode.field "sessionUuid" Uuid.decoder)
 
+                    "AckReceived" ->
+                        Decode.map3 ackReceived
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "origin" Uuid.decoder)
+
                     _ ->
                         Decode.fail "Unknown Event type"
             )
@@ -681,3 +737,43 @@ getProcessType state type_str =
         state.processTypes
         |> Set.values
         |> List.head
+
+
+getUuid : Event -> Uuid
+getUuid event =
+    case event of
+        ProcessTypeChanged pt ->
+            pt.uuid
+
+        ProcessTypeRemoved pt ->
+            pt.uuid
+
+        ProcessAdded p ->
+            p.uuid
+
+        CommitmentTypeAdded ct ->
+            ct.uuid
+
+        CommitmentTypeRemoved ct ->
+            ct.uuid
+
+        CommitmentAdded c ->
+            c.uuid
+
+        EventTypeAdded et ->
+            et.uuid
+
+        EventTypeRemoved et ->
+            et.uuid
+
+        EventAdded e ->
+            e.uuid
+
+        LinkedEventTypeToProcessType e ->
+            e.uuid
+
+        ConnectionInitiated e ->
+            e.uuid
+
+        AckReceived e ->
+            e.uuid
