@@ -12,17 +12,17 @@ import Control.Concurrent
     takeMVar,
     writeChan,
   )
-import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, when)
 import Control.Monad.Fix (fix)
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import Data.List ()
-import qualified Data.Text as T (Text, append, intercalate, lines, pack, split, unpack)
+import qualified Data.Text as T (Text, append, pack, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.UUID.V4 (nextRandom)
-import Event (RawEvent, ack, excludeType, getIntValue, getStringValue, isAfter, isType)
+import Event (Event, ack, excludeType, getInt, getString, isAfter, isType)
+import qualified EventStore as ES
 import Network.HTTP.Types (status200)
 import Network.Wai
   ( Application,
@@ -34,7 +34,8 @@ import Network.Wai
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets
-  ( DataMessage (Binary, Text),
+  ( Connection,
+    DataMessage (Binary, Text),
     ServerApp,
     acceptRequest,
     defaultConnectionOptions,
@@ -43,16 +44,11 @@ import Network.WebSockets
     sendTextData,
     withPingThread,
   )
-import Text.JSON (Result (..))
+import Text.JSON as JSON (Result (..), decode, encode)
 
 type NumClient = Int
 
-type Msg = (NumClient, RawEvent)
-
 type WSState = MVar NumClient
-
-eventStore :: FilePath
-eventStore = "eventstore.txt"
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -60,20 +56,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
   "js" : _ -> "javascript"
   _ -> "raw"
 
--- read the event store from the specified date
--- and send all messages to the websocket connection
---
-readES :: IO [RawEvent]
-readES =
-  do
-    raw <- catch (readFile eventStore) handleMissing
-    return (T.lines (T.pack raw))
-  where
-    handleMissing :: SomeException -> IO String
-    handleMissing (SomeException _) =
-      return []
-
-wsApp :: Chan Msg -> WSState -> ServerApp
+wsApp :: Chan (NumClient, Event) -> WSState -> ServerApp
 wsApp chan st pending_conn = do
   chan' <- dupChan chan
   -- accept a new connexion
@@ -90,45 +73,55 @@ wsApp chan st pending_conn = do
             (n, ev) <- readChan chan'
             when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
               putStrLn $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
-              sendTextData conn ev
+              sendTextData conn $ T.pack $ encode [ev]
             loop
         )
   -- loop on the handling of messages incoming through websocket
   withPingThread conn 30 (return ()) $
-    forever $ do
-      message <- receiveDataMessage conn
-      putStrLn $ "Received string from websocket from client " ++ show nc ++ ". Handling it : " ++ show message
-      let ev =
-            ( case message of
-                Text bs _ -> (fromLazyByteString bs :: T.Text)
-                Binary bs -> (fromLazyByteString bs :: T.Text)
-            )
-              `T.append` "\n"
-       in do
-            -- first store the event in the event store
-            appendFile eventStore $ T.unpack ev
-            -- Send back an ACK to let the client the message has been handled
-            posixtime <- getPOSIXTime
-            uuid <- nextRandom
-            case getStringValue "uuid" ev of
-              Ok origin -> do
-                let a = ack uuid (floor $ posixtime * 1000) origin
-                sendTextData conn $ a
-                putStrLn $ "Sent ACK to client " ++ show nc ++ " : " ++ T.unpack a
-              Error _ -> return ()
-            -- if the event is a InitiateConnection, get the lastEventTime from it
-            -- and send back all the events from that time (with an ack)
-            when
-              (isType "ConnectionInitiated" ev)
-              ( case getIntValue "lastEventTime" ev of
-                  Ok time -> do
-                    evs <- fmap (excludeType "ConnectionInitiated" . filter (isAfter time)) readES
-                    sendTextData conn ((T.intercalate "\n") evs)
-                  Error _ -> return ()
-              )
-            -- send the msg to other connected clients
-            putStrLn $ "Writing to the chan as client " ++ (show nc)
-            writeChan chan' (nc, ev)
+    forever $
+      do
+        messages <- receiveDataMessage conn
+        putStrLn $ "Received string from websocket from client " ++ show nc ++ ". Handling it : " ++ show messages
+        let events =
+              JSON.decode $
+                T.unpack $
+                  ( case messages of
+                      Text bs _ -> (fromLazyByteString bs :: T.Text)
+                      Binary bs -> (fromLazyByteString bs :: T.Text)
+                  )
+         in case events of
+              Ok evs -> mapM (handleEvent conn nc chan') evs
+              Error e -> mapM id [putStrLn $ "Error decoding incoming message: " ++ e]
+
+handleEvent :: Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
+handleEvent conn nc chan ev =
+  do
+    -- first store the event in the event store
+    ES.appendEvent ev
+    -- Send back an ACK to let the client the message has been stored
+    posixtime <- getPOSIXTime
+    uuid <- nextRandom
+    case getString "uuid" ev of
+      Ok origin -> do
+        let a = ack uuid (floor $ posixtime * 1000) origin
+            as = [a]
+        sendTextData conn $ T.pack $ encode as
+        ES.appendEvent a
+        putStrLn $ "Sent ACK to client " ++ show nc ++ " : " ++ encode a
+      Error _ -> return ()
+    -- if the event is a InitiateConnection, get the lastEventTime from it
+    -- and send back all the events from that time (with an ack)
+    when
+      (isType "ConnectionInitiated" ev)
+      ( case getInt "lastEventTime" ev of
+          Ok time -> do
+            evs <- fmap (excludeType "ConnectionInitiated" . filter (isAfter time)) ES.readEvents
+            sendTextData conn $ T.pack $ encode evs
+          Error _ -> return ()
+      )
+    -- send the msg to other connected clients
+    putStrLn $ "Writing to the chan as client " ++ (show nc)
+    writeChan chan (nc, ev)
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.
 

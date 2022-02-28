@@ -1,44 +1,43 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (RawEvent, getIntValue, ack, getStringValue, excludeType, isType, isAfter) where
+module Event (Event, getInt, ack, getString, excludeType, isType, isAfter) where
 
 import qualified Data.Text as T (Text, pack, unpack)
 import Data.UUID (UUID)
-import Text.JSON (JSValue (JSObject, JSString), Result (..), decode, encode, makeObj, showJSON, toJSString, valFromObj)
+import Text.JSON (JSObject, JSValue (JSObject, JSString), Result (..), decode, encode, makeObj, showJSON, toJSString, valFromObj)
 
-type RawEvent = T.Text
+type Event = JSObject JSValue
 
 type Time = Int
 
 type Uuid = String -- uuid as a string generated in Elm
 
-isType :: String -> RawEvent -> Bool
-isType t ev = getStringValue "type" ev == Ok t
+isType :: String -> Event -> Bool
+isType t ev = getString "type" ev == Ok t
 
-excludeType :: String -> [RawEvent] -> [RawEvent]
-excludeType t = filter (\ev -> getStringValue "type" ev /= Ok t)
+excludeType :: String -> [Event] -> [Event]
+excludeType t = filter (\ev -> not $ isType t ev)
 
-isAfter :: Int -> RawEvent -> Bool
+isAfter :: Int -> Event -> Bool
 isAfter t ev =
-  case getIntValue "posixtime" ev of
+  case getInt "posixtime" ev of
     Ok et -> et >= t
     Error _ -> False
 
-getIntValue :: String -> RawEvent -> Result Int
-getIntValue key ev =
-  decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o)
+getInt :: String -> Event -> Result Int
+getInt =
+  valFromObj
 
-getStringValue :: String -> RawEvent -> Result String
-getStringValue key ev =
-  decode (T.unpack ev) >>= (\(JSObject o) -> valFromObj key o)
+getString :: String -> Event -> Result String
+getString =
+  valFromObj
 
-ack :: UUID -> Time -> Uuid -> RawEvent
+ack :: UUID -> Time -> Uuid -> Event
 ack uuid time origin =
-  T.pack $
-    encode $
-      makeObj
-        [ ("type", JSString $ toJSString "AckReceived"),
-          ("uuid", JSString $ toJSString $ show uuid),
-          ("posixtime", showJSON time),
-          ("origin", JSString $ toJSString $ origin)
-        ]
+  case makeObj
+    [ ("type", JSString $ toJSString "AckReceived"),
+      ("uuid", JSString $ toJSString $ show uuid),
+      ("posixtime", showJSON time),
+      ("origin", JSString $ toJSString $ origin)
+    ] of
+    JSObject o -> o

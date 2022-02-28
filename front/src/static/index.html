@@ -76,10 +76,10 @@ const store = function(send) {
                 addrequest.onsuccess = (e) => {
                     console.log('...event successfully added to IDB...')
                     if (send) {
-                        app.ports.eventsStoredToSend.send(event);
+                        app.ports.eventsStoredToSend.send([event]);
                         console.log("...Success message (with send) sent back from JS to Elm")
                     } else {
-                        app.ports.eventsStored.send(event);
+                        app.ports.eventsStored.send([event]);
                         console.log("...Success message sent back from JS to Elm")
                     }
                 }

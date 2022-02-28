@@ -30,7 +30,7 @@ wrapper model content =
                 , span [] [ text " Reading from IDB..." ]
                 ]
 
-        ESReadFailed error ->
+        ESError error ->
             div [ class "section" ]
                 [ span [ class "icon-text" ]
                     [ span [ class "icon" ]

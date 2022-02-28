@@ -4,8 +4,7 @@ module Status exposing (ESStatus(..), WSStatus(..), esstatus2text, wsstatus2text
 type ESStatus
     = ESIdle
     | ESReading
-    | ESReadFailed String
-      --    | ESStoredFailed String
+    | ESError String
     | ESStoring
 
 
@@ -27,8 +26,8 @@ esstatus2text status =
         ESReading ->
             "ESReading"
 
-        ESReadFailed err ->
-            "ESReadFailed: " ++ err
+        ESError err ->
+            "ESError: " ++ err
 
         ESIdle ->
             "ESIdle"

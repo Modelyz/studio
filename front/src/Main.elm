@@ -195,7 +195,7 @@ update msg model =
                     )
 
                 Err str ->
-                    ( { model | esstatus = ESReadFailed (errorToString str) }, Cmd.none )
+                    ( { model | esstatus = ESError <| errorToString str }, Cmd.none )
 
         Msg.LinkClicked urlRequest ->
             case urlRequest of
@@ -372,20 +372,16 @@ update msg model =
             ( { model | esstatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
 
         Msg.EventsStoredTosend events ->
-            let
-                storedEvents =
-                    case decodeValue (Decode.list ES.decoder) events of
-                        Ok es ->
-                            es
+            case decodeValue (Decode.list ES.decoder) events of
+                Ok evs ->
+                    ( { model
+                        | esstatus = ESIdle
+                      }
+                    , ES.sendEvents <| Encode.encode 0 <| Encode.list ES.encode <| List.append (Set.toList model.pendingEvents) evs
+                    )
 
-                        Err _ ->
-                            []
-            in
-            ( { model
-                | esstatus = ESIdle
-              }
-            , ES.sendEvents <| Encode.encode 0 <| Encode.list ES.encode <| List.append (Set.toList model.pendingEvents) storedEvents
-            )
+                Err err ->
+                    ( { model | esstatus = ESError <| errorToString err }, Cmd.none )
 
         Msg.EventsStored events ->
             ( { model
@@ -439,7 +435,7 @@ update msg model =
             ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Cmd.none )
 
         Msg.EventsReceived ms ->
-            case decodeString (Decode.list ES.decoder) <| "[" ++ (ms |> String.trim |> String.split "\n" |> String.join ",") ++ "]" of
+            case decodeString (Decode.list ES.decoder) ms of
                 Ok messages ->
                     ( { model | wsstatus = WSOnline, esstatus = ESStoring }
                     , ES.storeEvents <|

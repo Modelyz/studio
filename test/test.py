@@ -112,16 +112,9 @@ def test_sync_process_type(backends):
         firefox.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Firefox"
 
-    # stop the backend, send an event, reconnect the backend,
-    # check the event is stored in the backend
-    # backends[-1].terminate()
-    # input_ = chrome.find_element(By.CLASS_NAME, "input")
-    # input_.send_keys("Dééé" + Keys.ENTER)
-    # assert (
-    #    chrome.find_element(By.ID, "Dééé").text == "Dééé"
-    # ), "The Process Type has not been created on Chrome"
-    # backends.append(subprocess.Popen(["../build/ms"]))
-    # WebDriverWait(chrome, 10).until(lambda _: check_in_backend("Dééé"))
+    WebDriverWait(chrome, 10).until(
+        lambda _: check_in_backend("EventCreatedWithoutBackend")
+    )
 
     firefox.quit()
     chrome.quit()
