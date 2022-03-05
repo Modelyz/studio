@@ -115,6 +115,14 @@ def test_sync_process_type(backends):
     WebDriverWait(chrome, 10).until(
         lambda _: count_evstore("EventCreatedWithoutBackend") == 1
     )
+    assert (
+        firefox.find_element(By.ID, "EventCreatedWithoutBackend").text
+        == "EventCreatedWithoutBackend"
+    ), "The Process Type has not been created on Firefox"
+    assert (
+        chrome.find_element(By.ID, "EventCreatedWithoutBackend").text
+        == "EventCreatedWithoutBackend"
+    ), "The Process Type has not been created on Chrome"
 
     firefox.quit()
     chrome.quit()
