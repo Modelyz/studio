@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
 import ES exposing (Event(..), getProcess, getProcessType, getTime)
+import IOStatus as IO exposing (IOStatus(..), toText)
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
@@ -25,10 +26,10 @@ import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
 import Result
 import Route exposing (parseUrl)
-import Status exposing (ESStatus(..), WSStatus(..))
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Url exposing (Url)
+import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
 type alias Model =
@@ -86,47 +87,22 @@ initiateConnection uuid model =
             Time.now
 
 
-wsReadyState2Status : Decode.Value -> WSStatus
-wsReadyState2Status value =
-    -- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
-    let
-        s =
-            decodeValue Decode.int value
-                |> Result.withDefault 9
-    in
-    case s of
-        0 ->
-            WSConnecting
-
-        1 ->
-            WSOnline
-
-        2 ->
-            WSDisconnecting
-
-        3 ->
-            WSOffline
-
-        _ ->
-            WSUnexpected
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg.None ->
+        Msg.None _ ->
             ( model, Cmd.none )
 
         Msg.WSConnect _ ->
-            ( { model | wsstatus = WSConnecting }, ES.wsConnect () )
+            ( model, wsConnect () )
 
         Msg.WSConnected st ->
             let
                 wsstatus =
-                    wsReadyState2Status st
+                    WS.fromReadyState st
 
                 timeoutReconnect =
-                    if wsstatus == WSOnline then
+                    if wsstatus == WSOpen then
                         max 1 <| remainderBy 4 (posixToMillis model.lastEventTime)
 
                     else
@@ -136,7 +112,7 @@ update msg model =
                     Random.step Uuid.generator model.currentSeed
 
                 cmd =
-                    if wsstatus == WSOnline then
+                    if wsstatus == WSOpen then
                         initiateConnection newUuid model
 
                     else
@@ -146,7 +122,8 @@ update msg model =
 
         Msg.WSError err ->
             ( { model
-                | wsstatus = WSOffline
+                | iostatus =
+                    IOError "Websocket error"
               }
             , Cmd.none
             )
@@ -154,9 +131,10 @@ update msg model =
         Msg.WSDisconnected err ->
             ( { model
                 | timeoutReconnect = min 30 (model.timeoutReconnect + 1)
-                , wsstatus = WSOffline
+                , wsstatus = WSClosed
               }
-            , Task.perform WSConnect (Process.sleep <| toFloat <| 1000 * model.timeoutReconnect)
+            , Task.perform Msg.WSConnect
+                (Process.sleep (toFloat (1000 * model.timeoutReconnect)))
             )
 
         Msg.EventsRead results ->
@@ -171,10 +149,10 @@ update msg model =
                             List.foldr ES.aggregate model (List.reverse events)
                     in
                     ( { newmodel
-                        | esstatus = ESIdle
+                        | iostatus = IOIdle
                         , wsstatus =
                             case model.wsstatus of
-                                WSInit ->
+                                WSClosed ->
                                     WSConnecting
 
                                 _ ->
@@ -187,15 +165,15 @@ update msg model =
                                 |> millisToPosix
                       }
                     , case model.wsstatus of
-                        WSInit ->
-                            ES.wsConnect ()
+                        WSClosed ->
+                            wsConnect ()
 
                         _ ->
                             Cmd.none
                     )
 
                 Err str ->
-                    ( { model | esstatus = ESError <| errorToString str }, Cmd.none )
+                    ( { model | iostatus = IOError <| errorToString str }, Cmd.none )
 
         Msg.LinkClicked urlRequest ->
             case urlRequest of
@@ -369,23 +347,28 @@ update msg model =
                     ( model, Cmd.none )
 
         Msg.StoreEventsToSend events ->
-            ( { model | esstatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
+            ( { model | iostatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
 
         Msg.EventsStoredTosend events ->
             case decodeValue (Decode.list ES.decoder) events of
                 Ok evs ->
-                    ( { model
-                        | esstatus = ESIdle
-                      }
-                    , ES.sendEvents <| Encode.encode 0 <| Encode.list ES.encode <| List.append (Set.toList model.pendingEvents) evs
-                    )
+                    if model.wsstatus == WSOpen then
+                        ( { model | iostatus = ESReading }
+                        , Cmd.batch
+                            [ ES.readEvents Encode.null
+                            , wsSend <| Encode.encode 0 <| Encode.list ES.encode <| Set.toList <| Set.union model.pendingEvents <| Set.fromList ES.compare evs
+                            ]
+                        )
+
+                    else
+                        ( { model | iostatus = IOIdle }, ES.readEvents Encode.null )
 
                 Err err ->
-                    ( { model | esstatus = ESError <| errorToString err }, Cmd.none )
+                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
         Msg.EventsStored events ->
             ( { model
-                | esstatus = ESIdle
+                | iostatus = IOIdle
               }
             , ES.readEvents Encode.null
             )
@@ -394,13 +377,13 @@ update msg model =
             case decodeValue Decode.string status of
                 Ok str ->
                     if str == "OK" then
-                        ( { model | esstatus = ESReading }, ES.readEvents Encode.null )
+                        ( { model | iostatus = ESReading }, Cmd.none )
 
                     else
-                        ( { model | wsstatus = WSSendFailed str }, Cmd.none )
+                        ( { model | iostatus = IOError str }, Cmd.none )
 
                 Err err ->
-                    ( { model | wsstatus = WSSendFailed <| errorToString err }, Cmd.none )
+                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
         Msg.InputEventType etype ->
             ( { model | inputEventType = etype }, Cmd.none )
@@ -437,13 +420,16 @@ update msg model =
         Msg.EventsReceived ms ->
             case decodeString (Decode.list ES.decoder) ms of
                 Ok messages ->
-                    ( { model | wsstatus = WSOnline, esstatus = ESStoring }
+                    ( { model
+                        | wsstatus = WSOpen
+                        , iostatus = ESStoring
+                      }
                     , ES.storeEvents <|
                         Encode.list ES.encode messages
                     )
 
                 Err err ->
-                    ( { model | wsstatus = WSReceiveFailed <| errorToString err }, Cmd.none )
+                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
 
 

@@ -1,7 +1,8 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, sendEvents, storeEvents, storeEventsToSend, wsConnect)
+port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, storeEvents, storeEventsToSend)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
+import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -18,8 +19,8 @@ import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
 import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
 import Route exposing (Route)
-import Status exposing (ESStatus(..), WSStatus(..))
 import Time exposing (millisToPosix, posixToMillis)
+import Websocket exposing (WSStatus(..))
 
 
 
@@ -41,16 +42,6 @@ port storeEvents : Encode.Value -> Cmd msg
 
 
 port storeEventsToSend : Encode.Value -> Cmd msg
-
-
-
--- send events through WS
-
-
-port sendEvents : String -> Cmd msg
-
-
-port wsConnect : () -> Cmd msg
 
 
 
@@ -139,9 +130,6 @@ type alias State =
     { currentSeed : Seed
     , navkey : Nav.Key
     , route : Route
-    , esstatus : ESStatus
-    , wsstatus : WSStatus
-    , timeoutReconnect : Int
 
     -- input related
     , inputProcessType : ProcessType
@@ -150,9 +138,14 @@ type alias State =
     , inputEventType : String
     , inputEventTypeProcessTypes : DictSet String String
 
-    -- ES related
+    -- ES and WS related
+    , iostatus : IOStatus
     , lastEventTime : Time.Posix
     , pendingEvents : DictSet Int Event
+
+    -- WS related
+    , wsstatus : WSStatus
+    , timeoutReconnect : Int
 
     -- session related
     , sessionUuid : Maybe Uuid
@@ -176,8 +169,8 @@ new seed key route =
     { currentSeed = seed
     , navkey = key
     , route = route
-    , esstatus = ESReading
-    , wsstatus = WSInit
+    , iostatus = ESReading
+    , wsstatus = WSClosed
     , timeoutReconnect = 1
     , inputProcessType = { name = "" }
     , inputCommitmentType = ""

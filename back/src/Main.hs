@@ -96,27 +96,31 @@ wsApp chan st pending_conn = do
 handleEvent :: Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
 handleEvent conn nc chan ev =
   do
-    -- first store the event in the event store
+    -- store the event in the event store
     ES.appendEvent ev
-    -- Send back an ACK to let the client the message has been stored
+    -- Send back an ACK to let the client know the message has been stored
     posixtime <- getPOSIXTime
     uuid <- nextRandom
     case getString "uuid" ev of
       Ok origin -> do
         let a = ack uuid (floor $ posixtime * 1000) origin
-            as = [a]
-        sendTextData conn $ T.pack $ encode as
         ES.appendEvent a
+        sendTextData conn $ T.pack $ encode [a]
         putStrLn $ "Sent ACK to client " ++ show nc ++ " : " ++ encode a
       Error _ -> return ()
-    -- if the event is a InitiateConnection, get the lastEventTime from it
-    -- and send back all the events from that time (with an ack)
+    -- if the event is a ConnectionInitiated, get the lastEventTime from it
+    -- and send back all the events from that time (with an added ack)
     when
       (isType "ConnectionInitiated" ev)
       ( case getInt "lastEventTime" ev of
           Ok time -> do
             evs <- fmap (excludeType "ConnectionInitiated" . filter (isAfter time)) ES.readEvents
-            sendTextData conn $ T.pack $ encode evs
+            if length evs > 0
+              then do
+                -- TODO CHECK
+                sendTextData conn $ T.pack $ encode evs
+                putStrLn $ "Sent all " ++ (show $ length evs) ++ "messsages after lasttime " ++ show time
+              else return ()
           Error _ -> return ()
       )
     -- send the msg to other connected clients

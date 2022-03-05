@@ -5,10 +5,11 @@ import ES
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, classList, href, id)
 import Html.Events exposing (onClick)
+import IOStatus as IO exposing (toText)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
-import Status exposing (esstatus2text, wsstatus2text)
 import Time exposing (posixToMillis)
+import Websocket as WS exposing (toText)
 
 
 type alias Model =
@@ -72,8 +73,8 @@ view model =
                         False ->
                             []
                    )
-        , div [ class "navbar-item", id "WSStatus" ] [ text <| wsstatus2text model.wsstatus ]
-        , div [ class "navbar-item", id "ESStatus" ] [ text <| esstatus2text model.esstatus ]
+        , div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText model.wsstatus ]
+        , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText model.iostatus ]
         , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
         , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
         , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]

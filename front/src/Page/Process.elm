@@ -6,8 +6,8 @@ import ES exposing (getCommitments, getEvents)
 import Html exposing (..)
 import Html.Attributes exposing (attribute, class, href, src, style, width)
 import Html.Events exposing (onClick)
+import IOStatus exposing (IOStatus(..))
 import Msg exposing (Msg(..))
-import Page.Loading as Loading
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
@@ -18,7 +18,6 @@ import REA.Process exposing (Process)
 import REA.ProcessType exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT
 import REA.ProcessTypeEventType as PTET
-import Status exposing (ESStatus(..))
 
 
 type alias Model =
@@ -30,7 +29,7 @@ view model process =
     { title = "Process"
     , body =
         [ Navbar.view model
-        , Loading.wrapper model (viewContent model process)
+        , viewContent model process
         ]
     }
 

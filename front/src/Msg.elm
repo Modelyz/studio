@@ -11,7 +11,7 @@ import Url exposing (Url)
 
 
 type Msg
-    = None
+    = None ()
     | WSDisconnected Json.Encode.Value
     | WSError Json.Encode.Value
     | WSConnect ()

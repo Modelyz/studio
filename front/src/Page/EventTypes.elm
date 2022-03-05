@@ -7,7 +7,6 @@ import Html exposing (..)
 import Html.Attributes exposing (checked, class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Msg exposing (Msg(..))
-import Page.Loading as Loading
 import Page.Navbar as Navbar
 import REA.EventType exposing (EventType)
 import REA.ProcessType as PT
@@ -22,7 +21,7 @@ view model =
     { title = "Event Types"
     , body =
         [ Navbar.view model
-        , Loading.wrapper model (viewContent model)
+        , viewContent model
         ]
     }
 

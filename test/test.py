@@ -43,9 +43,9 @@ def driver(nav):
     return driver
 
 
-def check_in_backend(string):
+def count_evstore(string):
     with open(ES) as es:
-        return es.read().find(string) > 0
+        return es.read().count(string)
 
 
 def test_sync_process_type(backends):
@@ -67,7 +67,7 @@ def test_sync_process_type(backends):
         chrome.find_element(By.CLASS_NAME, "input").get_attribute("value") == ""
     ), "Form was not cleared after submit"
     WebDriverWait(chrome, 2).until(lambda _: os.path.exists(ES))
-    assert check_in_backend("AAAAAA"), "Event not stored in the backend"
+    assert count_evstore("AAAAAA") == 1, "(1) Wrong event count in the Event Store"
 
     # Check we get the process type from another browser
     firefox = driver("firefox")
@@ -100,20 +100,20 @@ def test_sync_process_type(backends):
     time.sleep(0.5)
     backends.append(subprocess.Popen(["../build/ms"]))
     chromestatus = chrome.find_element(By.ID, "WSStatus")
-    WebDriverWait(chrome, 10).until(lambda _: chromestatus.text == "WSOnline")
+    WebDriverWait(chrome, 10).until(lambda _: chromestatus.text == "WS=WSOpen")
 
     input_ = chrome.find_element(By.CLASS_NAME, "input")
     input_.send_keys("Cééé" + Keys.ENTER)
     assert (
         chrome.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Chrome"
-    assert check_in_backend("Cééé"), "Event not stored in the backend"
+    assert count_evstore("Cééé") == 1, "(2) Wrong event count in the Event Store"
     assert (
         firefox.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Firefox"
 
     WebDriverWait(chrome, 10).until(
-        lambda _: check_in_backend("EventCreatedWithoutBackend")
+        lambda _: count_evstore("EventCreatedWithoutBackend") == 1
     )
 
     firefox.quit()

@@ -6,13 +6,12 @@ import ES
 import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
 import Html.Attributes exposing (attribute, class, href, id, src, width)
 import Html.Events exposing (onClick)
+import IOStatus exposing (IOStatus(..))
 import Msg exposing (Msg(..))
-import Page.Loading as Loading
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Process as P exposing (Process)
 import REA.ProcessType exposing (ProcessType)
-import Status exposing (ESStatus(..))
 
 
 type alias Model =
@@ -25,7 +24,6 @@ view model ptype =
     , body =
         [ Navbar.view model
         , viewContent model ptype
-            |> Loading.wrapper model
         ]
     }
 

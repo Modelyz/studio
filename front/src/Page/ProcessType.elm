@@ -2,22 +2,19 @@ module Page.ProcessType exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
-import Route
-import Maybe exposing (andThen)
 import ES
 import Html exposing (..)
 import Html.Attributes exposing (class, disabled, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
+import Maybe exposing (andThen)
 import Msg exposing (Msg(..))
-import Page.Loading as Loading
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
+import Route
 
 
 type alias Model =
     ES.State
-
-    
 
 
 view : Model -> ProcessType -> Document Msg
@@ -25,7 +22,7 @@ view model ptype =
     { title = "Process Type"
     , body =
         [ Navbar.view model
-        , Loading.wrapper model (viewContent model ptype)
+        , viewContent model ptype
         ]
     }
 

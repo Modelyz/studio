@@ -53,39 +53,36 @@ var app = Elm.Main.init({flags:flags});
 /**** subscribe to Ports ****/
 
 
-
-
 // store an event to IDB
 const store = function(send) {
-    console.log("Storing events, send= " + send)
     return function(events) {
+            console.log("ELM port storeEvents")
+            console.log("JS IDB store(events): " + events)
         let request = window.indexedDB.open('eventstore', 1);
         request.onsuccess = function(e) {
-            console.log("open IDB successful");
             const db = e.target.result;
             const transaction = db.transaction(['events'],'readwrite');
             transaction.oncomplete = function(e) {
-                console.log("...transaction complete")
+                console.log("JS IDB transaction.oncomplete")
             }
             transaction.onerror = function(e) {
                 alert("IndexedDB transaction error while storing events:" + transaction.error) // FIXME send error to elm
             }
             events.forEach(function(event) {
-                console.log("Adding event to IDB : " + event)
+                console.log("JS IDB events.forEach transaction.objectStore('events').add(event): " + event.type)
                 const addrequest = transaction.objectStore('events').add(event)
                 addrequest.onsuccess = (e) => {
-                    console.log('...event successfully added to IDB...')
                     if (send) {
+                        console.log("->ELM port eventsStoredToSend")
                         app.ports.eventsStoredToSend.send([event]);
-                        console.log("...Success message (with send) sent back from JS to Elm")
                     } else {
+                        console.log("->ELM port eventsStored")
                         app.ports.eventsStored.send([event]);
-                        console.log("...Success message sent back from JS to Elm")
                     }
                 }
                 addrequest.onerror = (e) => {
-                    addrequest.transaction.abort()
                     alert("IndexedDB store request error: " + addrequest.error); // FIXME
+                    addrequest.transaction.abort()
                 }
             })
             db.close()
@@ -102,14 +99,15 @@ app.ports.storeEventsToSend.subscribe(store(true));
 
 // read events from IDB
 app.ports.readEvents.subscribe(function() {
+        console.log("<-ELM port readEvents")
     let request = window.indexedDB.open('eventstore', 1);
     request.onsuccess = e => {
-            console.log("Sending events from JS to Elm...");
+        console.log("JS IDB request.onsuccess objectStore('events').getAll()")
         const openCursor = e.target.result.transaction('events','readonly').objectStore('events').getAll();
         openCursor.onsuccess = e => {
             const events = e.target.result;
+            console.log("-> ELM port eventsReader.send(events)")
             app.ports.eventsReader.send(events);
-            console.log("...successfully sent all events from JS to Elm");
         }
         openCursor.onerror = () => {
             alert("IndexedDB transaction error while reading events:" + transaction.error); // FIXME
@@ -121,46 +119,50 @@ app.ports.readEvents.subscribe(function() {
 });
 
 /**** Websocket ****/
-var socket;
 reconnect = function() {
-    console.log("NEW WEBSOCKET");
-    socket = new WebSocket('ws://localhost:8080/');
-    app.ports.wsOpened.send(socket.readyState);
+    console.log("<- ELM port wsConnect")
+    console.log("JS WS new WebSocket");
+    delete window.socket;
+    window.socket = new WebSocket('ws://localhost:8080/');
     // Notify Elm the WS has closed
-    socket.onopen = function(e) {
-            console.log('onopen')
-        app.ports.wsOpened.send(socket.readyState);
+    window.socket.onopen = function(e) {
+        console.log("JS WS socket.onopen")
+        console.log("-> ELM port wsOpened.send(readyState)")
+        app.ports.wsOpened.send(window.socket.readyState);
     };
     // Notify Elm the WS has closed
-    socket.onclose = function(e) {
-            console.log('onclose')
-        app.ports.wsClose.send(socket.readyState);
-        delete socket;
+    window.socket.onclose = function(e) {
+        console.log("JS WS socket.onclose")
+        console.log("-> ELM port wsClose.send(readyState)")
+        app.ports.wsClose.send(window.socket.readyState);
+        delete window.socket;
     };
     // Notify Elm the WS had error
-    socket.onerror = function(e) {
-            console.log('onerror')
-        app.ports.wsError.send(e.data);
+    window.socket.onerror = function(e) {
+        console.log("JS WS socket.onerror")
+        console.log("-> ELM port wsError.send(readyState)")
+        app.ports.wsError.send(window.socket.readyState);
     };
     // Notify Elm we received events from WS
-    socket.onmessage = function(e) {
-    console.log('onmessage')
-        console.log("JS received events from WS and transmitting to Elm: " + e);
+    window.socket.onmessage = function(e) {
+        console.log("JS WS socket.onmessage: " + e.data)
+        console.log("-> ELM port eventsReceiver.send(e.data)")
         app.ports.eventsReceiver.send(e.data);
     };
-    // Elm asks to send events to WS
-    app.ports.sendEvents.unsubscribe();
-    app.ports.sendEvents.subscribe(function(message) {
-            console.log("Sending event to WS... : " + message);
-            socket.send(message);
-            app.ports.wsSendStatus.send("OK");
-            console.log("...sent event to WS");
-    
-    });
 }
 // Elm asks to reconnect WS
+console.log("JS WS app.ports.wsConnect.subscribe")
 app.ports.wsConnect.subscribe(reconnect);
 
+// Elm asks to send events to WS
+console.log("JS WS app.ports.wsSend.subscribe")
+app.ports.wsSend.subscribe(function(message) {
+        console.log("ELM port wsSend")
+        console.log("JS WS window.socket.send(message)")
+        window.socket.send(message);
+        console.log("ELM wsSendStatus.send('OK')")
+        app.ports.wsSendStatus.send("OK");
+});
 
 
     </script>
