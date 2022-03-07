@@ -3,7 +3,6 @@ module REA.Process exposing (Process, compare, decoder, encode)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.ProcessType exposing (ProcessType)
 import Time exposing (millisToPosix, posixToMillis)
 
 
@@ -16,6 +15,7 @@ import Time exposing (millisToPosix, posixToMillis)
 type alias Process =
     { uuid : Uuid -- TODO rename uuid to producer
     , posixtime : Time.Posix
+    , name : String
     , type_ : String
     }
 
@@ -30,6 +30,7 @@ encode p =
     Encode.object
         [ ( "uuid", Uuid.encode p.uuid )
         , ( "posixtime", Encode.int <| posixToMillis p.posixtime )
+        , ( "name", Encode.string p.name )
         , ( "type_", Encode.string p.type_ )
         ]
 
@@ -43,7 +44,8 @@ encode p =
 
 decoder : Decode.Decoder Process
 decoder =
-    Decode.map3 Process
+    Decode.map4 Process
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "posixtime" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "name" Decode.string)
         (Decode.field "type_" Decode.string)

@@ -94,7 +94,7 @@ const store = function(send) {
 };
 // store an event to IDB
 app.ports.storeEvents.subscribe(store(false));
-// store events to IDB then tell to send them
+// store events to IDB then answer to send them through WS
 app.ports.storeEventsToSend.subscribe(store(true));
 
 // read events from IDB

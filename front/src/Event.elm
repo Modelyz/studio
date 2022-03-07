@@ -1,7 +1,5 @@
-port module ES exposing (Event(..), State, aggregate, compare, currentProcessType, decodelist, decoder, encode, getCommitments, getEvents, getProcess, getProcessType, getTime, new, readEvents, storeEvents, storeEventsToSend)
+port module Event exposing (Event(..), compare, decodelist, decoder, encode, getTime, readEvents, storeEvents, storeEventsToSend, unbox)
 
-import Browser.Navigation as Nav
-import DictSet as Set exposing (DictSet)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
@@ -11,14 +9,8 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Process as P exposing (Process)
-import REA.ProcessCommitments as PC exposing (ProcessCommitments)
-import REA.ProcessEvents as PE exposing (ProcessEvents)
 import REA.ProcessType as PT exposing (ProcessType)
-import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
-import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
-import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
-import Route exposing (Route)
 import Time exposing (millisToPosix, posixToMillis)
 import Websocket exposing (WSStatus(..))
 
@@ -48,357 +40,26 @@ port storeEventsToSend : Encode.Value -> Cmd msg
 -- application/user events --
 
 
+type alias EventBase a =
+    { a
+        | uuid : Uuid
+        , posixtime : Time.Posix
+    }
+
+
 type Event
-    = ProcessTypeChanged
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , ptype : ProcessType
-        }
-    | ProcessTypeRemoved
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , ptype : String
-        }
-    | ProcessAdded
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , type_ : String
-        }
-    | CommitmentTypeAdded
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , commitmentType : CommitmentType
-        }
-    | CommitmentTypeRemoved
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , commitmentType : CommitmentType
-        }
-    | CommitmentAdded
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , process : Process
-        , commitment : Commitment
-        }
-    | EventTypeAdded
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , eventType : EventType
-        }
-    | EventTypeRemoved
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , eventType : EventType
-        }
-    | EventAdded
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , process : Process
-        , event : E.Event
-        }
-    | LinkedEventTypeToProcessType
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , etype : String
-        , ptype : String
-        }
-    | ConnectionInitiated
-        -- A new connection occured from the frontend
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , lastEventTime : Time.Posix
-        , sessionUuid : Uuid
-
-        -- TODO add auth here?
-        }
-    | AckReceived
-        -- Ack from the backend that the message has been stored
-        { uuid : Uuid
-        , posixtime : Time.Posix
-        , origin : Uuid
-        }
-
-
-
--- global application state --
--- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
--- → switch to elm-spa
-
-
-type alias State =
-    -- ui model related
-    { currentSeed : Seed
-    , navkey : Nav.Key
-    , route : Route
-
-    -- input related
-    , inputProcessType : ProcessType
-    , inputCommitmentType : String
-    , inputCommitmentTypeProcessTypes : DictSet String String
-    , inputEventType : String
-    , inputEventTypeProcessTypes : DictSet String String
-
-    -- ES and WS related
-    , iostatus : IOStatus
-    , lastEventTime : Time.Posix
-    , pendingEvents : DictSet Int Event
-
-    -- WS related
-    , wsstatus : WSStatus
-    , timeoutReconnect : Int
-
-    -- session related
-    , sessionUuid : Maybe Uuid
-
-    -- REA state related
-    , processTypes : DictSet String ProcessType
-    , processes : DictSet Int Process
-    , commitmentTypes : DictSet String CommitmentType
-    , commitments : DictSet Int Commitment
-    , process_commitments : DictSet Int ProcessCommitments
-    , eventTypes : DictSet String EventType
-    , events : DictSet Int E.Event
-    , process_events : DictSet Int ProcessEvents
-    , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
-    , processType_eventTypes : DictSet String ProcessTypeEventType
-    }
-
-
-new : Seed -> Nav.Key -> Route -> State
-new seed key route =
-    { currentSeed = seed
-    , navkey = key
-    , route = route
-    , iostatus = ESReading
-    , wsstatus = WSClosed
-    , timeoutReconnect = 1
-    , inputProcessType = { name = "" }
-    , inputCommitmentType = ""
-    , inputEventType = ""
-    , inputCommitmentTypeProcessTypes = Set.empty identity
-    , inputEventTypeProcessTypes = Set.empty identity
-    , processTypes = Set.empty PT.compare
-    , processes = Set.empty P.compare
-    , process_commitments = Set.empty PC.compare
-    , commitmentTypes = Set.empty CT.compare
-    , commitments = Set.empty C.compare
-    , eventTypes = Set.empty ET.compare
-    , events = Set.empty E.compare
-    , lastEventTime = millisToPosix 0
-    , pendingEvents = Set.empty compare
-    , sessionUuid = Nothing
-    , process_events = Set.empty PE.compare
-    , processType_commitmentTypes = Set.empty PTCT.compare
-    , processType_eventTypes = Set.empty PTET.compare
-    }
-
-
-compare : Event -> Int
-compare event =
-    case event of
-        ProcessTypeChanged pt ->
-            posixToMillis pt.posixtime
-
-        ProcessTypeRemoved pt ->
-            posixToMillis pt.posixtime
-
-        ProcessAdded p ->
-            posixToMillis p.posixtime
-
-        CommitmentTypeAdded ct ->
-            posixToMillis ct.posixtime
-
-        CommitmentTypeRemoved ct ->
-            posixToMillis ct.posixtime
-
-        CommitmentAdded c ->
-            posixToMillis c.posixtime
-
-        EventTypeAdded et ->
-            posixToMillis et.posixtime
-
-        EventTypeRemoved et ->
-            posixToMillis et.posixtime
-
-        EventAdded e ->
-            posixToMillis e.posixtime
-
-        LinkedEventTypeToProcessType e ->
-            posixToMillis e.posixtime
-
-        ConnectionInitiated e ->
-            posixToMillis e.posixtime
-
-        AckReceived e ->
-            posixToMillis e.posixtime
-
-
-getTime : Event -> Time.Posix
-getTime event =
-    -- Maybe we could avoid redecoding after storing??
-    case event of
-        ProcessTypeChanged pt ->
-            pt.posixtime
-
-        ProcessTypeRemoved pt ->
-            pt.posixtime
-
-        ProcessAdded p ->
-            p.posixtime
-
-        CommitmentTypeAdded ct ->
-            ct.posixtime
-
-        CommitmentTypeRemoved ct ->
-            ct.posixtime
-
-        CommitmentAdded c ->
-            c.posixtime
-
-        EventTypeAdded et ->
-            et.posixtime
-
-        EventTypeRemoved et ->
-            et.posixtime
-
-        EventAdded e ->
-            e.posixtime
-
-        LinkedEventTypeToProcessType e ->
-            e.posixtime
-
-        ConnectionInitiated e ->
-            e.posixtime
-
-        AckReceived e ->
-            e.posixtime
-
-
-getProcess : State -> String -> Maybe Process
-getProcess state str =
-    -- TODO : move to Page/Process?
-    Uuid.fromString str
-        |> Maybe.andThen
-            (\uuid ->
-                Set.filter
-                    (\p -> p.uuid == uuid)
-                    state.processes
-                    |> Set.values
-                    |> List.head
-            )
-
-
-getCommitments : State -> Process -> DictSet Int Commitment
-getCommitments state process =
-    Set.filter (\pc -> pc.process.uuid == process.uuid) state.process_commitments
-        |> Set.map C.compare (\pc -> pc.commitment)
-
-
-getEvents : State -> Process -> DictSet Int E.Event
-getEvents state process =
-    Set.filter (\pe -> pe.process.uuid == process.uuid) state.process_events
-        |> Set.map E.compare (\pe -> pe.event)
-
-
-
---- evolve the state given an event
-
-
-aggregate : Event -> State -> State
-aggregate event state =
-    case event of
-        ProcessTypeChanged e ->
-            { state
-                | processTypes = Set.insert e.ptype state.processTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        ProcessTypeRemoved e ->
-            { state
-                | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        ProcessAdded e ->
-            { state
-                | processes = Set.insert e state.processes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        CommitmentTypeAdded e ->
-            { state
-                | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        CommitmentTypeRemoved e ->
-            { state
-                | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        CommitmentAdded e ->
-            { state
-                | commitments = Set.insert e.commitment state.commitments
-                , process_commitments = Set.insert { process = e.process, commitment = e.commitment } state.process_commitments
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        EventTypeAdded e ->
-            { state
-                | eventTypes = Set.insert e.eventType state.eventTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        LinkedEventTypeToProcessType e ->
-            let
-                ptet =
-                    { etype = e.etype, ptype = e.ptype }
-            in
-            { state
-                | processType_eventTypes = Set.insert ptet state.processType_eventTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        EventTypeRemoved e ->
-            { state
-                | eventTypes = Set.remove e.eventType state.eventTypes
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        EventAdded e ->
-            { state
-                | events = Set.insert e.event state.events
-                , process_events = Set.insert { process = e.process, event = e.event } state.process_events
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        ConnectionInitiated e ->
-            { state
-                | sessionUuid = Just e.sessionUuid
-                , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
-            }
-
-        AckReceived e ->
-            { state
-                | pendingEvents = Set.filter (\x -> getUuid x /= e.origin) state.pendingEvents
-                , lastEventTime = e.posixtime
-            }
-
-
-
--- Event constructors
+    = ProcessTypeChanged (EventBase { ptype : ProcessType })
+    | ProcessTypeRemoved (EventBase { ptype : String })
+    | ProcessAdded (EventBase { type_ : String, name : String })
+    | CommitmentTypeAdded (EventBase { commitmentType : CommitmentType })
+    | CommitmentTypeRemoved (EventBase { commitmentType : CommitmentType })
+    | CommitmentAdded (EventBase { process : Process, commitment : Commitment })
+    | EventTypeAdded (EventBase { eventType : EventType })
+    | EventTypeRemoved (EventBase { eventType : EventType })
+    | EventAdded (EventBase { process : Process, event : E.Event })
+    | LinkedEventTypeToProcessType (EventBase { etype : String, ptype : String })
+    | ConnectionInitiated (EventBase { lastEventTime : Time.Posix, sessionUuid : Uuid })
+    | AckReceived (EventBase { origin : Uuid })
 
 
 processTypeChanged : Uuid -> Time.Posix -> ProcessType -> Event
@@ -419,11 +80,66 @@ processTypeRemoved uuid posixtime ptype =
         }
 
 
-processAdded : Uuid -> Time.Posix -> String -> Event
-processAdded uuid posixtime ptype =
+unbox : Event -> EventBase {}
+unbox event =
+    case event of
+        ProcessTypeChanged e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        ProcessTypeRemoved e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        ProcessAdded e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        CommitmentTypeAdded e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        CommitmentTypeRemoved e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        CommitmentAdded e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        EventTypeAdded e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        EventTypeRemoved e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        EventAdded e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        LinkedEventTypeToProcessType e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        ConnectionInitiated e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+        AckReceived e ->
+            { uuid = e.uuid, posixtime = e.posixtime }
+
+
+compare : Event -> Int
+compare =
+    getTime >> posixToMillis
+
+
+getTime : Event -> Time.Posix
+getTime =
+    unbox >> .posixtime
+
+
+
+-- Event constructors
+
+
+processAdded : Uuid -> Time.Posix -> String -> String -> Event
+processAdded uuid posixtime pname ptype =
     ProcessAdded
         { uuid = uuid
         , posixtime = posixtime
+        , name = pname
         , type_ = ptype
         }
 
@@ -537,6 +253,7 @@ encode event =
                 [ ( "uuid", Uuid.encode e.uuid )
                 , ( "type", Encode.string "ProcessAdded" )
                 , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
+                , ( "name", Encode.string e.name )
                 , ( "type_", Encode.string e.type_ )
                 ]
 
@@ -645,9 +362,10 @@ decoder =
                             (Decode.field "ptype" Decode.string)
 
                     "ProcessAdded" ->
-                        Decode.map3 processAdded
+                        Decode.map4 processAdded
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "name" Decode.string)
                             (Decode.field "type_" Decode.string)
 
                     "CommitmentTypeAdded" ->
@@ -711,62 +429,3 @@ decoder =
                     _ ->
                         Decode.fail "Unknown Event type"
             )
-
-
-currentProcessType : State -> Maybe ProcessType
-currentProcessType state =
-    case state.route of
-        Route.Processes maybetype ->
-            getProcessType state (Maybe.withDefault "" maybetype)
-
-        _ ->
-            Nothing
-
-
-getProcessType : State -> String -> Maybe ProcessType
-getProcessType state type_str =
-    Set.filter
-        (\pt -> pt.name == type_str)
-        state.processTypes
-        |> Set.values
-        |> List.head
-
-
-getUuid : Event -> Uuid
-getUuid event =
-    case event of
-        ProcessTypeChanged pt ->
-            pt.uuid
-
-        ProcessTypeRemoved pt ->
-            pt.uuid
-
-        ProcessAdded p ->
-            p.uuid
-
-        CommitmentTypeAdded ct ->
-            ct.uuid
-
-        CommitmentTypeRemoved ct ->
-            ct.uuid
-
-        CommitmentAdded c ->
-            c.uuid
-
-        EventTypeAdded et ->
-            et.uuid
-
-        EventTypeRemoved et ->
-            et.uuid
-
-        EventAdded e ->
-            e.uuid
-
-        LinkedEventTypeToProcessType e ->
-            e.uuid
-
-        ConnectionInitiated e ->
-            e.uuid
-
-        AckReceived e ->
-            e.uuid

@@ -1,14 +1,14 @@
 module Page.Error exposing (view)
 
 import Browser
-import Html exposing (Html, a, div, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
-import ES
-import Page.Navbar as Navbar
+import Html exposing (div, text)
 import Msg exposing (Msg(..))
+import Page.Navbar as Navbar
+import State exposing (State)
+
 
 type alias Model =
-    ES.State
+    State
 
 
 viewContent : Model -> Html.Html Msg

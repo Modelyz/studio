@@ -1,20 +1,17 @@
 module Page.ProcessType exposing (view)
 
 import Browser exposing (Document)
-import DictSet as Set
-import ES
-import Html exposing (..)
-import Html.Attributes exposing (class, disabled, placeholder, style, type_, value)
+import Html exposing (Html, button, div, form, input, label, p, text)
+import Html.Attributes exposing (class, disabled, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Maybe exposing (andThen)
 import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
-import Route
+import State exposing (State)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 view : Model -> ProcessType -> Document Msg
@@ -70,12 +67,7 @@ viewContent model ptype =
                         [ button
                             [ class "button is-link"
                             , disabled
-                                (if model.inputProcessType == ptype then
-                                    True
-
-                                 else
-                                    False
-                                )
+                                (model.inputProcessType == ptype)
                             , onClick <| ProcessTypeChanged model.inputProcessType
                             ]
                             [ text "Change"

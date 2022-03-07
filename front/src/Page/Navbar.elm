@@ -1,19 +1,18 @@
 module Page.Navbar exposing (view)
 
 import DictSet as Set
-import ES
-import Html exposing (..)
+import Html exposing (Html, a, div, nav, span, text)
 import Html.Attributes exposing (attribute, class, classList, href, id)
-import Html.Events exposing (onClick)
 import IOStatus as IO exposing (toText)
 import Msg exposing (Msg(..))
 import Route exposing (Route(..))
+import State exposing (State)
 import Time exposing (posixToMillis)
 import Websocket as WS exposing (toText)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 isActive : Model -> Route -> Bool
@@ -64,14 +63,13 @@ view model =
                     ]
                 ]
             ]
-                ++ (case Set.size model.processTypes > 0 of
-                        True ->
-                            model.processTypes
-                                |> Set.toList
-                                |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
+                ++ (if Set.size model.processTypes > 0 then
+                        model.processTypes
+                            |> Set.toList
+                            |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
 
-                        False ->
-                            []
+                    else
+                        []
                    )
         , div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText model.wsstatus ]
         , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText model.iostatus ]

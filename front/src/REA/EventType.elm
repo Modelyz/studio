@@ -1,6 +1,6 @@
 module REA.EventType exposing (EventType, compare, decoder, encode, new)
 
-import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 

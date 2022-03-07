@@ -1,15 +1,11 @@
-module REA.ProcessTypeEventType exposing (ProcessTypeEventType, compare)
+module REA.ProcessTypeEventType exposing (ProcessTypeEventType, compare, decoder, encode)
 
-import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid exposing (toString)
-import REA.EventType as ET exposing (EventType)
-import REA.ProcessType as PT exposing (ProcessType)
-import Time exposing (millisToPosix, posixToMillis)
 
 
 
--- Represent the link between processes and commitments
+-- Represent the link between processes and events
 
 
 type alias ProcessTypeEventType =

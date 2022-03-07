@@ -3,8 +3,8 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
-import ES exposing (Event(..), getProcess, getProcessType, getTime)
-import IOStatus as IO exposing (IOStatus(..), toText)
+import Event exposing (Event(..), getTime)
+import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
@@ -22,10 +22,9 @@ import REA.Commitment as C
 import REA.CommitmentType as CT
 import REA.Event as E
 import REA.EventType as ET
-import REA.Process as P
 import Random.Pcg.Extended as Random exposing (initialSeed, step)
-import Result
 import Route exposing (parseUrl)
+import State exposing (State, getProcess, getProcessType)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Url exposing (Url)
@@ -33,7 +32,7 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 
@@ -66,8 +65,8 @@ port eventsReceiver : (String -> msg) -> Sub msg
 
 init : ( Int, List Int ) -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) url navkey =
-    ( ES.new (initialSeed seed seedExtension) navkey (parseUrl url)
-    , ES.readEvents Encode.null
+    ( State.new (initialSeed seed seedExtension) navkey (parseUrl url)
+    , Event.readEvents Encode.null
     )
 
 
@@ -108,7 +107,7 @@ update msg model =
                     else
                         model.timeoutReconnect
 
-                ( newUuid, newSeed ) =
+                ( newUuid, _ ) =
                     Random.step Uuid.generator model.currentSeed
 
                 cmd =
@@ -120,7 +119,7 @@ update msg model =
             in
             ( { model | wsstatus = wsstatus, timeoutReconnect = timeoutReconnect }, cmd )
 
-        Msg.WSError err ->
+        Msg.WSError _ ->
             ( { model
                 | iostatus =
                     IOError "Websocket error"
@@ -128,7 +127,7 @@ update msg model =
             , Cmd.none
             )
 
-        Msg.WSDisconnected err ->
+        Msg.WSDisconnected _ ->
             ( { model
                 | timeoutReconnect = min 30 (model.timeoutReconnect + 1)
                 , wsstatus = WSClosed
@@ -138,15 +137,11 @@ update msg model =
             )
 
         Msg.EventsRead results ->
-            let
-                ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.currentSeed
-            in
-            case decodeValue (Decode.list ES.decoder) results of
+            case decodeValue (Decode.list Event.decoder) results of
                 Ok events ->
                     let
                         newmodel =
-                            List.foldr ES.aggregate model (List.reverse events)
+                            List.foldr State.aggregate model (List.reverse events)
                     in
                     ( { newmodel
                         | iostatus = IOIdle
@@ -206,7 +201,7 @@ update msg model =
                 , inputProcessType = { name = "" }
               }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| ES.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now
+                Task.map (\t -> List.singleton <| Event.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now
             )
 
         Msg.DeleteProcessType ptype ->
@@ -230,7 +225,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, type_ = ptype.name }) Time.now
+                Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, name = Uuid.toString newUuid, type_ = ptype.name }) Time.now
             )
 
         Msg.NewCommitment process ctype ->
@@ -347,30 +342,30 @@ update msg model =
                     ( model, Cmd.none )
 
         Msg.StoreEventsToSend events ->
-            ( { model | iostatus = ESStoring }, ES.storeEventsToSend (Encode.list ES.encode events) )
+            ( { model | iostatus = ESStoring }, Event.storeEventsToSend (Encode.list Event.encode events) )
 
         Msg.EventsStoredTosend events ->
-            case decodeValue (Decode.list ES.decoder) events of
+            case decodeValue (Decode.list Event.decoder) events of
                 Ok evs ->
                     if model.wsstatus == WSOpen then
                         ( { model | iostatus = ESReading }
                         , Cmd.batch
-                            [ ES.readEvents Encode.null
-                            , wsSend <| Encode.encode 0 <| Encode.list ES.encode <| Set.toList <| Set.union model.pendingEvents <| Set.fromList ES.compare evs
+                            [ Event.readEvents Encode.null
+                            , wsSend <| Encode.encode 0 <| Encode.list Event.encode <| Set.toList <| Set.union model.pendingEvents <| Set.fromList Event.compare evs
                             ]
                         )
 
                     else
-                        ( { model | iostatus = IOIdle }, ES.readEvents Encode.null )
+                        ( { model | iostatus = IOIdle }, Event.readEvents Encode.null )
 
                 Err err ->
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
-        Msg.EventsStored events ->
+        Msg.EventsStored _ ->
             ( { model
                 | iostatus = IOIdle
               }
-            , ES.readEvents Encode.null
+            , Event.readEvents Encode.null
             )
 
         Msg.EventsSent status ->
@@ -418,14 +413,14 @@ update msg model =
             ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Cmd.none )
 
         Msg.EventsReceived ms ->
-            case decodeString (Decode.list ES.decoder) ms of
+            case decodeString (Decode.list Event.decoder) ms of
                 Ok messages ->
                     ( { model
                         | wsstatus = WSOpen
                         , iostatus = ESStoring
                       }
-                    , ES.storeEvents <|
-                        Encode.list ES.encode messages
+                    , Event.storeEvents <|
+                        Encode.list Event.encode messages
                     )
 
                 Err err ->

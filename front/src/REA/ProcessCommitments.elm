@@ -1,21 +1,14 @@
 module REA.ProcessCommitments exposing (ProcessCommitments, compare)
 
-import Prng.Uuid as Uuid exposing (toString)
-import REA.Commitment exposing (Commitment)
-import REA.Process exposing (Process)
-import Time exposing (millisToPosix, posixToMillis)
-
-
-
 -- Represent the link between processes and commitments
 
 
 type alias ProcessCommitments =
-    { process : Process
-    , commitment : Commitment
+    { process : String
+    , commitment : String
     }
 
 
-compare : ProcessCommitments -> Int
-compare =
-    .commitment >> .posixtime >> posixToMillis
+compare : ProcessCommitments -> String
+compare pc =
+    pc.process ++ " " ++ pc.commitment

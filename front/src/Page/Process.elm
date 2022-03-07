@@ -2,26 +2,23 @@ module Page.Process exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
-import ES exposing (getCommitments, getEvents)
-import Html exposing (..)
-import Html.Attributes exposing (attribute, class, href, src, style, width)
+import Html exposing (Html, a, br, div, nav, p, text)
+import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import IOStatus exposing (IOStatus(..))
 import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
-import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.CommitmentType exposing (CommitmentType)
 import REA.Event as E exposing (Event)
-import REA.EventType as ET exposing (EventType)
+import REA.EventType exposing (EventType)
 import REA.Process exposing (Process)
-import REA.ProcessType exposing (ProcessType)
-import REA.ProcessTypeCommitmentType as PTCT
-import REA.ProcessTypeEventType as PTET
+import State exposing (State, getCommitmentTypes, getCommitments, getEventTypes, getEvents)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 view : Model -> Process -> Document Msg
@@ -60,14 +57,10 @@ viewContent : Model -> Process -> Html Msg
 viewContent model process =
     let
         commitmentTypes =
-            model.processType_commitmentTypes
-                |> Set.filter (\ptct -> ptct.ptype.name == process.type_)
-                |> Set.map CT.compare .ctype
+            getCommitmentTypes model process.type_
 
         eventTypes =
-            model.processType_eventTypes
-                |> Set.filter (\ptet -> ptet.ptype == process.type_)
-                |> Set.map identity .etype
+            getEventTypes model process.type_
     in
     div []
         [ div
@@ -107,7 +100,7 @@ viewContent model process =
                     List.map
                         (newEventButton process)
                         (model.eventTypes
-                            |> Set.filter (\et -> Set.member et.name eventTypes)
+                            |> Set.filter (\et -> Set.member et eventTypes)
                             |> Set.toList
                         )
                 , div [ class "panel-block" ]

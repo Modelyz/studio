@@ -1,14 +1,14 @@
 module Page.NotFound exposing (view)
 
 import Browser
-import Html exposing (Html, a, div, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, src, width)
-import Page.Navbar as Navbar
-import ES
+import Html exposing (Html, div, text)
 import Msg exposing (Msg(..))
+import Page.Navbar as Navbar
+import State exposing (State)
+
 
 type alias Model =
-    ES.State
+    State
 
 
 view : Model -> Browser.Document Msg
@@ -16,11 +16,11 @@ view model =
     { title = "Not Found"
     , body =
         [ Navbar.view model
-        , viewContent model
+        , viewContent
         ]
     }
 
 
-viewContent : Model -> Html.Html msg
-viewContent model =
+viewContent : Html msg
+viewContent =
     div [] [ text "Not Found" ]

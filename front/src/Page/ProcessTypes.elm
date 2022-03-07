@@ -2,17 +2,17 @@ module Page.ProcessTypes exposing (view)
 
 import Browser exposing (Document)
 import DictSet as Set
-import ES
-import Html exposing (..)
+import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
 import Html.Attributes exposing (class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
+import State exposing (State)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 view : Model -> Document Msg

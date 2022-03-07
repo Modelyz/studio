@@ -2,9 +2,8 @@ module Page.Processes exposing (Model, view)
 
 import Browser exposing (Document)
 import DictSet
-import ES
-import Html exposing (Html, a, br, button, div, i, img, nav, span, text)
-import Html.Attributes exposing (attribute, class, href, id, src, width)
+import Html exposing (Html, a, br, button, div, text)
+import Html.Attributes exposing (class, href, id)
 import Html.Events exposing (onClick)
 import IOStatus exposing (IOStatus(..))
 import Msg exposing (Msg(..))
@@ -12,10 +11,11 @@ import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Process as P exposing (Process)
 import REA.ProcessType exposing (ProcessType)
+import State exposing (State)
 
 
 type alias Model =
-    ES.State
+    State
 
 
 view : Model -> ProcessType -> Document Msg

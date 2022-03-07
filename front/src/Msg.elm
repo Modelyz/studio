@@ -1,7 +1,7 @@
 module Msg exposing (Msg(..))
 
 import Browser
-import ES
+import Event
 import Json.Encode
 import REA.CommitmentType exposing (CommitmentType)
 import REA.EventType exposing (EventType)
@@ -18,7 +18,7 @@ type Msg
     | WSConnected Json.Encode.Value
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
-    | StoreEventsToSend (List ES.Event)
+    | StoreEventsToSend (List Event.Event)
     | EventsStored Json.Encode.Value
     | EventsStoredTosend Json.Encode.Value
     | EventsRead Json.Encode.Value
