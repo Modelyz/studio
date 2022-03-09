@@ -25,11 +25,13 @@ executable ms
   -- other-extensions:
   build-depends:
     base >=4.13 && <4.14
+    , aeson
     , bytestring
     , http-types
-    , json
+    , scientific
     , text
     , time
+    , unordered-containers
     , uuid
     , wai
     , wai-websockets

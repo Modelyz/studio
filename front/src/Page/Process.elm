@@ -3,7 +3,7 @@ module Page.Process exposing (view)
 import Browser exposing (Document)
 import DictSet as Set
 import Html exposing (Html, a, br, div, nav, p, text)
-import Html.Attributes exposing (class, style)
+import Html.Attributes exposing (class, href, style)
 import Html.Events exposing (onClick)
 import IOStatus exposing (IOStatus(..))
 import Msg exposing (Msg(..))

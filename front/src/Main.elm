@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
 import Event exposing (Event(..), getTime)
+import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
@@ -79,6 +80,7 @@ initiateConnection uuid model =
                     ConnectionInitiated
                         { uuid = uuid
                         , posixtime = t
+                        , flow = Requested
                         , lastEventTime = model.lastEventTime
                         , sessionUuid = uuid
                         }
@@ -201,7 +203,7 @@ update msg model =
                 , inputProcessType = { name = "" }
               }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| Event.ProcessTypeChanged { uuid = newUuid, posixtime = t, ptype = ptype }) Time.now
+                Task.map (\t -> List.singleton <| Event.ProcessTypeChanged { uuid = newUuid, posixtime = t, flow = Requested, ptype = ptype }) Time.now
             )
 
         Msg.DeleteProcessType ptype ->
@@ -213,7 +215,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, ptype = ptype.name }) Time.now
+                Task.map (\t -> List.singleton <| ProcessTypeRemoved { uuid = newUuid, posixtime = t, flow = Requested, ptype = ptype.name }) Time.now
             )
 
         Msg.NewProcess ptype ->
@@ -225,7 +227,7 @@ update msg model =
                 | currentSeed = newSeed
               }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, name = Uuid.toString newUuid, type_ = ptype.name }) Time.now
+                Task.map (\t -> List.singleton <| ProcessAdded { uuid = newUuid, posixtime = t, flow = Requested, name = Uuid.toString newUuid, type_ = ptype.name }) Time.now
             )
 
         Msg.NewCommitment process ctype ->
@@ -245,7 +247,7 @@ update msg model =
                         | currentSeed = newSeed
                       }
                     , Task.perform StoreEventsToSend <|
-                        Task.map (\t -> List.singleton <| CommitmentAdded { uuid = newUuid, posixtime = t, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
+                        Task.map (\t -> List.singleton <| CommitmentAdded { uuid = newUuid, posixtime = t, flow = Requested, process = process, commitment = C.new ct.name newUuid t ct }) Time.now
                     )
 
                 Nothing ->
@@ -266,19 +268,11 @@ update msg model =
             , Task.perform StoreEventsToSend <|
                 Task.map
                     (\t ->
-                        EventTypeAdded
-                            { uuid = newUuid
-                            , posixtime = t
-                            , eventType = ET.new model.inputEventType
-                            }
+                        EventTypeAdded { uuid = newUuid, posixtime = t, flow = Requested, eventType = ET.new model.inputEventType }
                             :: List.map
                                 (\pt ->
                                     LinkedEventTypeToProcessType
-                                        { uuid = newUuid
-                                        , posixtime = t
-                                        , etype = model.inputEventType
-                                        , ptype = pt
-                                        }
+                                        { uuid = newUuid, posixtime = t, flow = Requested, etype = model.inputEventType, ptype = pt }
                                 )
                                 (Set.toList model.inputEventTypeProcessTypes)
                     )
@@ -300,10 +294,7 @@ update msg model =
                     (\t ->
                         List.singleton <|
                             CommitmentTypeAdded
-                                { uuid = newUuid
-                                , posixtime = t
-                                , commitmentType = CT.new name
-                                }
+                                { uuid = newUuid, posixtime = t, flow = Requested, commitmentType = CT.new name }
                     )
                     Time.now
             )
@@ -331,6 +322,7 @@ update msg model =
                                     EventAdded
                                         { uuid = newUuid
                                         , posixtime = t
+                                        , flow = Requested
                                         , process = process
                                         , event = E.new et.name newUuid t et
                                         }
@@ -390,7 +382,7 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| EventTypeRemoved { uuid = newUuid, posixtime = t, eventType = etype }) Time.now
+                Task.map (\t -> List.singleton <| EventTypeRemoved { uuid = newUuid, posixtime = t, flow = Requested, eventType = etype }) Time.now
             )
 
         Msg.InputCommitmentType ctype ->
@@ -403,7 +395,7 @@ update msg model =
             in
             ( { model | currentSeed = newSeed }
             , Task.perform StoreEventsToSend <|
-                Task.map (\t -> List.singleton <| CommitmentTypeRemoved { uuid = newUuid, posixtime = t, commitmentType = ctype }) Time.now
+                Task.map (\t -> List.singleton <| CommitmentTypeRemoved { uuid = newUuid, posixtime = t, flow = Requested, commitmentType = ctype }) Time.now
             )
 
         Msg.InputCommitmentTypeProcessType pt ->

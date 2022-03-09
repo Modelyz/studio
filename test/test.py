@@ -67,7 +67,7 @@ def test_sync_process_type(backends):
         chrome.find_element(By.CLASS_NAME, "input").get_attribute("value") == ""
     ), "Form was not cleared after submit"
     WebDriverWait(chrome, 2).until(lambda _: os.path.exists(ES))
-    assert count_evstore("AAAAAA") == 1, "(1) Wrong event count in the Event Store"
+    assert count_evstore("AAAAAA") == 2, "(1) Wrong event count in the Event Store"
 
     # Check we get the process type from another browser
     firefox = driver("firefox")
@@ -99,21 +99,22 @@ def test_sync_process_type(backends):
     )
     time.sleep(0.5)
     backends.append(subprocess.Popen(["../build/ms"]))
-    chromestatus = chrome.find_element(By.ID, "WSStatus")
-    WebDriverWait(chrome, 10).until(lambda _: chromestatus.text == "WS=WSOpen")
+    WebDriverWait(chrome, 10).until(
+        lambda _: chrome.find_element(By.ID, "WSStatus").text == "WS=WSOpen"
+    )
 
     input_ = chrome.find_element(By.CLASS_NAME, "input")
     input_.send_keys("Cééé" + Keys.ENTER)
     assert (
         chrome.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Chrome"
-    assert count_evstore("Cééé") == 1, "(2) Wrong event count in the Event Store"
+    assert count_evstore("Cééé") == 2, "(2) Wrong event count in the Event Store"
     assert (
         firefox.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Firefox"
 
     WebDriverWait(chrome, 10).until(
-        lambda _: count_evstore("EventCreatedWithoutBackend") == 1
+        lambda _: count_evstore("EventCreatedWithoutBackend") == 2
     )
     assert (
         firefox.find_element(By.ID, "EventCreatedWithoutBackend").text
@@ -123,6 +124,14 @@ def test_sync_process_type(backends):
         chrome.find_element(By.ID, "EventCreatedWithoutBackend").text
         == "EventCreatedWithoutBackend"
     ), "The Process Type has not been created on Chrome"
+    chrome.set_window_size(1700, 800)
+    firefox.set_window_size(1700, 800)
+    assert (
+        firefox.find_element(By.ID, "pending").text == "pending=0"
+    ), "There is a remaining pending event on Firefox"
+    assert (
+        chrome.find_element(By.ID, "pending").text == "pending=0"
+    ), "There is a remaining pending event on Chrome"
 
     firefox.quit()
     chrome.quit()

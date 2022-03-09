@@ -4,7 +4,8 @@ module State exposing (State, aggregate, currentProcessType, getCommitmentTypes,
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
-import Event exposing (Event(..), unbox)
+import Event exposing (Event(..), base)
+import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Decode exposing (andThen)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -107,35 +108,39 @@ aggregate event state =
             { state
                 | processTypes = Set.insert e.ptype state.processTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         ProcessTypeRemoved e ->
             { state
                 | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         ProcessAdded e ->
+            let
+                p =
+                    { uuid = e.uuid, posixtime = e.posixtime, name = e.name, type_ = e.type_ }
+            in
             { state
-                | processes = Set.insert e state.processes
+                | processes = Set.insert p state.processes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         CommitmentTypeAdded e ->
             { state
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         CommitmentTypeRemoved e ->
             { state
                 | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         CommitmentAdded e ->
@@ -143,14 +148,14 @@ aggregate event state =
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process.name, commitment = e.commitment.name } state.process_commitments
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         EventTypeAdded e ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         LinkedEventTypeToProcessType e ->
@@ -161,14 +166,14 @@ aggregate event state =
             { state
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         EventTypeRemoved e ->
             { state
                 | eventTypes = Set.remove e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         EventAdded e ->
@@ -176,21 +181,25 @@ aggregate event state =
                 | events = Set.insert e.event state.events
                 , process_events = Set.insert { process = e.process.name, event = e.event.name } state.process_events
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
         ConnectionInitiated e ->
             { state
                 | sessionUuid = Just e.sessionUuid
                 , lastEventTime = e.posixtime
-                , pendingEvents = Set.insert event state.pendingEvents
+                , pendingEvents = updatePending event state.pendingEvents
             }
 
-        AckReceived e ->
-            { state
-                | pendingEvents = Set.filter (\x -> (x |> unbox |> .uuid) /= e.origin) state.pendingEvents
-                , lastEventTime = e.posixtime
-            }
+
+updatePending : Event -> DictSet Int Event -> DictSet Int Event
+updatePending e es =
+    case .flow <| base <| e of
+        Requested ->
+            Set.insert e es
+
+        Processed ->
+            Set.remove e es
 
 
 getProcess : State -> String -> Maybe Process
