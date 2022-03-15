@@ -27,65 +27,55 @@ view model =
         , attribute "role" "navigation"
         , attribute "aria-label" "main navigation"
         ]
-        [ div [ class "navbar-brand" ] <|
-            [ div [ class "navbar-item", class "has-dropdown", class "is-hoverable" ]
-                [ a [ class "navbar-item" ]
-                    [ text "Configuration"
-                    , div [ class "navbar-dropdown" ]
-                        [ a
-                            [ classList
-                                [ ( "navbar-item", True )
-                                , ( "active", isActive model Route.ProcessTypes )
-                                ]
-                            , href "/process-types"
+    <|
+        [ div
+            [ class "navbar-item", class "is-hoverable" ]
+            [ a [ class "navbar-item" ]
+                [ text "Configuration"
+                , div [ class "navbar-dropdown" ]
+                    [ a
+                        [ classList
+                            [ ( "navbar-item", True )
+                            , ( "active", isActive model Route.ProcessTypes )
                             ]
-                            [ text "Process Types"
+                        , href "/process-types"
+                        ]
+                        [ text "Process Types"
+                        ]
+                    , a
+                        [ classList
+                            [ ( "navbar-item", True )
+                            , ( "active", isActive model Route.EventTypes )
                             ]
-                        , a
-                            [ classList
-                                [ ( "navbar-item", True )
-                                , ( "active", isActive model Route.EventTypes )
-                                ]
-                            , href "/event-types"
+                        , href "/event-types"
+                        ]
+                        [ text "Event Types"
+                        ]
+                    , a
+                        [ classList
+                            [ ( "navbar-item", True )
+                            , ( "active", isActive model Route.CommitmentTypes )
                             ]
-                            [ text "Event Types"
-                            ]
-                        , a
-                            [ classList
-                                [ ( "navbar-item", True )
-                                , ( "active", isActive model Route.CommitmentTypes )
-                                ]
-                            , href "/commitment-types"
-                            ]
-                            [ text "Commitment Types"
-                            ]
+                        , href "/commitment-types"
+                        ]
+                        [ text "Commitment Types"
                         ]
                     ]
                 ]
             ]
-                ++ (if Set.size model.processTypes > 0 then
-                        model.processTypes
-                            |> Set.toList
-                            |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
-
-                    else
-                        []
-                   )
-        , div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText model.wsstatus ]
-        , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText model.iostatus ]
-        , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
-        , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
-        , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]
-        , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size model.uuids) ]
-        , a
-            [ attribute "role" "button"
-            , class "navbar-burger"
-            , attribute "aria-label" "menu"
-            , attribute "aria-expanded" "false"
-            , attribute "dat-target" "navBar"
-            ]
-            [ span [ attribute "aria-hidden" "true" ] []
-            , span [ attribute "aria-hidden" "true" ] []
-            , span [ attribute "aria-hidden" "true" ] []
-            ]
         ]
+            ++ (if Set.size model.processTypes > 0 then
+                    model.processTypes
+                        |> Set.toList
+                        |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
+
+                else
+                    []
+               )
+            ++ [ div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText model.wsstatus ]
+               , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText model.iostatus ]
+               , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
+               , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
+               , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]
+               , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size model.uuids) ]
+               ]
