@@ -50,6 +50,7 @@ type alias State =
     , iostatus : IOStatus
     , lastEventTime : Time.Posix
     , pendingEvents : DictSet Int Event
+    , uuids : DictSet String Uuid
 
     -- WS related
     , wsstatus : WSStatus
@@ -94,6 +95,7 @@ new seed key route =
     , events = Set.empty E.compare
     , lastEventTime = millisToPosix 0
     , pendingEvents = Set.empty Event.compare
+    , uuids = Set.empty Uuid.toString
     , sessionUuid = Nothing
     , process_events = Set.empty PE.compare
     , processType_commitmentTypes = Set.empty PTCT.compare
@@ -109,6 +111,7 @@ aggregate event state =
                 | processTypes = Set.insert e.ptype state.processTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         ProcessTypeRemoved e ->
@@ -116,6 +119,7 @@ aggregate event state =
                 | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         ProcessAdded e ->
@@ -127,6 +131,7 @@ aggregate event state =
                 | processes = Set.insert p state.processes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         CommitmentTypeAdded e ->
@@ -134,6 +139,7 @@ aggregate event state =
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         CommitmentTypeRemoved e ->
@@ -141,6 +147,7 @@ aggregate event state =
                 | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         CommitmentAdded e ->
@@ -149,6 +156,7 @@ aggregate event state =
                 , process_commitments = Set.insert { process = e.process.name, commitment = e.commitment.name } state.process_commitments
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         EventTypeAdded e ->
@@ -156,6 +164,7 @@ aggregate event state =
                 | eventTypes = Set.insert e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         LinkedEventTypeToProcessType e ->
@@ -167,6 +176,7 @@ aggregate event state =
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         EventTypeRemoved e ->
@@ -174,6 +184,7 @@ aggregate event state =
                 | eventTypes = Set.remove e.eventType state.eventTypes
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         EventAdded e ->
@@ -182,6 +193,7 @@ aggregate event state =
                 , process_events = Set.insert { process = e.process.name, event = e.event.name } state.process_events
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         ConnectionInitiated e ->
@@ -189,6 +201,7 @@ aggregate event state =
                 | sessionUuid = Just e.sessionUuid
                 , lastEventTime = e.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
 

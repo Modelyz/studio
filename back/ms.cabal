@@ -27,12 +27,14 @@ executable ms
     base >=4.13 && <4.14
     , aeson
     , bytestring
+    , containers
     , http-types
     , scientific
     , text
     , time
     , unordered-containers
     , uuid
+    , vector
     , wai
     , wai-websockets
     , warp

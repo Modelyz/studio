@@ -76,6 +76,7 @@ view model =
         , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
         , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
         , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]
+        , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size model.uuids) ]
         , a
             [ attribute "role" "button"
             , class "navbar-burger"

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (Event, getInt, setProcessed, getString, excludeType, isType, isAfter) where
+module Event (getUuids, Uuid, Event, getInt, setProcessed, getString, excludeType, isType, isAfter) where
 
 import qualified Data.Aeson as JSON (Value (..), toJSON)
 import qualified Data.ByteString.Lazy as LBS (ByteString)
@@ -8,6 +8,7 @@ import qualified Data.HashMap.Lazy as HashMap
 import Data.Scientific
 import qualified Data.Text as T (Text, pack, unpack)
 import Data.UUID (UUID)
+import qualified Data.Vector as Vector
 
 type Event = JSON.Value
 
@@ -43,10 +44,25 @@ getString k e =
             _ -> Nothing
         _ -> Nothing
 
+getUuids :: Event -> [Uuid]
+getUuids e =
+    case e of
+        (JSON.Object o) -> case (HashMap.lookup "uuids" o) of
+            Just (JSON.Array uuids) ->
+                Vector.toList
+                    ( fmap
+                        ( \v -> case v of
+                            JSON.String uuid -> T.unpack uuid
+                            _ -> ""
+                        )
+                        uuids
+                    )
+            _ -> []
+
 setProcessed :: Event -> Event
 setProcessed e =
     case e of
-        JSON.Object o -> JSON.toJSON $ HashMap.update (\v -> Just $ JSON.String "Processed") "flow" o
+        JSON.Object o -> JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" o
         _ -> e
 
 --    case makeObj

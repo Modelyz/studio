@@ -4,10 +4,12 @@ module EventStore (appendEvent, readEvents) where
 
 import Control.Exception (SomeException (SomeException), catch)
 import Data.Aeson as JSON (decode, encode)
-import qualified Data.Text.Lazy as T (Text, append, intercalate, lines, pack, unpack)
+import Data.Maybe (catMaybes)
+import qualified Data.Set as Set
+import qualified Data.Text.Lazy as T (Text, append, fromStrict, intercalate, lines, pack, toStrict, unpack)
 import Data.Text.Lazy.Encoding (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.IO as IO (appendFile, readFile)
-import Event (Event)
+import Event (Event, Uuid, getString)
 
 eventStore :: FilePath
 eventStore = "eventstore.txt"
@@ -16,9 +18,7 @@ appendEvent :: Event -> IO ()
 appendEvent event =
     IO.appendFile eventStore $ (decodeUtf8 $ JSON.encode event) `T.append` "\n"
 
--- read the event store from the specified date
--- and send all messages to the websocket connection
---
+-- read the event store
 readEvents :: IO [Event]
 readEvents =
     do
@@ -31,3 +31,8 @@ readEvents =
     handleMissing (SomeException _) = do
         putStrLn "Could not read EventSource"
         return ""
+
+getUuids :: IO (Set.Set Uuid)
+getUuids = do
+    evs <- readEvents
+    return $ Set.fromList $ catMaybes $ map (\e -> fmap (T.unpack . T.fromStrict) $ getString "uuid" e) evs

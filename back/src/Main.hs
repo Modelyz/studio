@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (Event, excludeType, getInt, isAfter, isType, setProcessed)
+import Event (Event, getString, getUuids, isType, setProcessed)
 import qualified EventStore as ES
 import Network.HTTP.Types (status200)
 import Network.Wai (
@@ -93,27 +93,32 @@ handleEvent conn nc chan ev =
     do
         -- store the event in the event store
         ES.appendEvent ev
+        -- if the event is a ConnectionInitiated, get the uuid list from it,
+        -- and send back all the missing events (with an added ack)
+        when
+            (isType "ConnectionInitiated" ev)
+            ( do
+                let uuids = getUuids ev
+                esevs <- ES.readEvents
+                let evs =
+                        filter
+                            ( \e -> case getString "uuid" e of
+                                Just u -> not $ elem (T.unpack u) uuids
+                                Nothing -> False
+                            )
+                            esevs
+                let evs' = map setProcessed evs
+                sendTextData conn $ JSON.encode $ mappend evs evs'
+                putStrLn $ "Sent all missing " ++ (show $ length uuids) ++ " messsages"
+            )
         -- Send back and store an ACK to let the client know the message has been stored
         let ev' = setProcessed ev
         ES.appendEvent ev'
         sendTextData conn $ JSON.encode [ev']
-        -- if the event is a ConnectionInitiated, get the lastEventTime from it
-        -- and send back all the events from that time (with an added ack)
-        when
-            (isType "ConnectionInitiated" ev)
-            ( case getInt "lastEventTime" ev of
-                Just time -> do
-                    evs <- fmap (excludeType "ConnectionInitiated" . filter (isAfter time)) ES.readEvents
-                    if length evs > 0
-                        then do
-                            sendTextData conn $ JSON.encode evs
-                            putStrLn $ "Sent all " ++ (show $ length evs) ++ "messsages after lasttime " ++ show time
-                        else return ()
-                Nothing -> return ()
-            )
         -- send the msg to other connected clients
         putStrLn $ "Writing to the chan as client " ++ (show nc)
         writeChan chan (nc, ev)
+        writeChan chan (nc, ev')
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.
 

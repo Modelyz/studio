@@ -1,5 +1,6 @@
 port module Event exposing (Event(..), base, compare, decodelist, decoder, encode, getTime, readEvents, storeEvents, storeEventsToSend)
 
+import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
@@ -60,7 +61,7 @@ type Event
     | EventTypeRemoved (EventBase { eventType : EventType })
     | EventAdded (EventBase { process : Process, event : E.Event })
     | LinkedEventTypeToProcessType (EventBase { etype : String, ptype : String })
-    | ConnectionInitiated (EventBase { lastEventTime : Time.Posix, sessionUuid : Uuid })
+    | ConnectionInitiated (EventBase { lastEventTime : Time.Posix, sessionUuid : Uuid, uuids : Set.DictSet String Uuid })
 
 
 base : Event -> EventBase {}
@@ -218,14 +219,15 @@ eventAdded uuid posixtime flow process event =
         }
 
 
-connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Uuid -> Event
-connectionInitiated uuid posixtime flow lastEventTime sessionUuid =
+connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Uuid -> Set.DictSet String Uuid -> Event
+connectionInitiated uuid posixtime flow lastEventTime sessionUuid uuids =
     ConnectionInitiated
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
         , lastEventTime = lastEventTime
         , sessionUuid = sessionUuid
+        , uuids = uuids
         }
 
 
@@ -334,6 +336,7 @@ encode event =
                 , ( "type", Encode.string "ConnectionInitiated" )
                 , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
                 , ( "sessionUuid", Uuid.encode e.sessionUuid )
+                , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
                 ]
 
 
@@ -346,7 +349,7 @@ decoder : Decoder Event
 decoder =
     let
         toPosix t =
-            millisToPosix t |> Decode.succeed
+            Decode.succeed (millisToPosix t)
     in
     Decode.field "type" Decode.string
         |> andThen
@@ -427,12 +430,13 @@ decoder =
                             (Decode.field "event" E.decoder)
 
                     "ConnectionInitiated" ->
-                        Decode.map5 connectionInitiated
+                        Decode.map6 connectionInitiated
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
                             (Decode.field "sessionUuid" Uuid.decoder)
+                            (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
 
                     _ ->
                         Decode.fail "Unknown Event type"

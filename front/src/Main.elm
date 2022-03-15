@@ -83,6 +83,7 @@ initiateConnection uuid model =
                         , flow = Requested
                         , lastEventTime = model.lastEventTime
                         , sessionUuid = uuid
+                        , uuids = Set.insert uuid model.uuids
                         }
             )
             Time.now
