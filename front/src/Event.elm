@@ -1,4 +1,4 @@
-port module Event exposing (Event(..), base, compare, decodelist, decoder, encode, getTime, readEvents, storeEvents, storeEventsToSend)
+port module Event exposing (Event(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
@@ -109,6 +109,20 @@ compare =
 getTime : Event -> Time.Posix
 getTime =
     base >> .posixtime
+
+
+exceptCI : List Event -> List Event
+exceptCI es =
+    List.filter
+        (\e ->
+            case e of
+                ConnectionInitiated _ ->
+                    False
+
+                _ ->
+                    True
+        )
+        es
 
 
 
@@ -229,6 +243,10 @@ connectionInitiated uuid posixtime flow lastEventTime sessionUuid uuids =
         , sessionUuid = sessionUuid
         , uuids = uuids
         }
+
+
+
+-- JSON encoding / decoding
 
 
 encode : Event -> Encode.Value

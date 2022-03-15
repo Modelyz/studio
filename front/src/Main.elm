@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import DictSet as Set
-import Event exposing (Event(..), getTime)
+import Event exposing (Event(..), exceptCI, getTime)
 import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
@@ -73,7 +73,7 @@ init ( seed, seedExtension ) url navkey =
 
 initiateConnection : Uuid.Uuid -> Model -> Cmd Msg
 initiateConnection uuid model =
-    Task.perform StoreEventsToSend <|
+    Task.perform SendEvents <|
         Task.map
             (\t ->
                 List.singleton <|
@@ -334,6 +334,10 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        Msg.SendEvents events ->
+            -- send the new events and the pending ones
+            ( { model | iostatus = WSSending }, WS.wsSend <| Encode.encode 0 <| Encode.list Event.encode <| Set.toList <| Set.union model.pendingEvents <| Set.fromList Event.compare events )
+
         Msg.StoreEventsToSend events ->
             ( { model | iostatus = ESStoring }, Event.storeEventsToSend (Encode.list Event.encode events) )
 
@@ -344,6 +348,8 @@ update msg model =
                         ( { model | iostatus = ESReading }
                         , Cmd.batch
                             [ Event.readEvents Encode.null
+
+                            -- send the new events and the pending ones
                             , wsSend <| Encode.encode 0 <| Encode.list Event.encode <| Set.toList <| Set.union model.pendingEvents <| Set.fromList Event.compare evs
                             ]
                         )
@@ -408,12 +414,26 @@ update msg model =
         Msg.EventsReceived ms ->
             case decodeString (Decode.list Event.decoder) ms of
                 Ok messages ->
+                    let
+                        msgs =
+                            exceptCI messages
+                    in
                     ( { model
                         | wsstatus = WSOpen
-                        , iostatus = ESStoring
+                        , iostatus =
+                            if List.length msgs > 0 then
+                                ESStoring
+
+                            else
+                                IOIdle
                       }
-                    , Event.storeEvents <|
-                        Encode.list Event.encode messages
+                    , if List.length msgs > 0 then
+                        Event.storeEvents <|
+                            Encode.list Event.encode <|
+                                exceptCI messages
+
+                      else
+                        Cmd.none
                     )
 
                 Err err ->

@@ -92,7 +92,9 @@ handleEvent :: Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO
 handleEvent conn nc chan ev =
     do
         -- store the event in the event store
-        ES.appendEvent ev
+        when
+            (not $ isType "ConnectionInitiated" ev)
+            (ES.appendEvent ev)
         -- if the event is a ConnectionInitiated, get the uuid list from it,
         -- and send back all the missing events (with an added ack)
         when
@@ -112,7 +114,7 @@ handleEvent conn nc chan ev =
             )
         -- Send back and store an ACK to let the client know the message has been stored
         let ev' = setProcessed ev
-        ES.appendEvent ev'
+        if not $ isType "ConnectionInitiated" ev then ES.appendEvent ev' else return ()
         sendTextData conn $ JSON.encode [ev']
         -- send the msg to other connected clients
         putStrLn $ "Writing to the chan as client " ++ (show nc)

@@ -19,6 +19,7 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url
     | StoreEventsToSend (List Event.Event)
+    | SendEvents (List Event.Event)
     | EventsStored Json.Encode.Value
     | EventsStoredTosend Json.Encode.Value
     | EventsRead Json.Encode.Value
