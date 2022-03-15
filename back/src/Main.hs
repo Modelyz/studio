@@ -107,9 +107,8 @@ handleEvent conn nc chan ev =
                                 Nothing -> False
                             )
                             esevs
-                let evs' = map setProcessed evs
-                sendTextData conn $ JSON.encode $ mappend evs evs'
-                putStrLn $ "Sent all missing " ++ (show $ length uuids) ++ " messsages"
+                sendTextData conn $ JSON.encode evs
+                putStrLn $ "Sent all missing " ++ (show $ length evs) ++ " messsages to client " ++ (show nc)
             )
         -- Send back and store an ACK to let the client know the message has been stored
         let ev' = setProcessed ev
