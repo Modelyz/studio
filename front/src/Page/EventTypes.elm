@@ -1,28 +1,103 @@
-module Page.EventTypes exposing (view)
+module Page.EventTypes exposing (match, page, view)
 
-import Browser exposing (Document)
-import DictSet as Set
+import DictSet as Set exposing (DictSet)
+import Effect exposing (Effect)
+import Event
 import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
 import Html.Attributes exposing (checked, class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
-import REA.EventType exposing (EventType)
+import REA.EventType as ET exposing (EventType)
 import REA.ProcessType as PT
-import State exposing (State)
+import Route exposing (Route)
+import Shared
+import Spa.Page
+import View exposing (View)
 
 
 type alias Model =
-    State
+    { route : Route
+    , inputEventType : String
+    , inputEventTypeProcessTypes : DictSet String String
+    }
 
 
-view : Model -> Document Msg
-view model =
+type Msg
+    = DeleteEventType EventType
+    | InputEventType String
+    | NewEventType
+    | InputEventTypeProcessType String
+
+
+type alias Flags =
+    { route : Route
+    }
+
+
+page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
+page shared =
+    Spa.Page.element
+        { init = init shared
+        , update = update shared
+        , view = view shared
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+match : Route -> Maybe Flags
+match route =
+    case route of
+        Route.EventTypes ->
+            Just { route = route }
+
+        _ ->
+            Nothing
+
+
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init _ flags =
+    ( { route = flags.route
+      , inputEventType = ""
+      , inputEventTypeProcessTypes = Set.empty identity
+      }
+    , Effect.none
+    )
+
+
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update shared msg model =
+    case msg of
+        NewEventType ->
+            ( { model
+                | inputEventType = ""
+                , inputEventTypeProcessTypes = Set.empty identity
+              }
+            , Shared.dispatchMany shared <|
+                Event.EventTypeAdded { eventType = ET.new model.inputEventType }
+                    :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = model.inputEventType, ptype = pt }) (Set.toList model.inputEventTypeProcessTypes)
+            )
+
+        InputEventType etype ->
+            ( { model | inputEventType = etype }, Effect.none )
+
+        DeleteEventType etype ->
+            ( model
+            , Shared.dispatch shared <| Event.EventTypeRemoved { eventType = etype }
+            )
+
+        InputEventTypeProcessType pt ->
+            ( { model | inputEventTypeProcessTypes = Set.insert pt model.inputEventTypeProcessTypes }, Effect.none )
+
+
+view : Shared.Model -> Model -> View Msg
+view shared model =
     { title = "Event Types"
-    , body =
-        [ Navbar.view model
-        , viewContent model
-        ]
+    , attributes = []
+    , element =
+        Html.div []
+            [ Navbar.view shared model.route
+            , viewContent shared model
+            ]
     }
 
 
@@ -44,8 +119,8 @@ viewThumbnail et =
         ]
 
 
-viewContent : Model -> Html Msg
-viewContent model =
+viewContent : Shared.Model -> Model -> Html Msg
+viewContent shared model =
     div
         []
         [ div
@@ -63,13 +138,13 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size model.eventTypes > 0 then
+                ((if Set.size shared.eventTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (model.eventTypes
+                    :: (shared.eventTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
@@ -99,7 +174,7 @@ viewContent model =
                             [ class "label" ]
                             [ text "This event type is usable from the following process types:" ]
                         , div [ class "field" ]
-                            (model.processTypes
+                            (shared.processTypes
                                 |> Set.toList
                                 |> List.sortBy PT.compare
                                 |> List.map

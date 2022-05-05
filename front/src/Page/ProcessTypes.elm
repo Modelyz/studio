@@ -1,28 +1,97 @@
-module Page.ProcessTypes exposing (view)
+module Page.ProcessTypes exposing (match, page, view)
 
-import Browser exposing (Document)
 import DictSet as Set
+import Effect exposing (Effect)
+import Event
 import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
 import Html.Attributes exposing (class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
-import State exposing (State)
+import Route exposing (Route)
+import Shared
+import Spa.Page
+import View exposing (View)
 
 
 type alias Model =
-    State
-
-
-view : Model -> Document Msg
-view model =
-    { title = "Process Types"
-    , body =
-        [ Navbar.view model
-        , viewContent model
-        ]
+    { route : Route
+    , inputProcessType : ProcessType
     }
+
+
+type Msg
+    = DeleteProcessType ProcessType
+    | ProcessTypeChanged ProcessType
+    | InputProcessName String
+
+
+type alias Flags =
+    { route : Route }
+
+
+page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
+page shared =
+    Spa.Page.element
+        { init = init
+        , update = update shared
+        , view = view shared
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+match : Route -> Maybe Flags
+match route =
+    case route of
+        Route.ProcessTypes ->
+            Just { route = route }
+
+        _ ->
+            Nothing
+
+
+init : Flags -> ( Model, Effect Shared.Msg Msg )
+init flags =
+    ( { route = flags.route
+      , inputProcessType = ProcessType ""
+      }
+    , Effect.none
+    )
+
+
+view : Shared.Model -> Model -> View Msg
+view shared model =
+    { title = "Process Types"
+    , attributes = []
+    , element =
+        Html.div []
+            [ Navbar.view shared model.route
+            , viewContent shared model
+            ]
+    }
+
+
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update shared msg model =
+    case msg of
+        InputProcessName name ->
+            let
+                ptype =
+                    model.inputProcessType
+            in
+            ( { model | inputProcessType = { ptype | name = name } }, Effect.none )
+
+        DeleteProcessType ptype ->
+            ( model
+            , Shared.dispatch shared <| Event.ProcessTypeRemoved { ptype = ptype.name }
+            )
+
+        ProcessTypeChanged ptype ->
+            ( { model
+                | inputProcessType = { name = "" }
+              }
+            , Shared.dispatch shared <| Event.ProcessTypeChanged { ptype = ptype }
+            )
 
 
 viewThumbnail : ProcessType -> Html Msg
@@ -43,8 +112,8 @@ viewThumbnail pt =
         ]
 
 
-viewContent : Model -> Html Msg
-viewContent model =
+viewContent : Shared.Model -> Model -> Html Msg
+viewContent shared model =
     div
         []
         [ div
@@ -62,13 +131,13 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size model.processTypes > 0 then
+                ((if Set.size shared.processTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (model.processTypes
+                    :: (shared.processTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )

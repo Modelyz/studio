@@ -1,4 +1,4 @@
-module REA.Commitment exposing (Commitment, compare, decoder, encode, new)
+module REA.Commitment exposing (Commitment, compare, decoder, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -17,15 +17,6 @@ type alias Commitment =
     --        , rtype: ResourceType
     --        , provider: Agent
     --        , receiver: Agent
-    }
-
-
-new : String -> Uuid -> Time.Posix -> CommitmentType -> Commitment
-new name uuid posixtime ctype =
-    { name = name
-    , uuid = uuid
-    , posixtime = posixtime
-    , ctype = ctype
     }
 
 

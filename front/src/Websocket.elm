@@ -28,7 +28,7 @@ toText status =
             "WSOpen"
 
         WSClosed ->
-            "WSClosed: "
+            "WSClosed"
 
         WSClosing ->
             "WSClosing"

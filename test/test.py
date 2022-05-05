@@ -99,7 +99,7 @@ def test_sync_process_type(backends):
     )
     time.sleep(0.5)
     backends.append(subprocess.Popen(["../build/ms"]))
-    WebDriverWait(chrome, 10).until(
+    WebDriverWait(chrome, 15).until(
         lambda _: chrome.find_element(By.ID, "WSStatus").text == "WS=WSOpen"
     )
 
@@ -113,7 +113,7 @@ def test_sync_process_type(backends):
         firefox.find_element(By.ID, "Cééé").text == "Cééé"
     ), "The Process Type has not been created on Firefox"
 
-    WebDriverWait(chrome, 10).until(
+    WebDriverWait(chrome, 15).until(
         lambda _: count_evstore("EventCreatedWithoutBackend") == 2
     )
     assert (

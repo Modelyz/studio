@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, currentProcessType, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType, new)
+module State exposing (State, aggregate, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType, new)
 
 --import REA.ProcessType as PT exposing (ProcessType)
 
@@ -21,7 +21,6 @@ import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType
 import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
 import Random.Pcg.Extended exposing (Seed)
 import Result exposing (Result(..))
-import Route exposing (Route)
 import Time exposing (millisToPosix)
 import Websocket exposing (WSStatus(..))
 
@@ -37,14 +36,11 @@ type alias State =
     -- ui model related
     { currentSeed : Seed
     , navkey : Nav.Key
-    , route : Route
+    , identity : Maybe String
 
     -- input related
-    , inputProcessType : ProcessType
     , inputCommitmentType : String
     , inputCommitmentTypeProcessTypes : DictSet String String
-    , inputEventType : String
-    , inputEventTypeProcessTypes : DictSet String String
 
     -- ES and WS related
     , iostatus : IOStatus
@@ -73,19 +69,16 @@ type alias State =
     }
 
 
-new : Seed -> Nav.Key -> Route -> State
-new seed key route =
+new : Seed -> Nav.Key -> State
+new seed key =
     { currentSeed = seed
     , navkey = key
-    , route = route
+    , identity = Nothing
     , iostatus = ESReading
     , wsstatus = WSClosed
     , timeoutReconnect = 1
-    , inputProcessType = ProcessType ""
     , inputCommitmentType = ""
-    , inputEventType = ""
     , inputCommitmentTypeProcessTypes = Set.empty identity
-    , inputEventTypeProcessTypes = Set.empty identity
     , processTypes = Set.empty PT.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
@@ -106,100 +99,100 @@ new seed key route =
 aggregate : Event -> State -> State
 aggregate event state =
     case event of
-        ProcessTypeChanged e ->
+        ProcessTypeChanged e b ->
             { state
                 | processTypes = Set.insert e.ptype state.processTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        ProcessTypeRemoved e ->
+        ProcessTypeRemoved e b ->
             { state
                 | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        ProcessAdded e ->
+        ProcessAdded e b ->
             let
                 p =
-                    { uuid = e.uuid, posixtime = e.posixtime, name = e.name, type_ = e.type_ }
+                    { uuid = b.uuid, posixtime = b.posixtime, name = e.name, type_ = e.type_ }
             in
             { state
                 | processes = Set.insert p state.processes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        CommitmentTypeAdded e ->
+        CommitmentTypeAdded e b ->
             { state
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        CommitmentTypeRemoved e ->
+        CommitmentTypeRemoved e b ->
             { state
                 | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        CommitmentAdded e ->
+        CommitmentAdded e b ->
             { state
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process.name, commitment = e.commitment.name } state.process_commitments
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        EventTypeAdded e ->
+        EventTypeAdded e b ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        LinkedEventTypeToProcessType e ->
+        LinkedEventTypeToProcessType e b ->
             let
                 ptet =
                     { etype = e.etype, ptype = e.ptype }
             in
             { state
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        EventTypeRemoved e ->
+        EventTypeRemoved e b ->
             { state
                 | eventTypes = Set.remove e.eventType state.eventTypes
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        EventAdded e ->
+        EventAdded e b ->
             { state
                 | events = Set.insert e.event state.events
                 , process_events = Set.insert { process = e.process.name, event = e.event.name } state.process_events
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
-        ConnectionInitiated e ->
+        ConnectionInitiated e b ->
             { state
                 | sessionUuid = Just e.sessionUuid
-                , lastEventTime = e.posixtime
+                , lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -267,16 +260,6 @@ getEvents state process =
                 |> Set.map identity (\pe -> pe.event)
     in
     Set.filter (\e -> Set.member e.name enames) state.events
-
-
-currentProcessType : State -> Maybe ProcessType
-currentProcessType state =
-    case state.route of
-        Route.Processes maybetype ->
-            getProcessType state (Maybe.withDefault "" maybetype)
-
-        _ ->
-            Nothing
 
 
 getProcessType : State -> String -> Maybe ProcessType

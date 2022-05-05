@@ -1,4 +1,4 @@
-port module Event exposing (Event(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
+port module Event exposing (Event(..), EventBase, base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
@@ -42,63 +42,62 @@ port storeEventsToSend : Encode.Value -> Cmd msg
 -- application/user events --
 
 
-type alias EventBase a =
-    { a
-        | uuid : Uuid
-        , posixtime : Time.Posix
-        , flow : EventFlow
+type alias EventBase =
+    { uuid : Uuid
+    , posixtime : Time.Posix
+    , flow : EventFlow
     }
 
 
 type Event
-    = ProcessTypeChanged (EventBase { ptype : ProcessType })
-    | ProcessTypeRemoved (EventBase { ptype : String })
-    | ProcessAdded (EventBase { type_ : String, name : String })
-    | CommitmentTypeAdded (EventBase { commitmentType : CommitmentType })
-    | CommitmentTypeRemoved (EventBase { commitmentType : CommitmentType })
-    | CommitmentAdded (EventBase { process : Process, commitment : Commitment })
-    | EventTypeAdded (EventBase { eventType : EventType })
-    | EventTypeRemoved (EventBase { eventType : EventType })
-    | EventAdded (EventBase { process : Process, event : E.Event })
-    | LinkedEventTypeToProcessType (EventBase { etype : String, ptype : String })
-    | ConnectionInitiated (EventBase { lastEventTime : Time.Posix, sessionUuid : Uuid, uuids : Set.DictSet String Uuid })
+    = ProcessTypeChanged { ptype : ProcessType } EventBase
+    | ProcessTypeRemoved { ptype : String } EventBase
+    | ProcessAdded { type_ : String, name : String } EventBase
+    | CommitmentTypeAdded { commitmentType : CommitmentType } EventBase
+    | CommitmentTypeRemoved { commitmentType : CommitmentType } EventBase
+    | CommitmentAdded { process : Process, commitment : Commitment } EventBase
+    | EventTypeAdded { eventType : EventType } EventBase
+    | EventTypeRemoved { eventType : EventType } EventBase
+    | EventAdded { process : Process, event : E.Event } EventBase
+    | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
+    | ConnectionInitiated { lastEventTime : Time.Posix, sessionUuid : Uuid, uuids : Set.DictSet String Uuid } EventBase
 
 
-base : Event -> EventBase {}
+base : Event -> EventBase
 base event =
     case event of
-        ProcessTypeChanged e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        ProcessTypeChanged _ b ->
+            b
 
-        ProcessTypeRemoved e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        ProcessTypeRemoved _ b ->
+            b
 
-        ProcessAdded e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        ProcessAdded _ b ->
+            b
 
-        CommitmentTypeAdded e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        CommitmentTypeAdded _ b ->
+            b
 
-        CommitmentTypeRemoved e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        CommitmentTypeRemoved _ b ->
+            b
 
-        CommitmentAdded e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        CommitmentAdded _ b ->
+            b
 
-        EventTypeAdded e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        EventTypeAdded _ b ->
+            b
 
-        EventTypeRemoved e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        EventTypeRemoved _ b ->
+            b
 
-        EventAdded e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        EventAdded _ b ->
+            b
 
-        LinkedEventTypeToProcessType e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        LinkedEventTypeToProcessType _ b ->
+            b
 
-        ConnectionInitiated e ->
-            { uuid = e.uuid, posixtime = e.posixtime, flow = e.flow }
+        ConnectionInitiated _ b ->
+            b
 
 
 compare : Event -> Int
@@ -116,7 +115,7 @@ exceptCI es =
     List.filter
         (\e ->
             case e of
-                ConnectionInitiated _ ->
+                ConnectionInitiated _ _ ->
                     False
 
                 _ ->
@@ -132,116 +131,127 @@ exceptCI es =
 processTypeChanged : Uuid -> Time.Posix -> EventFlow -> ProcessType -> Event
 processTypeChanged uuid posixtime flow ptype =
     ProcessTypeChanged
+        { ptype = ptype
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , ptype = ptype
         }
 
 
 processTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
 processTypeRemoved uuid posixtime flow ptype =
     ProcessTypeRemoved
+        { ptype = ptype
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , ptype = ptype
         }
 
 
 processAdded : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
 processAdded uuid posixtime flow name ptype =
     ProcessAdded
+        { name = name
+        , type_ = ptype
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , name = name
-        , type_ = ptype
         }
 
 
 commitmentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> CommitmentType -> Event
 commitmentTypeRemoved uuid posixtime flow commitmentType =
     CommitmentTypeRemoved
+        { commitmentType = commitmentType
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , commitmentType = commitmentType
         }
 
 
 commitmentTypeAdded : Uuid -> Time.Posix -> EventFlow -> CommitmentType -> Event
 commitmentTypeAdded uuid posixtime flow commitmentType =
     CommitmentTypeAdded
+        { commitmentType = commitmentType
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , commitmentType = commitmentType
         }
 
 
 commitmentAdded : Uuid -> Time.Posix -> EventFlow -> Process -> Commitment -> Event
 commitmentAdded uuid posixtime flow process commitment =
     CommitmentAdded
+        { commitment = commitment
+        , process = process
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , commitment = commitment
-        , process = process
         }
 
 
 eventTypeRemoved : Uuid -> Time.Posix -> EventFlow -> EventType -> Event
 eventTypeRemoved uuid posixtime flow eventType =
     EventTypeRemoved
+        { eventType = eventType
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , eventType = eventType
         }
 
 
 linkedEventTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
 linkedEventTypeToProcessType uuid posixtime flow etype ptype =
     LinkedEventTypeToProcessType
+        { etype = etype
+        , ptype = ptype
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , etype = etype
-        , ptype = ptype
         }
 
 
 eventTypeAdded : Uuid -> Time.Posix -> EventFlow -> EventType -> Event
 eventTypeAdded uuid posixtime flow eventType =
     EventTypeAdded
+        { eventType = eventType
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , eventType = eventType
         }
 
 
 eventAdded : Uuid -> Time.Posix -> EventFlow -> Process -> E.Event -> Event
 eventAdded uuid posixtime flow process event =
     EventAdded
+        { event = event
+        , process = process
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , event = event
-        , process = process
         }
 
 
 connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Uuid -> Set.DictSet String Uuid -> Event
 connectionInitiated uuid posixtime flow lastEventTime sessionUuid uuids =
     ConnectionInitiated
+        { lastEventTime = lastEventTime
+        , sessionUuid = sessionUuid
+        , uuids = uuids
+        }
         { uuid = uuid
         , posixtime = posixtime
         , flow = flow
-        , lastEventTime = lastEventTime
-        , sessionUuid = sessionUuid
-        , uuids = uuids
         }
 
 
@@ -252,105 +262,105 @@ connectionInitiated uuid posixtime flow lastEventTime sessionUuid uuids =
 encode : Event -> Encode.Value
 encode event =
     case event of
-        ProcessTypeChanged e ->
+        ProcessTypeChanged e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "ProcessTypeChanged" )
                 , ( "ptype", PT.encode e.ptype )
                 ]
 
-        ProcessTypeRemoved e ->
+        ProcessTypeRemoved e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "ProcessTypeRemoved" )
                 , ( "ptype", Encode.string e.ptype )
                 ]
 
-        ProcessAdded e ->
+        ProcessAdded e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "ProcessAdded" )
                 , ( "name", Encode.string e.name )
                 , ( "type_", Encode.string e.type_ )
                 ]
 
-        CommitmentTypeAdded e ->
+        CommitmentTypeAdded e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "CommitmentTypeAdded" )
                 , ( "commitmentType", CT.encode e.commitmentType )
                 ]
 
-        CommitmentTypeRemoved e ->
+        CommitmentTypeRemoved e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "CommitmentTypeRemoved" )
                 , ( "commitmentType", CT.encode e.commitmentType )
                 ]
 
-        CommitmentAdded e ->
+        CommitmentAdded e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "CommitmentAdded" )
                 , ( "process", P.encode e.process )
                 , ( "commitment", C.encode e.commitment )
                 ]
 
-        EventTypeAdded e ->
+        EventTypeAdded e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "EventTypeAdded" )
                 , ( "eventType", ET.encode e.eventType )
                 ]
 
-        LinkedEventTypeToProcessType e ->
+        LinkedEventTypeToProcessType e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "LinkedEventTypeToProcessType" )
                 , ( "etype", Encode.string e.etype )
                 , ( "ptype", Encode.string e.ptype )
                 ]
 
-        EventTypeRemoved e ->
+        EventTypeRemoved e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "EventTypeRemoved" )
                 , ( "eventType", ET.encode e.eventType )
                 ]
 
-        EventAdded e ->
+        EventAdded e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "EventAdded" )
                 , ( "process", P.encode e.process )
                 , ( "event", E.encode e.event )
                 ]
 
-        ConnectionInitiated e ->
+        ConnectionInitiated e b ->
             Encode.object
-                [ ( "uuid", Uuid.encode e.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-                , ( "flow", EventFlow.encode e.flow )
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "ConnectionInitiated" )
                 , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
                 , ( "sessionUuid", Uuid.encode e.sessionUuid )

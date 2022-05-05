@@ -1,21 +1,25 @@
-module Page.NotFound exposing (view)
+module Page.NotFound exposing (view, viewContent)
 
 import Browser
 import Html exposing (Html, div, text)
-import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
-import State exposing (State)
+import Route exposing (Route)
+import Shared
 
 
 type alias Model =
-    State
+    { route : Route }
 
 
-view : Model -> Browser.Document Msg
-view model =
+type alias Msg =
+    ()
+
+
+view : Shared.Model -> Model -> Browser.Document Msg
+view shared model =
     { title = "Not Found"
     , body =
-        [ Navbar.view model
+        [ Navbar.view shared model.route
         , viewContent
         ]
     }

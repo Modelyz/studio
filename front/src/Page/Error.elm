@@ -1,14 +1,18 @@
 module Page.Error exposing (view)
 
-import Browser
 import Html exposing (div, text)
-import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
-import State exposing (State)
+import Route exposing (Route)
+import Shared
+import View exposing (View)
 
 
 type alias Model =
-    State
+    { route : Route }
+
+
+type alias Msg =
+    ()
 
 
 viewContent : Model -> Html.Html Msg
@@ -16,11 +20,13 @@ viewContent _ =
     div [] [ text "Error" ]
 
 
-view : Model -> Browser.Document Msg
-view model =
+view : Shared.Model -> Model -> View Msg
+view shared model =
     { title = "Error"
-    , body =
-        [ Navbar.view model
-        , viewContent model
-        ]
+    , attributes = []
+    , element =
+        div []
+            [ Navbar.view shared model.route
+            , viewContent model
+            ]
     }

@@ -1,27 +1,17 @@
 module Page.Navbar exposing (view)
 
 import DictSet as Set
-import Html exposing (Html, a, div, nav, span, text)
+import Html exposing (Html, a, div, nav, text)
 import Html.Attributes exposing (attribute, class, classList, href, id)
 import IOStatus as IO exposing (toText)
-import Msg exposing (Msg(..))
 import Route exposing (Route(..))
-import State exposing (State)
+import Shared
 import Time exposing (posixToMillis)
 import Websocket as WS exposing (toText)
 
 
-type alias Model =
-    State
-
-
-isActive : Model -> Route -> Bool
-isActive model route =
-    model.route == route
-
-
-view : Model -> Html Msg
-view model =
+view : Shared.Model -> Route.Route -> Html msg
+view shared route =
     nav
         [ class "navbar"
         , attribute "role" "navigation"
@@ -36,7 +26,7 @@ view model =
                     [ a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", isActive model Route.ProcessTypes )
+                            , ( "active", route == Route.ProcessTypes )
                             ]
                         , href "/process-types"
                         ]
@@ -45,7 +35,7 @@ view model =
                     , a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", isActive model Route.EventTypes )
+                            , ( "active", route == Route.EventTypes )
                             ]
                         , href "/event-types"
                         ]
@@ -54,7 +44,7 @@ view model =
                     , a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", isActive model Route.CommitmentTypes )
+                            , ( "active", route == Route.CommitmentTypes )
                             ]
                         , href "/commitment-types"
                         ]
@@ -64,18 +54,18 @@ view model =
                 ]
             ]
         ]
-            ++ (if Set.size model.processTypes > 0 then
-                    model.processTypes
+            ++ (if Set.size shared.processTypes > 0 then
+                    shared.processTypes
                         |> Set.toList
                         |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
 
                 else
                     []
                )
-            ++ [ div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText model.wsstatus ]
-               , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText model.iostatus ]
-               , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis model.lastEventTime) ]
-               , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| model.timeoutReconnect) ]
-               , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size model.pendingEvents) ]
-               , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size model.uuids) ]
+            ++ [ div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText shared.wsstatus ]
+               , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText shared.iostatus ]
+               , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis shared.lastEventTime) ]
+               , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| shared.timeoutReconnect) ]
+               , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size shared.pendingEvents) ]
+               , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size shared.uuids) ]
                ]

@@ -1,27 +1,99 @@
-module Page.CommitmentTypes exposing (view)
+module Page.CommitmentTypes exposing (match, page, view)
 
-import Browser exposing (Document)
 import DictSet as Set
+import Effect exposing (Effect)
+import Event
 import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
 import Html.Attributes exposing (class, id, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Msg exposing (Msg(..))
 import Page.Navbar as Navbar
-import REA.CommitmentType exposing (CommitmentType)
-import State exposing (State)
+import REA.CommitmentType as CT exposing (CommitmentType)
+import Route exposing (Route)
+import Shared
+import Spa.Page
+import View exposing (View)
 
 
 type alias Model =
-    State
+    { route : Route
+    , inputCommitmentType : String
+    , inputCommitmentTypeProcessTypes : Set.DictSet String String
+    }
 
 
-view : Model -> Document Msg
-view model =
+type alias Flags =
+    { route : Route }
+
+
+type Msg
+    = InputCommitmentType String
+    | InputCommitmentTypeProcessType String
+    | NewCommitmentType String
+    | DeleteCommitmentType CommitmentType
+
+
+page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
+page shared =
+    Spa.Page.element
+        { init = init shared
+        , update = update shared
+        , view = view shared
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+match : Route -> Maybe Flags
+match route =
+    case route of
+        Route.CommitmentTypes ->
+            Just { route = route }
+
+        _ ->
+            Nothing
+
+
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init _ flags =
+    ( { route = flags.route
+      , inputCommitmentType = ""
+      , inputCommitmentTypeProcessTypes = Set.empty identity
+      }
+    , Effect.none
+    )
+
+
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update shared msg model =
+    case msg of
+        InputCommitmentType ctype ->
+            ( { model | inputCommitmentType = ctype }, Effect.none )
+
+        DeleteCommitmentType ctype ->
+            ( model
+            , Shared.dispatch shared <| Event.CommitmentTypeRemoved { commitmentType = ctype }
+            )
+
+        InputCommitmentTypeProcessType pt ->
+            ( { model | inputCommitmentTypeProcessTypes = Set.insert pt model.inputCommitmentTypeProcessTypes }, Effect.none )
+
+        NewCommitmentType name ->
+            ( { model
+                | inputCommitmentType = ""
+                , inputCommitmentTypeProcessTypes = Set.empty identity
+              }
+            , Shared.dispatch shared <| Event.CommitmentTypeAdded { commitmentType = CT.new name }
+            )
+
+
+view : Shared.Model -> Model -> View Msg
+view shared model =
     { title = "Commitment Types"
-    , body =
-        [ Navbar.view model
-        , viewContent model
-        ]
+    , attributes = []
+    , element =
+        Html.div []
+            [ Navbar.view shared model.route
+            , viewContent shared model
+            ]
     }
 
 
@@ -43,8 +115,8 @@ viewThumbnail ct =
         ]
 
 
-viewContent : Model -> Html Msg
-viewContent model =
+viewContent : Shared.Model -> Model -> Html Msg
+viewContent shared model =
     div
         []
         [ div
@@ -62,13 +134,13 @@ viewContent model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size model.commitmentTypes > 0 then
+                ((if Set.size shared.commitmentTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (model.commitmentTypes
+                    :: (shared.commitmentTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
