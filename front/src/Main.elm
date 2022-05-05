@@ -20,10 +20,6 @@ import State exposing (State)
 import View exposing (View)
 
 
-type alias Model =
-    State
-
-
 
 -- TODO gather ports in a single typed one
 
@@ -56,7 +52,7 @@ port eventsReceiver : (String -> msg) -> Sub msg
 -- TODO get or create a session uuid, retrieve the last event time, send to haskell )
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : Shared.Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ wsSendStatus EventsSent

@@ -10,7 +10,7 @@ import Json.Decode as Json exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
-import Random.Pcg.Extended as Random exposing (initialSeed)
+import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route)
 import State exposing (State)
 import Task
@@ -19,7 +19,21 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
 type alias Model =
-    State
+    -- ui model related
+    { currentSeed : Seed
+    , navkey : Nav.Key
+
+    -- ES and WS related
+    , iostatus : IOStatus
+    , wsstatus : WSStatus
+    , timeoutReconnect : Int
+
+    -- session related
+    , identity : Maybe String
+
+    -- REA state related
+    , state : State
+    }
 
 
 type Msg
@@ -41,7 +55,14 @@ type Msg
 
 init : ( Int, List Int ) -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) navkey =
-    ( State.new (initialSeed seed seedExtension) navkey
+    ( { currentSeed = initialSeed seed seedExtension
+      , navkey = navkey
+      , iostatus = ESReading
+      , wsstatus = WSClosed
+      , timeoutReconnect = 1
+      , identity = Nothing
+      , state = State.empty
+      }
     , Event.readEvents Encode.null
     )
 
@@ -62,7 +83,7 @@ update msg model =
 
                 timeoutReconnect =
                     if wsstatus == WSOpen then
-                        max 1 <| remainderBy 4 (posixToMillis model.lastEventTime)
+                        max 1 <| remainderBy 4 (posixToMillis model.state.lastEventTime)
 
                     else
                         model.timeoutReconnect
@@ -100,10 +121,17 @@ update msg model =
             case decodeValue (Json.list Event.decoder) results of
                 Ok events ->
                     let
-                        newmodel =
-                            List.foldr State.aggregate model (List.reverse events)
+                        newstate =
+                            List.foldr State.aggregate model.state (List.reverse events)
+
+                        lastEventTime =
+                            events
+                                |> List.map (getTime >> posixToMillis)
+                                |> List.maximum
+                                |> Maybe.withDefault 0
+                                |> millisToPosix
                     in
-                    ( { newmodel
+                    ( { model
                         | iostatus = IOIdle
                         , wsstatus =
                             case model.wsstatus of
@@ -112,12 +140,7 @@ update msg model =
 
                                 _ ->
                                     model.wsstatus
-                        , lastEventTime =
-                            events
-                                |> List.map (getTime >> posixToMillis)
-                                |> List.maximum
-                                |> Maybe.withDefault 0
-                                |> millisToPosix
+                        , state = { newstate | lastEventTime = lastEventTime }
                       }
                     , case model.wsstatus of
                         WSClosed ->
@@ -143,7 +166,7 @@ update msg model =
                 Encode.encode 0 <|
                     Encode.list Event.encode <|
                         Set.toList <|
-                            Set.union model.pendingEvents <|
+                            Set.union model.state.pendingEvents <|
                                 Set.fromList Event.compare events
             )
 
@@ -167,7 +190,7 @@ update msg model =
                                 Encode.encode 0 <|
                                     Encode.list Event.encode <|
                                         Set.toList <|
-                                            Set.union model.pendingEvents <|
+                                            Set.union model.state.pendingEvents <|
                                                 Set.fromList Event.compare evs
                             ]
                         )
@@ -233,9 +256,8 @@ initiateConnection uuid model =
             (\t ->
                 List.singleton <|
                     ConnectionInitiated
-                        { lastEventTime = model.lastEventTime
-                        , sessionUuid = uuid
-                        , uuids = Set.insert uuid model.uuids
+                        { lastEventTime = model.state.lastEventTime
+                        , uuids = Set.insert uuid model.state.uuids
                         }
                         { uuid = uuid, posixtime = t, flow = Flow.Requested }
             )

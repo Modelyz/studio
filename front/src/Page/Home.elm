@@ -24,11 +24,11 @@ type alias Flags =
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
         { init = init
         , update = update
-        , view = view shared
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -57,12 +57,12 @@ update _ model =
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Modelyz"
     , attributes = []
     , element =
         div []
-            [ Navbar.view shared model.route
+            [ Navbar.view s model.route
             , viewContent
             ]
     }

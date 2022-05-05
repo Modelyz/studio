@@ -11,7 +11,7 @@ import Websocket as WS exposing (toText)
 
 
 view : Shared.Model -> Route.Route -> Html msg
-view shared route =
+view s r =
     nav
         [ class "navbar"
         , attribute "role" "navigation"
@@ -26,7 +26,7 @@ view shared route =
                     [ a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", route == Route.ProcessTypes )
+                            , ( "active", r == Route.ProcessTypes )
                             ]
                         , href "/process-types"
                         ]
@@ -35,7 +35,7 @@ view shared route =
                     , a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", route == Route.EventTypes )
+                            , ( "active", r == Route.EventTypes )
                             ]
                         , href "/event-types"
                         ]
@@ -44,7 +44,7 @@ view shared route =
                     , a
                         [ classList
                             [ ( "navbar-item", True )
-                            , ( "active", route == Route.CommitmentTypes )
+                            , ( "active", r == Route.CommitmentTypes )
                             ]
                         , href "/commitment-types"
                         ]
@@ -54,18 +54,18 @@ view shared route =
                 ]
             ]
         ]
-            ++ (if Set.size shared.processTypes > 0 then
-                    shared.processTypes
+            ++ (if Set.size s.state.processTypes > 0 then
+                    s.state.processTypes
                         |> Set.toList
                         |> List.map (\pt -> a [ class "navbar-item", href <| "/processes?type=" ++ pt.name ] [ text pt.name ])
 
                 else
                     []
                )
-            ++ [ div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText shared.wsstatus ]
-               , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText shared.iostatus ]
-               , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis shared.lastEventTime) ]
-               , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| shared.timeoutReconnect) ]
-               , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size shared.pendingEvents) ]
-               , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size shared.uuids) ]
+            ++ [ div [ class "navbar-item", id "WSStatus" ] [ text <| "WS=" ++ WS.toText s.wsstatus ]
+               , div [ class "navbar-item", id "IOStatus" ] [ text <| "IO=" ++ IO.toText s.iostatus ]
+               , div [ class "navbar-item", id "LastEvenTime" ] [ text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis s.state.lastEventTime) ]
+               , div [ class "navbar-item", id "timeoutReconnect" ] [ text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect) ]
+               , div [ class "navbar-item", id "pending" ] [ text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents) ]
+               , div [ class "navbar-item", id "msgs" ] [ text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids) ]
                ]

@@ -33,11 +33,11 @@ type alias Flags =
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
         { init = init
-        , update = update shared
-        , view = view shared
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -62,28 +62,28 @@ init flags =
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update shared msg model =
+update s msg model =
     case msg of
         NewProcess ptype ->
             ( model
-            , Shared.dispatch shared <| Event.ProcessAdded { name = "new process", type_ = ptype.name }
+            , Shared.dispatch s <| Event.ProcessAdded { name = "new process", type_ = ptype.name }
             )
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Processes"
     , attributes = []
     , element =
         Html.div []
-            [ Navbar.view shared model.route
-            , viewContent shared model
+            [ Navbar.view s model.route
+            , viewContent s model
             ]
     }
 
 
 viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent s model =
     div
         [ class "section"
         ]
@@ -94,7 +94,7 @@ viewContent shared model =
             [ text <| "New " ++ model.ptype.name
             ]
         , div [ class "columns is-multiline" ]
-            (DictSet.filter (\p -> p.type_ == model.ptype.name) shared.processes
+            (DictSet.filter (\p -> p.type_ == model.ptype.name) s.state.processes
                 |> DictSet.toList
                 |> List.sortBy P.compare
                 |> List.reverse

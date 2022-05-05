@@ -21,12 +21,12 @@ viewContent _ =
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s m =
     { title = "Error"
     , attributes = []
     , element =
         div []
-            [ Navbar.view shared model.route
-            , viewContent model
+            [ Navbar.view s m.route
+            , viewContent m
             ]
     }

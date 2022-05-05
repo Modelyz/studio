@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType, new)
+module State exposing (State, aggregate, empty, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType)
 
 --import REA.ProcessType as PT exposing (ProcessType)
 
@@ -13,49 +13,23 @@ import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
+import REA.Group as G exposing (Group, compare)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
 import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
-import Random.Pcg.Extended exposing (Seed)
+import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (Result(..))
 import Time exposing (millisToPosix)
 import Websocket exposing (WSStatus(..))
 
 
-
--- store events to IDB then send to WS
--- global application state --
--- TODO : différencier le state et le model ? le state est l'agrégation des evenements, le model est ce qui représente l'ui. (alors le state serait dans le model)
--- → switch to elm-spa
-
-
 type alias State =
-    -- ui model related
-    { currentSeed : Seed
-    , navkey : Nav.Key
-    , identity : Maybe String
-
-    -- input related
-    , inputCommitmentType : String
-    , inputCommitmentTypeProcessTypes : DictSet String String
-
-    -- ES and WS related
-    , iostatus : IOStatus
+    { pendingEvents : DictSet Int Event
     , lastEventTime : Time.Posix
-    , pendingEvents : DictSet Int Event
     , uuids : DictSet String Uuid
-
-    -- WS related
-    , wsstatus : WSStatus
-    , timeoutReconnect : Int
-
-    -- session related
-    , sessionUuid : Maybe Uuid
-
-    -- REA state related
     , processTypes : DictSet String ProcessType
     , processes : DictSet Int Process
     , commitmentTypes : DictSet String CommitmentType
@@ -66,19 +40,15 @@ type alias State =
     , process_events : DictSet String ProcessEvents
     , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
     , processType_eventTypes : DictSet String ProcessTypeEventType
+    , groups : DictSet String Group
     }
 
 
-new : Seed -> Nav.Key -> State
-new seed key =
-    { currentSeed = seed
-    , navkey = key
-    , identity = Nothing
-    , iostatus = ESReading
-    , wsstatus = WSClosed
-    , timeoutReconnect = 1
-    , inputCommitmentType = ""
-    , inputCommitmentTypeProcessTypes = Set.empty identity
+empty : State
+empty =
+    { pendingEvents = Set.empty Event.compare
+    , lastEventTime = millisToPosix 0
+    , uuids = Set.empty Uuid.toString
     , processTypes = Set.empty PT.compare
     , processes = Set.empty P.compare
     , process_commitments = Set.empty PC.compare
@@ -86,13 +56,10 @@ new seed key =
     , commitments = Set.empty C.compare
     , eventTypes = Set.empty ET.compare
     , events = Set.empty E.compare
-    , lastEventTime = millisToPosix 0
-    , pendingEvents = Set.empty Event.compare
-    , uuids = Set.empty Uuid.toString
-    , sessionUuid = Nothing
     , process_events = Set.empty PE.compare
     , processType_commitmentTypes = Set.empty PTCT.compare
     , processType_eventTypes = Set.empty PTET.compare
+    , groups = Set.empty G.compare
     }
 
 
@@ -191,8 +158,7 @@ aggregate event state =
 
         ConnectionInitiated e b ->
             { state
-                | sessionUuid = Just e.sessionUuid
-                , lastEventTime = b.posixtime
+                | lastEventTime = b.posixtime
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }

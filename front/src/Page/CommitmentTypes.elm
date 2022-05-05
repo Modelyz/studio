@@ -33,11 +33,11 @@ type Msg
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
-        { init = init shared
-        , update = update shared
-        , view = view shared
+        { init = init s
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -63,14 +63,14 @@ init _ flags =
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update shared msg model =
+update s msg model =
     case msg of
         InputCommitmentType ctype ->
             ( { model | inputCommitmentType = ctype }, Effect.none )
 
         DeleteCommitmentType ctype ->
             ( model
-            , Shared.dispatch shared <| Event.CommitmentTypeRemoved { commitmentType = ctype }
+            , Shared.dispatch s <| Event.CommitmentTypeRemoved { commitmentType = ctype }
             )
 
         InputCommitmentTypeProcessType pt ->
@@ -81,18 +81,18 @@ update shared msg model =
                 | inputCommitmentType = ""
                 , inputCommitmentTypeProcessTypes = Set.empty identity
               }
-            , Shared.dispatch shared <| Event.CommitmentTypeAdded { commitmentType = CT.new name }
+            , Shared.dispatch s <| Event.CommitmentTypeAdded { commitmentType = CT.new name }
             )
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Commitment Types"
     , attributes = []
     , element =
         Html.div []
-            [ Navbar.view shared model.route
-            , viewContent shared model
+            [ Navbar.view s model.route
+            , viewContent s model
             ]
     }
 
@@ -116,7 +116,7 @@ viewThumbnail ct =
 
 
 viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent s model =
     div
         []
         [ div
@@ -134,13 +134,13 @@ viewContent shared model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size shared.commitmentTypes > 0 then
+                ((if Set.size s.state.commitmentTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (shared.commitmentTypes
+                    :: (s.state.commitmentTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )

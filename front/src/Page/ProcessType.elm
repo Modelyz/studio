@@ -31,11 +31,11 @@ type alias Flags =
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
         { init = init
-        , update = update shared
-        , view = view shared
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -61,7 +61,7 @@ init flags =
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update shared msg model =
+update s msg model =
     case msg of
         InputProcessName name ->
             let
@@ -74,17 +74,17 @@ update shared msg model =
             ( { model
                 | inputProcessType = { name = "" }
               }
-            , Shared.dispatch shared <| Event.ProcessTypeChanged { ptype = ptype }
+            , Shared.dispatch s <| Event.ProcessTypeChanged { ptype = ptype }
             )
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Process Type"
     , attributes = []
     , element =
         Html.div []
-            [ Navbar.view shared model.route
+            [ Navbar.view s model.route
             , viewContent model
             ]
     }

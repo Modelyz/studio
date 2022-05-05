@@ -16,10 +16,10 @@ type alias Msg =
 
 
 view : Shared.Model -> Model -> Browser.Document Msg
-view shared model =
+view s model =
     { title = "Not Found"
     , body =
-        [ Navbar.view shared model.route
+        [ Navbar.view s model.route
         , viewContent
         ]
     }

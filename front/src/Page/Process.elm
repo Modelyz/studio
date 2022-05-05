@@ -41,11 +41,11 @@ type alias Flags =
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
         { init = init
-        , update = update shared
-        , view = view shared
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -70,12 +70,12 @@ init flags =
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update shared msg model =
+update s msg model =
     case msg of
         NewCommitment process ctype ->
             let
                 commitmentType =
-                    shared.commitmentTypes
+                    s.state.commitmentTypes
                         |> Set.toList
                         |> List.filter (\ct -> ct.name == ctype)
                         |> List.head
@@ -83,7 +83,7 @@ update shared msg model =
             case commitmentType of
                 Just ct ->
                     ( model
-                    , Shared.dispatchT shared <|
+                    , Shared.dispatchT s <|
                         \uuid t -> Event.CommitmentAdded { process = process, commitment = Commitment ct.name uuid t ct }
                     )
 
@@ -95,7 +95,7 @@ update shared msg model =
         NewEvent process etype ->
             let
                 eventType =
-                    shared.eventTypes
+                    s.state.eventTypes
                         |> Set.toList
                         |> List.filter (\et -> et.name == etype)
                         |> List.head
@@ -103,7 +103,7 @@ update shared msg model =
             case eventType of
                 Just et ->
                     ( model
-                    , Shared.dispatchT shared <|
+                    , Shared.dispatchT s <|
                         \uuid t -> Event.EventAdded { process = process, event = E.new et.name uuid t et }
                     )
 
@@ -112,13 +112,13 @@ update shared msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Process"
     , attributes = []
     , element =
         Html.div []
-            [ Navbar.view shared model.route
-            , viewContent shared model
+            [ Navbar.view s model.route
+            , viewContent s model
             ]
     }
 
@@ -146,21 +146,21 @@ newEventButton process et =
 
 
 viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent s model =
     let
         process =
-            getProcess shared model.process
+            getProcess s.state model.process
 
         commitmentTypes =
             process
                 |> Maybe.map .type_
-                |> Maybe.map (getCommitmentTypes shared)
+                |> Maybe.map (getCommitmentTypes s.state)
                 |> Maybe.withDefault (Set.empty .name)
 
         eventTypes =
             process
                 |> Maybe.map .type_
-                |> Maybe.map (getEventTypes shared)
+                |> Maybe.map (getEventTypes s.state)
                 |> Maybe.withDefault (Set.empty .name)
     in
     case process of
@@ -185,13 +185,13 @@ viewContent shared model =
                         , div [ class "panel-block hscroll-container" ] <|
                             List.map
                                 (newCommitmentButton proc)
-                                (shared.commitmentTypes
+                                (s.state.commitmentTypes
                                     |> Set.filter (\ct -> Set.member ct commitmentTypes)
                                     |> Set.toList
                                 )
                         , div [ class "panel-block" ]
                             [ div [ class "columns is-multiline" ]
-                                (getCommitments shared proc
+                                (getCommitments s.state proc
                                     |> Set.toList
                                     |> List.sortBy C.compare
                                     |> List.reverse
@@ -205,13 +205,13 @@ viewContent shared model =
                         , div [ class "panel-block hscroll-container" ] <|
                             List.map
                                 (newEventButton proc)
-                                (shared.eventTypes
+                                (s.state.eventTypes
                                     |> Set.filter (\et -> Set.member et eventTypes)
                                     |> Set.toList
                                 )
                         , div [ class "panel-block" ]
                             [ div [ class "columns is-multiline" ]
-                                (getEvents shared proc
+                                (getEvents s.state proc
                                     |> Set.toList
                                     |> List.sortBy E.compare
                                     |> List.reverse

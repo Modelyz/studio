@@ -35,11 +35,11 @@ type alias Flags =
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
-page shared =
+page s =
     Spa.Page.element
-        { init = init shared
-        , update = update shared
-        , view = view shared
+        { init = init s
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -65,14 +65,14 @@ init _ flags =
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update shared msg model =
+update s msg model =
     case msg of
         NewEventType ->
             ( { model
                 | inputEventType = ""
                 , inputEventTypeProcessTypes = Set.empty identity
               }
-            , Shared.dispatchMany shared <|
+            , Shared.dispatchMany s <|
                 Event.EventTypeAdded { eventType = ET.new model.inputEventType }
                     :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = model.inputEventType, ptype = pt }) (Set.toList model.inputEventTypeProcessTypes)
             )
@@ -82,7 +82,7 @@ update shared msg model =
 
         DeleteEventType etype ->
             ( model
-            , Shared.dispatch shared <| Event.EventTypeRemoved { eventType = etype }
+            , Shared.dispatch s <| Event.EventTypeRemoved { eventType = etype }
             )
 
         InputEventTypeProcessType pt ->
@@ -90,13 +90,13 @@ update shared msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view shared model =
+view s model =
     { title = "Event Types"
     , attributes = []
     , element =
         Html.div []
-            [ Navbar.view shared model.route
-            , viewContent shared model
+            [ Navbar.view s model.route
+            , viewContent s model
             ]
     }
 
@@ -120,7 +120,7 @@ viewThumbnail et =
 
 
 viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent s model =
     div
         []
         [ div
@@ -138,13 +138,13 @@ viewContent shared model =
             ]
             [ div
                 [ class "column is-one-third" ]
-                ((if Set.size shared.eventTypes > 0 then
+                ((if Set.size s.state.eventTypes > 0 then
                     h1 [] [ text "Current types:" ]
 
                   else
                     span [] []
                  )
-                    :: (shared.eventTypes
+                    :: (s.state.eventTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
@@ -174,7 +174,7 @@ viewContent shared model =
                             [ class "label" ]
                             [ text "This event type is usable from the following process types:" ]
                         , div [ class "field" ]
-                            (shared.processTypes
+                            (s.state.processTypes
                                 |> Set.toList
                                 |> List.sortBy PT.compare
                                 |> List.map

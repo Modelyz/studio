@@ -60,7 +60,7 @@ type Event
     | EventTypeRemoved { eventType : EventType } EventBase
     | EventAdded { process : Process, event : E.Event } EventBase
     | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
-    | ConnectionInitiated { lastEventTime : Time.Posix, sessionUuid : Uuid, uuids : Set.DictSet String Uuid } EventBase
+    | ConnectionInitiated { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid } EventBase
 
 
 base : Event -> EventBase
@@ -242,11 +242,10 @@ eventAdded uuid posixtime flow process event =
         }
 
 
-connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Uuid -> Set.DictSet String Uuid -> Event
-connectionInitiated uuid posixtime flow lastEventTime sessionUuid uuids =
+connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Set.DictSet String Uuid -> Event
+connectionInitiated uuid posixtime flow lastEventTime uuids =
     ConnectionInitiated
         { lastEventTime = lastEventTime
-        , sessionUuid = sessionUuid
         , uuids = uuids
         }
         { uuid = uuid
@@ -363,7 +362,6 @@ encode event =
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "type", Encode.string "ConnectionInitiated" )
                 , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
-                , ( "sessionUuid", Uuid.encode e.sessionUuid )
                 , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
                 ]
 
@@ -458,12 +456,11 @@ decoder =
                             (Decode.field "event" E.decoder)
 
                     "ConnectionInitiated" ->
-                        Decode.map6 connectionInitiated
+                        Decode.map5 connectionInitiated
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
-                            (Decode.field "sessionUuid" Uuid.decoder)
                             (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
 
                     _ ->
