@@ -21,6 +21,7 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 type alias Model =
     -- ui model related
     { currentSeed : Seed
+    , route : Route
     , navkey : Nav.Key
 
     -- ES and WS related
@@ -56,6 +57,7 @@ type Msg
 init : ( Int, List Int ) -> Nav.Key -> ( Model, Cmd Msg )
 init ( seed, seedExtension ) navkey =
     ( { currentSeed = initialSeed seed seedExtension
+      , route = Route.Home
       , navkey = navkey
       , iostatus = ESReading
       , wsstatus = WSClosed
@@ -154,10 +156,10 @@ update msg model =
                     ( { model | iostatus = IOError <| errorToString str }, Cmd.none )
 
         PushRoute route ->
-            ( model, Nav.pushUrl model.navkey <| Route.toUrl route )
+            ( { model | route = route }, Nav.pushUrl model.navkey <| Route.toUrl route )
 
         ReplaceRoute route ->
-            ( model, Nav.replaceUrl model.navkey <| Route.toUrl route )
+            ( { model | route = route }, Nav.replaceUrl model.navkey <| Route.toUrl route )
 
         SendEvents events ->
             -- send the new events and the pending ones

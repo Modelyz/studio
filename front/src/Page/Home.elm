@@ -1,8 +1,7 @@
 module Page.Home exposing (match, page, view)
 
 import Effect exposing (Effect)
-import Html exposing (Html, div, p, text)
-import Html.Attributes exposing (class)
+import Element as E exposing (..)
 import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
@@ -11,7 +10,7 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route }
+    ()
 
 
 type alias Msg =
@@ -45,8 +44,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init flags =
-    ( { route = flags.route
-      }
+    ( ()
     , Effect.none
     )
 
@@ -60,25 +58,17 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Modelyz"
     , attributes = []
-    , element =
-        div []
-            [ Navbar.view s model.route
-            , viewContent
-            ]
+    , element = viewContent
     }
 
 
-viewContent : Html Msg
+viewContent : Element Msg
 viewContent =
-    div
+    column
         []
-        [ div
-            [ class "hero is-medium"
-            ]
-            [ div [ class "hero-body" ]
-                [ p [ class "title" ]
-                    [ text "Modelyz"
-                    ]
+        [ row []
+            [ paragraph []
+                [ text "Modelyz"
                 ]
             ]
         ]

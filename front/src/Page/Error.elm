@@ -1,6 +1,6 @@
 module Page.Error exposing (view)
 
-import Html exposing (div, text)
+import Element exposing (..)
 import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
@@ -8,25 +8,21 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route }
+    ()
 
 
 type alias Msg =
     ()
 
 
-viewContent : Model -> Html.Html Msg
+viewContent : Model -> Element Msg
 viewContent _ =
-    div [] [ text "Error" ]
+    row [] [ text "Error" ]
 
 
 view : Shared.Model -> Model -> View Msg
-view s m =
+view s model =
     { title = "Error"
     , attributes = []
-    , element =
-        div []
-            [ Navbar.view s m.route
-            , viewContent m
-            ]
+    , element = viewContent model
     }

@@ -2,7 +2,6 @@ module REA.Group exposing (Group, compare, decoder, encode)
 
 import Json.Decode exposing (Decoder, Value)
 import Json.Encode
-import Prng.Uuid
 import REA.Entity exposing (Entity)
 
 

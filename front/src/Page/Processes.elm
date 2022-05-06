@@ -2,10 +2,9 @@ module Page.Processes exposing (Model, match, page, view)
 
 import DictSet
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Input as Input
 import Event
-import Html exposing (Html, a, br, button, div, text)
-import Html.Attributes exposing (class, href, id)
-import Html.Events exposing (onClick)
 import IOStatus exposing (IOStatus(..))
 import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
@@ -18,8 +17,7 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route
-    , ptype : ProcessType
+    { ptype : ProcessType
     }
 
 
@@ -28,8 +26,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -46,7 +43,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Processes _ ->
-            Just { route = route }
+            Just ()
 
         _ ->
             Nothing
@@ -54,8 +51,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init flags =
-    ( { route = flags.route
-      , ptype = ProcessType ""
+    ( { ptype = ProcessType ""
       }
     , Effect.none
     )
@@ -74,26 +70,18 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Processes"
     , attributes = []
-    , element =
-        Html.div []
-            [ Navbar.view s model.route
-            , viewContent s model
-            ]
+    , element = viewContent s model
     }
 
 
-viewContent : Shared.Model -> Model -> Html Msg
+viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    div
-        [ class "section"
-        ]
-        [ button
-            [ onClick (NewProcess model.ptype)
-            , class "button"
-            ]
-            [ text <| "New " ++ model.ptype.name
-            ]
-        , div [ class "columns is-multiline" ]
+    row []
+        [ Input.button []
+            { onPress = Just (NewProcess model.ptype)
+            , label = text ("New " ++ model.ptype.name)
+            }
+        , row []
             (DictSet.filter (\p -> p.type_ == model.ptype.name) s.state.processes
                 |> DictSet.toList
                 |> List.sortBy P.compare
@@ -103,14 +91,9 @@ viewContent s model =
         ]
 
 
-viewThumbnail : Process -> Html Msg
+viewThumbnail : Process -> Element Msg
 viewThumbnail p =
-    div [ class "column is-one-quarter" ]
-        [ a [ href <| "/process/" ++ Uuid.toString p.uuid ]
-            [ div [ class "box", id <| Uuid.toString p.uuid ]
-                [ text "process"
-                , br [] []
-                , text <| Uuid.toString p.uuid
-                ]
-            ]
+    row []
+        [ link []
+            { url = "/process/" ++ Uuid.toString p.uuid, label = text <| "process " ++ Uuid.toString p.uuid }
         ]

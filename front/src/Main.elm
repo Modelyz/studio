@@ -1,6 +1,7 @@
 port module Main exposing (main)
 
 import Browser
+import Element as E
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
@@ -9,6 +10,7 @@ import Maybe exposing (Maybe(..))
 import Page.CommitmentTypes
 import Page.EventTypes
 import Page.Home
+import Page.Navbar as Navbar
 import Page.Process
 import Page.ProcessType
 import Page.ProcessTypes
@@ -16,7 +18,6 @@ import Page.Processes
 import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa
-import State exposing (State)
 import View exposing (View)
 
 
@@ -75,9 +76,16 @@ toDocument :
     Shared.Model
     -> View (Spa.Msg Shared.Msg pageMsg)
     -> Browser.Document (Spa.Msg Shared.Msg pageMsg)
-toDocument _ view =
+toDocument s view =
     { title = view.title
-    , body = [ view.element ]
+    , body =
+        [ E.layout [] <|
+            E.row
+                [ E.width E.fill, E.height E.fill ]
+                [ Navbar.view s
+                , view.element
+                ]
+        ]
     }
 
 

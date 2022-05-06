@@ -2,21 +2,20 @@ module Page.CommitmentTypes exposing (match, page, view)
 
 import DictSet as Set
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Input as Input exposing (button)
 import Event
-import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
-import Html.Attributes exposing (class, id, placeholder, style, type_, value)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html.Attributes as Attr
 import Page.Navbar as Navbar
 import REA.CommitmentType as CT exposing (CommitmentType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View)
+import View exposing (View, onEnter)
 
 
 type alias Model =
-    { route : Route
-    , inputCommitmentType : String
+    { inputCommitmentType : String
     , inputCommitmentTypeProcessTypes : Set.DictSet String String
     }
 
@@ -27,7 +26,8 @@ type alias Flags =
 
 type Msg
     = InputCommitmentType String
-    | InputCommitmentTypeProcessType String
+    | LinkToProcessType String
+    | UnlinkFromProcessType String
     | NewCommitmentType String
     | DeleteCommitmentType CommitmentType
 
@@ -54,8 +54,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init _ flags =
-    ( { route = flags.route
-      , inputCommitmentType = ""
+    ( { inputCommitmentType = ""
       , inputCommitmentTypeProcessTypes = Set.empty identity
       }
     , Effect.none
@@ -73,8 +72,11 @@ update s msg model =
             , Shared.dispatch s <| Event.CommitmentTypeRemoved { commitmentType = ctype }
             )
 
-        InputCommitmentTypeProcessType pt ->
+        LinkToProcessType pt ->
             ( { model | inputCommitmentTypeProcessTypes = Set.insert pt model.inputCommitmentTypeProcessTypes }, Effect.none )
+
+        UnlinkFromProcessType pt ->
+            ( { model | inputCommitmentTypeProcessTypes = Set.remove pt model.inputCommitmentTypeProcessTypes }, Effect.none )
 
         NewCommitmentType name ->
             ( { model
@@ -89,91 +91,77 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Commitment Types"
     , attributes = []
-    , element =
-        Html.div []
-            [ Navbar.view s model.route
-            , viewContent s model
-            ]
+    , element = viewContent s model
     }
 
 
-viewThumbnail : CommitmentType -> Html Msg
+viewThumbnail : CommitmentType -> Element Msg
 viewThumbnail ct =
-    div
-        [ class "container"
-        , style "background" "yellow"
-        ]
-        [ div
-            [ class "box", id ct.name ]
-            [ text ct.name
-            , button
-                [ class "delete is-medium"
-                , onClick <| DeleteCommitmentType ct
-                ]
+    row []
+        [ row
+            [ htmlAttribute <| Attr.id ct.name ]
+            [ button
                 []
+                { onPress = Just <| DeleteCommitmentType ct, label = text ct.name }
             ]
         ]
 
 
-viewContent : Shared.Model -> Model -> Html Msg
+viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    div
+    row
         []
-        [ div
-            [ class "hero is-medium"
-            ]
-            [ div [ class "hero-body" ]
-                [ p [ class "title" ]
+        [ row
+            []
+            [ row []
+                [ paragraph []
                     [ text "Commitment Types"
                     ]
-                , p [ class "subtitle" ] [ text "What kind of events may be expected to happen in the future" ]
+                , paragraph [] [ text "What kind of events may be expected to happen in the future" ]
                 ]
             ]
-        , div
-            [ class "columns form"
-            ]
-            [ div
-                [ class "column is-one-third" ]
+        , row
+            []
+            [ row
+                []
                 ((if Set.size s.state.commitmentTypes > 0 then
-                    h1 [] [ text "Current types:" ]
+                    row [] [ text "Current types:" ]
 
                   else
-                    span [] []
+                    column [] []
                  )
                     :: (s.state.commitmentTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
                 )
-            , div
-                [ class "column is-one-third" ]
-                [ label
-                    [ class "label" ]
+            , row
+                []
+                [ row
+                    []
                     [ text "Add a new Commitment type:" ]
-                , div [ class "field" ]
-                    [ form
-                        [ class "control"
-                        , onSubmit <| NewCommitmentType model.inputCommitmentType
-                        ]
-                        [ input
-                            [ type_ "text"
-                            , value model.inputCommitmentType
-                            , class "input"
-                            , onInput InputCommitmentType
-                            , placeholder "Enter the name of a new commitment type"
-                            ]
-                            []
+                , row []
+                    [ row
+                        []
+                        [ Input.text
+                            [ onEnter <| NewCommitmentType model.inputCommitmentType ]
+                            { onChange = InputCommitmentType
+                            , text = model.inputCommitmentType
+                            , placeholder =
+                                if model.inputCommitmentType == "" then
+                                    Just <| Input.placeholder [] <| text "Enter the name of a new commitment type"
+
+                                else
+                                    Nothing
+                            , label = Input.labelLeft [] (text "Commitment Type")
+                            }
                         ]
                     ]
-                , div [ class "field" ]
-                    [ div
-                        [ class "control" ]
-                        [ button
-                            [ class "button is-link"
-                            , onClick <| NewCommitmentType model.inputCommitmentType
-                            ]
-                            [ text "Add"
-                            ]
+                , row []
+                    [ row
+                        []
+                        [ button []
+                            { onPress = Just <| NewCommitmentType model.inputCommitmentType, label = text "Add" }
                         ]
                     ]
                 ]

@@ -2,10 +2,10 @@ module Page.ProcessTypes exposing (match, page, view)
 
 import DictSet as Set
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Input as Input
 import Event
-import Html exposing (Html, button, div, form, h1, input, label, p, span, text)
-import Html.Attributes exposing (class, id, placeholder, style, type_, value)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html.Attributes as Attr
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
 import Route exposing (Route)
@@ -15,8 +15,7 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route
-    , inputProcessType : ProcessType
+    { inputProcessType : ProcessType
     }
 
 
@@ -27,7 +26,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route }
+    ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -44,7 +43,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.ProcessTypes ->
-            Just { route = route }
+            Just ()
 
         _ ->
             Nothing
@@ -52,8 +51,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init flags =
-    ( { route = flags.route
-      , inputProcessType = ProcessType ""
+    ( { inputProcessType = ProcessType ""
       }
     , Effect.none
     )
@@ -63,11 +61,7 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process Types"
     , attributes = []
-    , element =
-        Html.div []
-            [ Navbar.view s model.route
-            , viewContent s model
-            ]
+    , element = viewContent s model
     }
 
 
@@ -94,84 +88,71 @@ update s msg model =
             )
 
 
-viewThumbnail : ProcessType -> Html Msg
+viewThumbnail : ProcessType -> Element Msg
 viewThumbnail pt =
-    div
-        [ class "container"
-        , style "background" "yellow"
-        ]
-        [ div
-            [ class "box", id pt.name ]
-            [ text pt.name
-            , button
-                [ class "delete is-medium"
-                , onClick <| DeleteProcessType pt
-                ]
-                []
-            ]
-        ]
-
-
-viewContent : Shared.Model -> Model -> Html Msg
-viewContent s model =
-    div
+    row
         []
-        [ div
-            [ class "hero is-medium"
+        [ row
+            [ htmlAttribute <| Attr.id pt.name ]
+            [ Input.button []
+                { onPress = Just <| DeleteProcessType pt, label = text pt.name }
             ]
-            [ div [ class "hero-body" ]
-                [ p [ class "title" ]
+        ]
+
+
+viewContent : Shared.Model -> Model -> Element Msg
+viewContent s model =
+    row
+        []
+        [ row
+            []
+            [ row []
+                [ paragraph []
                     [ text "Process Types"
                     ]
-                , p [ class "subtitle" ] [ text "What kind of processes may be created" ]
+                , paragraph [] [ text "What kind of processes may be created" ]
                 ]
             ]
-        , div
-            [ class "columns form"
-            ]
-            [ div
-                [ class "column is-one-third" ]
+        , row
+            []
+            [ row
+                []
                 ((if Set.size s.state.processTypes > 0 then
-                    h1 [] [ text "Current types:" ]
+                    text "Current types:"
 
                   else
-                    span [] []
+                    column [] []
                  )
                     :: (s.state.processTypes
                             |> Set.toList
                             |> List.map viewThumbnail
                        )
                 )
-            , div
-                [ class "column is-one-third" ]
-                [ label
-                    [ class "label" ]
-                    [ text "Add a new Process type:" ]
-                , div [ class "field" ]
-                    [ form
-                        [ class "control"
-                        , onSubmit <| ProcessTypeChanged model.inputProcessType
-                        ]
-                        [ input
-                            [ type_ "text"
-                            , value model.inputProcessType.name
-                            , class "input"
-                            , onInput InputProcessName
-                            , placeholder "Enter the name of a new process type"
-                            ]
-                            []
-                        ]
+            , row
+                []
+                [ text "Add a new Process type:"
+                , row []
+                    [ Input.text
+                        [ View.onEnter <| ProcessTypeChanged model.inputProcessType ]
+                        { onChange = InputProcessName
+                        , text = model.inputProcessType.name
+                        , placeholder =
+                            if model.inputProcessType.name == "" then
+                                Just <| Input.placeholder [] <| text "Enter the name of a new process type"
+
+                            else
+                                Nothing
+                        , label = Input.labelLeft [] <| text "Process type"
+                        }
                     ]
-                , div [ class "field" ]
-                    [ div
-                        [ class "control" ]
-                        [ button
-                            [ class "button is-link"
-                            , onClick <| ProcessTypeChanged model.inputProcessType
-                            ]
-                            [ text "Add"
-                            ]
-                        ]
+                ]
+            , row []
+                [ row
+                    []
+                    [ Input.button []
+                        { onPress = Just <| ProcessTypeChanged model.inputProcessType
+                        , label = text "Add"
+                        }
                     ]
                 ]
             ]

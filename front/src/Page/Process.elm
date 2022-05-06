@@ -2,11 +2,10 @@ module Page.Process exposing (match, page, view)
 
 import DictSet as Set
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Input as Input
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
-import Html exposing (Html, a, br, div, nav, p, text)
-import Html.Attributes exposing (class, href, style)
-import Html.Events exposing (onClick)
 import IOStatus exposing (IOStatus(..))
 import Page.Navbar as Navbar
 import Page.NotFound as NotFound
@@ -24,8 +23,7 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route
-    , process : String
+    { process : String
     }
 
 
@@ -35,8 +33,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    , process : String
+    { process : String
     }
 
 
@@ -54,7 +51,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Process p ->
-            Just { route = route, process = p }
+            Just { process = p }
 
         _ ->
             Nothing
@@ -62,8 +59,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init flags =
-    ( { route = flags.route
-      , process = flags.process
+    ( { process = flags.process
       }
     , Effect.none
     )
@@ -115,37 +111,27 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process"
     , attributes = []
-    , element =
-        Html.div []
-            [ Navbar.view s model.route
-            , viewContent s model
-            ]
+    , element = viewContent s model
     }
 
 
-newCommitmentButton : Process -> CommitmentType -> Html Msg
+newCommitmentButton : Process -> CommitmentType -> Element Msg
 newCommitmentButton process ct =
-    div
-        [ class "button"
-        , class "hscroll"
-        , onClick <| NewCommitment process ct.name
-        ]
-        [ text ct.name
-        ]
+    Input.button []
+        { onPress = Just <| NewCommitment process ct.name
+        , label = text ct.name
+        }
 
 
-newEventButton : Process -> EventType -> Html Msg
+newEventButton : Process -> EventType -> Element Msg
 newEventButton process et =
-    div
-        [ class "button"
-        , class "hscroll"
-        , onClick <| NewEvent process et.name
-        ]
-        [ text et.name
-        ]
+    Input.button []
+        { onPress = Just <| NewEvent process et.name
+        , label = text et.name
+        }
 
 
-viewContent : Shared.Model -> Model -> Html Msg
+viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
     let
         process =
@@ -168,29 +154,28 @@ viewContent s model =
             NotFound.viewContent
 
         Just proc ->
-            div []
-                [ div
-                    [ class "hero is-medium"
-                    ]
-                    [ div [ class "hero-body" ]
-                        [ p [ class "title" ]
+            row []
+                [ row
+                    []
+                    [ row []
+                        [ paragraph []
                             [ text <| proc.type_ ++ " # " ++ Uuid.toString proc.uuid
                             ]
                         ]
                     ]
-                , div [ class "columns" ]
-                    [ nav [ class "panel", style "margin" "0.5rem" ]
-                        [ p [ class "panel-heading" ]
+                , row []
+                    [ row []
+                        [ paragraph []
                             [ text "Commitments" ]
-                        , div [ class "panel-block hscroll-container" ] <|
+                        , row [] <|
                             List.map
                                 (newCommitmentButton proc)
                                 (s.state.commitmentTypes
                                     |> Set.filter (\ct -> Set.member ct commitmentTypes)
                                     |> Set.toList
                                 )
-                        , div [ class "panel-block" ]
-                            [ div [ class "columns is-multiline" ]
+                        , row []
+                            [ row []
                                 (getCommitments s.state proc
                                     |> Set.toList
                                     |> List.sortBy C.compare
@@ -199,18 +184,18 @@ viewContent s model =
                                 )
                             ]
                         ]
-                    , nav [ class "panel", style "margin" "0.5rem" ]
-                        [ p [ class "panel-heading" ]
+                    , row []
+                        [ paragraph []
                             [ text "Events" ]
-                        , div [ class "panel-block hscroll-container" ] <|
+                        , row [] <|
                             List.map
                                 (newEventButton proc)
                                 (s.state.eventTypes
                                     |> Set.filter (\et -> Set.member et eventTypes)
                                     |> Set.toList
                                 )
-                        , div [ class "panel-block" ]
-                            [ div [ class "columns is-multiline" ]
+                        , row []
+                            [ row []
                                 (getEvents s.state proc
                                     |> Set.toList
                                     |> List.sortBy E.compare
@@ -223,31 +208,33 @@ viewContent s model =
                 ]
 
 
-viewCommitmentThumbnail : Commitment -> Html Msg
+viewCommitmentThumbnail : Commitment -> Element Msg
 viewCommitmentThumbnail c =
-    div [ class "column is-one-quarter" ]
-        [ a
-            [ href <| "/commitment/" ++ Uuid.toString c.uuid ]
-            [ div
-                [ class "card" ]
-                [ text c.name
-                , br [] []
-                , text <| Uuid.toString c.uuid
-                ]
+    row []
+        [ link
+            []
+            { url = "/commitment/" ++ Uuid.toString c.uuid
+            , label = text c.name
+            }
+        , row
+            []
+            [ text c.name
+            , text <| Uuid.toString c.uuid
             ]
         ]
 
 
-viewEventThumbnail : Event -> Html Msg
+viewEventThumbnail : Event -> Element Msg
 viewEventThumbnail c =
-    div [ class "column is-one-quarter" ]
-        [ a
-            [ href <| "/event/" ++ Uuid.toString c.uuid ]
-            [ div
-                [ class "card" ]
-                [ text c.name
-                , br [] []
-                , text <| Uuid.toString c.uuid
-                ]
+    row []
+        [ link
+            []
+            { url = "/event/" ++ Uuid.toString c.uuid
+            , label = text c.name
+            }
+        , row
+            []
+            [ text c.name
+            , text <| Uuid.toString c.uuid
             ]
         ]

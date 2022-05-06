@@ -1,30 +1,28 @@
 module Page.NotFound exposing (view, viewContent)
 
-import Browser
-import Html exposing (Html, div, text)
+import Element exposing (..)
 import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
+import View exposing (View)
 
 
 type alias Model =
-    { route : Route }
+    ()
 
 
 type alias Msg =
     ()
 
 
-view : Shared.Model -> Model -> Browser.Document Msg
+view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Not Found"
-    , body =
-        [ Navbar.view s model.route
-        , viewContent
-        ]
+    , attributes = []
+    , element = viewContent
     }
 
 
-viewContent : Html msg
+viewContent : Element msg
 viewContent =
-    div [] [ text "Not Found" ]
+    row [] [ text "Not Found" ]

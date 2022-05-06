@@ -1,10 +1,10 @@
 module Page.ProcessType exposing (match, page, view)
 
 import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Input as Input
 import Event
-import Html exposing (Html, button, div, form, input, label, p, text)
-import Html.Attributes exposing (class, disabled, placeholder, type_, value)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html.Attributes as Attr
 import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
 import Route exposing (Route)
@@ -14,8 +14,7 @@ import View exposing (View)
 
 
 type alias Model =
-    { route : Route
-    , inputProcessType : ProcessType
+    { inputProcessType : ProcessType
     , ptype : ProcessType
     }
 
@@ -26,8 +25,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -44,7 +42,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.ProcessType _ ->
-            Just { route = route }
+            Just ()
 
         _ ->
             Nothing
@@ -52,8 +50,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init flags =
-    ( { route = flags.route
-      , inputProcessType = ProcessType ""
+    ( { inputProcessType = ProcessType ""
       , ptype = ProcessType ""
       }
     , Effect.none
@@ -82,63 +79,52 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process Type"
     , attributes = []
-    , element =
-        Html.div []
-            [ Navbar.view s model.route
-            , viewContent model
-            ]
+    , element = viewContent model
     }
 
 
-viewContent : Model -> Html Msg
+viewContent : Model -> Element Msg
 viewContent model =
-    div
+    row
         []
-        [ div
-            [ class "hero is-medium"
-            ]
-            [ div [ class "hero-body" ]
-                [ p [ class "title" ]
+        [ row
+            []
+            [ row []
+                [ paragraph []
                     [ text "Process Type"
                     ]
-                , p [ class "subtitle" ] [ text "Configuration of the type of processes managed by this service" ]
+                , paragraph [] [ text "Configuration of the type of processes managed by this service" ]
                 ]
             ]
-        , div
-            [ class "columns form"
-            ]
-            [ div
-                [ class "column is-one-third" ]
-                [ label
-                    [ class "label" ]
-                    [ text "Process name:" ]
-                , div [ class "field" ]
-                    [ form
-                        [ class "control"
-                        , onSubmit <| ProcessTypeChanged model.inputProcessType
-                        ]
-                        [ input
-                            [ type_ "text"
-                            , value model.inputProcessType.name
-                            , class "input"
-                            , onInput InputProcessName
-                            , placeholder "Enter the name of the processes to create"
-                            ]
-                            []
-                        ]
-                    ]
-                , div [ class "field" ]
-                    [ div
-                        [ class "control" ]
-                        [ button
-                            [ class "button is-link"
-                            , disabled
+        , row
+            []
+            [ row
+                []
+                [ text "Process name:" ]
+            , row []
+                [ Input.text [ View.onEnter <| ProcessTypeChanged model.inputProcessType ]
+                    { onChange = InputProcessName
+                    , text = model.inputProcessType.name
+                    , placeholder =
+                        if model.inputProcessType.name == "" then
+                            Just <| Input.placeholder [] <| text "Enter the name of the processes to create"
+
+                        else
+                            Nothing
+                    , label = Input.labelLeft [] <| text "Process name"
+                    }
+                ]
+            , row []
+                [ row
+                    []
+                    [ Input.button
+                        [ htmlAttribute <|
+                            Attr.disabled
                                 (model.inputProcessType == model.ptype)
-                            , onClick <| ProcessTypeChanged model.inputProcessType
-                            ]
-                            [ text "Change"
-                            ]
                         ]
+                        { onPress = Just <| ProcessTypeChanged model.inputProcessType
+                        , label = text "Change"
+                        }
                     ]
                 ]
             ]
