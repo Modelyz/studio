@@ -1,3 +1,3 @@
 #!/bin/bash
 
-npx elm-go -v -d ../build/ -s index.html src/Main.elm -- --output ../build/static/app.js
+npx elm-go -u -d ../build/ -s index.html src/Main.elm -- --output ../build/static/app.js
