@@ -102,20 +102,20 @@ viewThumbnail pt =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    row
+    column
         []
-        [ row
+        [ column
             []
-            [ row []
+            [ column []
                 [ paragraph []
                     [ text "Process Types"
                     ]
                 , paragraph [] [ text "What kind of processes may be created" ]
                 ]
             ]
-        , row
+        , column
             []
-            [ row
+            [ column
                 []
                 ((if Set.size s.state.processTypes > 0 then
                     text "Current types:"
@@ -128,10 +128,10 @@ viewContent s model =
                             |> List.map viewThumbnail
                        )
                 )
-            , row
+            , column
                 []
                 [ text "Add a new Process type:"
-                , row []
+                , column []
                     [ Input.text
                         [ View.onEnter <| ProcessTypeChanged model.inputProcessType ]
                         { onChange = InputProcessName
@@ -146,8 +146,8 @@ viewContent s model =
                         }
                     ]
                 ]
-            , row []
-                [ row
+            , column []
+                [ column
                     []
                     [ Input.button []
                         { onPress = Just <| ProcessTypeChanged model.inputProcessType

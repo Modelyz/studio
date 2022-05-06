@@ -154,8 +154,8 @@ viewContent s model =
             NotFound.viewContent
 
         Just proc ->
-            row []
-                [ row
+            column []
+                [ column
                     []
                     [ row []
                         [ paragraph []
@@ -163,18 +163,18 @@ viewContent s model =
                             ]
                         ]
                     ]
-                , row []
+                , column []
                     [ row []
                         [ paragraph []
                             [ text "Commitments" ]
-                        , row [] <|
+                        , column [] <|
                             List.map
                                 (newCommitmentButton proc)
                                 (s.state.commitmentTypes
                                     |> Set.filter (\ct -> Set.member ct commitmentTypes)
                                     |> Set.toList
                                 )
-                        , row []
+                        , column []
                             [ row []
                                 (getCommitments s.state proc
                                     |> Set.toList
@@ -184,18 +184,18 @@ viewContent s model =
                                 )
                             ]
                         ]
-                    , row []
+                    , column []
                         [ paragraph []
                             [ text "Events" ]
-                        , row [] <|
+                        , column [] <|
                             List.map
                                 (newEventButton proc)
                                 (s.state.eventTypes
                                     |> Set.filter (\et -> Set.member et eventTypes)
                                     |> Set.toList
                                 )
-                        , row []
-                            [ row []
+                        , column []
+                            [ column []
                                 (getEvents s.state proc
                                     |> Set.toList
                                     |> List.sortBy E.compare

@@ -76,12 +76,12 @@ view s model =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    row []
+    column []
         [ Input.button []
             { onPress = Just (NewProcess model.ptype)
             , label = text ("New " ++ model.ptype.name)
             }
-        , row []
+        , column []
             (DictSet.filter (\p -> p.type_ == model.ptype.name) s.state.processes
                 |> DictSet.toList
                 |> List.sortBy P.compare
@@ -93,7 +93,7 @@ viewContent s model =
 
 viewThumbnail : Process -> Element Msg
 viewThumbnail p =
-    row []
+    column []
         [ link []
             { url = "/process/" ++ Uuid.toString p.uuid, label = text <| "process " ++ Uuid.toString p.uuid }
         ]

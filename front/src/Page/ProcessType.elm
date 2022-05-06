@@ -85,23 +85,23 @@ view s model =
 
 viewContent : Model -> Element Msg
 viewContent model =
-    row
+    column
         []
-        [ row
+        [ column
             []
-            [ row []
+            [ column []
                 [ paragraph []
                     [ text "Process Type"
                     ]
                 , paragraph [] [ text "Configuration of the type of processes managed by this service" ]
                 ]
             ]
-        , row
+        , column
             []
-            [ row
+            [ column
                 []
                 [ text "Process name:" ]
-            , row []
+            , column []
                 [ Input.text [ View.onEnter <| ProcessTypeChanged model.inputProcessType ]
                     { onChange = InputProcessName
                     , text = model.inputProcessType.name
@@ -114,8 +114,8 @@ viewContent model =
                     , label = Input.labelLeft [] <| text "Process name"
                     }
                 ]
-            , row []
-                [ row
+            , column []
+                [ column
                     []
                     [ Input.button
                         [ htmlAttribute <|
