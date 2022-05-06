@@ -134,7 +134,7 @@ httpApp request respond = do
         "static" : pathtail -> case pathtail of
             filename : _ ->
                 let ct = BS.append "text/" (encodeUtf8 (contentType filename))
-                 in responseFile status200 [("Content-Type", ct)] ("../build/" ++ T.unpack filename) Nothing
+                 in responseFile status200 [("Content-Type", ct)] ("../build/static/" ++ T.unpack filename) Nothing
             _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
         _ -> responseFile status200 [("Content-Type", "text/html")] ("../build/index.html" :: String) Nothing
 

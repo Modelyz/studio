@@ -1,4 +1,4 @@
-module Page.NotFound exposing (view, viewContent)
+module Page.NotFound exposing (defaultView, view, viewContent)
 
 import Element exposing (..)
 import Page.Navbar as Navbar
@@ -17,6 +17,11 @@ type alias Msg =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
+    defaultView
+
+
+defaultView : View msg
+defaultView =
     { title = "Not Found"
     , attributes = []
     , element = viewContent
@@ -25,4 +30,4 @@ view s model =
 
 viewContent : Element msg
 viewContent =
-    row [] [ text "Not Found" ]
+    row [ centerX, centerY ] [ text "Not Found" ]

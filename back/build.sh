@@ -11,8 +11,8 @@ if [ "$1" == "-c" ]; then
     while true; do
         inotifywait -e modify -e create -e delete src/*hs src/*/*hs || killall less &
         sleep 0.25
-	$BUILD
-	cp -a $EXEC ../build/
+    $BUILD
+    cp -a $EXEC ../build/
     done
 elif [ "$1" == "-o" ]; then
     $BUILD $OPTIMIZE

@@ -1,4 +1,4 @@
-module View exposing (View, defaultView, map, onEnter)
+module View exposing (View, map, onEnter)
 
 import Element exposing (..)
 import Html.Events
@@ -10,11 +10,6 @@ type alias View msg =
     , attributes : List (Attribute msg)
     , element : Element msg
     }
-
-
-defaultView : View msg
-defaultView =
-    placeholder "404"
 
 
 placeholder : String -> View msg
