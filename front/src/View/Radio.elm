@@ -6,19 +6,18 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import REA.Entity exposing (Entity)
 import View exposing (color)
 
 
-type alias Config msg =
+type alias Config a msg =
     { title : String
-    , options : List ( Entity, String )
-    , selected : Maybe Entity
-    , msg : Entity -> msg
+    , options : List ( a, String )
+    , selected : Maybe a
+    , msg : a -> msg
     }
 
 
-view : Config msg -> Element msg
+view : Config a msg -> Element msg
 view config =
     column [ spacing 50 ]
         [ Input.radio

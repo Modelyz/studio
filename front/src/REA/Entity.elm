@@ -9,6 +9,7 @@ type Entity
     | Event
     | Agent
     | Commitment
+    | Contract
     | Process
 
 
@@ -30,6 +31,9 @@ decoder =
 fromString : String -> Maybe Entity
 fromString s =
     case s of
+        "Process" ->
+            Just Process
+
         "Resource" ->
             Just Resource
 
@@ -42,8 +46,8 @@ fromString s =
         "Commitment" ->
             Just Commitment
 
-        "Process" ->
-            Just Process
+        "Contract" ->
+            Just Contract
 
         _ ->
             Nothing
@@ -52,6 +56,9 @@ fromString s =
 toString : Entity -> String
 toString e =
     case e of
+        Process ->
+            "Process"
+
         Resource ->
             "Resource"
 
@@ -64,5 +71,5 @@ toString e =
         Commitment ->
             "Commitment"
 
-        Process ->
-            "Process"
+        Contract ->
+            "Contract"

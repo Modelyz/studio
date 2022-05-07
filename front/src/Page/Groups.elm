@@ -178,11 +178,12 @@ viewContent s model =
                     [ Radio.view
                         { title = "This is a Group of:"
                         , options =
-                            [ ( Resource, "Resources" )
+                            [ ( Process, "Processes" )
+                            , ( Resource, "Resources" )
                             , ( Event, "Events" )
                             , ( Agent, "Agents" )
                             , ( Commitment, "Commitments" )
-                            , ( Process, "Processes" )
+                            , ( Contract, "Contracts" )
                             ]
                         , selected = model.form.entity
                         , msg =
