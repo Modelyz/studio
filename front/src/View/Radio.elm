@@ -6,7 +6,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import View exposing (color)
+import View exposing (color, size)
 
 
 type alias Config a msg =
@@ -19,14 +19,14 @@ type alias Config a msg =
 
 view : Config a msg -> Element msg
 view config =
-    column [ spacing 50 ]
+    column []
         [ Input.radio
-            [ padding 10
-            , spacing 30
+            [ spacing 5
+            , Font.size size.text.main
             ]
             { onChange = config.msg
             , selected = config.selected
-            , label = Input.labelAbove [] <| text config.title
+            , label = Input.labelAbove [ paddingXY 0 10 ] <| text config.title
             , options = List.map (\( o, t ) -> Input.optionWith o <| radioOption t) config.options
             }
         ]

@@ -64,8 +64,8 @@ view _ model =
 
 cell : String -> String -> Element Msg
 cell title link =
-    column [ width (px 300), height (px 300), Background.color color.background.main ]
-        [ E.link [ centerX, centerY, width (px 290), height (px 290), Background.color color.background.focus ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
+    column [ width (px 250), height (px 250), Background.color color.background.main ]
+        [ E.link [ centerX, centerY, width (px 240), height (px 240), Background.color color.background.focus ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
 
 
 viewContent : Element Msg
