@@ -95,6 +95,13 @@ update s msg model =
         GotInput form ->
             ( { model | form = form }, Effect.none )
 
+        Added group ->
+            ( { model
+                | form = empty
+              }
+            , Shared.dispatch s <| Event.GroupAdded { name = group.name, entity = group.entity }
+            )
+
         Removed group ->
             let
                 form =
@@ -102,13 +109,6 @@ update s msg model =
             in
             ( { model | form = { form | warning = "" } }
             , Shared.dispatch s <| Event.GroupRemoved { name = group.name, entity = group.entity }
-            )
-
-        Added group ->
-            ( { model
-                | form = empty
-              }
-            , Shared.dispatch s <| Event.GroupAdded { name = group.name, entity = group.entity }
             )
 
         Warning w ->

@@ -88,6 +88,13 @@ update s msg model =
         GotInput form ->
             ( { model | form = form }, Effect.none )
 
+        Added ptype ->
+            ( { model
+                | form = empty
+              }
+            , Shared.dispatch s <| Event.ProcessTypeChanged { ptype = ptype }
+            )
+
         Removed ptype ->
             let
                 form =
@@ -95,13 +102,6 @@ update s msg model =
             in
             ( { model | form = { form | warning = "" } }
             , Shared.dispatch s <| Event.ProcessTypeRemoved { ptype = ptype.name }
-            )
-
-        Added ptype ->
-            ( { model
-                | form = empty
-              }
-            , Shared.dispatch s <| Event.ProcessTypeChanged { ptype = ptype }
             )
 
         Warning w ->
