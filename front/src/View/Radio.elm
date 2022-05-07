@@ -55,7 +55,7 @@ radioOption label state =
                             color.background.main
 
                         Input.Focused ->
-                            color.background.focus
+                            color.background.item
 
                         Input.Selected ->
                             color.background.selected

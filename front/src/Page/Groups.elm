@@ -4,17 +4,17 @@ import DictSet as Set
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Event
-import Html.Attributes as Attr
-import REA.Entity as Entity exposing (Entity(..))
+import REA.Entity as Entity exposing (Entity(..), toString)
 import REA.Group exposing (Group)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View, button, color, h1, p, shadow, size)
+import View exposing (..)
 import View.Radio as Radio
 
 
@@ -35,12 +35,8 @@ validate f =
         Nothing
 
     else
-        Just f.name
-            |> Maybe.andThen
-                (\n ->
-                    f.entity
-                        |> Maybe.andThen (\e -> Just { name = n, entity = e })
-                )
+        f.entity
+            |> Maybe.andThen (\e -> Just { name = f.name, entity = e })
 
 
 type alias Model =
@@ -116,21 +112,6 @@ update s msg model =
             ( { model | warning = w }, Effect.none )
 
 
-viewThumbnail : Group -> Element Msg
-viewThumbnail g =
-    row
-        [ shadow, htmlAttribute <| Attr.id g.name ]
-        [ column [ Background.color color.background.main ]
-            [ row [ spacing 10, width fill ]
-                [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text g.name)
-                , Input.button [ padding 10, alignRight, Font.size size.text.main, Font.color color.text.main, Background.color color.background.error ]
-                    { onPress = Just <| Removed g, label = text "X" }
-                ]
-            , row [ padding 10, Font.size size.text.small ] [ text <| "(Group of " ++ Entity.toPluralString g.entity ++ ")" ]
-            ]
-        ]
-
-
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
     let
@@ -138,9 +119,8 @@ viewContent s model =
             model.form
     in
     column [ width fill, alignTop, padding 20 ]
-        [ column [ shadow, padding 20, centerX, alignTop ]
-            [ paragraph [ Font.color color.text.warning ] [ text model.warning ]
-            , column
+        [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop ]
+            [ column
                 [ spacing 20 ]
                 [ h1 "Groups"
                 , if Set.size s.state.groups > 0 then
@@ -152,7 +132,7 @@ viewContent s model =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Set.toList
-                        |> List.map viewThumbnail
+                        |> List.map (\g -> viewSmallCard (Removed g) g.name ("(Group of " ++ Entity.toPluralString g.entity ++ ")"))
                     )
                 , column
                     [ spacing 20 ]
@@ -168,12 +148,12 @@ viewContent s model =
                             , text = model.form.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name of the new group"
-                            , label = Input.labelLeft [] <| text "Group"
+                            , label = Input.labelLeft [] <| text "Name"
                             }
                         ]
                     , row [ Font.size size.text.main ]
                         [ Radio.view
-                            { title = "This is a Group of:"
+                            { title = "This will be a Group of:"
                             , options =
                                 [ ( Process, "Processes" )
                                 , ( Resource, "Resources" )
@@ -188,17 +168,19 @@ viewContent s model =
                             }
                         ]
                     ]
-                , column []
-                    [ column
-                        []
-                        [ button.primary
-                            { onPress =
-                                Maybe.map Added (validate model.form)
-                                    |> Maybe.withDefault (Warning "Incomplete form")
-                                    |> Just
-                            , label = text "Add"
-                            }
-                        ]
+                , row [ spacing 20 ]
+                    [ button.primary
+                        { onPress =
+                            Maybe.map Added (validate model.form)
+                                |> Maybe.withDefault (Warning "Incomplete form")
+                                |> Just
+                        , label = text "Add"
+                        }
+                    , if model.warning /= "" then
+                        paragraph [ Font.color color.text.warning ] [ text model.warning ]
+
+                      else
+                        none
                     ]
                 ]
             ]

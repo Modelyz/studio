@@ -1,4 +1,4 @@
-module View exposing (View, button, color, h1, h2, h3, map, onEnter, p, shadow, size)
+module View exposing (..)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -6,6 +6,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
 
@@ -44,22 +45,21 @@ size =
 color =
     { background =
         { main = rgb255 0xFF 0xFF 0xFF
-        , alt = rgb255 0x2E 0x34 0x36
-        , alt2 = rgb255 0xEF 0xEF 0xEF
-        , focus = rgb255 0xE0 0xE0 0xE0
+        , navbar = rgb255 0xC5 0xE8 0xF7
+        , item = rgb255 0xF0 0xF0 0xF0
         , selected = rgb255 0xC5 0xE8 0xF7
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54
         }
     , border =
         { main = rgb255 0x72 0x9F 0xCF
-        , focused = rgb255 0xE0 0xE0 0xE0
+        , focus = rgb255 0xE0 0xE0 0xE0
         , selected = rgb255 0xC5 0xE8 0xF7
         }
     , text =
-        { main = rgb255 0xE0 0xE0 0xE0
-        , alt = rgb255 0xE0 0xE0 0xE0
-        , focus = rgb255 0xE0 0xE0 0xE0
+        { main = rgb255 0x00 0x00 0x00
+        , navbar = rgb255 0x00 0x00 0x00
+        , item = rgb255 0xE0 0xE0 0xE0
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54
         }
@@ -76,8 +76,16 @@ button =
     }
 
 
-shadow =
-    Border.shadow { offset = ( 3, 3 ), size = 4, blur = 9, color = color.border.focused }
+shadowStyle =
+    { offset = ( 3, 3 ), size = 4, blur = 9, color = color.border.focus }
+
+
+hoverstyle : List Decoration
+hoverstyle =
+    [ Border.color color.border.focus
+    , Background.color color.background.item
+    , Border.shadow shadowStyle
+    ]
 
 
 placeholder : String -> View msg
@@ -111,3 +119,18 @@ onEnter msg =
                     )
             )
         )
+
+
+viewSmallCard : msg -> String -> String -> Element msg
+viewSmallCard msg title description =
+    row
+        [ htmlAttribute <| Attr.id title ]
+        [ column [ Background.color color.background.item ]
+            [ row [ spacing 10, width fill ]
+                [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text title)
+                , Input.button [ padding 10, alignRight, Font.size size.text.main, Font.color color.text.main, Background.color color.button.primary ]
+                    { onPress = Just msg, label = text "X" }
+                ]
+            , row [ padding 10, Font.size size.text.small ] [ text description ]
+            ]
+        ]
