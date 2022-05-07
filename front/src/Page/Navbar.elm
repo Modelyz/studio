@@ -1,7 +1,7 @@
 module Page.Navbar exposing (view)
 
 import DictSet as Set
-import Element exposing (Element, alignTop, column, fill, height, htmlAttribute, link, padding, rgb, row, spacing, text)
+import Element exposing (Element, alignTop, column, fill, height, htmlAttribute, link, padding, row, spacing, text)
 import Element.Background as Background
 import Element.Font as Font
 import Html.Attributes as Attr
@@ -9,13 +9,14 @@ import IOStatus as IO exposing (toText)
 import Route exposing (Route(..))
 import Shared
 import Time exposing (posixToMillis)
+import View exposing (color)
 import Websocket as WS exposing (toText)
 
 
 view : Shared.Model -> Element msg
 view s =
     column
-        [ padding 10, spacing 10, alignTop, height fill, Font.color (rgb 1 1 1), Background.color (rgb 0.15 0.15 0.15) ]
+        [ padding 10, spacing 10, alignTop, height fill, Font.color color.text.alt, Background.color color.background.alt ]
     <|
         [ column
             []

@@ -6,7 +6,7 @@ import Element.Background as Background
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View)
+import View exposing (View, color)
 
 
 type alias Model =
@@ -64,8 +64,8 @@ view _ model =
 
 cell : String -> String -> Element Msg
 cell title link =
-    column [ width (px 300), height (px 300), Background.color (rgb 0.9 0.9 0.9) ]
-        [ E.link [ centerX, centerY, width (px 290), height (px 290), Background.color (rgb 0.5 0.85 0.85) ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
+    column [ width (px 300), height (px 300), Background.color color.background.main ]
+        [ E.link [ centerX, centerY, width (px 290), height (px 290), Background.color color.background.focus ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
 
 
 viewContent : Element Msg

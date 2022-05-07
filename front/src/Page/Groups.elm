@@ -12,7 +12,7 @@ import REA.Group exposing (Group)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View)
+import View exposing (View, color)
 import View.Radio as Radio
 
 
@@ -134,7 +134,7 @@ viewContent s model =
     in
     column
         []
-        [ paragraph [ Font.color (rgb 0.9 0 0) ] [ text model.warning ]
+        [ paragraph [ Font.color color.text.warning ] [ text model.warning ]
         , column
             []
             [ paragraph []

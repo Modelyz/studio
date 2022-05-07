@@ -42,7 +42,7 @@ radioOption label state =
             , padding 4
             , Border.rounded 6
             , Border.width 2
-            , Border.color color.blue
+            , Border.color color.border.main
             ]
           <|
             el
@@ -52,13 +52,13 @@ radioOption label state =
                 , Background.color <|
                     case state of
                         Input.Idle ->
-                            color.white
+                            color.background.main
 
                         Input.Focused ->
-                            color.lightGrey
+                            color.background.focus
 
                         Input.Selected ->
-                            color.lightBlue
+                            color.background.selected
                 ]
                 none
         , text label
