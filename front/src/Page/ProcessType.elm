@@ -5,7 +5,6 @@ import Element exposing (..)
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import Page.Navbar as Navbar
 import REA.ProcessType exposing (ProcessType)
 import Route exposing (Route)
 import Shared
@@ -49,7 +48,7 @@ match route =
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init flags =
+init _ =
     ( { inputProcessType = ProcessType ""
       , ptype = ProcessType ""
       }
@@ -76,7 +75,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Process Type"
     , attributes = []
     , element = viewContent model

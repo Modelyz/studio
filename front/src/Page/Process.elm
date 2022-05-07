@@ -7,7 +7,6 @@ import Element.Input as Input
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
-import Page.Navbar as Navbar
 import Page.NotFound as NotFound
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)

@@ -8,6 +8,7 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.Entity exposing (Entity)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Process as P exposing (Process)
@@ -50,7 +51,8 @@ type alias EventBase =
 
 
 type Event
-    = ProcessTypeChanged { ptype : ProcessType } EventBase
+    = ConnectionInitiated { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid } EventBase
+    | ProcessTypeChanged { ptype : ProcessType } EventBase
     | ProcessTypeRemoved { ptype : String } EventBase
     | ProcessAdded { type_ : String, name : String } EventBase
     | CommitmentTypeAdded { commitmentType : CommitmentType } EventBase
@@ -60,7 +62,8 @@ type Event
     | EventTypeRemoved { eventType : EventType } EventBase
     | EventAdded { process : Process, event : E.Event } EventBase
     | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
-    | ConnectionInitiated { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid } EventBase
+    | GroupAdded { name : String, entity : Entity } EventBase
+    | GroupRemoved { name : String, entity : Entity } EventBase
 
 
 base : Event -> EventBase
@@ -97,6 +100,12 @@ base event =
             b
 
         ConnectionInitiated _ b ->
+            b
+
+        GroupAdded _ b ->
+            b
+
+        GroupRemoved _ b ->
             b
 
 
@@ -254,6 +263,30 @@ connectionInitiated uuid posixtime flow lastEventTime uuids =
         }
 
 
+groupAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
+groupAdded uuid posixtime flow name entity =
+    GroupAdded
+        { name = name
+        , entity = entity
+        }
+        { uuid = uuid
+        , posixtime = posixtime
+        , flow = flow
+        }
+
+
+groupRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
+groupRemoved uuid posixtime flow name entity =
+    GroupRemoved
+        { name = name
+        , entity = entity
+        }
+        { uuid = uuid
+        , posixtime = posixtime
+        , flow = flow
+        }
+
+
 
 -- JSON encoding / decoding
 
@@ -365,6 +398,26 @@ encode event =
                 , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
                 ]
 
+        GroupAdded e b ->
+            Encode.object
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "type", Encode.string "GroupAdded" )
+                , ( "name", Encode.string e.name )
+                , ( "entity", REA.Entity.encode e.entity )
+                ]
+
+        GroupRemoved e b ->
+            Encode.object
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "type", Encode.string "GroupRemoved" )
+                , ( "name", Encode.string e.name )
+                , ( "entity", REA.Entity.encode e.entity )
+                ]
+
 
 decodelist : Decode.Value -> List Event
 decodelist =
@@ -462,6 +515,22 @@ decoder =
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
                             (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
+
+                    "GroupAdded" ->
+                        Decode.map5 groupAdded
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "name" Decode.string)
+                            (Decode.field "entity" REA.Entity.decoder)
+
+                    "GroupRemoved" ->
+                        Decode.map5 groupRemoved
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "name" Decode.string)
+                            (Decode.field "entity" REA.Entity.decoder)
 
                     _ ->
                         Decode.fail "Unknown Event type"

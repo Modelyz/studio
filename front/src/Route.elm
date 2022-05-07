@@ -14,6 +14,7 @@ type Route
     | Process String
     | CommitmentTypes
     | EventTypes
+    | Groups
 
 
 routeParser : Parser (Route -> a) a
@@ -26,6 +27,7 @@ routeParser =
         , map Process (s "process" </> string)
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")
+        , map Groups (s "groups")
         ]
 
 
@@ -66,3 +68,6 @@ toUrl r =
 
         EventTypes ->
             "/event-types"
+
+        Groups ->
+            "groups"

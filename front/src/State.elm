@@ -163,6 +163,20 @@ aggregate event state =
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
+        GroupAdded e b ->
+            { state
+                | groups = Set.insert (Group e.name e.entity) state.groups
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        GroupRemoved e b ->
+            { state
+                | groups = Set.remove (Group e.name e.entity) state.groups
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
 
 updatePending : Event -> DictSet Int Event -> DictSet Int Event
 updatePending e es =

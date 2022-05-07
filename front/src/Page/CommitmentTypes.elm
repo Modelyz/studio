@@ -6,7 +6,6 @@ import Element exposing (..)
 import Element.Input as Input exposing (button)
 import Event
 import Html.Attributes as Attr
-import Page.Navbar as Navbar
 import REA.CommitmentType as CT exposing (CommitmentType)
 import Route exposing (Route)
 import Shared
@@ -53,7 +52,7 @@ match route =
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
-init _ flags =
+init _ _ =
     ( { inputCommitmentType = ""
       , inputCommitmentTypeProcessTypes = Set.empty identity
       }

@@ -1,7 +1,6 @@
 module Page.Error exposing (view)
 
 import Element exposing (..)
-import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
 import View exposing (View)

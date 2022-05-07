@@ -6,7 +6,6 @@ import Element exposing (..)
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import Page.Navbar as Navbar
 import REA.EventType as ET exposing (EventType)
 import REA.ProcessType as PT
 import Route exposing (Route)
@@ -54,7 +53,7 @@ match route =
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
-init _ flags =
+init _ _ =
     ( { inputEventType = ""
       , inputEventTypeProcessTypes = Set.empty identity
       }

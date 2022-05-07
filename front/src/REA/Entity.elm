@@ -1,4 +1,4 @@
-module REA.Entity exposing (Entity, decoder, encode)
+module REA.Entity exposing (Entity(..), decoder, encode)
 
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)

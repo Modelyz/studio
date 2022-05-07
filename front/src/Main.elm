@@ -9,6 +9,7 @@ import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Page.CommitmentTypes
 import Page.EventTypes
+import Page.Groups
 import Page.Home
 import Page.Navbar as Navbar
 import Page.NotFound
@@ -102,6 +103,7 @@ main =
         |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
+        |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
             , init = Shared.init

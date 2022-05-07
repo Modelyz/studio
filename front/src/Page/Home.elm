@@ -3,7 +3,6 @@ module Page.Home exposing (match, page, view)
 import Effect exposing (Effect)
 import Element as E exposing (..)
 import Element.Background as Background
-import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -44,7 +43,7 @@ match route =
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init flags =
+init _ =
     ( ()
     , Effect.none
     )
@@ -56,7 +55,7 @@ update _ model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Modelyz"
     , attributes = []
     , element = viewContent

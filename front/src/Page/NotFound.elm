@@ -1,7 +1,6 @@
 module Page.NotFound exposing (defaultView, view, viewContent)
 
 import Element exposing (..)
-import Page.Navbar as Navbar
 import Route exposing (Route)
 import Shared
 import View exposing (View)
@@ -16,7 +15,7 @@ type alias Msg =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ _ =
     defaultView
 
 

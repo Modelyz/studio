@@ -6,7 +6,6 @@ import Element exposing (..)
 import Element.Input as Input
 import Event
 import IOStatus exposing (IOStatus(..))
-import Page.Navbar as Navbar
 import Prng.Uuid as Uuid
 import REA.Process as P exposing (Process)
 import REA.ProcessType exposing (ProcessType)
@@ -50,7 +49,7 @@ match route =
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init flags =
+init _ =
     ( { ptype = ProcessType ""
       }
     , Effect.none

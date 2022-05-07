@@ -1,7 +1,7 @@
 module Page.Navbar exposing (view)
 
 import DictSet as Set
-import Element as E exposing (Element, alignTop, column, fill, height, htmlAttribute, link, padding, rgb, row, spacing, text)
+import Element exposing (Element, alignTop, column, fill, height, htmlAttribute, link, padding, rgb, row, spacing, text)
 import Element.Background as Background
 import Element.Font as Font
 import Html.Attributes as Attr
