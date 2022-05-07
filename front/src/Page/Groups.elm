@@ -21,12 +21,13 @@ import View.Radio as Radio
 type alias Form =
     { name : String
     , entity : Maybe Entity
+    , warning : String
     }
 
 
 empty : Form
 empty =
-    { name = "", entity = Nothing }
+    { name = "", entity = Nothing, warning = "" }
 
 
 validate : Form -> Maybe Group
@@ -41,7 +42,6 @@ validate f =
 
 type alias Model =
     { form : Form
-    , warning : String
     }
 
 
@@ -78,7 +78,7 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init _ =
-    ( { form = empty, warning = "" }, Effect.none )
+    ( { form = empty }, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -96,20 +96,27 @@ update s msg model =
             ( { model | form = form }, Effect.none )
 
         Removed group ->
-            ( { model | warning = "" }
+            let
+                form =
+                    model.form
+            in
+            ( { model | form = { form | warning = "" } }
             , Shared.dispatch s <| Event.GroupRemoved { name = group.name, entity = group.entity }
             )
 
         Added group ->
             ( { model
                 | form = empty
-                , warning = ""
               }
             , Shared.dispatch s <| Event.GroupAdded { name = group.name, entity = group.entity }
             )
 
         Warning w ->
-            ( { model | warning = w }, Effect.none )
+            let
+                form =
+                    model.form
+            in
+            ( { model | form = { form | warning = "" } }, Effect.none )
 
 
 viewContent : Shared.Model -> Model -> Element Msg
@@ -127,7 +134,7 @@ viewContent s model =
                     p "Existing groups:"
 
                   else
-                    p "There are no groups yet. Create your first group!"
+                    p "There are no groups yet. Create your first one!"
                 , wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
@@ -176,8 +183,8 @@ viewContent s model =
                                 |> Just
                         , label = text "Add"
                         }
-                    , if model.warning /= "" then
-                        paragraph [ Font.color color.text.warning ] [ text model.warning ]
+                    , if model.form.warning /= "" then
+                        paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
 
                       else
                         none

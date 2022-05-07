@@ -131,6 +131,10 @@ viewSmallCard msg title description =
                 , Input.button [ padding 10, alignRight, Font.size size.text.main, Font.color color.text.main, Background.color color.button.primary ]
                     { onPress = Just msg, label = text "X" }
                 ]
-            , row [ padding 10, Font.size size.text.small ] [ text description ]
+            , if description == "" then
+                none
+
+              else
+                row [ padding 10, Font.size size.text.small ] [ text description ]
             ]
         ]
