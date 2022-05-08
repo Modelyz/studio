@@ -62,6 +62,7 @@ type Event
     | EventTypeRemoved { eventType : EventType } EventBase
     | EventAdded { process : Process, event : E.Event } EventBase
     | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
+    | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String } EventBase
     | GroupAdded { name : String, entity : Entity } EventBase
     | GroupRemoved { name : String, entity : Entity } EventBase
 
@@ -97,6 +98,9 @@ base event =
             b
 
         LinkedEventTypeToProcessType _ b ->
+            b
+
+        LinkedCommitmentTypeToProcessType _ b ->
             b
 
         ConnectionInitiated _ b ->
@@ -220,6 +224,18 @@ linkedEventTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> Stri
 linkedEventTypeToProcessType uuid posixtime flow etype ptype =
     LinkedEventTypeToProcessType
         { etype = etype
+        , ptype = ptype
+        }
+        { uuid = uuid
+        , posixtime = posixtime
+        , flow = flow
+        }
+
+
+linkedCommitmentTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
+linkedCommitmentTypeToProcessType uuid posixtime flow ctype ptype =
+    LinkedCommitmentTypeToProcessType
+        { ctype = ctype
         , ptype = ptype
         }
         { uuid = uuid
@@ -369,6 +385,16 @@ encode event =
                 , ( "ptype", Encode.string e.ptype )
                 ]
 
+        LinkedCommitmentTypeToProcessType e b ->
+            Encode.object
+                [ ( "uuid", Uuid.encode b.uuid )
+                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "type", Encode.string "LinkedCommitmentTypeToProcessType" )
+                , ( "ctype", Encode.string e.ctype )
+                , ( "ptype", Encode.string e.ptype )
+                ]
+
         EventTypeRemoved e b ->
             Encode.object
                 [ ( "uuid", Uuid.encode b.uuid )
@@ -491,6 +517,14 @@ decoder =
                             (Decode.field "posixtime" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "etype" Decode.string)
+                            (Decode.field "ptype" Decode.string)
+
+                    "LinkedCommitmentTypeToProcessType" ->
+                        Decode.map5 linkedCommitmentTypeToProcessType
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "ctype" Decode.string)
                             (Decode.field "ptype" Decode.string)
 
                     "EventTypeRemoved" ->

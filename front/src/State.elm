@@ -139,6 +139,18 @@ aggregate event state =
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
+        LinkedCommitmentTypeToProcessType e b ->
+            let
+                ptct =
+                    { ctype = e.ctype, ptype = e.ptype }
+            in
+            { state
+                | processType_commitmentTypes = Set.insert ptct state.processType_commitmentTypes
+                , lastEventTime = b.posixtime
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
         EventTypeRemoved e b ->
             { state
                 | eventTypes = Set.remove e.eventType state.eventTypes
