@@ -68,12 +68,13 @@ color =
     , button =
         { primary = rgb255 0xC5 0xE8 0xF7
         , secondary = rgb255 0xE0 0xE0 0xE0
+        , hover = rgb255 0xB5 0xD8 0xE7
         }
     }
 
 
 button =
-    { primary = Input.button [ Background.color color.button.primary, padding 10 ]
+    { primary = Input.button [ mouseOver buttonHoverstyle, Background.color color.button.primary, padding 10 ]
     , secondary = Input.button [ Background.color color.button.secondary, padding 10 ]
     }
 
@@ -82,11 +83,17 @@ shadowStyle =
     { offset = ( 3, 3 ), size = 4, blur = 9, color = color.border.focus }
 
 
-hoverstyle : List Decoration
-hoverstyle =
+itemHoverstyle : List Decoration
+itemHoverstyle =
     [ Border.color color.border.focus
     , Background.color color.background.item
     , Border.shadow shadowStyle
+    ]
+
+
+buttonHoverstyle : List Decoration
+buttonHoverstyle =
+    [ Background.color color.button.hover
     ]
 
 
@@ -130,7 +137,7 @@ viewSmallCard msg title description =
         [ column [ Background.color color.background.item ]
             [ row [ spacing 10, width fill ]
                 [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text title)
-                , Input.button [ padding 10, alignRight, Font.size size.text.main, Font.color color.text.main, Background.color color.button.primary ]
+                , button.primary
                     { onPress = Just msg, label = text "X" }
                 ]
             , if description == "" then
