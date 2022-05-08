@@ -1,4 +1,4 @@
-# Revision history for ms
+# Revision history for studio
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
