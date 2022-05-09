@@ -186,21 +186,19 @@ viewContent s model =
                                 |> List.map
                                     (\pt ->
                                         row []
-                                            [ row []
-                                                [ Input.checkbox
-                                                    []
-                                                    { onChange =
-                                                        \b ->
-                                                            if b then
-                                                                Link pt.name
+                                            [ Input.checkbox
+                                                []
+                                                { onChange =
+                                                    \b ->
+                                                        if b then
+                                                            Link pt.name
 
-                                                            else
-                                                                Unlink pt.name
-                                                    , icon = Input.defaultCheckbox
-                                                    , checked = Set.member pt.name model.form.processTypes
-                                                    , label = Input.labelRight [] <| text pt.name
-                                                    }
-                                                ]
+                                                        else
+                                                            Unlink pt.name
+                                                , icon = Input.defaultCheckbox
+                                                , checked = Set.member pt.name model.form.processTypes
+                                                , label = Input.labelRight [] <| text pt.name
+                                                }
                                             ]
                                     )
                             )

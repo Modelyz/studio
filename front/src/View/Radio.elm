@@ -52,13 +52,13 @@ radioOption label state =
                 , Background.color <|
                     case state of
                         Input.Idle ->
-                            color.background.main
+                            color.widget.background
 
                         Input.Focused ->
-                            color.background.item
+                            color.item.background
 
                         Input.Selected ->
-                            color.background.selected
+                            color.widget.selected
                 ]
                 none
         , text label

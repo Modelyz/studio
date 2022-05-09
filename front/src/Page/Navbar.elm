@@ -16,7 +16,7 @@ import Websocket as WS exposing (toText)
 view : Shared.Model -> Element msg
 view s =
     column
-        [ padding 10, spacing 10, alignTop, height fill, Font.color color.text.navbar, Background.color color.background.navbar ]
+        [ padding 10, spacing 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background ]
     <|
         [ column
             []

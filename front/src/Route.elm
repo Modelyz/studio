@@ -15,6 +15,7 @@ type Route
     | CommitmentTypes
     | EventTypes
     | Groups
+    | Identifiers
 
 
 routeParser : Parser (Route -> a) a
@@ -28,6 +29,7 @@ routeParser =
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")
         , map Groups (s "groups")
+        , map Identifiers (s "identifiers")
         ]
 
 
@@ -71,3 +73,6 @@ toUrl r =
 
         Groups ->
             "groups"
+
+        Identifiers ->
+            "identifiers"

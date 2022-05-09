@@ -14,6 +14,7 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
+import REA.Identifier as I exposing (Identifier)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -41,6 +42,7 @@ type alias State =
     , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
     , processType_eventTypes : DictSet String ProcessTypeEventType
     , groups : DictSet String Group
+    , identifiers : DictSet String Identifier
     }
 
 
@@ -60,6 +62,7 @@ empty =
     , processType_commitmentTypes = Set.empty PTCT.compare
     , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
+    , identifiers = Set.empty I.compare
     }
 
 
@@ -187,6 +190,16 @@ aggregate event state =
                 | groups = Set.remove (Group e.name e.entity) state.groups
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        IdentifierAdded e b ->
+            { state
+                | identifiers = Set.insert e state.identifiers
+            }
+
+        IdentifierRemoved e b ->
+            { state
+                | identifiers = Set.filter (\i -> i.name /= e) state.identifiers
             }
 
 

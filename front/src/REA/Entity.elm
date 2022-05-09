@@ -1,4 +1,4 @@
-module REA.Entity exposing (Entity(..), decoder, encode, toPluralString, toString)
+module REA.Entity exposing (Entity(..), all, decoder, encode, toPluralString, toString)
 
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
@@ -11,6 +11,11 @@ type Entity
     | Commitment
     | Contract
     | Process
+
+
+all : List Entity
+all =
+    [ Resource, Event, Agent, Commitment, Contract, Process ]
 
 
 encode : Entity -> Value

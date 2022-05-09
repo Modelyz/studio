@@ -65,7 +65,7 @@ view _ model =
 cell : String -> String -> Element Msg
 cell title link =
     column [ width (px 250), height (px 250) ]
-        [ E.link [ mouseOver itemHoverstyle, centerX, centerY, width fill, height fill, Background.color color.background.item ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
+        [ E.link [ mouseOver itemHoverstyle, centerX, centerY, width fill, height fill, Background.color color.item.background ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
 
 
 viewContent : Element Msg
@@ -79,5 +79,6 @@ viewContent =
             , cell "Commitment Types" "commitment-types"
             , cell "Contract Types" "contract-types"
             , cell "Groups" "groups"
+            , cell "Identifiers" "identifiers"
             ]
         ]

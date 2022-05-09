@@ -53,22 +53,28 @@ size =
 
 
 color =
-    { background =
-        { main = rgb255 0xFF 0xFF 0xFF
-        , navbar = rgb255 0xC5 0xE8 0xF7
-        , item = rgb255 0xF0 0xF0 0xF0
+    -- TODO remove unused colors
+    { navbar =
+        { background = rgb255 0xC5 0xE8 0xF7
+        , text = rgb255 0x00 0x00 0x00
+        }
+    , item =
+        { background = rgb255 0xF0 0xF0 0xF0
+        , border = rgb255 0xF0 0xF0 0xF0
         , selected = rgb255 0xC5 0xE8 0xF7
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54
         }
+    , widget =
+        { background = rgb255 0xFF 0xFF 0xFF
+        , selected = rgb255 0xC5 0xE8 0xF7
+        }
     , border =
         { main = rgb255 0x72 0x9F 0xCF
         , focus = rgb255 0xE0 0xE0 0xE0
-        , selected = rgb255 0xC5 0xE8 0xF7
         }
     , text =
         { main = rgb255 0x00 0x00 0x00
-        , navbar = rgb255 0x00 0x00 0x00
         , item = rgb255 0xE0 0xE0 0xE0
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54
@@ -76,14 +82,15 @@ color =
     , button =
         { primary = rgb255 0xC5 0xE8 0xF7
         , secondary = rgb255 0xE0 0xE0 0xE0
-        , hover = rgb255 0xB5 0xD8 0xE7
+        , prim_hover = rgb255 0xB5 0xD8 0xE7
+        , sec_hover = rgb255 0xD0 0xD0 0xD0
         }
     }
 
 
 button =
-    { primary = Input.button [ mouseOver buttonHoverstyle, Background.color color.button.primary, padding 10 ]
-    , secondary = Input.button [ Background.color color.button.secondary, padding 10 ]
+    { primary = Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
+    , secondary = Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ]
     }
 
 
@@ -94,14 +101,8 @@ shadowStyle =
 itemHoverstyle : List Decoration
 itemHoverstyle =
     [ Border.color color.border.focus
-    , Background.color color.background.item
+    , Background.color color.item.background
     , Border.shadow shadowStyle
-    ]
-
-
-buttonHoverstyle : List Decoration
-buttonHoverstyle =
-    [ Background.color color.button.hover
     ]
 
 
@@ -142,7 +143,7 @@ viewSmallCard : msg -> String -> String -> Element msg
 viewSmallCard msg title description =
     row
         [ htmlAttribute <| Attr.id title ]
-        [ column [ Background.color color.background.item ]
+        [ column [ Background.color color.item.background ]
             [ row [ spacing 10, width fill ]
                 [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text title)
                 , button.primary
