@@ -12,7 +12,6 @@ import Page.EventTypes
 import Page.Groups
 import Page.Home
 import Page.Navbar as Navbar
-import Page.NotFound
 import Page.Process
 import Page.ProcessType
 import Page.ProcessTypes
@@ -93,7 +92,7 @@ toDocument s view =
 
 main =
     Spa.init
-        { defaultView = Page.NotFound.defaultView
+        { defaultView = View.notFound
         , extractIdentity = Shared.identity
         }
         |> Spa.addPublicPage mappers Page.Home.match Page.Home.page

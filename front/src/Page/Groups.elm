@@ -18,6 +18,22 @@ import View exposing (..)
 import View.Radio as Radio
 
 
+type alias Model =
+    { form : Form
+    }
+
+
+type Msg
+    = Removed Group
+    | Added Group
+    | GotInput Form
+    | Warning String
+
+
+type alias Flags =
+    ()
+
+
 type alias Form =
     { name : String
     , entity : Maybe Entity
@@ -38,22 +54,6 @@ validate f =
     else
         f.entity
             |> Maybe.andThen (\e -> Just { name = f.name, entity = e })
-
-
-type alias Model =
-    { form : Form
-    }
-
-
-type Msg
-    = Removed Group
-    | Added Group
-    | GotInput Form
-    | Warning String
-
-
-type alias Flags =
-    ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -79,14 +79,6 @@ match route =
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init _ =
     ( { form = empty }, Effect.none )
-
-
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "Groups"
-    , attributes = []
-    , element = viewContent s model
-    }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -117,6 +109,14 @@ update s msg model =
                     model.form
             in
             ( { model | form = { form | warning = "" } }, Effect.none )
+
+
+view : Shared.Model -> Model -> View Msg
+view s model =
+    { title = "Groups"
+    , attributes = []
+    , element = viewContent s model
+    }
 
 
 viewContent : Shared.Model -> Model -> Element Msg

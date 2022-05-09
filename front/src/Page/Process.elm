@@ -7,7 +7,6 @@ import Element.Input as Input
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
-import Page.NotFound as NotFound
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType exposing (CommitmentType)
@@ -150,7 +149,7 @@ viewContent s model =
     in
     case process of
         Nothing ->
-            NotFound.viewContent
+            el [ centerX, centerY ] (text "Not Found")
 
         Just proc ->
             column []

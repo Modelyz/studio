@@ -17,6 +17,24 @@ import Spa.Page
 import View exposing (..)
 
 
+type alias Model =
+    { form : Form
+    }
+
+
+type Msg
+    = Removed CommitmentType
+    | Added ( CommitmentType, List ProcessType )
+    | GotInput Form
+    | Warning String
+    | Link String
+    | Unlink String
+
+
+type alias Flags =
+    ()
+
+
 type alias Form =
     { name : String, ctype : Maybe String, processTypes : DictSet String String, warning : String }
 
@@ -37,24 +55,6 @@ validate f =
             ( { name = f.name, ctype = f.ctype }
             , f.processTypes |> Set.toList |> List.map (\pt -> { name = pt })
             )
-
-
-type alias Model =
-    { form : Form
-    }
-
-
-type alias Flags =
-    ()
-
-
-type Msg
-    = Removed CommitmentType
-    | Added ( CommitmentType, List ProcessType )
-    | GotInput Form
-    | Warning String
-    | Link String
-    | Unlink String
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -80,14 +80,6 @@ match route =
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init _ =
     ( { form = empty }, Effect.none )
-
-
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "Commitment Types"
-    , attributes = []
-    , element = viewContent s model
-    }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -135,6 +127,14 @@ update s msg model =
                     model.form
             in
             ( { model | form = { form | processTypes = Set.remove pt model.form.processTypes } }, Effect.none )
+
+
+view : Shared.Model -> Model -> View Msg
+view s model =
+    { title = "Commitment Types"
+    , attributes = []
+    , element = viewContent s model
+    }
 
 
 viewContent : Shared.Model -> Model -> Element Msg

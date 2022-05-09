@@ -20,6 +20,14 @@ type alias View msg =
     }
 
 
+notFound : View msg
+notFound =
+    { title = "Not Found"
+    , attributes = []
+    , element = el [ centerX, centerY ] (text "Not Found")
+    }
+
+
 h1 : String -> Element msg
 h1 title =
     paragraph [ Font.size size.text.h1, Region.heading 1 ] [ text title ]

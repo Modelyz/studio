@@ -15,6 +15,22 @@ import Spa.Page
 import View exposing (..)
 
 
+type alias Model =
+    { form : Form
+    }
+
+
+type Msg
+    = Removed ProcessType
+    | Added ProcessType
+    | GotInput Form
+    | Warning String
+
+
+type alias Flags =
+    ()
+
+
 type alias Form =
     { name : String, warning : String }
 
@@ -31,22 +47,6 @@ validate f =
 
     else
         Just { name = f.name }
-
-
-type alias Model =
-    { form : Form
-    }
-
-
-type Msg
-    = Removed ProcessType
-    | Added ProcessType
-    | GotInput Form
-    | Warning String
-
-
-type alias Flags =
-    ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -72,14 +72,6 @@ match route =
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init _ =
     ( { form = empty }, Effect.none )
-
-
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "Process Types"
-    , attributes = []
-    , element = viewContent s model
-    }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -110,6 +102,14 @@ update s msg model =
                     model.form
             in
             ( { model | form = { form | warning = w } }, Effect.none )
+
+
+view : Shared.Model -> Model -> View Msg
+view s model =
+    { title = "Process Types"
+    , attributes = []
+    , element = viewContent s model
+    }
 
 
 viewThumbnail : ProcessType -> Element Msg
