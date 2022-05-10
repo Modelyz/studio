@@ -1,4 +1,4 @@
-port module Websocket exposing (WSStatus(..), fromReadyState, toText, wsConnect, wsSend)
+port module Websocket exposing (WSStatus(..), fromReadyState, toEmoji, toText, wsConnect, wsSend)
 
 import Json.Decode as Decode exposing (decodeValue)
 
@@ -35,6 +35,23 @@ toText status =
 
         WSConnecting ->
             "WSConnecting"
+
+
+toEmoji : WSStatus -> String
+toEmoji status =
+    -- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+    case status of
+        WSOpen ->
+            "🔵"
+
+        WSClosed ->
+            "🔴"
+
+        WSClosing ->
+            "🔶"
+
+        WSConnecting ->
+            "🔷"
 
 
 fromReadyState : Decode.Value -> WSStatus

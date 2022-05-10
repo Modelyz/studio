@@ -90,12 +90,6 @@ color =
     }
 
 
-navbar =
-    { link = link [ padding 10, width fill, mouseOver navbarHoverstyle ]
-    , separator = row [ width fill, Border.width 1, Border.color color.navbar.separator ] []
-    }
-
-
 button =
     { primary = Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
     , secondary = Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ]
@@ -161,7 +155,7 @@ viewSmallCard msg title description =
             [ row [ spacing 10, width fill ]
                 [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text title)
                 , button.primary
-                    { onPress = Just msg, label = text "X" }
+                    { onPress = Just msg, label = text "×" }
                 ]
             , if description == "" then
                 none

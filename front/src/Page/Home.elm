@@ -70,7 +70,7 @@ cell title link =
 
 viewContent : Element Msg
 viewContent =
-    column [ width fill, alignTop ]
+    column [ height fill, scrollbarY, width fill, alignTop ]
         [ wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
             [ cell "Process Types" "process-types"
             , cell "Resource Types" "resource-types"

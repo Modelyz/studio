@@ -1,4 +1,4 @@
-module IOStatus exposing (IOStatus(..), toText)
+module IOStatus exposing (IOStatus(..), toEmoji, toText)
 
 
 type IOStatus
@@ -30,3 +30,25 @@ toText status =
 
         IOError err ->
             "IOError: " ++ err
+
+
+toEmoji : IOStatus -> String
+toEmoji status =
+    case status of
+        IOIdle ->
+            "🔵"
+
+        ESReading ->
+            "📤"
+
+        ESStoring ->
+            "📥"
+
+        WSReceiving ->
+            "🔻"
+
+        WSSending ->
+            "🔺"
+
+        IOError err ->
+            "🔴 (" ++ err ++ ")"

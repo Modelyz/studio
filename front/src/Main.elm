@@ -1,7 +1,7 @@
 port module Main exposing (main)
 
 import Browser
-import Element as E
+import Element exposing (..)
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
@@ -81,9 +81,9 @@ toDocument :
 toDocument s view =
     { title = view.title
     , body =
-        [ E.layout [] <|
-            E.row
-                [ E.width E.fill, E.height E.fill ]
+        [ layout [ width fill, height fill ] <|
+            row
+                [ width fill, height fill ]
                 [ Navbar.view s
                 , view.element
                 ]
