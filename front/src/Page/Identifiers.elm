@@ -169,12 +169,12 @@ viewContent s model =
                         |> List.sortBy .name
                         |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
                     )
-                , column
-                    [ spacing 20 ]
-                    [ text "Add a new Identifier:"
-                    , row []
+                , column [ width fill ]
+                    [ h2 "Add a new Identifier:"
+                    , wrappedRow [ width fill, spacing 50, height shrink, alignTop ]
                         [ Input.text
-                            [ Input.focusedOnLoad
+                            [ width <| minimum 200 fill
+                            , Input.focusedOnLoad
                             , View.onEnter <|
                                 case validate model.form of
                                     Ok f ->
@@ -187,79 +187,85 @@ viewContent s model =
                             , text = model.form.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name of the new Identifier"
-                            , label = Input.labelLeft [] <| text "Name"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Name"
                             }
-                        ]
-                    , row [ Font.size size.text.main ]
-                        [ Radio.view
-                            { title = "Apply this identifier to Which Entity?"
-                            , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
-                            , selected = model.form.entity
-                            , msg =
-                                \e -> GotInput { form | entity = Just e }
-                            }
-                        ]
-                    ]
-                , row [ Font.size size.text.main ]
-                    [ Input.checkbox
-                        []
-                        { onChange = \u -> GotInput { form | unique = u }
-                        , icon = Input.defaultCheckbox
-                        , checked = form.unique
-                        , label = Input.labelRight [] <| text "Each value is unique"
-                        }
-                    ]
-                , row [ Font.size size.text.main ]
-                    [ Input.checkbox
-                        []
-                        { onChange = \u -> GotInput { form | mandatory = u }
-                        , icon = Input.defaultCheckbox
-                        , checked = form.mandatory
-                        , label = Input.labelRight [] <| text "This identifier is mandatory"
-                        }
-                    ]
-                , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                    text "Format: "
-                        :: List.append
-                            (List.indexedMap
-                                (\i p ->
-                                    row [ Background.color color.item.selected ]
-                                        [ el [ padding 5 ] (text <| Portion.toString p)
-                                        , button.secondary
-                                            { onPress =
-                                                Just <|
-                                                    GotInput
-                                                        { form
-                                                            | format =
-                                                                form.format
-                                                                    |> List.indexedMap Tuple.pair
-                                                                    |> List.filter (\( j, q ) -> j /= i)
-                                                                    |> List.map Tuple.second
+                        , row [ width <| minimum 200 fill, Font.size size.text.h3 ]
+                            [ Radio.view
+                                { title = "Apply to Which Entity?"
+                                , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
+                                , selected = model.form.entity
+                                , msg =
+                                    \e -> GotInput { form | entity = Just e }
+                                }
+                            ]
+                        , column [ width <| minimum 200 fill, spacing 10 ]
+                            [ h3 "Options:"
+                            , row [ Font.size size.text.main ]
+                                [ Input.checkbox
+                                    []
+                                    { onChange = \u -> GotInput { form | unique = u }
+                                    , icon = Input.defaultCheckbox
+                                    , checked = form.unique
+                                    , label = Input.labelRight [] <| text "Each value is unique"
+                                    }
+                                ]
+                            , row [ Font.size size.text.main ]
+                                [ Input.checkbox
+                                    []
+                                    { onChange = \u -> GotInput { form | mandatory = u }
+                                    , icon = Input.defaultCheckbox
+                                    , checked = form.mandatory
+                                    , label = Input.labelRight [] <| text "This identifier is mandatory"
+                                    }
+                                ]
+                            ]
+                        , column [ width <| minimum 200 fill ]
+                            [ h3 "Format"
+                            , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                                text "Format: "
+                                    :: List.append
+                                        (List.indexedMap
+                                            (\i p ->
+                                                row [ Background.color color.item.selected ]
+                                                    [ el [ padding 5 ] (text <| Portion.toString p)
+                                                    , button.secondary
+                                                        { onPress =
+                                                            Just <|
+                                                                GotInput
+                                                                    { form
+                                                                        | format =
+                                                                            form.format
+                                                                                |> List.indexedMap Tuple.pair
+                                                                                |> List.filter (\( j, q ) -> j /= i)
+                                                                                |> List.map Tuple.second
+                                                                    }
+                                                        , label = text "×"
                                                         }
-                                            , label = text "×"
-                                            }
-                                        ]
-                                )
-                                form.format
-                            )
-                            [ row [] [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ] ]
-                , row [ spacing 20 ]
-                    [ button.primary
-                        { onPress =
-                            Just <|
-                                case validate model.form of
-                                    Ok f ->
-                                        Added f
+                                                    ]
+                                            )
+                                            form.format
+                                        )
+                                        [ row [] [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ] ]
+                            ]
+                        ]
+                    , row [ paddingXY 0 20 ]
+                        [ button.primary
+                            { onPress =
+                                Just <|
+                                    case validate model.form of
+                                        Ok f ->
+                                            Added f
 
-                                    Err err ->
-                                        Warning ("Error: " ++ err)
-                        , label = text "Set"
-                        }
-                    , if model.form.warning /= "" then
-                        paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
+                                        Err err ->
+                                            Warning ("Error: " ++ err)
+                            , label = text "Set"
+                            }
+                        , if model.form.warning /= "" then
+                            paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
 
-                      else
-                        none
+                          else
+                            none
+                        ]
                     ]
                 ]
             ]

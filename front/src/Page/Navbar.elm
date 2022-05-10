@@ -24,8 +24,13 @@ view s =
         <|
             [ navlink "/" "Home"
             , navlink "/process-types" "Process Types"
+            , navlink "/resource-types" "Resource Types"
             , navlink "/event-types" "Event Types"
+            , navlink "/agent-types" "Agent Types"
             , navlink "/commitment-types" "Commitment Types"
+            , navlink "/contract-types" "Contract Types"
+            , navlink "/groups" "Groups"
+            , navlink "/identifiers" "Identifiers"
             ]
                 ++ (if Set.size s.state.processTypes > 0 then
                         s.state.processTypes
@@ -35,21 +40,22 @@ view s =
                     else
                         []
                    )
-                ++ [ column [ alignBottom ]
-                        [ separator
-                        , el [ paddingXY 0 5, htmlAttribute <| Attr.id "WSStatus" ] (text <| "WS=" ++ WS.toText s.wsstatus)
-                        , el [ htmlAttribute <| Attr.id "IOStatus" ] (text <| "IO=" ++ IO.toText s.iostatus)
-                        , el [ htmlAttribute <| Attr.id "LastEvenTime" ] (text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis s.state.lastEventTime))
-                        , el [ htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
-                        , el [ htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents))
-                        , el [ htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
+                ++ [ column [ spacing 5, alignBottom ]
+                        [ row [ centerX, Font.color color.navbar.separator, padding 10, Font.size 15, Font.bold ] [ text "Modelyz Studio" ]
+                        , separator
+                        , el [ paddingXY 0 5, htmlAttribute <| Attr.title <| "WSStatus=" ++ WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
+                        , el [ htmlAttribute <| Attr.title <| "IOStatus" ++ "IO=" ++ IO.toText s.iostatus ] (text <| "IO  " ++ WS.toEmoji s.wsstatus)
+                        , el [ Font.size 15, htmlAttribute <| Attr.id "LastEvenTime" ] (text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis s.state.lastEventTime))
+                        , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
+                        , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents))
+                        , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                         ]
                    ]
 
 
 navlink : String -> String -> Element msg
 navlink url label =
-    link [ padding 10, width fill, mouseOver navbarHoverstyle ]
+    link [ Font.size 15, padding 10, width fill, mouseOver navbarHoverstyle ]
         { url = url, label = text label }
 
 

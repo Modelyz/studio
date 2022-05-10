@@ -35,12 +35,12 @@ h1 title =
 
 h2 : String -> Element msg
 h2 title =
-    paragraph [ Font.size size.text.h1, Region.heading 2 ] [ text title ]
+    paragraph [ Font.size size.text.h2, Region.heading 2 ] [ text title ]
 
 
 h3 : String -> Element msg
 h3 title =
-    paragraph [ Font.size size.text.h1, Region.heading 3 ] [ text title ]
+    paragraph [ Font.size size.text.h3, Region.heading 3 ] [ text title ]
 
 
 p : String -> Element msg
@@ -49,7 +49,7 @@ p content =
 
 
 size =
-    { text = { main = 15, small = 12, h1 = 35, h2 = 25, h3 = 17 } }
+    { text = { main = 15, small = 12, h1 = 35, h2 = 25, h3 = 20 } }
 
 
 color =
@@ -97,7 +97,7 @@ button =
 
 
 shadowStyle =
-    { offset = ( 3, 3 ), size = 4, blur = 9, color = color.border.focus }
+    { offset = ( 2, 2 ), size = 3, blur = 5, color = color.border.focus }
 
 
 navbarHoverstyle : List Decoration
