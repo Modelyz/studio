@@ -48,6 +48,11 @@ p content =
     paragraph [ Font.size size.text.main ] [ text content ]
 
 
+separator : Color -> Element msg
+separator c =
+    row [ width fill, Border.width 1, Border.color c ] []
+
+
 size =
     { text = { main = 15, small = 12, h1 = 35, h2 = 25, h3 = 20 } }
 
@@ -87,6 +92,7 @@ color =
         , prim_hover = rgb255 0xB5 0xD8 0xE7
         , sec_hover = rgb255 0xD0 0xD0 0xD0
         }
+    , content = { separator = rgb255 0xE0 0xE0 0xE0 }
     }
 
 

@@ -169,27 +169,29 @@ viewContent s model =
                         |> List.sortBy .name
                         |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
                     )
+                , row [ width fill, Border.width 1, Border.color color.content.separator ] []
                 , column [ width fill ]
                     [ h2 "Add a new Identifier:"
-                    , wrappedRow [ width fill, spacing 50, height shrink, alignTop ]
-                        [ Input.text
-                            [ width <| minimum 200 fill
-                            , Input.focusedOnLoad
-                            , View.onEnter <|
-                                case validate model.form of
-                                    Ok f ->
-                                        Added f
+                    , wrappedRow [ padding 20, width fill, spacing 50 ]
+                        [ el [ alignTop ] <|
+                            Input.text
+                                [ width <| minimum 200 fill
+                                , Input.focusedOnLoad
+                                , View.onEnter <|
+                                    case validate model.form of
+                                        Ok f ->
+                                            Added f
 
-                                    Err err ->
-                                        Warning ("Error: " ++ err)
-                            ]
-                            { onChange = \n -> GotInput { form | name = n }
-                            , text = model.form.name
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Name of the new Identifier"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Name"
-                            }
-                        , row [ width <| minimum 200 fill, Font.size size.text.h3 ]
+                                        Err err ->
+                                            Warning ("Error: " ++ err)
+                                ]
+                                { onChange = \n -> GotInput { form | name = n }
+                                , text = model.form.name
+                                , placeholder =
+                                    Just <| Input.placeholder [] <| text "Name of the new Identifier"
+                                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Name"
+                                }
+                        , row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                             [ Radio.view
                                 { title = "Apply to Which Entity?"
                                 , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
@@ -198,7 +200,7 @@ viewContent s model =
                                     \e -> GotInput { form | entity = Just e }
                                 }
                             ]
-                        , column [ width <| minimum 200 fill, spacing 10 ]
+                        , column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                             [ h3 "Options:"
                             , row [ Font.size size.text.main ]
                                 [ Input.checkbox
@@ -219,33 +221,32 @@ viewContent s model =
                                     }
                                 ]
                             ]
-                        , column [ width <| minimum 200 fill ]
-                            [ h3 "Format"
+                        , column [ alignTop, spacing 10, width <| minimum 200 fill ]
+                            [ h3 "Format:"
                             , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                                text "Format: "
-                                    :: List.append
-                                        (List.indexedMap
-                                            (\i p ->
-                                                row [ Background.color color.item.selected ]
-                                                    [ el [ padding 5 ] (text <| Portion.toString p)
-                                                    , button.secondary
-                                                        { onPress =
-                                                            Just <|
-                                                                GotInput
-                                                                    { form
-                                                                        | format =
-                                                                            form.format
-                                                                                |> List.indexedMap Tuple.pair
-                                                                                |> List.filter (\( j, q ) -> j /= i)
-                                                                                |> List.map Tuple.second
-                                                                    }
-                                                        , label = text "×"
-                                                        }
-                                                    ]
-                                            )
-                                            form.format
+                                List.append
+                                    (List.indexedMap
+                                        (\i p ->
+                                            row [ Background.color color.item.selected ]
+                                                [ el [ padding 5 ] (text <| Portion.toString p)
+                                                , button.secondary
+                                                    { onPress =
+                                                        Just <|
+                                                            GotInput
+                                                                { form
+                                                                    | format =
+                                                                        form.format
+                                                                            |> List.indexedMap Tuple.pair
+                                                                            |> List.filter (\( j, q ) -> j /= i)
+                                                                            |> List.map Tuple.second
+                                                                }
+                                                    , label = text "×"
+                                                    }
+                                                ]
                                         )
-                                        [ row [] [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ] ]
+                                        form.format
+                                    )
+                                    [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ]
                             ]
                         ]
                     , row [ paddingXY 0 20 ]

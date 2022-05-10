@@ -10,7 +10,7 @@ import IOStatus as IO exposing (toText)
 import Route exposing (Route(..))
 import Shared
 import Time exposing (posixToMillis)
-import View exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
+import View exposing (color, itemHoverstyle, navbarHoverstyle, separator, shadowStyle)
 import Websocket as WS exposing (toText)
 
 
@@ -20,7 +20,7 @@ view s =
         [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background ]
     <|
         List.intersperse
-            separator
+            (separator color.navbar.separator)
         <|
             [ navlink "/" "Home"
             , navlink "/process-types" "Process Types"
@@ -42,7 +42,7 @@ view s =
                    )
                 ++ [ column [ spacing 5, alignBottom ]
                         [ row [ centerX, Font.color color.navbar.separator, padding 10, Font.size 15, Font.bold ] [ text "Modelyz Studio" ]
-                        , separator
+                        , separator color.navbar.separator
                         , el [ paddingXY 0 5, htmlAttribute <| Attr.title <| "WSStatus=" ++ WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
                         , el [ htmlAttribute <| Attr.title <| "IOStatus" ++ "IO=" ++ IO.toText s.iostatus ] (text <| "IO  " ++ WS.toEmoji s.wsstatus)
                         , el [ Font.size 15, htmlAttribute <| Attr.id "LastEvenTime" ] (text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis s.state.lastEventTime))
@@ -57,7 +57,3 @@ navlink : String -> String -> Element msg
 navlink url label =
     link [ Font.size 15, padding 10, width fill, mouseOver navbarHoverstyle ]
         { url = url, label = text label }
-
-
-separator =
-    row [ width fill, Border.width 1, Border.color color.navbar.separator ] []
