@@ -56,7 +56,9 @@ color =
     -- TODO remove unused colors
     { navbar =
         { background = rgb255 0xC5 0xE8 0xF7
+        , separator = rgb255 0xE5 0xF8 0xFF
         , text = rgb255 0x00 0x00 0x00
+        , hover = rgb255 0xE5 0xF8 0xFF
         }
     , item =
         { background = rgb255 0xF0 0xF0 0xF0
@@ -88,6 +90,12 @@ color =
     }
 
 
+navbar =
+    { link = link [ padding 10, width fill, mouseOver navbarHoverstyle ]
+    , separator = row [ width fill, Border.width 1, Border.color color.navbar.separator ] []
+    }
+
+
 button =
     { primary = Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
     , secondary = Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ]
@@ -96,6 +104,12 @@ button =
 
 shadowStyle =
     { offset = ( 3, 3 ), size = 4, blur = 9, color = color.border.focus }
+
+
+navbarHoverstyle : List Decoration
+navbarHoverstyle =
+    [ Background.color color.navbar.hover
+    ]
 
 
 itemHoverstyle : List Decoration

@@ -167,7 +167,7 @@ viewContent s model =
                     (s.state.identifiers
                         |> Set.toList
                         |> List.sortBy .name
-                        |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toString i.entity))
+                        |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
                     )
                 , column
                     [ spacing 20 ]
@@ -242,7 +242,7 @@ viewContent s model =
                                 )
                                 form.format
                             )
-                            [ row [] [ button.primary { onPress = Just <| GotInput { form | format = List.append form.format [ Free "plop" ] }, label = text "+" } ] ]
+                            [ row [] [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ] ]
                 , row [ spacing 20 ]
                     [ button.primary
                         { onPress =
@@ -253,7 +253,7 @@ viewContent s model =
 
                                     Err err ->
                                         Warning ("Error: " ++ err)
-                        , label = text "Add"
+                        , label = text "Set"
                         }
                     , if model.form.warning /= "" then
                         paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
