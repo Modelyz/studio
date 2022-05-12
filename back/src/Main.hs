@@ -43,10 +43,25 @@ import Network.WebSockets (
     sendTextData,
     withPingThread,
  )
+import Options.Applicative
+
+-- dir, port, file
+data Options = Options String Port FilePath
 
 type NumClient = Int
-
+type Port = Int
 type WSState = MVar NumClient
+
+portOption :: Parser Port
+portOption =
+    option auto (long "port" <> short 'p' <> metavar "PORT" <> value 8080 <> help "Bind socket to this port.  [default: 8080]")
+
+options :: Parser Options
+options =
+    Options
+        <$> strOption (short 'd' <> long "dir" <> value "." <> help "Directory containing the index file and static directory")
+        <*> portOption
+        <*> strOption (short 'f' <> long "file" <> value "eventstore.txt" <> help "Filename of the file containing events")
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -54,8 +69,8 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-wsApp :: Chan (NumClient, Event) -> WSState -> ServerApp
-wsApp chan st pending_conn = do
+wsApp :: FilePath -> Chan (NumClient, Event) -> WSState -> ServerApp
+wsApp f chan st pending_conn = do
     chan' <- dupChan chan
     -- accept a new connexion
     conn <- acceptRequest pending_conn
@@ -85,23 +100,23 @@ wsApp chan st pending_conn = do
                         Text bs _ -> (fromLazyByteString bs)
                         Binary bs -> (fromLazyByteString bs)
                     ) of
-                    Just evs -> mapM (handleEvent conn nc chan') evs
+                    Just evs -> mapM (handleEvent f conn nc chan') evs
                     Nothing -> mapM id [putStrLn $ "Error decoding incoming message"]
 
-handleEvent :: Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
-handleEvent conn nc chan ev =
+handleEvent :: FilePath -> Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
+handleEvent f conn nc chan ev =
     do
         -- store the event in the event store
         when
             (not $ isType "ConnectionInitiated" ev)
-            (ES.appendEvent ev)
+            (ES.appendEvent f ev)
         -- if the event is a ConnectionInitiated, get the uuid list from it,
         -- and send back all the missing events (with an added ack)
         when
             (isType "ConnectionInitiated" ev)
             ( do
                 let uuids = getUuids ev
-                esevs <- ES.readEvents
+                esevs <- ES.readEvents f
                 let evs =
                         filter
                             ( \e -> case getString "uuid" e of
@@ -114,7 +129,7 @@ handleEvent conn nc chan ev =
             )
         -- Send back and store an ACK to let the client know the message has been stored
         let ev' = setProcessed ev
-        if not $ isType "ConnectionInitiated" ev then ES.appendEvent ev' else return ()
+        if not $ isType "ConnectionInitiated" ev then ES.appendEvent f ev' else return ()
         sendTextData conn $ JSON.encode [ev']
         -- send the msg to other connected clients
         putStrLn $ "Writing to the chan as client " ++ (show nc)
@@ -123,8 +138,8 @@ handleEvent conn nc chan ev =
 
 -- TODO send the event back to the central event store so that it be handled by other microservices.
 
-httpApp :: Application
-httpApp request respond = do
+httpApp :: Options -> Application
+httpApp (Options d _ _) request respond = do
     rawPathInfo request
         & decodeUtf8
         & T.append "Request "
@@ -134,15 +149,25 @@ httpApp request respond = do
         "static" : pathtail -> case pathtail of
             filename : _ ->
                 let ct = BS.append "text/" (encodeUtf8 (contentType filename))
-                 in responseFile status200 [("Content-Type", ct)] ("./static/" ++ T.unpack filename) Nothing
-            _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
-        _ -> responseFile status200 [("Content-Type", "text/html")] ("index.html" :: String) Nothing
+                 in responseFile status200 [("Content-Type", ct)] (d ++ "/static/" ++ T.unpack filename) Nothing
+            _ -> responseLBS status200 [("Content-Type", "text/html")] ""
+        _ -> responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
+
+serve :: Options -> IO ()
+serve (Options d p f) = do
+    putStrLn $ "http://localhost:" ++ (show p) ++ "/"
+    st <- newMVar 0
+    chan <- newChan
+    run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)
 
 main :: IO ()
 main =
-    let port = 8080
-     in do
-            putStrLn $ "http://localhost:" ++ show port ++ "/"
-            st <- newMVar 0
-            chan <- newChan
-            run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan st) httpApp
+    serve =<< execParser opts
+  where
+    opts =
+        info
+            (options <**> helper)
+            ( fullDesc
+                <> progDesc "Studio helps you define your application domain"
+                <> header "Modelyz Studio"
+            )

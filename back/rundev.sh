@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cabal run
+cabal run studio -- -d ../build -f ../data

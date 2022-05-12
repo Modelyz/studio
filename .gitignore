@@ -11,8 +11,8 @@ test/geckodriver.log
 # haskell build
 back/dist-newstyle/
 
-# Event Store
-eventstore.txt
+# Data
+data/
 
 # cabam
 back/cabal.project.local

@@ -29,6 +29,7 @@ executable studio
     , bytestring
     , containers
     , http-types
+    , optparse-applicative
     , scientific
     , text
     , time
