@@ -92,7 +92,10 @@ color =
         , prim_hover = rgb255 0xB5 0xD8 0xE7
         , sec_hover = rgb255 0xD0 0xD0 0xD0
         }
-    , content = { separator = rgb255 0xE0 0xE0 0xE0 }
+    , content =
+        { separator = rgb255 0xE0 0xE0 0xE0
+        , background = rgb255 0xFF 0xFF 0xFF
+        }
     }
 
 
@@ -159,9 +162,10 @@ viewSmallCard msg title description =
         [ htmlAttribute <| Attr.id title ]
         [ column [ Background.color color.item.background ]
             [ row [ spacing 10, width fill ]
-                [ el [ padding 10 ] (el [ Font.size size.text.main ] <| text title)
-                , button.primary
-                    { onPress = Just msg, label = text "×" }
+                [ row [ Font.size size.text.main, padding 10 ] [ text title ]
+                , el [ alignRight ] <|
+                    button.primary
+                        { onPress = Just msg, label = text "×" }
                 ]
             , if description == "" then
                 none

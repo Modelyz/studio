@@ -18,6 +18,7 @@ import Shared
 import Spa.Page
 import View exposing (..)
 import View.Radio as Radio
+import View.Wizard as Wizard
 
 
 type alias Model =
@@ -30,6 +31,10 @@ type Msg
     | Added Identifier
     | GotInput Form
     | Warning String
+    | Wizard
+    | PreviousPage Int
+    | NextPage Int
+    | Cancel
 
 
 type alias Flags =
@@ -43,6 +48,7 @@ type alias Form =
     , mandatory : Bool
     , format : List Portion
     , warning : String
+    , step : Maybe Int
     }
 
 
@@ -54,6 +60,7 @@ empty =
     , mandatory = False
     , format = []
     , warning = ""
+    , step = Nothing
     }
 
 
@@ -67,8 +74,8 @@ fromForm f =
             Err "No entity is selected"
 
 
-check : String -> (Form -> Bool) -> Form -> Result String Form
-check err c f =
+checkField : String -> (Form -> Bool) -> Form -> Result String Form
+checkField err c f =
     if c f then
         Ok f
 
@@ -78,8 +85,8 @@ check err c f =
 
 validate : Form -> Result String Identifier
 validate =
-    check "The name is empty" (\f -> String.length f.name > 0)
-        >> Result.andThen (check "The format is not defined" (\f -> List.length f.format > 0))
+    checkField "The name is empty" (\f -> String.length f.name > 0)
+        >> Result.andThen (checkField "The format is not defined" (\f -> List.length f.format > 0))
         >> Result.andThen fromForm
 
 
@@ -110,9 +117,13 @@ init _ =
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
+    let
+        form =
+            model.form
+    in
     case msg of
-        GotInput form ->
-            ( { model | form = form }, Effect.none )
+        GotInput f ->
+            ( { model | form = f }, Effect.none )
 
         Added i ->
             ( { model
@@ -122,20 +133,58 @@ update s msg model =
             )
 
         Removed i ->
-            let
-                form =
-                    model.form
-            in
             ( { model | form = { form | warning = "" } }
             , Shared.dispatch s <| Event.IdentifierRemoved i
             )
 
         Warning w ->
-            let
-                form =
-                    model.form
-            in
             ( { model | form = { form | warning = w } }, Effect.none )
+
+        PreviousPage n ->
+            ( { model
+                | form =
+                    { form
+                        | step =
+                            form.step
+                                |> Maybe.map (\i -> i - 1)
+                                |> Maybe.andThen
+                                    (\i ->
+                                        if List.member i (List.range 1 n) then
+                                            Just i
+
+                                        else
+                                            Nothing
+                                    )
+                    }
+              }
+            , Effect.none
+            )
+
+        NextPage n ->
+            ( { model
+                | form =
+                    { form
+                        | step =
+                            form.step
+                                |> Maybe.map ((+) 1)
+                                |> Maybe.andThen
+                                    (\i ->
+                                        if List.member i (List.range 1 n) then
+                                            Just i
+
+                                        else
+                                            Nothing
+                                    )
+                    }
+              }
+            , Effect.none
+            )
+
+        Wizard ->
+            ( { model | form = { form | step = Just 1 } }, Effect.none )
+
+        Cancel ->
+            ( { model | form = empty }, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -151,123 +200,126 @@ viewContent s model =
     let
         form =
             model.form
+
+        check =
+            case validate form of
+                Ok f ->
+                    Added f
+
+                Err err ->
+                    Warning ("Error: " ++ err)
     in
-    column [ width fill, alignTop, padding 20 ]
-        [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop ]
-            [ column
-                [ spacing 20 ]
-                [ h1 "Identifiers"
-                , if Set.size s.state.eventTypes > 0 then
-                    p "Existing Identifiers:"
+    Wizard.view
+        model
+        [ h1 "Identifiers"
+        , if Set.size s.state.eventTypes > 0 then
+            p "Existing Identifiers:"
 
-                  else
-                    p "There are no Identifiers yet. Create your first one!"
-                , wrappedRow
-                    [ spacing 10 ]
-                    (s.state.identifiers
-                        |> Set.toList
-                        |> List.sortBy .name
-                        |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
-                    )
-                , row [ width fill, Border.width 1, Border.color color.content.separator ] []
-                , column [ width fill ]
-                    [ h2 "Add a new Identifier:"
-                    , wrappedRow [ padding 20, width fill, spacing 50 ]
-                        [ el [ alignTop ] <|
-                            Input.text
-                                [ width <| minimum 200 fill
-                                , Input.focusedOnLoad
-                                , View.onEnter <|
-                                    case validate model.form of
-                                        Ok f ->
-                                            Added f
-
-                                        Err err ->
-                                            Warning ("Error: " ++ err)
-                                ]
-                                { onChange = \n -> GotInput { form | name = n }
-                                , text = model.form.name
-                                , placeholder =
-                                    Just <| Input.placeholder [] <| text "Name of the new Identifier"
-                                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Name"
-                                }
-                        , row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
-                            [ Radio.view
-                                { title = "Apply to Which Entity?"
-                                , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
-                                , selected = model.form.entity
-                                , msg =
-                                    \e -> GotInput { form | entity = Just e }
-                                }
-                            ]
-                        , column [ alignTop, width <| minimum 200 fill, spacing 10 ]
-                            [ h3 "Options:"
-                            , row [ Font.size size.text.main ]
-                                [ Input.checkbox
-                                    []
-                                    { onChange = \u -> GotInput { form | unique = u }
-                                    , icon = Input.defaultCheckbox
-                                    , checked = form.unique
-                                    , label = Input.labelRight [] <| text "Each value is unique"
-                                    }
-                                ]
-                            , row [ Font.size size.text.main ]
-                                [ Input.checkbox
-                                    []
-                                    { onChange = \u -> GotInput { form | mandatory = u }
-                                    , icon = Input.defaultCheckbox
-                                    , checked = form.mandatory
-                                    , label = Input.labelRight [] <| text "This identifier is mandatory"
-                                    }
-                                ]
-                            ]
-                        , column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                            [ h3 "Format:"
-                            , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                                List.append
-                                    (List.indexedMap
-                                        (\i p ->
-                                            row [ Background.color color.item.selected ]
-                                                [ el [ padding 5 ] (text <| Portion.toString p)
-                                                , button.secondary
-                                                    { onPress =
-                                                        Just <|
-                                                            GotInput
-                                                                { form
-                                                                    | format =
-                                                                        form.format
-                                                                            |> List.indexedMap Tuple.pair
-                                                                            |> List.filter (\( j, q ) -> j /= i)
-                                                                            |> List.map Tuple.second
-                                                                }
-                                                    , label = text "×"
-                                                    }
-                                                ]
-                                        )
-                                        form.format
-                                    )
-                                    [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ]
-                            ]
-                        ]
-                    , row [ paddingXY 0 20 ]
-                        [ button.primary
-                            { onPress =
-                                Just <|
-                                    case validate model.form of
-                                        Ok f ->
-                                            Added f
-
-                                        Err err ->
-                                            Warning ("Error: " ++ err)
-                            , label = text "Set"
-                            }
-                        , if model.form.warning /= "" then
-                            paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
-
-                          else
-                            none
-                        ]
+          else
+            p "There are no Identifiers yet. Create your first one!"
+        , wrappedRow
+            [ spacing 10 ]
+            (s.state.identifiers
+                |> Set.toList
+                |> List.sortBy .name
+                |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
+            )
+        ]
+        { title = "Add a new Identifier"
+        , context = "Adding a new identifier"
+        , steps =
+            [ row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
+                [ Radio.view
+                    { title = "Apply to Which Entity?"
+                    , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
+                    , selected = form.entity
+                    , msg =
+                        \e -> GotInput { form | entity = Just e }
+                    }
+                ]
+            , column [ alignTop, width <| minimum 200 fill, spacing 10 ]
+                [ h3 "Options:"
+                , row [ Font.size size.text.main ]
+                    [ Input.checkbox
+                        []
+                        { onChange = \u -> GotInput { form | unique = u }
+                        , icon = Input.defaultCheckbox
+                        , checked = form.unique
+                        , label = Input.labelRight [] <| text "Each value is unique"
+                        }
+                    ]
+                , row [ Font.size size.text.main ]
+                    [ Input.checkbox
+                        []
+                        { onChange = \u -> GotInput { form | mandatory = u }
+                        , icon = Input.defaultCheckbox
+                        , checked = form.mandatory
+                        , label = Input.labelRight [] <| text "This identifier is mandatory"
+                        }
                     ]
                 ]
+            , column [ alignTop, spacing 10, width <| minimum 200 fill ]
+                [ h3 "Format:"
+                , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                    List.append
+                        (List.indexedMap
+                            (\i p ->
+                                row [ Background.color color.item.selected ]
+                                    [ el [ padding 5 ] (text <| Portion.toString p)
+                                    , button.secondary
+                                        { onPress =
+                                            Just <|
+                                                GotInput
+                                                    { form
+                                                        | format =
+                                                            form.format
+                                                                |> List.indexedMap Tuple.pair
+                                                                |> List.filter (\( j, q ) -> j /= i)
+                                                                |> List.map Tuple.second
+                                                    }
+                                        , label = text "×"
+                                        }
+                                    ]
+                            )
+                            form.format
+                        )
+                        [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ]
+                ]
+            , el [ alignTop ] <|
+                Input.text
+                    [ width <| minimum 200 fill
+                    , Input.focusedOnLoad
+                    , View.onEnter <|
+                        case validate model.form of
+                            Ok f ->
+                                Added f
+
+                            Err err ->
+                                Warning ("Error: " ++ err)
+                    ]
+                    { onChange = \n -> GotInput { form | name = n }
+                    , text = form.name
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text "Name"
+                    , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifie"
+                    }
             ]
-        ]
+        , button =
+            row [ paddingXY 0 20 ]
+                [ button.primary
+                    { onPress =
+                        Just check
+                    , label = text "Set"
+                    }
+                , if form.warning /= "" then
+                    paragraph [ Font.color color.text.warning ] [ text form.warning ]
+
+                  else
+                    none
+                ]
+        , open = Wizard
+        , next = NextPage
+        , previous = PreviousPage
+        , ok = check
+        , cancel = Cancel
+        }
