@@ -155,7 +155,7 @@ httpApp (Options d _ _) request respond = do
 
 serve :: Options -> IO ()
 serve (Options d p f) = do
-    putStrLn $ "http://localhost:" ++ (show p) ++ "/"
+    print $ "http://localhost:" ++ (show p) ++ "/"
     st <- newMVar 0
     chan <- newChan
     run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)

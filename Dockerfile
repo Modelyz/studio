@@ -2,7 +2,24 @@ FROM debian:11 AS build
 
 WORKDIR /srv
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends rsync curl gzip npm uglifyjs cabal-install libghc-aeson-dev libghc-optparse-applicative-dev \
+    && apt-get install -y --no-install-recommends \
+        cabal-install \
+        curl \
+        gzip \
+        libghc-aeson-dev \
+        libghc-http-types-dev \
+        libghc-optparse-applicative-dev \
+        libghc-scientific-dev \
+        libghc-unordered-containers-dev \
+        libghc-uuid-dev \
+        libghc-uuid-types-dev \
+        libghc-wai-dev \
+        libghc-wai-websockets-dev \
+        libghc-warp-dev \
+        libghc-websockets-dev \
+        npm \
+        rsync \
+        uglifyjs \
     && curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz \
     && gunzip elm.gz \
     && chmod +x elm \

@@ -3,11 +3,9 @@
 module Event (getUuids, Uuid, Event, getInt, setProcessed, getString, excludeType, isType, isAfter) where
 
 import qualified Data.Aeson as JSON (Value (..), toJSON)
-import qualified Data.ByteString.Lazy as LBS (ByteString)
 import qualified Data.HashMap.Lazy as HashMap
 import Data.Scientific
-import qualified Data.Text as T (Text, pack, unpack)
-import Data.UUID (UUID)
+import qualified Data.Text as T (Text, unpack)
 import qualified Data.Vector as Vector
 
 type Event = JSON.Value
@@ -22,7 +20,7 @@ isType t ev = getString "type" ev == Just t
 excludeType :: T.Text -> [Event] -> [Event]
 excludeType t = filter (\ev -> not $ isType t ev)
 
-isAfter :: Int -> Event -> Bool
+isAfter :: Time -> Event -> Bool
 isAfter t ev =
     case getInt "posixtime" ev of
         Just et -> et >= t
@@ -58,6 +56,7 @@ getUuids e =
                         uuids
                     )
             _ -> []
+        _ -> []
 
 setProcessed :: Event -> Event
 setProcessed e =
