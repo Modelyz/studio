@@ -81,12 +81,7 @@ toDocument :
 toDocument s view =
     { title = view.title
     , body =
-        [ layout [ width fill, height fill ] <|
-            row
-                [ width fill, height fill ]
-                [ Navbar.view s
-                , view.element
-                ]
+        [ layout [ width fill, height fill ] view.element
         ]
     }
 
@@ -111,6 +106,6 @@ main =
             , update = Shared.update
             , subscriptions = subscriptions
             , toDocument = toDocument
-            , protectPage = Route.toUrl
+            , protectPage = Route.toString
             }
         |> Browser.application

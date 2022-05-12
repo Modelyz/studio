@@ -15,11 +15,13 @@ import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (..)
+import View.Navbar as Navbar
 import View.Radio as Radio
 
 
 type alias Model =
-    { form : Form
+    { route : Route
+    , form : Form
     }
 
 
@@ -31,7 +33,8 @@ type Msg
 
 
 type alias Flags =
-    ()
+    { route : Route
+    }
 
 
 type alias Form =
@@ -70,15 +73,15 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Groups ->
-            Just ()
+            Just { route = route }
 
         _ ->
             Nothing
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init _ =
-    ( { form = empty }, Effect.none )
+init f =
+    ( { route = f.route, form = empty }, Effect.none )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -115,7 +118,12 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Groups"
     , attributes = []
-    , element = viewContent s model
+    , element =
+        row
+            [ width fill, height fill ]
+            [ Navbar.view s model
+            , viewContent s model
+            ]
     }
 
 

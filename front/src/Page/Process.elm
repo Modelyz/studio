@@ -18,10 +18,12 @@ import Shared
 import Spa.Page
 import State exposing (getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess)
 import View exposing (View)
+import View.Navbar as Navbar
 
 
 type alias Model =
-    { process : String
+    { route : Route
+    , process : String
     }
 
 
@@ -31,7 +33,8 @@ type Msg
 
 
 type alias Flags =
-    { process : String
+    { route : Route
+    , process : String
     }
 
 
@@ -49,15 +52,16 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Process p ->
-            Just { process = p }
+            Just { route = route, process = p }
 
         _ ->
             Nothing
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init flags =
-    ( { process = flags.process
+init f =
+    ( { route = f.route
+      , process = f.process
       }
     , Effect.none
     )
@@ -109,7 +113,12 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process"
     , attributes = []
-    , element = viewContent s model
+    , element =
+        row
+            [ width fill, height fill ]
+            [ Navbar.view s model
+            , viewContent s model
+            ]
     }
 
 

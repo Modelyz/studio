@@ -1,4 +1,4 @@
-module Route exposing (Route(..), routeParser, toRoute, toUrl)
+module Route exposing (Route(..), firstSegment, routeParser, toRoute, toString)
 
 import Url exposing (Url)
 import Url.Parser exposing ((</>), (<?>), Parser, map, oneOf, s, string, top)
@@ -6,12 +6,14 @@ import Url.Parser.Query as Query
 
 
 type Route
-    = NotFound Url
-    | Home
+    = Home
     | ProcessTypes
     | ProcessType String
     | Processes (Maybe String)
     | Process String
+    | ResourceTypes
+    | AgentTypes
+    | ContractTypes
     | CommitmentTypes
     | EventTypes
     | Groups
@@ -36,15 +38,12 @@ routeParser =
 toRoute : Url -> Route
 toRoute url =
     Url.Parser.parse routeParser url
-        |> Maybe.withDefault (NotFound url)
+        |> Maybe.withDefault Home
 
 
-toUrl : Route -> String
-toUrl r =
+toString : Route -> String
+toString r =
     case r of
-        NotFound url ->
-            Url.toString url
-
         Home ->
             "/"
 
@@ -54,13 +53,22 @@ toUrl r =
         ProcessType ptype ->
             "/process-type/" ++ ptype
 
-        Processes mps ->
-            case mps of
+        Processes ps ->
+            case ps of
                 Just t ->
                     "/processes?type=" ++ t
 
                 Nothing ->
                     "/processes"
+
+        ResourceTypes ->
+            "/resource-types"
+
+        AgentTypes ->
+            "/agent-types"
+
+        ContractTypes ->
+            "/contract-types"
 
         Process p ->
             "/process/" ++ p
@@ -72,7 +80,12 @@ toUrl r =
             "/event-types"
 
         Groups ->
-            "groups"
+            "/groups"
 
         Identifiers ->
-            "identifiers"
+            "/identifiers"
+
+
+firstSegment : Route -> String
+firstSegment =
+    toString >> String.split "/" >> List.drop 1 >> List.head >> Maybe.withDefault "#"

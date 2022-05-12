@@ -7,35 +7,41 @@ import Element.Border as Border
 import Element.Font as Font
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
-import Route exposing (Route(..))
+import Route exposing (Route(..), firstSegment, toString)
 import Shared
 import Time exposing (posixToMillis)
 import View exposing (color, itemHoverstyle, navbarHoverstyle, separator, shadowStyle)
 import Websocket as WS exposing (toText)
 
 
-view : Shared.Model -> Element msg
-view s =
+type alias Model a =
+    { a | route : Route }
+
+
+view : Shared.Model -> Model a -> Element msg
+view s m =
     column
         [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background ]
     <|
         List.intersperse
             (separator color.navbar.separator)
         <|
-            [ navlink "/" "Home"
-            , navlink "/process-types" "Process Types"
-            , navlink "/resource-types" "Resource Types"
-            , navlink "/event-types" "Event Types"
-            , navlink "/agent-types" "Agent Types"
-            , navlink "/commitment-types" "Commitment Types"
-            , navlink "/contract-types" "Contract Types"
-            , navlink "/groups" "Groups"
-            , navlink "/identifiers" "Identifiers"
+            [ navlink s m Home "Home"
+            , navlink s m ProcessTypes "Process Types"
+            , navlink s m ResourceTypes "Resource Types"
+            , navlink s m AgentTypes "Agent Types"
+            , navlink s m ContractTypes "Contract Types"
+            , navlink s m EventTypes "Event Types"
+            , navlink s m AgentTypes "Agent Types"
+            , navlink s m CommitmentTypes "Commitment Types"
+            , navlink s m ContractTypes "Contract Types"
+            , navlink s m Groups "Groups"
+            , navlink s m Identifiers "Identifiers"
             ]
                 ++ (if Set.size s.state.processTypes > 0 then
                         s.state.processTypes
                             |> Set.toList
-                            |> List.map (\pt -> navlink ("/processes?type=" ++ pt.name) pt.name)
+                            |> List.map (\pt -> navlink s m (ProcessType pt.name) pt.name)
 
                     else
                         []
@@ -50,10 +56,27 @@ view s =
                         , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents))
                         , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                         ]
+                   , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString m.route)
                    ]
 
 
-navlink : String -> String -> Element msg
-navlink url label =
-    link [ Font.size 15, padding 10, width fill, mouseOver navbarHoverstyle ]
-        { url = url, label = text label }
+navlink : Shared.Model -> Model a -> Route -> String -> Element msg
+navlink s m r label =
+    let
+        active =
+            firstSegment m.route == firstSegment r
+    in
+    link
+        ([ Font.size 15
+         , padding 10
+         , width fill
+         , mouseOver navbarHoverstyle
+         ]
+            ++ (if active then
+                    [ Background.color color.navbar.hover ]
+
+                else
+                    []
+               )
+        )
+        { url = toString r, label = text label }

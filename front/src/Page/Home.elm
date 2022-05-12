@@ -7,10 +7,12 @@ import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View, color, itemHoverstyle)
+import View.Navbar as Navbar
 
 
 type alias Model =
-    ()
+    { route : Route
+    }
 
 
 type alias Msg =
@@ -43,8 +45,8 @@ match route =
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init _ =
-    ( ()
+init f =
+    ( { route = f.route }
     , Effect.none
     )
 
@@ -55,10 +57,15 @@ update _ model =
 
 
 view : Shared.Model -> Model -> View Msg
-view _ model =
+view s model =
     { title = "Home"
     , attributes = []
-    , element = viewContent
+    , element =
+        row
+            [ width fill, height fill ]
+            [ Navbar.view s model
+            , viewContent
+            ]
     }
 
 
@@ -70,7 +77,7 @@ cell title link =
 
 viewContent : Element Msg
 viewContent =
-    column [ height fill, scrollbarY, width fill, alignTop ]
+    column [ width fill, alignTop ]
         [ wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
             [ cell "Process Types" "process-types"
             , cell "Resource Types" "resource-types"

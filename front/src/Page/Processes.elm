@@ -13,10 +13,12 @@ import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
+import View.Navbar as Navbar
 
 
 type alias Model =
-    { ptype : ProcessType
+    { route : Route
+    , ptype : ProcessType
     }
 
 
@@ -25,7 +27,8 @@ type Msg
 
 
 type alias Flags =
-    ()
+    { route : Route
+    }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -42,15 +45,16 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Processes _ ->
-            Just ()
+            Just { route = route }
 
         _ ->
             Nothing
 
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
-init _ =
-    ( { ptype = ProcessType ""
+init f =
+    ( { route = f.route
+      , ptype = ProcessType ""
       }
     , Effect.none
     )
@@ -69,7 +73,12 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Processes"
     , attributes = []
-    , element = viewContent s model
+    , element =
+        row
+            [ width fill, height fill ]
+            [ Navbar.view s model
+            , viewContent s model
+            ]
     }
 
 
