@@ -56,7 +56,7 @@ update _ model =
 
 view : Shared.Model -> Model -> View Msg
 view _ model =
-    { title = "Modelyz"
+    { title = "Home"
     , attributes = []
     , element = viewContent
     }
