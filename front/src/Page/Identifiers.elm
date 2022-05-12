@@ -301,7 +301,7 @@ viewContent s model =
                     , text = form.name
                     , placeholder =
                         Just <| Input.placeholder [] <| text "Name"
-                    , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifie"
+                    , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifier"
                     }
             ]
         , button =
