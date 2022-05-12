@@ -1,4 +1,4 @@
-module Page.Navbar exposing (view)
+module View.Navbar exposing (view)
 
 import DictSet as Set
 import Element exposing (..)

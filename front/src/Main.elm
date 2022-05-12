@@ -12,7 +12,6 @@ import Page.EventTypes
 import Page.Groups
 import Page.Home
 import Page.Identifiers
-import Page.Navbar as Navbar
 import Page.Process
 import Page.ProcessType
 import Page.ProcessTypes
@@ -21,6 +20,7 @@ import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa
 import View exposing (View)
+import View.Navbar as Navbar
 
 
 
