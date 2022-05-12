@@ -134,13 +134,15 @@ httpApp request respond = do
         "static" : pathtail -> case pathtail of
             filename : _ ->
                 let ct = BS.append "text/" (encodeUtf8 (contentType filename))
-                 in responseFile status200 [("Content-Type", ct)] ("../build/static/" ++ T.unpack filename) Nothing
+                 in responseFile status200 [("Content-Type", ct)] ("./static/" ++ T.unpack filename) Nothing
             _ -> responseLBS status200 [("Content-Type", "text/html")] "static directory"
-        _ -> responseFile status200 [("Content-Type", "text/html")] ("../build/index.html" :: String) Nothing
+        _ -> responseFile status200 [("Content-Type", "text/html")] ("index.html" :: String) Nothing
 
 main :: IO ()
-main = do
-    putStrLn "http://localhost:8080/"
-    st <- newMVar 0
-    chan <- newChan
-    run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan st) httpApp
+main =
+    let port = 8080
+     in do
+            putStrLn $ "http://localhost:" ++ show port ++ "/"
+            st <- newMVar 0
+            chan <- newChan
+            run 8080 $ websocketsOr defaultConnectionOptions (wsApp chan st) httpApp
