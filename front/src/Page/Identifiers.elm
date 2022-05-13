@@ -268,8 +268,14 @@ viewContent s model =
                 ]
             , column [ alignTop, spacing 10, width <| minimum 200 fill ]
                 [ h3 "Format:"
-                , wrappedRow [ Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                , wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                     List.append
+                        (if List.isEmpty form.format then
+                            [ el [ padding 5, Font.color color.text.disabled ] (text "Empty") ]
+
+                         else
+                            []
+                        )
                         (List.indexedMap
                             (\i p ->
                                 row [ Background.color color.item.selected ]
@@ -291,7 +297,19 @@ viewContent s model =
                             )
                             form.format
                         )
-                        [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ Free "plop" ] }, label = text "+" } ]
+                , p "Construct the format of your identifier by clicking on the items below"
+                , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
+                    List.map
+                        (\p ->
+                            column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 250), height (px 150) ]
+                                [ row [ alignLeft ]
+                                    [ button.primary { onPress = Just <| GotInput { form | format = form.format ++ [ p ] }, label = text "+" }
+                                    , el [ paddingXY 10 0 ] (text <| Portion.toString p)
+                                    ]
+                                , paragraph [ padding 10, Font.size size.text.main ] [ text <| Portion.toDesc p ]
+                                ]
+                        )
+                        Portion.all
                 ]
             , el [ alignTop ] <|
                 Input.text

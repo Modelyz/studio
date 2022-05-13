@@ -46,6 +46,7 @@ import Json.Encode as Encode
 
 type Portion
     = Free Name
+    | Fixed String
     | Sequence Name Padding Step
     | Existing Name
     | YYYY
@@ -72,65 +73,115 @@ type alias Name =
     String
 
 
-all : List String
+all : List Portion
 all =
-    [ "Free"
-    , "Sequence"
-    , "Existing"
-    , "YYYY"
-    , "YY"
-    , "MMMM"
-    , "MM"
-    , "DoW"
-    , "DoM"
-    , "Hour"
-    , "Minute"
-    , "Second"
-    , "DateFrom"
+    [ Free ""
+    , Fixed ""
+    , Sequence "" 4 1
+    , Existing ""
+    , YYYY
+    , YY
+    , MMMM
+    , MM
+    , DoW
+    , DoM
+    , Hour
+    , Minute
+    , Second
+    , DateFrom ""
     ]
 
 
 toString : Portion -> String
 toString p =
     case p of
-        Free str ->
-            "Free " ++ str
+        Free name ->
+            "Free"
+
+        Fixed str ->
+            "Fixed"
 
         Sequence name padding step ->
-            "Sequence: " ++ name ++ " (padding=" ++ String.fromInt padding ++ ", step=" ++ String.fromInt step
+            "Sequence"
 
         Existing str ->
-            "Existing: " ++ str
+            "Existing"
 
         YYYY ->
-            "YYYY (ex: 2022)"
+            "YYYY"
 
         YY ->
-            "YY (ex: 22)"
+            "YY"
 
         MMMM ->
-            "MMMM (ex: December)"
+            "MMMM"
 
         MM ->
-            "MM (ex: 12)"
+            "MM"
 
         DoW ->
-            "Day of week (ex: Sunday)"
+            "DoW"
 
         DoM ->
-            "Day of month (ex: 23)"
+            "DoM"
 
         Hour ->
-            "Hour"
+            "hh"
 
         Minute ->
-            "Minute"
+            "mm"
 
         Second ->
-            "Second"
+            "ss"
 
         DateFrom from ->
             "Date from: " ++ from
+
+
+toDesc : Portion -> String
+toDesc p =
+    case p of
+        Free name ->
+            "A free text that you will be able to enter when adding a new TODO. For instance a firstname of an Agent"
+
+        Fixed str ->
+            "A fixed text that you must configure now and that will be always the same. For instance it can be a prefix or a suffix"
+
+        Sequence name padding step ->
+            "A sequence number"
+
+        Existing str ->
+            "An existing identifier"
+
+        YYYY ->
+            "The year on 4 digits"
+
+        YY ->
+            "The year on 2 digits"
+
+        MMMM ->
+            "The month in long form. Ex: August"
+
+        MM ->
+            "The month on 2 digits."
+
+        DoW ->
+            "Day of week in long form (Ex: Saturday)"
+
+        DoM ->
+            "Day of month on 2 digits"
+
+        Hour ->
+            "Hour on 2 digits"
+
+        Minute ->
+            "Minute on 2 digits"
+
+        Second ->
+            "Second on 2 digits"
+
+        DateFrom from ->
+            "Date coming from another entity: " ++ from
 
 
 encode : Portion -> Encode.Value
@@ -141,6 +192,12 @@ encode =
                 Encode.object
                     [ ( "type", Encode.string "Free" )
                     , ( "name", Encode.string name )
+                    ]
+
+            Fixed string ->
+                Encode.object
+                    [ ( "type", Encode.string "Fixed" )
+                    , ( "string", Encode.string string )
                     ]
 
             Sequence name padding step ->
@@ -218,6 +275,9 @@ decoder =
                     "Free" ->
                         Decode.map Free (Decode.field "name" Decode.string)
 
+                    "Fixed" ->
+                        Decode.map Free (Decode.field "string" Decode.string)
+
                     "Sequence" ->
                         Decode.map3 Sequence
                             (Decode.field "name" Decode.string)
@@ -225,7 +285,7 @@ decoder =
                             (Decode.field "step" Decode.int)
 
                     "Existing" ->
-                        Decode.map Free (Decode.field "name" Decode.string)
+                        Decode.map Existing (Decode.field "name" Decode.string)
 
                     "YYYY" ->
                         Decode.succeed YYYY
