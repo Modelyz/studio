@@ -6,7 +6,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import View exposing (color, size)
+import Style exposing (color, size)
 
 
 type alias Config a msg =

@@ -9,8 +9,9 @@ import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
 import Route exposing (Route(..), firstSegment, toString)
 import Shared
+import Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
 import Time exposing (posixToMillis)
-import View exposing (color, itemHoverstyle, navbarHoverstyle, separator, shadowStyle)
+import View exposing (separator)
 import Websocket as WS exposing (toText)
 
 

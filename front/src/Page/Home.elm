@@ -6,7 +6,8 @@ import Element.Background as Background
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View, color, itemHoverstyle)
+import Style exposing (..)
+import View exposing (View)
 import View.Navbar as Navbar
 
 
