@@ -219,8 +219,7 @@ viewContent s model =
     in
     Wizard.view
         model
-        [ h1 "Identifiers"
-        , if Set.size s.state.eventTypes > 0 then
+        [ if Set.size s.state.eventTypes > 0 then
             p "Existing Identifiers:"
 
           else
@@ -233,8 +232,12 @@ viewContent s model =
                 |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
             )
         ]
-        { title = "Add a new Identifier"
-        , context = "Adding a new identifier"
+        { title = "Adding an identifier"
+        , open = Wizard
+        , next = NextPage
+        , previous = PreviousPage
+        , ok = check
+        , cancel = Cancel
         , steps =
             [ row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                 [ Radio.view
@@ -267,7 +270,7 @@ viewContent s model =
                     ]
                 ]
             , column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                [ h3 "Format:"
+                [ h2 "Format:"
                 , wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                     List.append
                         (if List.isEmpty form.format then
@@ -297,7 +300,7 @@ viewContent s model =
                             )
                             form.format
                         )
-                , p "Construct the format of your identifier by clicking on the items below"
+                , h2 "Construct the format of your identifier by clicking on the items below"
                 , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                     List.map
                         (\p ->
@@ -343,9 +346,4 @@ viewContent s model =
                   else
                     none
                 ]
-        , open = Wizard
-        , next = NextPage
-        , previous = PreviousPage
-        , ok = check
-        , cancel = Cancel
         }

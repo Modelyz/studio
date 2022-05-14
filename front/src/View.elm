@@ -53,8 +53,21 @@ separator c =
     row [ width fill, Border.width 1, Border.color c ] []
 
 
+topbar : String -> Element msg
+topbar title =
+    paragraph [ width fill, padding 10, Font.size size.text.topbar, Background.color color.item.topbar ] [ text title ]
+
+
 size =
-    { text = { main = 15, small = 12, h1 = 35, h2 = 25, h3 = 20 } }
+    { text =
+        { main = 15
+        , small = 12
+        , h1 = 35
+        , h2 = 25
+        , h3 = 20
+        , topbar = 20
+        }
+    }
 
 
 color =
@@ -69,6 +82,7 @@ color =
         { background = rgb255 0xF0 0xF0 0xF0
         , border = rgb255 0xF0 0xF0 0xF0
         , selected = rgb255 0xC5 0xE8 0xF7
+        , topbar = rgb255 0xC5 0xE8 0xF7
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54
         }
