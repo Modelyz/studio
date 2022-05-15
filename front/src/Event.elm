@@ -460,6 +460,7 @@ decodelist =
 decoder : Decoder Event
 decoder =
     let
+        toPosix : Int -> Decoder Time.Posix
         toPosix t =
             Decode.succeed (millisToPosix t)
     in

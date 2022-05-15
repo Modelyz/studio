@@ -273,12 +273,7 @@ buttonNext model =
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
     let
-        result =
-            validate model
-
-        nbsteps =
-            List.length steps
-
+        buttons : List (Element Msg)
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
                 [ button.secondary
@@ -354,7 +349,7 @@ viewContent s model =
                                                 (InputFormat
                                                     (model.format
                                                         |> List.indexedMap Tuple.pair
-                                                        |> List.filter (\( j, q ) -> j /= i)
+                                                        |> List.filter (\( j, _ ) -> j /= i)
                                                         |> List.map Tuple.second
                                                     )
                                                 )
@@ -383,13 +378,7 @@ viewContent s model =
                         Input.text
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
-                            , View.onEnter <|
-                                case result of
-                                    Ok f ->
-                                        Added
-
-                                    Err err ->
-                                        Warning ("Error: " ++ err)
+                            , View.onEnter Added
                             ]
                             { onChange = InputName
                             , text = model.name
