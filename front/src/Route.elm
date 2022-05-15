@@ -18,6 +18,7 @@ type Route
     | EventTypes
     | Groups
     | Identifiers
+    | AddIdentifier
 
 
 routeParser : Parser (Route -> a) a
@@ -31,6 +32,7 @@ routeParser =
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")
         , map Groups (s "groups")
+        , map AddIdentifier (s "identifiers" </> s "add")
         , map Identifiers (s "identifiers")
         ]
 
@@ -84,6 +86,9 @@ toString r =
 
         Identifiers ->
             "/identifiers"
+
+        AddIdentifier ->
+            "/identifiers/add"
 
 
 firstSegment : Route -> String

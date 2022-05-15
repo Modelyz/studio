@@ -1,6 +1,8 @@
 module View exposing (..)
 
+import Browser.Navigation as Nav
 import DictSet as Set
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -10,6 +12,7 @@ import Element.Region as Region
 import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
+import Route exposing (Route)
 import Shared
 import Style exposing (..)
 
@@ -68,6 +71,11 @@ button =
     { primary = Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
     , secondary = Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ]
     }
+
+
+goTo : Shared.Model -> Route -> Effect Shared.Msg msg
+goTo s =
+    Route.toString >> Nav.pushUrl s.navkey >> Effect.fromCmd
 
 
 placeholder : String -> View msg

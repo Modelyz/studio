@@ -11,7 +11,7 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
-import Route exposing (Route)
+import Route exposing (Route, toString)
 import State exposing (State)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
@@ -38,6 +38,8 @@ type alias Model =
 
 type Msg
     = None ()
+    | PushRoute Route
+    | ReplaceRoute Route
     | WSDisconnected Json.Value
     | WSError Json.Value
     | WSConnect ()
@@ -70,6 +72,12 @@ update msg model =
     case msg of
         None _ ->
             ( model, Cmd.none )
+
+        PushRoute route ->
+            ( model, Nav.pushUrl model.navkey <| Route.toString route )
+
+        ReplaceRoute route ->
+            ( model, Nav.replaceUrl model.navkey <| Route.toString route )
 
         WSConnect _ ->
             ( model, wsConnect () )
