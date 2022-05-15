@@ -67,9 +67,40 @@ topbar title =
     paragraph [ width fill, padding 10, Font.size size.text.topbar, Background.color color.item.topbar ] [ text title ]
 
 
+topview : String -> List (Element msg) -> List (Element msg) -> Element msg
+topview title buttons children =
+    column [ width fill, alignTop, padding 20 ]
+        [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
+            [ topbar title
+            , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
+                [ column
+                    [ width fill, alignTop, spacing 20, padding 20 ]
+                    (buttons ++ children)
+                ]
+            ]
+        ]
+
+
+withDefaultContent : Element msg -> List (Element msg) -> List (Element msg)
+withDefaultContent e xs =
+    if List.isEmpty xs then
+        [ e ]
+
+    else
+        xs
+
+
 button =
-    { primary = Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
-    , secondary = Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ]
+    { primary =
+        \msg txt ->
+            Input.button
+                [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
+                { onPress = Just msg, label = text txt }
+    , secondary = \msg txt -> Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ] { onPress = Just msg, label = text txt }
+    , disabled =
+        \err txt ->
+            row [ spacing 20 ]
+                [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt }, text <| "(" ++ err ++ ")" ]
     }
 
 
@@ -118,9 +149,7 @@ viewSmallCard msg title description =
         [ column [ Background.color color.item.background ]
             [ row [ spacing 10, width fill ]
                 [ row [ Font.size size.text.main, padding 10 ] [ text title ]
-                , el [ alignRight ] <|
-                    button.primary
-                        { onPress = Just msg, label = text "×" }
+                , el [ alignRight ] (button.primary msg "×")
                 ]
             , if description == "" then
                 none

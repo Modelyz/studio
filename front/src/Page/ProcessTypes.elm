@@ -173,12 +173,10 @@ viewContent s model =
                         ]
                     , row [ spacing 20 ]
                         [ button.primary
-                            { onPress =
-                                Maybe.map Added (validate model.form)
-                                    |> Maybe.withDefault (Warning "Incomplete form")
-                                    |> Just
-                            , label = text "Add"
-                            }
+                            (Maybe.map Added (validate model.form)
+                                |> Maybe.withDefault (Warning "Incomplete form")
+                            )
+                            "Add"
                         , if model.form.warning /= "" then
                             paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
 

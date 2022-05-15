@@ -1,6 +1,5 @@
 module Page.AddIdentifier exposing (..)
 
-import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -30,10 +29,10 @@ type Msg
     | InputMandatory Bool
     | InputFormat (List Portion)
     | Warning String
-    | PreviousPage Int
-    | NextPage Int
+    | PreviousPage
+    | NextPage
     | Cancel
-    | Added Identifier
+    | Added
 
 
 type alias Flags =
@@ -66,9 +65,18 @@ steps =
     [ Entity, Options, Format, Name ]
 
 
-checkEmpty : String -> String -> Result String String
-checkEmpty field err =
+checkEmptyString : String -> String -> Result String String
+checkEmptyString field err =
     if String.isEmpty field then
+        Err err
+
+    else
+        Ok field
+
+
+checkEmptyList : List a -> String -> Result String (List a)
+checkEmptyList field err =
+    if List.isEmpty field then
         Err err
 
     else
@@ -79,7 +87,7 @@ checkNothing : Maybe a -> String -> Result String a
 checkNothing field err =
     case field of
         Nothing ->
-            Err "You must select an Entity"
+            Err err
 
         Just x ->
             Ok x
@@ -89,7 +97,7 @@ validate : Model -> Result String Identifier
 validate m =
     Result.map5
         Identifier
-        (checkEmpty m.name "The name is Empty")
+        (checkEmptyString m.name "The name is Empty")
         (checkNothing m.entity "You must select an entity")
         (Ok m.unique)
         (Ok m.mandatory)
@@ -185,37 +193,34 @@ update s msg model =
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
-        Added i ->
-            ( model
-            , Effect.batch
-                [ Shared.dispatch s <| Event.IdentifierAdded i
-                , goTo s Route.Identifiers
-                ]
-            )
+        Added ->
+            case validate model of
+                Ok i ->
+                    ( model
+                    , Effect.batch
+                        [ Shared.dispatch s <| Event.IdentifierAdded i
+                        , goTo s Route.Identifiers
+                        ]
+                    )
 
-        PreviousPage step ->
+                Err err ->
+                    ( { model | warning = err }, Effect.none )
+
+        PreviousPage ->
             case previous model.step steps of
                 Just x ->
-                    ( { model
-                        | step = x
-                      }
-                    , Effect.none
-                    )
+                    ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, Effect.fromCmd <| Nav.pushUrl s.navkey <| Route.toString Route.Identifiers )
+                    ( model, goTo s Route.Identifiers )
 
-        NextPage step ->
+        NextPage ->
             case next model.step steps of
                 Just x ->
-                    ( { model
-                        | step = x
-                      }
-                    , Effect.none
-                    )
+                    ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, Effect.fromCmd <| Nav.pushUrl s.navkey <| Route.toString Route.Identifiers )
+                    ( model, goTo s Route.Identifiers )
 
         Cancel ->
             ( model, goTo s Route.Identifiers )
@@ -234,16 +239,42 @@ view s model =
     }
 
 
+buttonNext : Model -> Element Msg
+buttonNext model =
+    case model.step of
+        Entity ->
+            case checkNothing model.entity "Please select an Entity" of
+                Ok _ ->
+                    button.primary NextPage "Next →"
+
+                Err err ->
+                    button.disabled err "Next →"
+
+        Options ->
+            button.primary NextPage "Next →"
+
+        Format ->
+            case checkEmptyList model.format "The format is still empty" of
+                Ok _ ->
+                    button.primary NextPage "Next →"
+
+                Err err ->
+                    button.disabled err "Next →"
+
+        Name ->
+            case checkEmptyString model.name "Please choose a name" of
+                Ok _ ->
+                    button.primary Added "Validate and add the identifier"
+
+                Err err ->
+                    button.disabled err "Validate and add the identifier"
+
+
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
     let
-        check =
-            case validate model of
-                Ok f ->
-                    Added f
-
-                Err err ->
-                    Warning ("Error: " ++ err)
+        result =
+            validate model
 
         nbsteps =
             List.length steps
@@ -251,26 +282,15 @@ viewContent s model =
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
                 [ button.secondary
-                    { onPress =
-                        Just <|
-                            if isFirst model.step steps then
-                                Cancel
+                    (if isFirst model.step steps then
+                        Cancel
 
-                            else
-                                PreviousPage nbsteps
-                    , label =
-                        text "← Previous"
-                    }
-                , button.secondary
-                    { onPress = Just <| Cancel
-                    , label =
-                        text "Cancel"
-                    }
-                , if isLast model.step steps then
-                    button.primary { onPress = Just check, label = text "Validate and add this identifier" }
-
-                  else
-                    button.secondary { onPress = Just <| NextPage nbsteps, label = text "Next →" }
+                     else
+                        PreviousPage
+                    )
+                    "← Previous"
+                , button.secondary Cancel "Cancel"
+                , buttonNext model
                 , if model.warning /= "" then
                     paragraph [ Font.color color.text.warning ] [ text model.warning ]
 
@@ -331,16 +351,14 @@ viewContent s model =
                                         row [ Background.color color.item.selected ]
                                             [ el [ padding 5 ] (text <| Portion.toString p)
                                             , button.secondary
-                                                { onPress =
-                                                    Just <|
-                                                        InputFormat
-                                                            (model.format
-                                                                |> List.indexedMap Tuple.pair
-                                                                |> List.filter (\( j, q ) -> j /= i)
-                                                                |> List.map Tuple.second
-                                                            )
-                                                , label = text "×"
-                                                }
+                                                (InputFormat
+                                                    (model.format
+                                                        |> List.indexedMap Tuple.pair
+                                                        |> List.filter (\( j, q ) -> j /= i)
+                                                        |> List.map Tuple.second
+                                                    )
+                                                )
+                                                "×"
                                             ]
                                     )
                                     model.format
@@ -351,7 +369,7 @@ viewContent s model =
                                 (\p ->
                                     column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 250), height (px 150) ]
                                         [ row [ alignLeft ]
-                                            [ button.primary { onPress = Just <| InputFormat <| model.format ++ [ p ], label = text "+" }
+                                            [ button.primary (InputFormat <| model.format ++ [ p ]) "+"
                                             , el [ paddingXY 10 0 ] (text <| Portion.toString p)
                                             ]
                                         , paragraph [ padding 10, Font.size size.text.main ] [ text <| Portion.toDesc p ]
@@ -366,9 +384,9 @@ viewContent s model =
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
                             , View.onEnter <|
-                                case validate model of
+                                case result of
                                     Ok f ->
-                                        Added f
+                                        Added
 
                                     Err err ->
                                         Warning ("Error: " ++ err)
@@ -380,17 +398,8 @@ viewContent s model =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifier"
                             }
     in
-    column [ width fill, alignTop, padding 20 ]
-        [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
-            [ topbar "Adding an identifier"
-            , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
-                [ column
-                    [ width fill, alignTop, spacing 20, padding 20 ]
-                    (buttons
-                        ++ [ el [ alignTop, alignLeft ] (h3 "Adding an identifier")
-                           , step
-                           ]
-                    )
-                ]
-            ]
+    topview "Adding an identifier"
+        buttons
+        [ el [ alignTop, alignLeft ] (h3 "Adding an identifier")
+        , step
         ]

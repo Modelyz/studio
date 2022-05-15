@@ -89,27 +89,15 @@ view s model =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    column [ width fill, alignTop, padding 20 ]
-        [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop, spacing 20 ]
-            [ h1 "Identifiers"
-            , if Set.isEmpty s.state.eventTypes then
-                p "There are no Identifiers yet. Create your first one!"
-
-              else
-                none
-            , wrappedRow [ width fill, spacing 20 ]
-                [ button.primary
-                    { onPress = Just Add
-                    , label =
-                        text "Add..."
-                    }
-                ]
-            , wrappedRow
-                [ spacing 10 ]
-                (s.state.identifiers
-                    |> Set.toList
-                    |> List.sortBy .name
-                    |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
-                )
-            ]
+    topview "Identifiers"
+        [ button.primary Add "Add..."
+        ]
+        [ wrappedRow
+            [ spacing 10 ]
+            (s.state.identifiers
+                |> Set.toList
+                |> List.sortBy .name
+                |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
+                |> withDefaultContent (p "There are no Identifiers yet. Create your first one!")
+            )
         ]
