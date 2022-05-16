@@ -332,32 +332,32 @@ viewContent s model =
 
                 Format ->
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                        [ h2 "Format:"
-                        , wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                            List.append
-                                (if List.isEmpty model.format then
-                                    [ el [ padding 5, Font.color color.text.disabled ] (text "Empty") ]
+                        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                            h2 "Format:"
+                                :: List.append
+                                    (if List.isEmpty model.format then
+                                        [ el [ padding 5, Font.color color.text.disabled ] (text "Empty") ]
 
-                                 else
-                                    []
-                                )
-                                (List.indexedMap
-                                    (\i p ->
-                                        row [ Background.color color.item.selected ]
-                                            [ el [ padding 5 ] (text <| Portion.toString p)
-                                            , button.secondary
-                                                (InputFormat
-                                                    (model.format
-                                                        |> List.indexedMap Tuple.pair
-                                                        |> List.filter (\( j, _ ) -> j /= i)
-                                                        |> List.map Tuple.second
-                                                    )
-                                                )
-                                                "×"
-                                            ]
+                                     else
+                                        []
                                     )
-                                    model.format
-                                )
+                                    (List.indexedMap
+                                        (\i p ->
+                                            row [ Background.color color.item.selected ]
+                                                [ el [ padding 5 ] (text <| Portion.toString p)
+                                                , button.secondary
+                                                    (InputFormat
+                                                        (model.format
+                                                            |> List.indexedMap Tuple.pair
+                                                            |> List.filter (\( j, _ ) -> j /= i)
+                                                            |> List.map Tuple.second
+                                                        )
+                                                    )
+                                                    "×"
+                                                ]
+                                        )
+                                        model.format
+                                    )
                         , h2 "Construct the format of your identifier by clicking on the items below"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
