@@ -30,3 +30,6 @@ front/node_modules
 
 # dependency lock file
 front/package-lock.json
+
+# elm-review
+front/review/elm-stuff/
