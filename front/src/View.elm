@@ -14,13 +14,15 @@ import Html.Events
 import Json.Decode exposing (..)
 import Route exposing (Route)
 import Shared
+import Spa exposing (mapSharedMsg)
 import Style exposing (..)
 
 
 type alias View msg =
     { title : String
     , attributes : List (Attribute msg)
-    , element : Element msg
+    , element : Shared.Model -> Element msg
+    , route : Route
     }
 
 
@@ -33,7 +35,8 @@ notFound : View msg
 notFound =
     { title = "Not Found"
     , attributes = []
-    , element = el [ centerX, centerY ] (text "Not Found")
+    , element = \_ -> el [ centerX, centerY ] (text "Not Found")
+    , route = Route.Home
     }
 
 
@@ -62,16 +65,64 @@ separator c =
     row [ width fill, Border.width 1, Border.color c ] []
 
 
-topbar : String -> Element msg
-topbar title =
-    paragraph [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }, Border.color color.topbar.border, width fill, padding 10, Font.size size.text.topbar, Background.color color.topbar.background ] [ text title ]
+hamburger : String -> Shared.Model -> Element Shared.Msg
+hamburger title s =
+    let
+        msg =
+            if s.menu == Shared.Desktop then
+                Shared.None ()
+
+            else
+                Shared.ToggleMenu
+    in
+    row []
+        [ Input.button
+            [ Background.color color.button.primary, padding 10 ]
+            { onPress = Just msg
+            , label =
+                column
+                    [ width (px 40)
+                    , alignTop
+                    , spacing 5
+                    , Background.color color.navbar.background
+                    ]
+                    (List.repeat 3 <|
+                        row
+                            [ width (px 30)
+                            , height (px 3)
+                            , Font.color color.navbar.text
+                            , Background.color color.navbar.text
+                            ]
+                            []
+                    )
+            }
+        , text title
+        ]
 
 
-cardContent : String -> List (Element msg) -> List (Element msg) -> Element msg
-cardContent title buttons children =
+topbar : Shared.Model -> String -> Element msg
+topbar s title =
+    if s.menu == Shared.Desktop then
+        row
+            [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }
+            , Border.color color.topbar.border
+            , width fill
+            , padding 10
+            , Font.size size.text.topbar
+            , Background.color color.topbar.background
+            ]
+            [ text title
+            ]
+
+    else
+        none
+
+
+cardContent : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
+cardContent s title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
-            [ topbar title
+            [ topbar s title
             , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
                 [ column
                     [ width fill, alignTop, spacing 20, padding 20 ]
@@ -81,11 +132,11 @@ cardContent title buttons children =
         ]
 
 
-flatContent : String -> List (Element msg) -> List (Element msg) -> Element msg
-flatContent title buttons children =
+flatContent : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
+flatContent s title buttons children =
     column [ width fill, alignTop, padding 0 ]
         [ column [ width fill, padding 0, centerX, alignTop ]
-            [ topbar title
+            [ topbar s title
             , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
                 [ column
                     [ width fill, alignTop, spacing 20, padding 20 ]
@@ -123,19 +174,12 @@ goTo s =
     Route.toString >> Nav.pushUrl s.navkey >> Effect.fromCmd
 
 
-placeholder : String -> View msg
-placeholder str =
-    { title = str
-    , attributes = []
-    , element = text str
-    }
-
-
 map : (a -> b) -> View a -> View b
 map fn view =
     { title = view.title
     , attributes = List.map (mapAttribute fn) view.attributes
-    , element = Element.map fn view.element
+    , element = \s -> Element.map fn <| view.element s
+    , route = view.route
     }
 
 

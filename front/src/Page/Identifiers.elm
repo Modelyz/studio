@@ -22,8 +22,7 @@ import View.Radio as Radio
 
 
 type alias Model =
-    { route : Route
-    }
+    { route : Route }
 
 
 type Msg
@@ -32,8 +31,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    { route : Route }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -75,20 +73,17 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Event Types"
+    { title = "Identifiers"
     , attributes = []
-    , element =
-        row
-            [ width fill, height fill ]
-            [ Navbar.view s model
-            , viewContent s model
-            ]
+    , element = viewContent model
+    , route = Route.Identifiers
     }
 
 
-viewContent : Shared.Model -> Model -> Element Msg
-viewContent s model =
-    flatContent "Identifiers"
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
+    flatContent s
+        "Identifiers"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow

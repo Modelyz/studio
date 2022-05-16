@@ -36,13 +36,12 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    { route : Route }
 
 
 type alias Model =
-    { previous : Route
-    , route : Route
+    { route : Route
+    , previous : Route
     , name : String
     , entity : Maybe Entity
     , unique : Bool
@@ -158,8 +157,8 @@ match route =
 
 init : Flags -> ( Model, Effect Shared.Msg Msg )
 init f =
-    ( { previous = Route.Identifiers
-      , route = f.route
+    ( { route = f.route
+      , previous = Route.Identifiers
       , name = ""
       , entity = Nothing
       , unique = False
@@ -230,12 +229,8 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Event Types"
     , attributes = []
-    , element =
-        row
-            [ width fill, height fill ]
-            [ Navbar.view s model
-            , viewContent s model
-            ]
+    , element = viewContent model
+    , route = model.route
     }
 
 
@@ -270,8 +265,8 @@ buttonNext model =
                     button.disabled err "Validate and add the identifier"
 
 
-viewContent : Shared.Model -> Model -> Element Msg
-viewContent s model =
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
     let
         buttons : List (Element Msg)
         buttons =
@@ -386,7 +381,8 @@ viewContent s model =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifier"
                             }
     in
-    cardContent "Adding an identifier"
+    cardContent s
+        "Adding an identifier"
         buttons
         [ el [ alignTop, alignLeft ] (h3 "Adding an identifier")
         , step

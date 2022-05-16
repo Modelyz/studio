@@ -26,8 +26,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    { route : Route }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -82,7 +81,8 @@ view : Shared.Model -> Model -> View Msg
 view _ model =
     { title = "Process Type"
     , attributes = []
-    , element = viewContent model
+    , element = \_ -> viewContent model
+    , route = model.route
     }
 
 

@@ -11,7 +11,7 @@ import Route exposing (Route(..), firstSegment, toString)
 import Shared
 import Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
 import Time exposing (posixToMillis)
-import View exposing (separator)
+import View exposing (hamburger, separator)
 import Websocket as WS exposing (toText)
 
 
@@ -19,30 +19,73 @@ type alias Model a =
     { a | route : Route }
 
 
-view : Shared.Model -> Model a -> Element msg
-view s m =
+view : String -> Shared.Model -> Route -> Element Shared.Msg
+view title s =
+    if s.menu == Shared.Desktop then
+        desktop s
+
+    else
+        mobile title s
+
+
+mobile : String -> Shared.Model -> Route -> Element Shared.Msg
+mobile title s r =
+    column [ width fill, padding 0, Font.color color.navbar.text, Background.color color.navbar.background ] <|
+        List.intersperse
+            (separator color.navbar.separator)
+        <|
+            [ hamburger title s ]
+                ++ (if s.menu == Shared.MobileClosed then
+                        []
+
+                    else
+                        [ navlink s r Home "Home"
+                        , navlink s r ProcessTypes "Process Types"
+                        , navlink s r ResourceTypes "Resource Types"
+                        , navlink s r AgentTypes "Agent Types"
+                        , navlink s r ContractTypes "Contract Types"
+                        , navlink s r EventTypes "Event Types"
+                        , navlink s r AgentTypes "Agent Types"
+                        , navlink s r CommitmentTypes "Commitment Types"
+                        , navlink s r ContractTypes "Contract Types"
+                        , navlink s r Groups "Groups"
+                        , navlink s r Identifiers "Identifiers"
+                        ]
+                            ++ (if Set.size s.state.processTypes > 0 then
+                                    s.state.processTypes
+                                        |> Set.toList
+                                        |> List.map (\pt -> navlink s r (ProcessType pt.name) pt.name)
+
+                                else
+                                    []
+                               )
+                   )
+
+
+desktop : Shared.Model -> Route -> Element msg
+desktop s r =
     column
         [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background ]
     <|
         List.intersperse
             (separator color.navbar.separator)
         <|
-            [ navlink s m Home "Home"
-            , navlink s m ProcessTypes "Process Types"
-            , navlink s m ResourceTypes "Resource Types"
-            , navlink s m AgentTypes "Agent Types"
-            , navlink s m ContractTypes "Contract Types"
-            , navlink s m EventTypes "Event Types"
-            , navlink s m AgentTypes "Agent Types"
-            , navlink s m CommitmentTypes "Commitment Types"
-            , navlink s m ContractTypes "Contract Types"
-            , navlink s m Groups "Groups"
-            , navlink s m Identifiers "Identifiers"
+            [ navlink s r Home "Home"
+            , navlink s r ProcessTypes "Process Types"
+            , navlink s r ResourceTypes "Resource Types"
+            , navlink s r AgentTypes "Agent Types"
+            , navlink s r ContractTypes "Contract Types"
+            , navlink s r EventTypes "Event Types"
+            , navlink s r AgentTypes "Agent Types"
+            , navlink s r CommitmentTypes "Commitment Types"
+            , navlink s r ContractTypes "Contract Types"
+            , navlink s r Groups "Groups"
+            , navlink s r Identifiers "Identifiers"
             ]
                 ++ (if Set.size s.state.processTypes > 0 then
                         s.state.processTypes
                             |> Set.toList
-                            |> List.map (\pt -> navlink s m (ProcessType pt.name) pt.name)
+                            |> List.map (\pt -> navlink s r (ProcessType pt.name) pt.name)
 
                     else
                         []
@@ -57,15 +100,15 @@ view s m =
                         , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents))
                         , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                         ]
-                   , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString m.route)
+                   , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString r)
                    ]
 
 
-navlink : Shared.Model -> Model a -> Route -> String -> Element msg
-navlink s m r label =
+navlink : Shared.Model -> Route -> Route -> String -> Element msg
+navlink s currentRoute linkRoute label =
     let
         active =
-            firstSegment m.route == firstSegment r
+            currentRoute == linkRoute
     in
     link
         ([ Font.size 15
@@ -80,4 +123,4 @@ navlink s m r label =
                     []
                )
         )
-        { url = toString r, label = text label }
+        { url = toString linkRoute, label = text label }

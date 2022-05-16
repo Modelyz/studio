@@ -23,5 +23,6 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Error"
     , attributes = []
-    , element = viewContent model
+    , element = \_ -> viewContent model
+    , route = model.route
     }

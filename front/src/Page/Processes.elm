@@ -27,8 +27,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route
-    }
+    { route : Route }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -73,17 +72,13 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Processes"
     , attributes = []
-    , element =
-        row
-            [ width fill, height fill ]
-            [ Navbar.view s model
-            , viewContent s model
-            ]
+    , element = viewContent model
+    , route = model.route
     }
 
 
-viewContent : Shared.Model -> Model -> Element Msg
-viewContent s model =
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
     column []
         [ Input.button []
             { onPress = Just (NewProcess model.ptype)

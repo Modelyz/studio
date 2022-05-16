@@ -1,6 +1,7 @@
 port module Main exposing (main)
 
 import Browser
+import Browser.Events as Events
 import Element exposing (..)
 import Event exposing (Event(..))
 import EventFlow exposing (EventFlow(..))
@@ -18,8 +19,8 @@ import Page.ProcessType
 import Page.ProcessTypes
 import Page.Processes
 import Route exposing (toRoute)
-import Shared exposing (Msg(..))
-import Spa
+import Shared exposing (Msg(..), WindowSize)
+import Spa exposing (mapSharedMsg)
 import View exposing (View)
 import View.Navbar as Navbar
 
@@ -60,6 +61,7 @@ subscriptions : Shared.Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ wsSendStatus EventsSent
+        , Events.onResize (\width height -> WindowResized (WindowSize width height))
         , eventsReader EventsRead
         , eventsStoredToSend EventsStoredTosend
         , eventsStored EventsStored
@@ -82,7 +84,17 @@ toDocument :
 toDocument s view =
     { title = view.title
     , body =
-        [ layout [ width fill, height fill ] view.element
+        [ layout [ width fill, height fill ] <|
+            (if s.menu == Shared.Desktop then
+                row
+
+             else
+                column
+            )
+                [ width fill, height fill ]
+                [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
+                , view.element s
+                ]
         ]
     }
 

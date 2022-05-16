@@ -12,8 +12,7 @@ import View.Navbar as Navbar
 
 
 type alias Model =
-    { route : Route
-    }
+    { route : Route }
 
 
 type alias Msg =
@@ -21,8 +20,7 @@ type alias Msg =
 
 
 type alias Flags =
-    { route : Route
-    }
+    { route : Route }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -61,12 +59,8 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Home"
     , attributes = []
-    , element =
-        row
-            [ width fill, height fill ]
-            [ Navbar.view s model
-            , viewContent
-            ]
+    , element = \_ -> viewContent
+    , route = model.route
     }
 
 

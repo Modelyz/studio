@@ -1,4 +1,4 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update)
+module Shared exposing (Menu(..), Model, Msg(..), WindowSize, dispatch, dispatchMany, dispatchT, identity, init, isMobile, update)
 
 import Browser.Navigation as Nav
 import DictSet as Set
@@ -11,17 +11,25 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
-import Route exposing (Route, toString)
+import Route exposing (Route(..), toString)
 import State exposing (State)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
+type alias WindowSize =
+    { w : Int
+    , h : Int
+    }
+
+
 type alias Model =
     -- ui model related
     { currentSeed : Seed
     , navkey : Nav.Key
+    , windowSize : WindowSize
+    , menu : Menu
 
     -- ES and WS related
     , iostatus : IOStatus
@@ -36,8 +44,16 @@ type alias Model =
     }
 
 
+type Menu
+    = Desktop
+    | MobileClosed
+    | MobileOpen
+
+
 type Msg
     = None ()
+    | WindowResized WindowSize
+    | ToggleMenu
     | PushRoute Route
     | ReplaceRoute Route
     | WSDisconnected Json.Value
@@ -53,18 +69,63 @@ type Msg
     | EventsReceived String
 
 
-init : ( Int, List Int ) -> Nav.Key -> ( Model, Cmd Msg )
-init ( seed, seedExtension ) navkey =
-    ( { currentSeed = initialSeed seed seedExtension
-      , navkey = navkey
-      , iostatus = ESReading
-      , wsstatus = WSClosed
-      , timeoutReconnect = 1
-      , identity = Nothing
-      , state = State.empty
-      }
-    , Event.readEvents Encode.null
-    )
+type alias Flags =
+    { seed : Int
+    , seedExtension : List Int
+    , windowSize : WindowSize
+    }
+
+
+flagsDecoder : Json.Decoder Flags
+flagsDecoder =
+    Json.map3 Flags
+        (Json.field "seed" Json.int)
+        (Json.field "seedExtension" (Json.list Json.int))
+        (Json.field "windowSize"
+            (Json.map2 WindowSize (Json.field "w" Json.int) (Json.field "h" Json.int))
+        )
+
+
+isMobile : WindowSize -> Bool
+isMobile window =
+    window.w < 640
+
+
+init : Json.Value -> Nav.Key -> ( Model, Cmd Msg )
+init value navkey =
+    case Json.decodeValue flagsDecoder value of
+        Ok f ->
+            ( { currentSeed = initialSeed f.seed f.seedExtension
+              , navkey = navkey
+              , windowSize = f.windowSize
+              , menu =
+                    if isMobile f.windowSize then
+                        MobileClosed
+
+                    else
+                        Desktop
+              , iostatus = ESReading
+              , wsstatus = WSClosed
+              , timeoutReconnect = 1
+              , identity = Nothing
+              , state = State.empty
+              }
+            , Event.readEvents Encode.null
+            )
+
+        Err err ->
+            ( { currentSeed = initialSeed 0 [ 0, 0 ]
+              , navkey = navkey
+              , windowSize = WindowSize 1024 768
+              , menu = Desktop
+              , iostatus = IOError "Wrong init flags"
+              , wsstatus = WSClosed
+              , timeoutReconnect = 1
+              , identity = Nothing
+              , state = State.empty
+              }
+            , Event.readEvents Encode.null
+            )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -72,6 +133,35 @@ update msg model =
     case msg of
         None _ ->
             ( model, Cmd.none )
+
+        WindowResized size ->
+            ( { model
+                | windowSize = size
+                , menu =
+                    if isMobile size then
+                        MobileClosed
+
+                    else
+                        Desktop
+              }
+            , Cmd.none
+            )
+
+        ToggleMenu ->
+            ( { model
+                | menu =
+                    case model.menu of
+                        Desktop ->
+                            Desktop
+
+                        MobileOpen ->
+                            MobileClosed
+
+                        MobileClosed ->
+                            MobileOpen
+              }
+            , Cmd.none
+            )
 
         PushRoute route ->
             ( model, Nav.pushUrl model.navkey <| Route.toString route )

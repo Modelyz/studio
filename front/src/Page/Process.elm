@@ -113,12 +113,8 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process"
     , attributes = []
-    , element =
-        row
-            [ width fill, height fill ]
-            [ Navbar.view s model
-            , viewContent s model
-            ]
+    , element = viewContent model
+    , route = model.route
     }
 
 
@@ -138,8 +134,8 @@ newEventButton process et =
         }
 
 
-viewContent : Shared.Model -> Model -> Element Msg
-viewContent s model =
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
     let
         process =
             getProcess s.state model.process

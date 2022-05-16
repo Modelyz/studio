@@ -45,7 +45,7 @@ const getRandomInts = (n) => {
 
 /**** run Elm ****/
 const randInts = getRandomInts(5);
-const flags = [randInts[0], randInts.slice(1)];
+const flags = { seed: randInts[0], seedExtension : randInts.slice(1), windowSize: {w: window.innerWidth, h: window.innerHeight}};
 var app = Elm.Main.init({flags:flags});
 
 /**** subscribe to Ports ****/
