@@ -386,7 +386,7 @@ viewContent s model =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifier"
                             }
     in
-    topview "Adding an identifier"
+    cardContent "Adding an identifier"
         buttons
         [ el [ alignTop, alignLeft ] (h3 "Adding an identifier")
         , step

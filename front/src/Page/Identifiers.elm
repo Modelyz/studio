@@ -4,7 +4,6 @@ import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Event
@@ -89,7 +88,7 @@ view s model =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    topview "Identifiers"
+    flatContent "Identifiers"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow

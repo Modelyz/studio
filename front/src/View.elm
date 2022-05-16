@@ -64,13 +64,27 @@ separator c =
 
 topbar : String -> Element msg
 topbar title =
-    paragraph [ width fill, padding 10, Font.size size.text.topbar, Background.color color.item.topbar ] [ text title ]
+    paragraph [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }, Border.color color.topbar.border, width fill, padding 10, Font.size size.text.topbar, Background.color color.topbar.background ] [ text title ]
 
 
-topview : String -> List (Element msg) -> List (Element msg) -> Element msg
-topview title buttons children =
+cardContent : String -> List (Element msg) -> List (Element msg) -> Element msg
+cardContent title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
+            [ topbar title
+            , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
+                [ column
+                    [ width fill, alignTop, spacing 20, padding 20 ]
+                    (buttons ++ children)
+                ]
+            ]
+        ]
+
+
+flatContent : String -> List (Element msg) -> List (Element msg) -> Element msg
+flatContent title buttons children =
+    column [ width fill, alignTop, padding 0 ]
+        [ column [ width fill, padding 0, centerX, alignTop ]
             [ topbar title
             , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
                 [ column
