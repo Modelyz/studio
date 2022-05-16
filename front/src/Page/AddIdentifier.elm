@@ -276,13 +276,12 @@ viewContent s model =
         buttons : List (Element Msg)
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
-                [ button.secondary
-                    (if isFirst model.step steps then
-                        Cancel
+                [ (if isFirst model.step steps then
+                    button.disabled "This is the first page"
 
-                     else
-                        PreviousPage
-                    )
+                   else
+                    button.secondary PreviousPage
+                  )
                     "← Previous"
                 , button.secondary Cancel "Cancel"
                 , buttonNext model

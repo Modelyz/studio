@@ -99,8 +99,8 @@ button =
     , secondary = \msg txt -> Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ] { onPress = Just msg, label = text txt }
     , disabled =
         \err txt ->
-            row [ spacing 20 ]
-                [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt }, text <| "(" ++ err ++ ")" ]
+            row [ htmlAttribute <| Attr.title err, spacing 20 ]
+                [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt } ]
     }
 
 
