@@ -11,14 +11,6 @@ services:
       - "8080:8080"
     volumes:
       - data:/srv/data
-    networks:
-      - caddy_default
 
 volumes:
   data:
-    driver: anybox/buttervolume:latest
-
-networks:
-  caddy_default:
-    external: true
-
