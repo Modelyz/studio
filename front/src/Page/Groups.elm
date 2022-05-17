@@ -62,7 +62,7 @@ validate f =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = init
+        { init = init s
         , update = update s
         , view = view s
         , subscriptions = \_ -> Sub.none
@@ -79,9 +79,9 @@ match route =
             Nothing
 
 
-init : Flags -> ( Model, Effect Shared.Msg Msg )
-init f =
-    ( { route = f.route, form = empty }, Effect.none )
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init s f =
+    ( { route = f.route, form = empty }, closeMenu s )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )

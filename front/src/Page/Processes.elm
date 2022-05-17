@@ -12,7 +12,7 @@ import REA.ProcessType exposing (ProcessType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View)
+import View exposing (View, closeMenu)
 import View.Navbar as Navbar
 
 
@@ -33,7 +33,7 @@ type alias Flags =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = init
+        { init = init s
         , update = update s
         , view = view s
         , subscriptions = \_ -> Sub.none
@@ -50,12 +50,12 @@ match route =
             Nothing
 
 
-init : Flags -> ( Model, Effect Shared.Msg Msg )
-init f =
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init s f =
     ( { route = f.route
       , ptype = ProcessType ""
       }
-    , Effect.none
+    , closeMenu s
     )
 
 

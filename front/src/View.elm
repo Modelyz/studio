@@ -175,6 +175,15 @@ goTo s =
     Route.toString >> Nav.pushUrl s.navkey >> Effect.fromCmd
 
 
+closeMenu : Shared.Model -> Effect Shared.Msg msg
+closeMenu s =
+    if s.menu == MobileOpen then
+        Effect.fromShared Shared.ToggleMenu
+
+    else
+        Effect.none
+
+
 map : (a -> b) -> View a -> View b
 map fn view =
     { title = view.title
