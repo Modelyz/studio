@@ -1,4 +1,4 @@
-module Shared exposing (Menu(..), Model, Msg(..), WindowSize, dispatch, dispatchMany, dispatchT, identity, init, isMobile, update)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update)
 
 import Browser.Navigation as Nav
 import DictSet as Set
@@ -13,15 +13,10 @@ import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route(..), toString)
 import State exposing (State)
+import Style exposing (Menu(..), WindowSize, isMobile)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
-
-
-type alias WindowSize =
-    { w : Int
-    , h : Int
-    }
 
 
 type alias Model =
@@ -42,12 +37,6 @@ type alias Model =
     -- REA state related
     , state : State
     }
-
-
-type Menu
-    = Desktop
-    | MobileClosed
-    | MobileOpen
 
 
 type Msg
@@ -84,11 +73,6 @@ flagsDecoder =
         (Json.field "windowSize"
             (Json.map2 WindowSize (Json.field "w" Json.int) (Json.field "h" Json.int))
         )
-
-
-isMobile : WindowSize -> Bool
-isMobile window =
-    window.w < 640
 
 
 init : Json.Value -> Nav.Key -> ( Model, Cmd Msg )

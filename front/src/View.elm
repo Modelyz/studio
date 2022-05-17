@@ -69,7 +69,7 @@ hamburger : String -> Shared.Model -> Element Shared.Msg
 hamburger title s =
     let
         msg =
-            if s.menu == Shared.Desktop then
+            if s.menu == Style.Desktop then
                 Shared.None ()
 
             else
@@ -102,7 +102,7 @@ hamburger title s =
 
 topbar : Shared.Model -> String -> Element msg
 topbar s title =
-    if s.menu == Shared.Desktop then
+    if s.menu == Style.Desktop then
         row
             [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }
             , Border.color color.topbar.border

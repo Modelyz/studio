@@ -19,8 +19,9 @@ import Page.ProcessType
 import Page.ProcessTypes
 import Page.Processes
 import Route exposing (toRoute)
-import Shared exposing (Msg(..), WindowSize)
+import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)
+import Style exposing (WindowSize)
 import View exposing (View)
 import View.Navbar as Navbar
 
@@ -85,7 +86,7 @@ toDocument s view =
     { title = view.title
     , body =
         [ layout [ width fill, height fill ] <|
-            (if s.menu == Shared.Desktop then
+            (if s.menu == Style.Desktop then
                 row
 
              else

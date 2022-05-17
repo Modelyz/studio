@@ -5,6 +5,23 @@ import Element.Background as Background
 import Element.Border as Border
 
 
+type alias WindowSize =
+    { w : Int
+    , h : Int
+    }
+
+
+type Menu
+    = Desktop
+    | MobileClosed
+    | MobileOpen
+
+
+isMobile : WindowSize -> Bool
+isMobile window =
+    window.w < 992
+
+
 size =
     { text =
         { main = 15

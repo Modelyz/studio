@@ -21,7 +21,7 @@ type alias Model a =
 
 view : String -> Shared.Model -> Route -> Element Shared.Msg
 view title s =
-    if s.menu == Shared.Desktop then
+    if s.menu == Style.Desktop then
         desktop s
 
     else
@@ -35,7 +35,7 @@ mobile title s r =
             (separator color.navbar.separator)
         <|
             [ hamburger title s ]
-                ++ (if s.menu == Shared.MobileClosed then
+                ++ (if s.menu == Style.MobileClosed then
                         []
 
                     else
