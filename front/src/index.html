@@ -121,7 +121,7 @@ reconnect = function() {
     console.log("<- ELM port wsConnect")
     console.log("JS WS new WebSocket");
     if (window.socket) { window.socket.close(); }
-    window.socket = new WebSocket('ws://localhost:8080/');
+        window.socket = new WebSocket('${WSS}');
     // Notify Elm the WS has closed
     window.socket.onopen = function(e) {
         console.log("JS WS socket.onopen")

@@ -1,10 +1,13 @@
 FROM debian:11 AS build
 
+ARG WSS
+ENV WSS $WSS
 WORKDIR /srv
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         cabal-install \
         curl \
+        gettext-base \
         gzip \
         libghc-aeson-dev \
         libghc-http-types-dev \

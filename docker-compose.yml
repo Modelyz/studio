@@ -3,7 +3,10 @@ version: '3'
 services:
   studio:
     image: studio:latest
-    build: .
+    build:
+      context: .
+      args:
+        - WSS=${WSS}
     ports:
       - "8080:8080"
     volumes:

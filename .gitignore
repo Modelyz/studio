@@ -33,3 +33,6 @@ front/package-lock.json
 
 # elm-review
 front/review/elm-stuff/
+
+# docker build args
+.env
