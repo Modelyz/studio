@@ -7,14 +7,14 @@ import Maybe exposing (Maybe(..))
 
 type alias CommitmentType =
     { name : String
-    , ctype : Maybe String
+    , type_ : Maybe String
     }
 
 
 new : String -> CommitmentType
 new name =
     { name = name
-    , ctype = Nothing
+    , type_ = Nothing
     }
 
 
@@ -22,7 +22,7 @@ encode : CommitmentType -> Encode.Value
 encode ct =
     Encode.object
         [ ( "name", Encode.string ct.name )
-        , ( "ctype", Encode.string ct.name )
+        , ( "type", Encode.string ct.name )
         ]
 
 
@@ -30,7 +30,7 @@ decoder : Decoder CommitmentType
 decoder =
     Decode.map2 CommitmentType
         (Decode.field "name" Decode.string)
-        (Decode.maybe <| Decode.field "ctype" Decode.string)
+        (Decode.maybe <| Decode.field "type" Decode.string)
 
 
 compare : CommitmentType -> String

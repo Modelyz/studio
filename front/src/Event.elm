@@ -47,21 +47,21 @@ port storeEventsToSend : Encode.Value -> Cmd msg
 
 type alias EventBase =
     { uuid : Uuid
-    , posixtime : Time.Posix
+    , when : Time.Posix
     , flow : EventFlow
     }
 
 
 type Event
     = ConnectionInitiated { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid } EventBase
-    | ProcessTypeChanged { ptype : ProcessType } EventBase
-    | ProcessTypeRemoved { ptype : String } EventBase
+    | ProcessTypeChanged { name : ProcessType } EventBase
+    | ProcessTypeRemoved String EventBase
     | ProcessAdded { type_ : String, name : String } EventBase
     | CommitmentTypeAdded { commitmentType : CommitmentType } EventBase
-    | CommitmentTypeRemoved { commitmentType : CommitmentType } EventBase
+    | CommitmentTypeRemoved String EventBase
     | CommitmentAdded { process : Process, commitment : Commitment } EventBase
     | EventTypeAdded { eventType : EventType } EventBase
-    | EventTypeRemoved { eventType : EventType } EventBase
+    | EventTypeRemoved String EventBase
     | EventAdded { process : Process, event : E.Event } EventBase
     | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
     | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String } EventBase
@@ -69,6 +69,8 @@ type Event
     | GroupRemoved { name : String, entity : Entity } EventBase
     | IdentifierAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, format : List Portion } EventBase
     | IdentifierRemoved String EventBase --TODO also simplify other *Removed
+    | AgentTypeAdded { name : String, type_ : Maybe String } EventBase
+    | AgentTypeRemoved String EventBase
 
 
 base : Event -> EventBase
@@ -122,6 +124,12 @@ base event =
         IdentifierRemoved _ b ->
             b
 
+        AgentTypeAdded _ b ->
+            b
+
+        AgentTypeRemoved _ b ->
+            b
+
 
 compare : Event -> Int
 compare =
@@ -130,7 +138,7 @@ compare =
 
 getTime : Event -> Time.Posix
 getTime =
-    base >> .posixtime
+    base >> .when
 
 
 exceptCI : List Event -> List Event
@@ -152,127 +160,119 @@ exceptCI es =
 
 
 processTypeChanged : Uuid -> Time.Posix -> EventFlow -> ProcessType -> Event
-processTypeChanged uuid posixtime flow ptype =
+processTypeChanged uuid when flow name =
     ProcessTypeChanged
-        { ptype = ptype
+        { name = name
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 processTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-processTypeRemoved uuid posixtime flow ptype =
-    ProcessTypeRemoved
-        { ptype = ptype
-        }
-        (EventBase uuid posixtime flow)
+processTypeRemoved uuid when flow name =
+    ProcessTypeRemoved name
+        (EventBase uuid when flow)
 
 
 processAdded : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-processAdded uuid posixtime flow name ptype =
+processAdded uuid when flow name type_ =
     ProcessAdded
         { name = name
-        , type_ = ptype
+        , type_ = type_
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
-commitmentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> CommitmentType -> Event
-commitmentTypeRemoved uuid posixtime flow commitmentType =
-    CommitmentTypeRemoved
-        { commitmentType = commitmentType
-        }
-        (EventBase uuid posixtime flow)
+commitmentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
+commitmentTypeRemoved uuid when flow name =
+    CommitmentTypeRemoved name (EventBase uuid when flow)
 
 
 commitmentTypeAdded : Uuid -> Time.Posix -> EventFlow -> CommitmentType -> Event
-commitmentTypeAdded uuid posixtime flow commitmentType =
+commitmentTypeAdded uuid when flow commitmentType =
     CommitmentTypeAdded
         { commitmentType = commitmentType
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 commitmentAdded : Uuid -> Time.Posix -> EventFlow -> Process -> Commitment -> Event
-commitmentAdded uuid posixtime flow process commitment =
+commitmentAdded uuid when flow process commitment =
     CommitmentAdded
         { commitment = commitment
         , process = process
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
-eventTypeRemoved : Uuid -> Time.Posix -> EventFlow -> EventType -> Event
-eventTypeRemoved uuid posixtime flow eventType =
-    EventTypeRemoved
-        { eventType = eventType
-        }
-        (EventBase uuid posixtime flow)
+eventTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
+eventTypeRemoved uuid when flow name =
+    EventTypeRemoved name (EventBase uuid when flow)
 
 
 linkedEventTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-linkedEventTypeToProcessType uuid posixtime flow etype ptype =
+linkedEventTypeToProcessType uuid when flow etype ptype =
     LinkedEventTypeToProcessType
         { etype = etype
         , ptype = ptype
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 linkedCommitmentTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-linkedCommitmentTypeToProcessType uuid posixtime flow ctype ptype =
+linkedCommitmentTypeToProcessType uuid when flow ctype ptype =
     LinkedCommitmentTypeToProcessType
         { ctype = ctype
         , ptype = ptype
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 eventTypeAdded : Uuid -> Time.Posix -> EventFlow -> EventType -> Event
-eventTypeAdded uuid posixtime flow eventType =
+eventTypeAdded uuid when flow eventType =
     EventTypeAdded
         { eventType = eventType
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 eventAdded : Uuid -> Time.Posix -> EventFlow -> Process -> E.Event -> Event
-eventAdded uuid posixtime flow process event =
+eventAdded uuid when flow process event =
     EventAdded
         { event = event
         , process = process
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Set.DictSet String Uuid -> Event
-connectionInitiated uuid posixtime flow lastEventTime uuids =
+connectionInitiated uuid when flow lastEventTime uuids =
     ConnectionInitiated
         { lastEventTime = lastEventTime
         , uuids = uuids
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 groupAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
-groupAdded uuid posixtime flow name entity =
+groupAdded uuid when flow name entity =
     GroupAdded
         { name = name
         , entity = entity
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 groupRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
-groupRemoved uuid posixtime flow name entity =
+groupRemoved uuid when flow name entity =
     GroupRemoved
         { name = name
         , entity = entity
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 identifierAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Portion -> Event
-identifierAdded uuid posixtime flow name entity unique mandatory format =
+identifierAdded uuid when flow name entity unique mandatory format =
     IdentifierAdded
         { name = name
         , entity = entity
@@ -280,12 +280,22 @@ identifierAdded uuid posixtime flow name entity unique mandatory format =
         , mandatory = mandatory
         , format = format
         }
-        (EventBase uuid posixtime flow)
+        (EventBase uuid when flow)
 
 
 identifierRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-identifierRemoved uuid posixtime flow name =
-    IdentifierRemoved name (EventBase uuid posixtime flow)
+identifierRemoved uuid when flow name =
+    IdentifierRemoved name (EventBase uuid when flow)
+
+
+agentTypeAdded : Uuid -> Time.Posix -> EventFlow -> String -> Maybe String -> Event
+agentTypeAdded uuid when flow name type_ =
+    AgentTypeAdded { name = name, type_ = type_ } (EventBase uuid when flow)
+
+
+agentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
+agentTypeRemoved uuid when flow name =
+    AgentTypeRemoved name (EventBase uuid when flow)
 
 
 
@@ -297,55 +307,55 @@ encode event =
     case event of
         ProcessTypeChanged e b ->
             Encode.object
-                [ ( "type", Encode.string "ProcessTypeChanged" )
+                [ ( "what", Encode.string "ProcessTypeChanged" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "ptype", PT.encode e.ptype )
+                , ( "type", PT.encode e.name )
                 ]
 
         ProcessTypeRemoved e b ->
             Encode.object
-                [ ( "type", Encode.string "ProcessTypeRemoved" )
+                [ ( "what", Encode.string "ProcessTypeRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "ptype", Encode.string e.ptype )
+                , ( "name", Encode.string e )
                 ]
 
         ProcessAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "ProcessAdded" )
+                [ ( "what", Encode.string "ProcessAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "name", Encode.string e.name )
-                , ( "type_", Encode.string e.type_ )
+                , ( "type", Encode.string e.type_ )
                 ]
 
         CommitmentTypeAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "CommitmentTypeAdded" )
+                [ ( "what", Encode.string "CommitmentTypeAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "commitmentType", CT.encode e.commitmentType )
                 ]
 
         CommitmentTypeRemoved e b ->
             Encode.object
-                [ ( "type", Encode.string "CommitmentTypeRemoved" )
+                [ ( "what", Encode.string "CommitmentTypeRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "commitmentType", CT.encode e.commitmentType )
+                , ( "name", Encode.string e )
                 ]
 
         CommitmentAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "CommitmentAdded" )
+                [ ( "what", Encode.string "CommitmentAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "process", P.encode e.process )
                 , ( "commitment", C.encode e.commitment )
@@ -353,18 +363,18 @@ encode event =
 
         EventTypeAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "EventTypeAdded" )
+                [ ( "what", Encode.string "EventTypeAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "eventType", ET.encode e.eventType )
                 ]
 
         LinkedEventTypeToProcessType e b ->
             Encode.object
-                [ ( "type", Encode.string "LinkedEventTypeToProcessType" )
+                [ ( "what", Encode.string "LinkedEventTypeToProcessType" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "etype", Encode.string e.etype )
                 , ( "ptype", Encode.string e.ptype )
@@ -372,9 +382,9 @@ encode event =
 
         LinkedCommitmentTypeToProcessType e b ->
             Encode.object
-                [ ( "type", Encode.string "LinkedCommitmentTypeToProcessType" )
+                [ ( "what", Encode.string "LinkedCommitmentTypeToProcessType" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "ctype", Encode.string e.ctype )
                 , ( "ptype", Encode.string e.ptype )
@@ -382,18 +392,18 @@ encode event =
 
         EventTypeRemoved e b ->
             Encode.object
-                [ ( "type", Encode.string "EventTypeRemoved" )
+                [ ( "what", Encode.string "EventTypeRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "eventType", ET.encode e.eventType )
+                , ( "name", Encode.string e )
                 ]
 
         EventAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "EventAdded" )
+                [ ( "what", Encode.string "EventAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "process", P.encode e.process )
                 , ( "event", E.encode e.event )
@@ -401,9 +411,9 @@ encode event =
 
         ConnectionInitiated e b ->
             Encode.object
-                [ ( "type", Encode.string "ConnectionInitiated" )
+                [ ( "what", Encode.string "ConnectionInitiated" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
                 , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
@@ -411,9 +421,9 @@ encode event =
 
         GroupAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "GroupAdded" )
+                [ ( "what", Encode.string "GroupAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "name", Encode.string e.name )
                 , ( "entity", REA.Entity.encode e.entity )
@@ -421,9 +431,9 @@ encode event =
 
         GroupRemoved e b ->
             Encode.object
-                [ ( "type", Encode.string "GroupRemoved" )
+                [ ( "what", Encode.string "GroupRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "name", Encode.string e.name )
                 , ( "entity", REA.Entity.encode e.entity )
@@ -431,9 +441,9 @@ encode event =
 
         IdentifierAdded e b ->
             Encode.object
-                [ ( "type", Encode.string "IdentifierAdded" )
+                [ ( "what", Encode.string "IdentifierAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "name", Encode.string e.name )
                 , ( "entity", REA.Entity.encode e.entity )
@@ -444,9 +454,28 @@ encode event =
 
         IdentifierRemoved e b ->
             Encode.object
-                [ ( "type", Encode.string "IdentifierRemoved" )
+                [ ( "what", Encode.string "IdentifierRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
-                , ( "posixtime", Encode.int <| posixToMillis b.posixtime )
+                , ( "when", Encode.int <| posixToMillis b.when )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "name", Encode.string e )
+                ]
+
+        AgentTypeAdded e b ->
+            Encode.object
+                [ ( "what", Encode.string "AgentTypeAdded" )
+                , ( "uuid", Uuid.encode b.uuid )
+                , ( "when", Encode.int <| posixToMillis b.when )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "name", Encode.string e.name )
+                , ( "type", Maybe.map Encode.string e.type_ |> Maybe.withDefault Encode.null )
+                ]
+
+        AgentTypeRemoved e b ->
+            Encode.object
+                [ ( "what", Encode.string "AgentTypeRemoved" )
+                , ( "uuid", Uuid.encode b.uuid )
+                , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
                 , ( "name", Encode.string e )
                 ]
@@ -464,50 +493,50 @@ decoder =
         toPosix t =
             Decode.succeed (millisToPosix t)
     in
-    Decode.field "type" Decode.string
+    Decode.field "what" Decode.string
         |> andThen
             (\s ->
                 case s of
                     "ProcessTypeChanged" ->
                         Decode.map4 processTypeChanged
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "ptype" PT.decoder)
+                            (Decode.field "type" PT.decoder)
 
                     "ProcessTypeRemoved" ->
                         Decode.map4 processTypeRemoved
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "ptype" Decode.string)
+                            (Decode.field "type" Decode.string)
 
                     "ProcessAdded" ->
                         Decode.map5 processAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Decode.string)
-                            (Decode.field "type_" Decode.string)
+                            (Decode.field "type" Decode.string)
 
                     "CommitmentTypeAdded" ->
                         Decode.map4 commitmentTypeAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "commitmentType" CT.decoder)
 
                     "CommitmentTypeRemoved" ->
                         Decode.map4 commitmentTypeRemoved
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "commitmentType" CT.decoder)
+                            (Decode.field "name" Decode.string)
 
                     "CommitmentAdded" ->
                         Decode.map5 commitmentAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "process" P.decoder)
                             (Decode.field "commitment" C.decoder)
@@ -515,14 +544,14 @@ decoder =
                     "EventTypeAdded" ->
                         Decode.map4 eventTypeAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "eventType" ET.decoder)
 
                     "LinkedEventTypeToProcessType" ->
                         Decode.map5 linkedEventTypeToProcessType
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "etype" Decode.string)
                             (Decode.field "ptype" Decode.string)
@@ -530,7 +559,7 @@ decoder =
                     "LinkedCommitmentTypeToProcessType" ->
                         Decode.map5 linkedCommitmentTypeToProcessType
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "ctype" Decode.string)
                             (Decode.field "ptype" Decode.string)
@@ -538,14 +567,14 @@ decoder =
                     "EventTypeRemoved" ->
                         Decode.map4 eventTypeRemoved
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "eventType" ET.decoder)
+                            (Decode.field "name" Decode.string)
 
                     "EventAdded" ->
                         Decode.map5 eventAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "process" P.decoder)
                             (Decode.field "event" E.decoder)
@@ -553,7 +582,7 @@ decoder =
                     "ConnectionInitiated" ->
                         Decode.map5 connectionInitiated
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
                             (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
@@ -561,7 +590,7 @@ decoder =
                     "GroupAdded" ->
                         Decode.map5 groupAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Decode.string)
                             (Decode.field "entity" REA.Entity.decoder)
@@ -569,7 +598,7 @@ decoder =
                     "GroupRemoved" ->
                         Decode.map5 groupRemoved
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Decode.string)
                             (Decode.field "entity" REA.Entity.decoder)
@@ -577,7 +606,7 @@ decoder =
                     "IdentifierAdded" ->
                         Decode.map8 identifierAdded
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Decode.string)
                             (Decode.field "entity" REA.Entity.decoder)
@@ -588,7 +617,22 @@ decoder =
                     "IdentifierRemoved" ->
                         Decode.map4 identifierRemoved
                             (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "posixtime" Decode.int |> andThen toPosix)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "name" Decode.string)
+
+                    "AgentTypeAdded" ->
+                        Decode.map5 agentTypeAdded
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "name" Decode.string)
+                            (Decode.field "type" (Decode.maybe Decode.string))
+
+                    "AgentTypeRemoved" ->
+                        Decode.map4 agentTypeRemoved
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Decode.string)
 

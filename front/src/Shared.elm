@@ -333,7 +333,7 @@ initiateConnection uuid model =
                         { lastEventTime = model.state.lastEventTime
                         , uuids = Set.insert uuid model.state.uuids
                         }
-                        { uuid = uuid, posixtime = t, flow = Flow.Requested }
+                        { uuid = uuid, when = t, flow = Flow.Requested }
             )
             Time.now
 
@@ -350,7 +350,7 @@ dispatch model payload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| payload { uuid = newUuid, posixtime = t, flow = Flow.Requested })
+                (\t -> List.singleton <| payload { uuid = newUuid, when = t, flow = Flow.Requested })
                 Time.now
 
 
@@ -366,7 +366,7 @@ dispatchT model payload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| payload newUuid t { uuid = newUuid, posixtime = t, flow = Flow.Requested })
+                (\t -> List.singleton <| payload newUuid t { uuid = newUuid, when = t, flow = Flow.Requested })
                 Time.now
 
 

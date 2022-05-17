@@ -9,6 +9,7 @@ import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Decode exposing (andThen)
 import Prng.Uuid as Uuid exposing (Uuid)
+import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
@@ -43,6 +44,7 @@ type alias State =
     , processType_eventTypes : DictSet String ProcessTypeEventType
     , groups : DictSet String Group
     , identifiers : DictSet String Identifier
+    , agentTypes : DictSet String AgentType
     }
 
 
@@ -63,6 +65,7 @@ empty =
     , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
     , identifiers = Set.empty I.compare
+    , agentTypes = Set.empty AT.compare
     }
 
 
@@ -71,16 +74,16 @@ aggregate event state =
     case event of
         ProcessTypeChanged e b ->
             { state
-                | processTypes = Set.insert e.ptype state.processTypes
-                , lastEventTime = b.posixtime
+                | processTypes = Set.insert e.name state.processTypes
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         ProcessTypeRemoved e b ->
             { state
-                | processTypes = Set.filter (\pt -> pt.name /= e.ptype) state.processTypes
-                , lastEventTime = b.posixtime
+                | processTypes = Set.filter (\pt -> pt.name /= e) state.processTypes
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -88,11 +91,11 @@ aggregate event state =
         ProcessAdded e b ->
             let
                 p =
-                    { uuid = b.uuid, posixtime = b.posixtime, name = e.name, type_ = e.type_ }
+                    { uuid = b.uuid, when = b.when, name = e.name, type_ = e.type_ }
             in
             { state
                 | processes = Set.insert p state.processes
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -100,15 +103,15 @@ aggregate event state =
         CommitmentTypeAdded e b ->
             { state
                 | commitmentTypes = Set.insert e.commitmentType state.commitmentTypes
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         CommitmentTypeRemoved e b ->
             { state
-                | commitmentTypes = Set.remove e.commitmentType state.commitmentTypes
-                , lastEventTime = b.posixtime
+                | commitmentTypes = Set.filter (\ct -> ct.name /= e) state.commitmentTypes
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -117,7 +120,7 @@ aggregate event state =
             { state
                 | commitments = Set.insert e.commitment state.commitments
                 , process_commitments = Set.insert { process = e.process.name, commitment = e.commitment.name } state.process_commitments
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -125,7 +128,7 @@ aggregate event state =
         EventTypeAdded e b ->
             { state
                 | eventTypes = Set.insert e.eventType state.eventTypes
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -137,7 +140,7 @@ aggregate event state =
             in
             { state
                 | processType_eventTypes = Set.insert ptet state.processType_eventTypes
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -149,15 +152,15 @@ aggregate event state =
             in
             { state
                 | processType_commitmentTypes = Set.insert ptct state.processType_commitmentTypes
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         EventTypeRemoved e b ->
             { state
-                | eventTypes = Set.remove e.eventType state.eventTypes
-                , lastEventTime = b.posixtime
+                | eventTypes = Set.filter (\et -> et.name /= e) state.eventTypes
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -166,14 +169,14 @@ aggregate event state =
             { state
                 | events = Set.insert e.event state.events
                 , process_events = Set.insert { process = e.process.name, event = e.event.name } state.process_events
-                , lastEventTime = b.posixtime
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         ConnectionInitiated e b ->
             { state
-                | lastEventTime = b.posixtime
+                | lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -181,6 +184,7 @@ aggregate event state =
         GroupAdded e b ->
             { state
                 | groups = Set.insert (Group e.name e.entity) state.groups
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -188,6 +192,7 @@ aggregate event state =
         GroupRemoved e b ->
             { state
                 | groups = Set.remove (Group e.name e.entity) state.groups
+                , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
             }
@@ -195,11 +200,37 @@ aggregate event state =
         IdentifierAdded e b ->
             { state
                 | identifiers = Set.insert e state.identifiers
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
         IdentifierRemoved e b ->
             { state
                 | identifiers = Set.filter (\i -> i.name /= e) state.identifiers
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        AgentTypeAdded e b ->
+            let
+                at =
+                    { name = e.name, type_ = e.type_ }
+            in
+            { state
+                | agentTypes = Set.insert at state.agentTypes
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        AgentTypeRemoved e b ->
+            { state
+                | agentTypes = Set.filter (\at -> at.name /= e) state.agentTypes
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
             }
 
 
@@ -228,10 +259,10 @@ getProcess state str =
 
 
 getEventTypes : State -> String -> DictSet String EventType
-getEventTypes state etype =
+getEventTypes state name =
     let
         etnames =
-            Set.filter (\ptet -> ptet.ptype == etype) state.processType_eventTypes
+            Set.filter (\ptet -> ptet.ptype == name) state.processType_eventTypes
                 |> Set.map identity (\ptet -> ptet.etype)
     in
     Set.filter (\et -> Set.member et.name etnames) state.eventTypes

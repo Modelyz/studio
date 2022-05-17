@@ -9,6 +9,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import Page exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.Identifier as I exposing (..)
 import REA.Identifier.Portion as Portion exposing (Portion(..))
@@ -20,6 +21,7 @@ import Style exposing (..)
 import View exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
+import View.TagList exposing (..)
 
 
 type Msg
@@ -46,7 +48,7 @@ type alias Model =
     , entity : Maybe Entity
     , unique : Bool
     , mandatory : Bool
-    , format : List Portion
+    , taglist : List Portion
     , warning : String
     , step : Step
     }
@@ -64,34 +66,6 @@ steps =
     [ Entity, Options, Format, Name ]
 
 
-checkEmptyString : String -> String -> Result String String
-checkEmptyString field err =
-    if String.isEmpty field then
-        Err err
-
-    else
-        Ok field
-
-
-checkEmptyList : List a -> String -> Result String (List a)
-checkEmptyList field err =
-    if List.isEmpty field then
-        Err err
-
-    else
-        Ok field
-
-
-checkNothing : Maybe a -> String -> Result String a
-checkNothing field err =
-    case field of
-        Nothing ->
-            Err err
-
-        Just x ->
-            Ok x
-
-
 validate : Model -> Result String Identifier
 validate m =
     Result.map5
@@ -100,7 +74,7 @@ validate m =
         (checkNothing m.entity "You must select an entity")
         (Ok m.unique)
         (Ok m.mandatory)
-        (Ok m.format)
+        (Ok m.taglist)
 
 
 indexOf : a -> List a -> Maybe Int
@@ -163,7 +137,7 @@ init s f =
       , entity = Nothing
       , unique = False
       , mandatory = False
-      , format = []
+      , taglist = []
       , warning = ""
       , step = Entity
       }
@@ -187,7 +161,7 @@ update s msg model =
             ( { model | mandatory = x }, Effect.none )
 
         InputFormat x ->
-            ( { model | format = x }, Effect.none )
+            ( { model | taglist = x }, Effect.none )
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
@@ -249,7 +223,7 @@ buttonNext model =
             button.primary NextPage "Next →"
 
         Format ->
-            case checkEmptyList model.format "The format is still empty" of
+            case checkEmptyList model.taglist "The format is still empty" of
                 Ok _ ->
                     button.primary NextPage "Next →"
 
@@ -325,47 +299,14 @@ viewContent model s =
                         ]
 
                 Format ->
-                    column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                            h2 "Format:"
-                                :: List.append
-                                    (if List.isEmpty model.format then
-                                        [ el [ padding 5, Font.color color.text.disabled ] (text "Empty") ]
-
-                                     else
-                                        []
-                                    )
-                                    (List.indexedMap
-                                        (\i p ->
-                                            row [ Background.color color.item.selected ]
-                                                [ el [ padding 5 ] (text <| Portion.toString p)
-                                                , button.secondary
-                                                    (InputFormat
-                                                        (model.format
-                                                            |> List.indexedMap Tuple.pair
-                                                            |> List.filter (\( j, _ ) -> j /= i)
-                                                            |> List.map Tuple.second
-                                                        )
-                                                    )
-                                                    "×"
-                                                ]
-                                        )
-                                        model.format
-                                    )
-                        , h2 "Construct the format of your identifier by clicking on the items below"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
-                            List.map
-                                (\p ->
-                                    column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 250), height (px 150) ]
-                                        [ row [ alignLeft ]
-                                            [ button.primary (InputFormat <| model.format ++ [ p ]) "+"
-                                            , el [ paddingXY 10 0 ] (text <| Portion.toString p)
-                                            ]
-                                        , paragraph [ padding 10, Font.size size.text.main ] [ text <| Portion.toDesc p ]
-                                        ]
-                                )
-                                Portion.all
-                        ]
+                    taglist model
+                        { all = Portion.all
+                        , toString = Portion.toString
+                        , toDesc = Portion.toDesc
+                        , inputmsg = InputFormat
+                        , label = "Format: "
+                        , explain = h2 "Construct the format of your identifier by clicking on the items below"
+                        }
 
                 Name ->
                     el [ alignTop ] <|

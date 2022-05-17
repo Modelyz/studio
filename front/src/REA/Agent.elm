@@ -9,7 +9,7 @@ import REA.AgentType as AT exposing (AgentType)
 type alias Agent =
     { name : String
     , uuid : Prng.Uuid.Uuid
-    , atype : AgentType
+    , type_ : AgentType
     }
 
 
@@ -18,7 +18,7 @@ encode a =
     Json.Encode.object
         [ ( "name", Json.Encode.string a.name )
         , ( "uuid", Prng.Uuid.encode a.uuid )
-        , ( "atype", AT.encode a.atype )
+        , ( "type", AT.encode a.type_ )
         ]
 
 
@@ -27,4 +27,4 @@ decoder =
     Json.Decode.map3 Agent
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "atype" AT.decoder)
+        (Json.Decode.field "type" AT.decoder)

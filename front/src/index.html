@@ -67,7 +67,7 @@ const store = function(send) {
                 alert("IndexedDB transaction error while storing events:" + transaction.error) // FIXME send error to elm
             }
             events.forEach(function(event) {
-                console.log("JS IDB events.forEach transaction.objectStore('events').add(event): " + event.type)
+                console.log("JS IDB events.forEach transaction.objectStore('events').add(event): " + event.what)
                 const addrequest = transaction.objectStore('events').add(event)
                 addrequest.onsuccess = (e) => {
                     if (send) {

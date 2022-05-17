@@ -7,5 +7,5 @@ import REA.ResourceType exposing (ResourceType)
 type alias Resource =
     { name : String
     , uuid : Uuid
-    , rtype : ResourceType
+    , type_ : String
     }

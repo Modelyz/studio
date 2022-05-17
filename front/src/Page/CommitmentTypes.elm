@@ -26,7 +26,7 @@ type alias Model =
 
 
 type Msg
-    = Removed CommitmentType
+    = Removed String
     | Added ( CommitmentType, List ProcessType )
     | GotInput Form
     | Warning String
@@ -40,7 +40,7 @@ type alias Flags =
 
 type alias Form =
     { name : String
-    , ctype : Maybe String
+    , type_ : Maybe String
     , processTypes : DictSet String String
     , warning : String
     }
@@ -49,7 +49,7 @@ type alias Form =
 empty : Form
 empty =
     { name = ""
-    , ctype = Nothing
+    , type_ = Nothing
     , processTypes = Set.empty identity
     , warning = ""
     }
@@ -63,7 +63,7 @@ validate f =
 
     else
         Just
-            ( { name = f.name, ctype = f.ctype }
+            ( { name = f.name, type_ = f.type_ }
             , f.processTypes |> Set.toList |> List.map (\pt -> { name = pt })
             )
 
@@ -104,18 +104,18 @@ update s msg model =
                 | form = empty
               }
             , Shared.dispatchMany s <|
-                Event.CommitmentTypeAdded { commitmentType = CommitmentType ctype.name ctype.ctype }
+                Event.CommitmentTypeAdded { commitmentType = CommitmentType ctype.name ctype.type_ }
                     :: List.map (\pt -> Event.LinkedCommitmentTypeToProcessType { ctype = ctype.name, ptype = pt.name }) ptypes
             )
 
-        Removed ctype ->
+        Removed name ->
             let
                 form =
                     model.form
             in
             -- TODO UnlinkedCommitmentTypeToProcessType ?
             ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.CommitmentTypeRemoved { commitmentType = ctype }
+            , Shared.dispatch s <| Event.CommitmentTypeRemoved name
             )
 
         Warning w ->
@@ -169,7 +169,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.commitmentTypes
                         |> Set.toList
-                        |> List.map (\pt -> viewSmallCard (Removed pt) pt.name "")
+                        |> List.map (\pt -> viewSmallCard (Removed pt.name) pt.name "")
                     )
                 , column
                     [ spacing 20 ]

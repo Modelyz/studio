@@ -26,7 +26,7 @@ type alias Model =
 
 
 type Msg
-    = Removed EventType
+    = Removed String
     | Added ( EventType, List ProcessType )
     | GotInput Form
     | Warning String
@@ -40,7 +40,7 @@ type alias Flags =
 
 type alias Form =
     { name : String
-    , etype : Maybe String
+    , type_ : Maybe String
     , processTypes : DictSet String String
     , warning : String
     }
@@ -48,7 +48,7 @@ type alias Form =
 
 empty : Form
 empty =
-    { name = "", etype = Nothing, processTypes = Set.empty identity, warning = "" }
+    { name = "", type_ = Nothing, processTypes = Set.empty identity, warning = "" }
 
 
 validate : Form -> Maybe ( EventType, List ProcessType )
@@ -59,7 +59,7 @@ validate f =
 
     else
         Just
-            ( { name = f.name, etype = f.etype }
+            ( { name = f.name, type_ = f.type_ }
             , f.processTypes |> Set.toList |> List.map (\pt -> { name = pt })
             )
 
@@ -100,7 +100,7 @@ update s msg model =
                 | form = empty
               }
             , Shared.dispatchMany s <|
-                Event.EventTypeAdded { eventType = EventType etype.name etype.etype }
+                Event.EventTypeAdded { eventType = EventType etype.name etype.type_ }
                     :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = etype.name, ptype = pt.name }) ptypes
             )
 
@@ -111,7 +111,7 @@ update s msg model =
             in
             -- TODO UnlinkedEventTypeToProcessType ?
             ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.EventTypeRemoved { eventType = etype }
+            , Shared.dispatch s <| Event.EventTypeRemoved etype
             )
 
         Warning w ->
@@ -165,7 +165,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.eventTypes
                         |> Set.toList
-                        |> List.map (\pt -> viewSmallCard (Removed pt) pt.name "")
+                        |> List.map (\pt -> viewSmallCard (Removed pt.name) pt.name "")
                     )
                 , column
                     [ spacing 20 ]

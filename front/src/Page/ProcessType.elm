@@ -69,11 +69,11 @@ update s msg model =
             in
             ( { model | inputProcessType = { ptype | name = name } }, Effect.none )
 
-        ProcessTypeChanged ptype ->
+        ProcessTypeChanged name ->
             ( { model
                 | inputProcessType = { name = "" }
               }
-            , Shared.dispatch s <| Event.ProcessTypeChanged { ptype = ptype }
+            , Shared.dispatch s <| Event.ProcessTypeChanged { name = name }
             )
 
 

@@ -10,8 +10,8 @@ import Time exposing (millisToPosix, posixToMillis)
 type alias Event =
     { name : String
     , uuid : Uuid
-    , posixtime : Time.Posix
-    , etype : EventType
+    , when : Time.Posix
+    , type_ : EventType
 
     --    , qty: Float
     --    , rtype: ResourceType
@@ -21,11 +21,11 @@ type alias Event =
 
 
 new : String -> Uuid -> Time.Posix -> EventType -> Event
-new name uuid posixtime etype =
+new name uuid when type_ =
     { name = name
     , uuid = uuid
-    , posixtime = posixtime
-    , etype = etype
+    , when = when
+    , type_ = type_
     }
 
 
@@ -34,8 +34,8 @@ encode e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "uuid", Uuid.encode e.uuid )
-        , ( "posixtime", Encode.int <| posixToMillis e.posixtime )
-        , ( "etype", ET.encode e.etype )
+        , ( "when", Encode.int <| posixToMillis e.when )
+        , ( "type", ET.encode e.type_ )
         ]
 
 
@@ -44,10 +44,10 @@ decoder =
     Decode.map4 Event
         (Decode.field "name" Decode.string)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "posixtime" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.field "etype" ET.decoder)
+        (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "type" ET.decoder)
 
 
 compare : Event -> Int
 compare =
-    .posixtime >> posixToMillis
+    .when >> posixToMillis

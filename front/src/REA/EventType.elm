@@ -7,7 +7,7 @@ import Maybe exposing (Maybe(..))
 
 type alias EventType =
     { name : String
-    , etype : Maybe String
+    , type_ : Maybe String
     }
 
 
@@ -15,14 +15,7 @@ encode : EventType -> Encode.Value
 encode et =
     Encode.object
         [ ( "name", Encode.string et.name )
-        , ( "etype"
-          , case et.etype of
-                Nothing ->
-                    Encode.null
-
-                Just t ->
-                    Encode.string t
-          )
+        , ( "type", Maybe.map Encode.string et.type_ |> Maybe.withDefault Encode.null )
         ]
 
 
@@ -30,7 +23,7 @@ decoder : Decoder EventType
 decoder =
     Decode.map2 EventType
         (Decode.field "name" Decode.string)
-        (Decode.maybe <| Decode.field "etype" Decode.string)
+        (Decode.maybe <| Decode.field "type" Decode.string)
 
 
 compare : EventType -> String

@@ -15,7 +15,7 @@ type Time = Int
 type Uuid = String -- uuid as a string generated in Elm
 
 isType :: T.Text -> Event -> Bool
-isType t ev = getString "type" ev == Just t
+isType t ev = getString "what" ev == Just t
 
 excludeType :: T.Text -> [Event] -> [Event]
 excludeType t = filter (\ev -> not $ isType t ev)

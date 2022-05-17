@@ -24,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed ProcessType
+    = Removed String
     | Added ProcessType
     | GotInput Form
     | Warning String
@@ -83,11 +83,11 @@ update s msg model =
         GotInput form ->
             ( { model | form = form }, Effect.none )
 
-        Added ptype ->
+        Added name ->
             ( { model
                 | form = empty
               }
-            , Shared.dispatch s <| Event.ProcessTypeChanged { ptype = ptype }
+            , Shared.dispatch s <| Event.ProcessTypeChanged { name = name }
             )
 
         Removed ptype ->
@@ -96,7 +96,7 @@ update s msg model =
                     model.form
             in
             ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.ProcessTypeRemoved { ptype = ptype.name }
+            , Shared.dispatch s <| Event.ProcessTypeRemoved ptype
             )
 
         Warning w ->
@@ -123,7 +123,7 @@ viewThumbnail pt =
         [ row
             [ htmlAttribute <| Attr.id pt.name ]
             [ Input.button []
-                { onPress = Just <| Removed pt, label = text pt.name }
+                { onPress = Just <| Removed pt.name, label = text pt.name }
             ]
         ]
 
@@ -148,7 +148,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.processTypes
                         |> Set.toList
-                        |> List.map (\pt -> viewSmallCard (Removed pt) pt.name "")
+                        |> List.map (\pt -> viewSmallCard (Removed pt.name) pt.name "")
                     )
                 , column
                     [ spacing 20 ]

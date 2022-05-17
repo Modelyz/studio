@@ -8,7 +8,9 @@ import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
+import Page.AddAgentType
 import Page.AddIdentifier
+import Page.AgentTypes
 import Page.CommitmentTypes
 import Page.EventTypes
 import Page.Groups
@@ -115,6 +117,8 @@ main =
         |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
         |> Spa.addPublicPage mappers Page.Identifiers.match Page.Identifiers.page
         |> Spa.addPublicPage mappers Page.AddIdentifier.match Page.AddIdentifier.page
+        |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
+        |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
             , init = Shared.init
