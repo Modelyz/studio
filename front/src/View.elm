@@ -6,6 +6,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -76,26 +77,25 @@ hamburger title s =
                 Shared.ToggleMenu
     in
     row []
-        [ Input.button
-            [ Background.color color.button.primary, padding 10 ]
-            { onPress = Just msg
-            , label =
-                column
-                    [ width (px 40)
-                    , alignTop
-                    , spacing 5
-                    , Background.color color.navbar.background
+        [ column
+            [ width (px 40)
+            , alignTop
+            , spacing 5
+            , Background.color color.navbar.background
+            , paddingEach { left = 10, top = 10, right = 50, bottom = 10 }
+            , Events.onClick Shared.ToggleMenu
+            , pointer
+            ]
+            (List.repeat 3 <|
+                row
+                    [ width (px 30)
+                    , height (px 4)
+                    , Font.color color.navbar.text
+                    , Background.color color.navbar.text
+                    , Border.rounded 2
                     ]
-                    (List.repeat 3 <|
-                        row
-                            [ width (px 30)
-                            , height (px 3)
-                            , Font.color color.navbar.text
-                            , Background.color color.navbar.text
-                            ]
-                            []
-                    )
-            }
+                    []
+            )
         , text title
         ]
 
@@ -108,6 +108,7 @@ topbar s title =
             , Border.color color.topbar.border
             , width fill
             , padding 10
+            , height (px 42)
             , Font.size size.text.topbar
             , Background.color color.topbar.background
             ]
