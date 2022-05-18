@@ -216,6 +216,5 @@ viewContent model s =
     cardContent s
         "Adding an Agent Type"
         buttons
-        [ el [ alignTop, alignLeft ] (h3 "Adding an Agent Type")
-        , step
+        [ step
         ]

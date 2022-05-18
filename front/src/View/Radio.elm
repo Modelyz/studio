@@ -25,6 +25,6 @@ view config =
         ]
         { onChange = config.msg
         , selected = config.selected
-        , label = Input.labelAbove [ paddingXY 0 10 ] <| text config.title
+        , label = Input.labelAbove [ paddingXY 0 20 ] <| text config.title
         , options = List.map (\( o, t ) -> Input.option o <| text t) config.options
         }

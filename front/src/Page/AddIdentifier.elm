@@ -325,6 +325,5 @@ viewContent model s =
     cardContent s
         "Adding an identifier"
         buttons
-        [ el [ alignTop, alignLeft ] (h3 "Adding an identifier")
-        , step
+        [ step
         ]
