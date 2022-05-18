@@ -77,37 +77,6 @@ validate m =
         (Ok m.taglist)
 
 
-indexOf : a -> List a -> Maybe Int
-indexOf x =
-    -- 1st index is 1
-    List.indexedMap Tuple.pair >> List.filter (\z -> x == Tuple.second z) >> List.head >> Maybe.map Tuple.first
-
-
-getItem : Int -> List a -> Maybe a
-getItem i =
-    List.indexedMap Tuple.pair >> List.filter (\x -> i == Tuple.first x) >> List.head >> Maybe.map Tuple.second
-
-
-previous : a -> List a -> Maybe a
-previous x xs =
-    indexOf x xs |> Maybe.andThen (\i -> getItem (i - 1) xs)
-
-
-next : a -> List a -> Maybe a
-next x xs =
-    indexOf x xs |> Maybe.andThen (\i -> getItem (i + 1) xs)
-
-
-isLast : a -> List a -> Bool
-isLast x xs =
-    indexOf x xs |> Maybe.map ((==) (List.length xs - 1)) |> Maybe.withDefault False
-
-
-isFirst : a -> List a -> Bool
-isFirst x xs =
-    indexOf x xs |> Maybe.map ((==) 0) |> Maybe.withDefault False
-
-
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
