@@ -152,16 +152,16 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        StepName ->
-            button.primary NextPage "Next →"
-
         StepAgentType ->
+            button.primary Added "Validate and add the Agent Type"
+
+        StepName ->
             case checkEmptyString model.name "Please choose a name" of
                 Ok _ ->
-                    button.primary Added "Validate and add the Agent Type"
+                    button.primary NextPage "Next →"
 
                 Err err ->
-                    button.disabled err "Validate and add the Agent Type"
+                    button.disabled err "Next →"
 
 
 viewContent : Model -> Shared.Model -> Element Msg
