@@ -11,8 +11,8 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Entity exposing (Entity)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
-import REA.Identifier as Identifier exposing (Identifier)
-import REA.Identifier.Portion as Portion exposing (Portion)
+import REA.Identification as Identification exposing (Identification)
+import REA.Identification.Portion as Portion exposing (Portion)
 import REA.Process as P exposing (Process)
 import REA.ProcessType as PT exposing (ProcessType)
 import Result exposing (Result(..))
@@ -67,8 +67,8 @@ type Event
     | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String } EventBase
     | GroupAdded { name : String, entity : Entity } EventBase
     | GroupRemoved { name : String, entity : Entity } EventBase
-    | IdentifierAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, format : List Portion } EventBase
-    | IdentifierRemoved String EventBase --TODO also simplify other *Removed
+    | IdentificationAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, format : List Portion } EventBase
+    | IdentificationRemoved String EventBase --TODO also simplify other *Removed
     | AgentTypeAdded { name : String, type_ : Maybe String } EventBase
     | AgentTypeRemoved String EventBase
     | AgentAdded { name : Uuid, type_ : String } EventBase
@@ -120,10 +120,10 @@ base event =
         GroupRemoved _ b ->
             b
 
-        IdentifierAdded _ b ->
+        IdentificationAdded _ b ->
             b
 
-        IdentifierRemoved _ b ->
+        IdentificationRemoved _ b ->
             b
 
         AgentTypeAdded _ b ->
@@ -279,9 +279,9 @@ groupRemoved uuid when flow name entity =
         (EventBase uuid when flow)
 
 
-identifierAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Portion -> Event
-identifierAdded uuid when flow name entity unique mandatory format =
-    IdentifierAdded
+identificationAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Portion -> Event
+identificationAdded uuid when flow name entity unique mandatory format =
+    IdentificationAdded
         { name = name
         , entity = entity
         , unique = unique
@@ -291,9 +291,9 @@ identifierAdded uuid when flow name entity unique mandatory format =
         (EventBase uuid when flow)
 
 
-identifierRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-identifierRemoved uuid when flow name =
-    IdentifierRemoved name (EventBase uuid when flow)
+identificationRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
+identificationRemoved uuid when flow name =
+    IdentificationRemoved name (EventBase uuid when flow)
 
 
 agentTypeAdded : Uuid -> Time.Posix -> EventFlow -> String -> Maybe String -> Event
@@ -457,9 +457,9 @@ encode event =
                 , ( "entity", REA.Entity.encode e.entity )
                 ]
 
-        IdentifierAdded e b ->
+        IdentificationAdded e b ->
             Encode.object
-                [ ( "what", Encode.string "IdentifierAdded" )
+                [ ( "what", Encode.string "IdentificationAdded" )
                 , ( "uuid", Uuid.encode b.uuid )
                 , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
@@ -470,9 +470,9 @@ encode event =
                 , ( "format", Encode.list Portion.encode e.format )
                 ]
 
-        IdentifierRemoved e b ->
+        IdentificationRemoved e b ->
             Encode.object
-                [ ( "what", Encode.string "IdentifierRemoved" )
+                [ ( "what", Encode.string "IdentificationRemoved" )
                 , ( "uuid", Uuid.encode b.uuid )
                 , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
@@ -640,8 +640,8 @@ decoder =
                             (Decode.field "name" Decode.string)
                             (Decode.field "entity" REA.Entity.decoder)
 
-                    "IdentifierAdded" ->
-                        Decode.map8 identifierAdded
+                    "IdentificationAdded" ->
+                        Decode.map8 identificationAdded
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
@@ -651,8 +651,8 @@ decoder =
                             (Decode.field "mandatory" Decode.bool)
                             (Decode.field "format" (Decode.list Portion.decoder))
 
-                    "IdentifierRemoved" ->
-                        Decode.map4 identifierRemoved
+                    "IdentificationRemoved" ->
+                        Decode.map4 identificationRemoved
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)

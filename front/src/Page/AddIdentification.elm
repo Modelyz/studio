@@ -1,4 +1,4 @@
-module Page.AddIdentifier exposing (..)
+module Page.AddIdentification exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -10,8 +10,8 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.Identifier as I exposing (..)
-import REA.Identifier.Portion as Portion exposing (Portion(..))
+import REA.Identification as I exposing (..)
+import REA.Identification.Portion as Portion exposing (Portion(..))
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -62,10 +62,10 @@ type Step
     | Format
 
 
-validate : Model -> Result String Identifier
+validate : Model -> Result String Identification
 validate m =
     Result.map5
-        Identifier
+        Identification
         (checkEmptyString m.name "The name is Empty")
         (checkNothing m.entity "You must select an entity")
         (Ok m.unique)
@@ -85,9 +85,9 @@ page s =
 
 match : Route -> Maybe Flags
 match route =
-    -- TODO give the entity to create through the flags? /add/identifier?step=2
+    -- TODO give the entity to create through the flags? /add/identification?step=2
     case route of
-        Route.AddIdentifier ->
+        Route.AddIdentification ->
             Just { route = route }
 
         _ ->
@@ -97,7 +97,7 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
-      , previous = Route.Identifiers
+      , previous = Route.Identifications
       , name = ""
       , entity = Nothing
       , unique = False
@@ -137,8 +137,8 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.IdentifierAdded i
-                        , goTo s Route.Identifiers
+                        [ Shared.dispatch s <| Event.IdentificationAdded i
+                        , goTo s Route.Identifications
                         ]
                     )
 
@@ -151,7 +151,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Identifiers )
+                    ( model, goTo s Route.Identifications )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -159,15 +159,15 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Identifiers )
+                    ( model, goTo s Route.Identifications )
 
         Cancel ->
-            ( model, goTo s Route.Identifiers )
+            ( model, goTo s Route.Identifications )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Identifier"
+    { title = "Adding an Identification"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -244,7 +244,7 @@ viewContent model s =
                                 { onChange = InputMandatory
                                 , icon = Input.defaultCheckbox
                                 , checked = model.mandatory
-                                , label = Input.labelRight [] <| text "This identifier is mandatory"
+                                , label = Input.labelRight [] <| text "This identification is mandatory"
                                 }
                             ]
                         ]
@@ -256,7 +256,7 @@ viewContent model s =
                         , toDesc = Portion.toDesc
                         , inputmsg = InputFormat
                         , label = "Format: "
-                        , explain = h2 "Construct the format of your identifier by clicking on the items below"
+                        , explain = h2 "Construct the format of your identification by clicking on the items below"
                         }
 
                 Step.Step Name ->
@@ -270,11 +270,11 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifier"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identification"
                             }
     in
     cardContent s
-        "Adding an identifier"
+        "Adding an identification"
         buttons
         [ step
         ]

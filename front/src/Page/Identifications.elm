@@ -1,4 +1,4 @@
-module Page.Identifiers exposing (match, page, view)
+module Page.Identifications exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -9,8 +9,8 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.Identifier as I exposing (..)
-import REA.Identifier.Portion as Portion exposing (Portion(..))
+import REA.Identification as I exposing (..)
+import REA.Identification.Portion as Portion exposing (Portion(..))
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -47,7 +47,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Identifiers ->
+        Route.Identifications ->
             Just { route = route }
 
         _ ->
@@ -64,34 +64,34 @@ update s msg model =
     case msg of
         Removed i ->
             ( model
-            , Shared.dispatch s <| Event.IdentifierRemoved i
+            , Shared.dispatch s <| Event.IdentificationRemoved i
             )
 
         Add ->
-            ( model, goTo s Route.AddIdentifier )
+            ( model, goTo s Route.AddIdentification )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Identifiers"
+    { title = "Identifications"
     , attributes = []
     , element = viewContent model
-    , route = Route.Identifiers
+    , route = Route.Identifications
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "Identifiers"
+        "Identifications"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.identifiers
+            (s.state.identifications
                 |> Set.toList
                 |> List.sortBy .name
                 |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
-                |> withDefaultContent (p "There are no Identifiers yet. Create your first one!")
+                |> withDefaultContent (p "There are no Identifications yet. Create your first one!")
             )
         ]

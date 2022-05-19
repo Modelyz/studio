@@ -81,6 +81,6 @@ viewContent =
             , cell "Commitment Types" "commitment-types"
             , cell "Contract Types" "contract-types"
             , cell "Groups" "groups"
-            , cell "Identifiers" "identifiers"
+            , cell "Identifications" "identifications"
             ]
         ]

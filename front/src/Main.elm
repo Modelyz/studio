@@ -10,14 +10,14 @@ import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Page.AddAgent
 import Page.AddAgentType
-import Page.AddIdentifier
+import Page.AddIdentification
 import Page.AgentTypes
 import Page.Agents
 import Page.CommitmentTypes
 import Page.EventTypes
 import Page.Groups
 import Page.Home
-import Page.Identifiers
+import Page.Identifications
 import Page.Process
 import Page.ProcessType
 import Page.ProcessTypes
@@ -117,8 +117,8 @@ main =
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
         |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
-        |> Spa.addPublicPage mappers Page.Identifiers.match Page.Identifiers.page
-        |> Spa.addPublicPage mappers Page.AddIdentifier.match Page.AddIdentifier.page
+        |> Spa.addPublicPage mappers Page.Identifications.match Page.Identifications.page
+        |> Spa.addPublicPage mappers Page.AddIdentification.match Page.AddIdentification.page
         |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
         |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
         |> Spa.addPublicPage mappers Page.Agents.match Page.Agents.page

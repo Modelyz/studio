@@ -1,11 +1,11 @@
-module REA.Identifier.Portion exposing (..)
+module REA.Identification.Portion exposing (..)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
 
 
 
-{- A Portion is a part of a generated identifier
+{- A Portion is a part of a generated identification
 
    It can be :
 
@@ -151,7 +151,7 @@ toDesc p =
             "A sequence number"
 
         Existing str ->
-            "An existing identifier"
+            "An existing identification"
 
         YYYY ->
             "The year on 4 digits"

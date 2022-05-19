@@ -50,10 +50,7 @@ type alias Model =
 
 type Step
     = StepType
-
-
-
---| StepIdentifiers
+    | StepIdentifications
 
 
 validate : Model -> Result String Agent
@@ -95,7 +92,7 @@ init s f =
       , name = newUuid
       , warning = ""
       , step = Step.Step StepType
-      , steps = [ Step.Step StepType ]
+      , steps = [ Step.Step StepType, Step.Step StepIdentifications ]
       }
     , closeMenu s
     )
@@ -158,10 +155,8 @@ buttonNext model =
         Step.Step StepType ->
             nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a name")
 
-
-
---        Step.Step StepIdentifiers ->
---            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
+        Step.Step StepIdentifications ->
+            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
