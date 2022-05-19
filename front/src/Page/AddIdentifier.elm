@@ -9,7 +9,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import Page exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.Identifier as I exposing (..)
 import REA.Identifier.Portion as Portion exposing (Portion(..))
@@ -50,7 +49,8 @@ type alias Model =
     , mandatory : Bool
     , taglist : List Portion
     , warning : String
-    , step : Step
+    , step : View.Step Step
+    , steps : List (View.Step Step)
     }
 
 
@@ -59,11 +59,6 @@ type Step
     | Entity
     | Options
     | Format
-
-
-steps : List Step
-steps =
-    [ Entity, Options, Format, Name ]
 
 
 validate : Model -> Result String Identifier
@@ -108,7 +103,8 @@ init s f =
       , mandatory = False
       , taglist = []
       , warning = ""
-      , step = Entity
+      , steps = [ View.Step Entity, View.Step Options, View.Step Format, View.Step Name ]
+      , step = View.Step Entity
       }
     , closeMenu s
     )
@@ -149,7 +145,7 @@ update s msg model =
                     ( { model | warning = err }, Effect.none )
 
         PreviousPage ->
-            case previous model.step steps of
+            case previousStep model.step model.steps of
                 Just x ->
                     ( { model | step = x }, Effect.none )
 
@@ -157,7 +153,7 @@ update s msg model =
                     ( model, goTo s Route.Identifiers )
 
         NextPage ->
-            case next model.step steps of
+            case nextStep model.step model.steps of
                 Just x ->
                     ( { model | step = x }, Effect.none )
 
@@ -180,32 +176,17 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        Entity ->
-            case checkNothing model.entity "Please select an Entity" of
-                Ok _ ->
-                    button.primary NextPage "Next →"
+        View.Step Entity ->
+            nextOrValidate model NextPage Added (checkNothing model.entity "Please select an Entity")
 
-                Err err ->
-                    button.disabled err "Next →"
+        View.Step Options ->
+            nextOrValidate model NextPage Added (Ok model.name)
 
-        Options ->
-            button.primary NextPage "Next →"
+        View.Step Format ->
+            nextOrValidate model NextPage Added (checkEmptyList model.taglist "The format is still empty")
 
-        Format ->
-            case checkEmptyList model.taglist "The format is still empty" of
-                Ok _ ->
-                    button.primary NextPage "Next →"
-
-                Err err ->
-                    button.disabled err "Next →"
-
-        Name ->
-            case checkEmptyString model.name "Please choose a name" of
-                Ok _ ->
-                    button.primary Added "Validate and add the identifier"
-
-                Err err ->
-                    button.disabled err "Validate and add the identifier"
+        View.Step Name ->
+            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -214,7 +195,7 @@ viewContent model s =
         buttons : List (Element Msg)
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
-                [ (if isFirst model.step steps then
+                [ (if isFirst model.step model.steps then
                     button.disabled "This is the first page"
 
                    else
@@ -233,7 +214,7 @@ viewContent model s =
 
         step =
             case model.step of
-                Entity ->
+                View.Step Entity ->
                     row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                         [ Radio.view
                             { title = "Apply to Which Entity?"
@@ -244,7 +225,7 @@ viewContent model s =
                             }
                         ]
 
-                Options ->
+                View.Step Options ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                         [ h3 "Options:"
                         , row [ Font.size size.text.main ]
@@ -267,7 +248,7 @@ viewContent model s =
                             ]
                         ]
 
-                Format ->
+                View.Step Format ->
                     taglist model
                         { all = Portion.all
                         , toString = Portion.toString
@@ -277,7 +258,7 @@ viewContent model s =
                         , explain = h2 "Construct the format of your identifier by clicking on the items below"
                         }
 
-                Name ->
+                View.Step Name ->
                     el [ alignTop ] <|
                         Input.text
                             [ width <| minimum 200 fill

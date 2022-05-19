@@ -9,7 +9,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import Page exposing (..)
 import REA.AgentType as AT exposing (AgentType)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -41,18 +40,14 @@ type alias Model =
     , name : String
     , flatselect : Maybe AgentType
     , warning : String
-    , step : Step
+    , step : View.Step Step
+    , steps : List (View.Step Step)
     }
 
 
 type Step
     = StepName
-    | StepAgentType
-
-
-steps : List Step
-steps =
-    [ StepName, StepAgentType ]
+    | StepType
 
 
 validate : Model -> Result String AgentType
@@ -89,7 +84,8 @@ init s f =
       , flatselect = Nothing
       , name = ""
       , warning = ""
-      , step = StepName
+      , steps = [ View.Step StepName, View.Step StepType ]
+      , step = View.Step StepName
       }
     , closeMenu s
     )
@@ -121,7 +117,7 @@ update s msg model =
                     ( { model | warning = err }, Effect.none )
 
         PreviousPage ->
-            case previous model.step steps of
+            case previousStep model.step model.steps of
                 Just x ->
                     ( { model | step = x }, Effect.none )
 
@@ -129,7 +125,7 @@ update s msg model =
                     ( model, goTo s Route.AgentTypes )
 
         NextPage ->
-            case next model.step steps of
+            case nextStep model.step model.steps of
                 Just x ->
                     ( { model | step = x }, Effect.none )
 
@@ -152,16 +148,11 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        StepAgentType ->
-            button.primary Added "Validate and add the Agent Type"
+        View.Step StepType ->
+            nextOrValidate model NextPage Added (Ok model.flatselect)
 
-        StepName ->
-            case checkEmptyString model.name "Please choose a name" of
-                Ok _ ->
-                    button.primary NextPage "Next →"
-
-                Err err ->
-                    button.disabled err "Next →"
+        View.Step StepName ->
+            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -170,7 +161,7 @@ viewContent model s =
         buttons : List (Element Msg)
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
-                [ (if isFirst model.step steps then
+                [ (if isFirst model.step model.steps then
                     button.disabled "This is the first page"
 
                    else
@@ -189,7 +180,7 @@ viewContent model s =
 
         step =
             case model.step of
-                StepAgentType ->
+                View.Step StepType ->
                     flatselect model
                         { all = Set.toList <| s.state.agentTypes
                         , toString = AT.toString
@@ -199,7 +190,7 @@ viewContent model s =
                         , explain = h2 "Choose the type of the new Agent Type (it can be hierarchical)"
                         }
 
-                StepName ->
+                View.Step StepName ->
                     el [ alignTop ] <|
                         Input.text
                             [ width <| minimum 200 fill
