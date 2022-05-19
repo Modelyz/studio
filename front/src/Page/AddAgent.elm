@@ -10,8 +10,10 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import Page exposing (..)
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
+import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -24,8 +26,7 @@ import View.Radio as Radio
 
 
 type Msg
-    = InputName String
-    | InputType (Maybe AgentType)
+    = InputType (Maybe AgentType)
     | Warning String
     | PreviousPage
     | NextPage
@@ -39,7 +40,7 @@ type alias Flags =
 
 type alias Model =
     { route : Route
-    , name : String
+    , name : Uuid
     , flatselect : Maybe AgentType
     , warning : String
     , step : Step
@@ -47,20 +48,19 @@ type alias Model =
 
 
 type Step
-    = StepName
-    | StepType
+    = StepType
 
 
 steps : List Step
 steps =
-    [ StepName, StepType ]
+    [ StepType ]
 
 
 validate : Model -> Result String Agent
 validate m =
     Result.map2
         Agent
-        (checkEmptyString m.name "The name is Empty")
+        (Ok m.name)
         (checkNothing m.flatselect "You must select an Agent Type" |> Result.map .name)
 
 
@@ -86,11 +86,15 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
+    let
+        ( newUuid, newSeed ) =
+            Random.step Uuid.generator s.currentSeed
+    in
     ( { route = f.route
       , flatselect = Nothing
-      , name = ""
+      , name = newUuid
       , warning = ""
-      , step = StepName
+      , step = StepType
       }
     , closeMenu s
     )
@@ -99,9 +103,6 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputName x ->
-            ( { model | name = x }, Effect.none )
-
         InputType x ->
             ( { model | flatselect = x }, Effect.none )
 
@@ -161,14 +162,6 @@ buttonNext model =
                 Err err ->
                     button.disabled err "Validate and add the Agent"
 
-        StepName ->
-            case checkEmptyString model.name "Please choose a name" of
-                Ok _ ->
-                    button.primary NextPage "Next →"
-
-                Err err ->
-                    button.disabled err "Next →"
-
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
@@ -204,20 +197,6 @@ viewContent model s =
                         , label = "Type"
                         , explain = h2 "Choose the Type of the new Agent"
                         }
-
-                StepName ->
-                    el [ alignTop ] <|
-                        Input.text
-                            [ width <| minimum 200 fill
-                            , Input.focusedOnLoad
-                            , View.onEnter NextPage
-                            ]
-                            { onChange = InputName
-                            , text = model.name
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Agent"
-                            }
     in
     cardContent s
         "Adding an Agent"

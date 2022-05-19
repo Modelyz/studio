@@ -71,8 +71,8 @@ type Event
     | IdentifierRemoved String EventBase --TODO also simplify other *Removed
     | AgentTypeAdded { name : String, type_ : Maybe String } EventBase
     | AgentTypeRemoved String EventBase
-    | AgentAdded { name : String, type_ : String } EventBase
-    | AgentRemoved String EventBase
+    | AgentAdded { name : Uuid, type_ : String } EventBase
+    | AgentRemoved Uuid EventBase
 
 
 base : Event -> EventBase
@@ -306,12 +306,12 @@ agentTypeRemoved uuid when flow name =
     AgentTypeRemoved name (EventBase uuid when flow)
 
 
-agentAdded : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
+agentAdded : Uuid -> Time.Posix -> EventFlow -> Uuid -> String -> Event
 agentAdded uuid when flow name type_ =
     AgentAdded { name = name, type_ = type_ } (EventBase uuid when flow)
 
 
-agentRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
+agentRemoved : Uuid -> Time.Posix -> EventFlow -> Uuid -> Event
 agentRemoved uuid when flow name =
     AgentRemoved name (EventBase uuid when flow)
 
@@ -504,7 +504,7 @@ encode event =
                 , ( "uuid", Uuid.encode b.uuid )
                 , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
+                , ( "name", Uuid.encode e.name )
                 , ( "type", Encode.string e.type_ )
                 ]
 
@@ -514,7 +514,7 @@ encode event =
                 , ( "uuid", Uuid.encode b.uuid )
                 , ( "when", Encode.int <| posixToMillis b.when )
                 , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
+                , ( "name", Uuid.encode e )
                 ]
 
 
@@ -678,7 +678,7 @@ decoder =
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                            (Decode.field "name" Uuid.decoder)
                             (Decode.field "type" Decode.string)
 
                     "AgentRemoved" ->
@@ -686,7 +686,7 @@ decoder =
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "when" Decode.int |> andThen toPosix)
                             (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                            (Decode.field "name" Uuid.decoder)
 
                     _ ->
                         Decode.fail "Unknown Event type"

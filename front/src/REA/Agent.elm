@@ -7,7 +7,7 @@ import REA.AgentType as AT exposing (AgentType)
 
 
 type alias Agent =
-    { name : String
+    { name : Uuid
     , type_ : String
     }
 
@@ -15,7 +15,7 @@ type alias Agent =
 encode : Agent -> Encode.Value
 encode a =
     Encode.object
-        [ ( "name", Encode.string a.name )
+        [ ( "name", Uuid.encode a.name )
         , ( "type", Encode.string a.type_ )
         ]
 
@@ -23,10 +23,10 @@ encode a =
 decoder : Decoder Agent
 decoder =
     Decode.map2 Agent
-        (Decode.field "name" Decode.string)
+        (Decode.field "name" Uuid.decoder)
         (Decode.field "type" Decode.string)
 
 
 compare : Agent -> String
 compare =
-    .name
+    .name >> Uuid.toString

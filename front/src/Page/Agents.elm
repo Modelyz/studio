@@ -8,7 +8,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
+import REA.AgentType as AT
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -25,7 +27,7 @@ type alias Model =
 
 
 type Msg
-    = Removed String
+    = Removed Uuid
     | Add
 
 
@@ -89,8 +91,8 @@ viewContent model s =
             [ spacing 10 ]
             (s.state.agents
                 |> Set.toList
-                |> List.sortBy .name
-                |> List.map (\at -> viewSmallCard (Removed at.name) at.name <| "of type: " ++ at.type_)
+                |> List.sortBy A.compare
+                |> List.map (\at -> viewSmallCard (Removed at.name) (Uuid.toString at.name) <| "of type: " ++ at.type_)
                 |> withDefaultContent (p "There are no Agents yet. Create your first one!")
             )
         ]
