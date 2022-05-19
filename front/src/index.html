@@ -23,7 +23,7 @@
 <div id="root"></div>
 <script>
 /**** indexedDB ****/
-let request = window.indexedDB.open('eventstore', 1);
+let request = window.indexedDB.open('eventstore', $IDBVERSION);
 request.onupgradeneeded = function(e) {
     console.log('Upgrading database...')
     const db = e.target.result;
@@ -33,6 +33,7 @@ request.onupgradeneeded = function(e) {
     } catch(e) {}
     let idbstore = db.createObjectStore('events', {autoIncrement:true});
     console.log('Database upgraded')
+    db.onerror = function(event) { alert("DB open error during upgrade request. Your browser may be a little old?");}
 };
 
 /**** Random UUID ****/
@@ -56,7 +57,7 @@ const store = function(send) {
     return function(events) {
             console.log("ELM port storeEvents")
             console.log("JS IDB store(events): " + events)
-        let request = window.indexedDB.open('eventstore', 1);
+        let request = window.indexedDB.open('eventstore', $IDBVERSION);
         request.onsuccess = function(e) {
             const db = e.target.result;
             const transaction = db.transaction(['events'],'readwrite');
@@ -98,7 +99,7 @@ app.ports.storeEventsToSend.subscribe(store(true));
 // read events from IDB
 app.ports.readEvents.subscribe(function() {
         console.log("<-ELM port readEvents")
-    let request = window.indexedDB.open('eventstore', 1);
+    let request = window.indexedDB.open('eventstore', $IDBVERSION);
     request.onsuccess = e => {
         console.log("JS IDB request.onsuccess objectStore('events').getAll()")
         const openCursor = e.target.result.transaction('events','readonly').objectStore('events').getAll();
