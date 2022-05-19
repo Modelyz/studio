@@ -170,7 +170,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Event Types"
+    { title = "Adding an Identifier"
     , attributes = []
     , element = viewContent model
     , route = model.route

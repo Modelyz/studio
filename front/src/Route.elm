@@ -17,6 +17,8 @@ type Route
     | ContractTypes
     | CommitmentTypes
     | EventTypes
+    | Agents
+    | AddAgent
     | Groups
     | Identifiers
     | AddIdentifier
@@ -37,6 +39,8 @@ routeParser =
         , map AddIdentifier (s "identifiers" </> s "add")
         , map AgentTypes (s "agent-types")
         , map AddAgentType (s "agent-types" </> s "add")
+        , map Agents (s "agents")
+        , map AddAgent (s "agents" </> s "add")
         ]
 
 
@@ -95,6 +99,12 @@ toString r =
 
         AddIdentifier ->
             "/identifiers/add"
+
+        Agents ->
+            "/agents"
+
+        AddAgent ->
+            "/agents/add"
 
 
 firstSegment : Route -> String

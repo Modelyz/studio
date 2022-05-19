@@ -9,6 +9,7 @@ import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Json.Decode exposing (andThen)
 import Prng.Uuid as Uuid exposing (Uuid)
+import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as C exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
@@ -45,6 +46,7 @@ type alias State =
     , groups : DictSet String Group
     , identifiers : DictSet String Identifier
     , agentTypes : DictSet String AgentType
+    , agents : DictSet String Agent
     }
 
 
@@ -66,6 +68,7 @@ empty =
     , groups = Set.empty G.compare
     , identifiers = Set.empty I.compare
     , agentTypes = Set.empty AT.compare
+    , agents = Set.empty A.compare
     }
 
 
@@ -215,11 +218,11 @@ aggregate event state =
 
         AgentTypeAdded e b ->
             let
-                at =
+                a =
                     { name = e.name, type_ = e.type_ }
             in
             { state
-                | agentTypes = Set.insert at state.agentTypes
+                | agentTypes = Set.insert a state.agentTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids
@@ -227,7 +230,27 @@ aggregate event state =
 
         AgentTypeRemoved e b ->
             { state
-                | agentTypes = Set.filter (\at -> at.name /= e) state.agentTypes
+                | agentTypes = Set.filter (\a -> a.name /= e) state.agentTypes
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        AgentAdded e b ->
+            let
+                a =
+                    { name = e.name, type_ = e.type_ }
+            in
+            { state
+                | agents = Set.insert a state.agents
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        AgentRemoved e b ->
+            { state
+                | agents = Set.filter (\a -> a.name /= e) state.agents
                 , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids

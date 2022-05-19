@@ -1,4 +1,4 @@
-module Page.AgentTypes exposing (match, page, view)
+module Page.Agents exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -8,7 +8,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.AgentType as AT exposing (..)
+import REA.Agent as A exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -46,7 +46,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentTypes ->
+        Route.Agents ->
             Just { route = route }
 
         _ ->
@@ -63,34 +63,34 @@ update s msg model =
     case msg of
         Removed i ->
             ( model
-            , Shared.dispatch s <| Event.AgentTypeRemoved i
+            , Shared.dispatch s <| Event.AgentRemoved i
             )
 
         Add ->
-            ( model, goTo s Route.AddAgentType )
+            ( model, goTo s Route.AddAgent )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Agent Types"
+    { title = "Agents"
     , attributes = []
     , element = viewContent model
-    , route = Route.AgentTypes
+    , route = Route.Agents
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "AgentTypes"
+        "Agents"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.agentTypes
+            (s.state.agents
                 |> Set.toList
                 |> List.sortBy .name
-                |> List.map (\at -> viewSmallCard (Removed at.name) at.name <| Maybe.withDefault "" <| Maybe.map (\t -> "of type: " ++ t) at.type_)
-                |> withDefaultContent (p "There are no AgentTypes yet. Create your first one!")
+                |> List.map (\at -> viewSmallCard (Removed at.name) at.name <| "of type: " ++ at.type_)
+                |> withDefaultContent (p "There are no Agents yet. Create your first one!")
             )
         ]

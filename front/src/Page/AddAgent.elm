@@ -1,4 +1,4 @@
-module Page.AddAgentType exposing (..)
+module Page.AddAgent exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -10,6 +10,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import Page exposing (..)
+import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -47,20 +48,20 @@ type alias Model =
 
 type Step
     = StepName
-    | StepAgentType
+    | StepType
 
 
 steps : List Step
 steps =
-    [ StepName, StepAgentType ]
+    [ StepName, StepType ]
 
 
-validate : Model -> Result String AgentType
+validate : Model -> Result String Agent
 validate m =
     Result.map2
-        AgentType
+        Agent
         (checkEmptyString m.name "The name is Empty")
-        (Ok <| Maybe.map .name m.flatselect)
+        (checkNothing m.flatselect "You must select an Agent Type" |> Result.map .name)
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -76,7 +77,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddAgentType ->
+        Route.AddAgent ->
             Just { route = route }
 
         _ ->
@@ -109,11 +110,11 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok i ->
+                Ok a ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.AgentTypeAdded i
-                        , goTo s Route.AgentTypes
+                        [ Shared.dispatch s <| Event.AgentAdded { name = a.name, type_ = a.type_ }
+                        , goTo s Route.Agents
                         ]
                     )
 
@@ -126,7 +127,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.AgentTypes )
+                    ( model, goTo s Route.Agents )
 
         NextPage ->
             case next model.step steps of
@@ -134,15 +135,15 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.AgentTypes )
+                    ( model, goTo s Route.Agents )
 
         Cancel ->
-            ( model, goTo s Route.AgentTypes )
+            ( model, goTo s Route.Agents )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding and Agent Type"
+    { title = "Adding an Agent"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -152,8 +153,13 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        StepAgentType ->
-            button.primary Added "Validate and add the Agent Type"
+        StepType ->
+            case checkNothing model.flatselect "Please choose a Type" of
+                Ok _ ->
+                    button.primary Added "Validate and add the Agent"
+
+                Err err ->
+                    button.disabled err "Validate and add the Agent"
 
         StepName ->
             case checkEmptyString model.name "Please choose a name" of
@@ -189,14 +195,14 @@ viewContent model s =
 
         step =
             case model.step of
-                StepAgentType ->
+                StepType ->
                     flatselect model
                         { all = Set.toList <| s.state.agentTypes
                         , toString = AT.toString
                         , toDesc = AT.toDesc
                         , inputmsg = InputType
                         , label = "Type"
-                        , explain = h2 "Choose the type of the new Agent Type (it can be hierarchical)"
+                        , explain = h2 "Choose the Type of the new Agent"
                         }
 
                 StepName ->
@@ -210,11 +216,11 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Agent Type"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Agent"
                             }
     in
     cardContent s
-        "Adding an Agent Type"
+        "Adding an Agent"
         buttons
         [ step
         ]

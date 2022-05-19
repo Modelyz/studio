@@ -1,30 +1,32 @@
-module REA.Agent exposing (Agent, decoder, encode)
+module REA.Agent exposing (Agent, compare, decoder, encode)
 
-import Json.Decode
-import Json.Encode
-import Prng.Uuid
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.AgentType as AT exposing (AgentType)
 
 
 type alias Agent =
     { name : String
-    , uuid : Prng.Uuid.Uuid
-    , type_ : AgentType
+    , type_ : String
     }
 
 
-encode : Agent -> Json.Encode.Value
+encode : Agent -> Encode.Value
 encode a =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string a.name )
-        , ( "uuid", Prng.Uuid.encode a.uuid )
-        , ( "type", AT.encode a.type_ )
+    Encode.object
+        [ ( "name", Encode.string a.name )
+        , ( "type", Encode.string a.type_ )
         ]
 
 
-decoder : Json.Decode.Decoder Agent
+decoder : Decoder Agent
 decoder =
-    Json.Decode.map3 Agent
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "uuid" Prng.Uuid.decoder)
-        (Json.Decode.field "type" AT.decoder)
+    Decode.map2 Agent
+        (Decode.field "name" Decode.string)
+        (Decode.field "type" Decode.string)
+
+
+compare : Agent -> String
+compare =
+    .name
