@@ -20,6 +20,7 @@ import Style exposing (..)
 import View exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
+import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
 import View.TagList exposing (..)
 
 
@@ -49,8 +50,8 @@ type alias Model =
     , mandatory : Bool
     , taglist : List Portion
     , warning : String
-    , step : View.Step Step
-    , steps : List (View.Step Step)
+    , step : Step.Step Step
+    , steps : List (Step.Step Step)
     }
 
 
@@ -103,8 +104,8 @@ init s f =
       , mandatory = False
       , taglist = []
       , warning = ""
-      , steps = [ View.Step Entity, View.Step Options, View.Step Format, View.Step Name ]
-      , step = View.Step Entity
+      , steps = [ Step.Step Entity, Step.Step Options, Step.Step Format, Step.Step Name ]
+      , step = Step.Step Entity
       }
     , closeMenu s
     )
@@ -176,16 +177,16 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        View.Step Entity ->
+        Step.Step Entity ->
             nextOrValidate model NextPage Added (checkNothing model.entity "Please select an Entity")
 
-        View.Step Options ->
+        Step.Step Options ->
             nextOrValidate model NextPage Added (Ok model.name)
 
-        View.Step Format ->
+        Step.Step Format ->
             nextOrValidate model NextPage Added (checkEmptyList model.taglist "The format is still empty")
 
-        View.Step Name ->
+        Step.Step Name ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
@@ -214,7 +215,7 @@ viewContent model s =
 
         step =
             case model.step of
-                View.Step Entity ->
+                Step.Step Entity ->
                     row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                         [ Radio.view
                             { title = "Apply to Which Entity?"
@@ -225,7 +226,7 @@ viewContent model s =
                             }
                         ]
 
-                View.Step Options ->
+                Step.Step Options ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                         [ h3 "Options:"
                         , row [ Font.size size.text.main ]
@@ -248,7 +249,7 @@ viewContent model s =
                             ]
                         ]
 
-                View.Step Format ->
+                Step.Step Format ->
                     taglist model
                         { all = Portion.all
                         , toString = Portion.toString
@@ -258,7 +259,7 @@ viewContent model s =
                         , explain = h2 "Construct the format of your identifier by clicking on the items below"
                         }
 
-                View.Step Name ->
+                Step.Step Name ->
                     el [ alignTop ] <|
                         Input.text
                             [ width <| minimum 200 fill

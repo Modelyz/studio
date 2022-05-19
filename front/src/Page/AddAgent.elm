@@ -22,6 +22,7 @@ import View exposing (..)
 import View.FlatSelect exposing (flatselect)
 import View.Navbar as Navbar
 import View.Radio as Radio
+import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
 
 
 type Msg
@@ -42,8 +43,8 @@ type alias Model =
     , name : Uuid
     , flatselect : Maybe AgentType
     , warning : String
-    , step : View.Step Step
-    , steps : List (View.Step Step)
+    , step : Step.Step Step
+    , steps : List (Step.Step Step)
     }
 
 
@@ -93,8 +94,8 @@ init s f =
       , flatselect = Nothing
       , name = newUuid
       , warning = ""
-      , step = View.Step StepType
-      , steps = [ View.Step StepType ]
+      , step = Step.Step StepType
+      , steps = [ Step.Step StepType ]
       }
     , closeMenu s
     )
@@ -154,12 +155,12 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        View.Step StepType ->
+        Step.Step StepType ->
             nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a name")
 
 
 
---        View.Step StepIdentifiers ->
+--        Step.Step StepIdentifiers ->
 --            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
@@ -188,7 +189,7 @@ viewContent model s =
 
         step =
             case model.step of
-                View.Step StepType ->
+                Step.Step StepType ->
                     flatselect model
                         { all = Set.toList <| s.state.agentTypes
                         , toString = AT.toString

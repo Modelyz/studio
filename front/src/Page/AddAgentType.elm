@@ -19,6 +19,7 @@ import View exposing (..)
 import View.FlatSelect exposing (flatselect)
 import View.Navbar as Navbar
 import View.Radio as Radio
+import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
 
 
 type Msg
@@ -40,8 +41,8 @@ type alias Model =
     , name : String
     , flatselect : Maybe AgentType
     , warning : String
-    , step : View.Step Step
-    , steps : List (View.Step Step)
+    , step : Step.Step Step
+    , steps : List (Step.Step Step)
     }
 
 
@@ -84,8 +85,8 @@ init s f =
       , flatselect = Nothing
       , name = ""
       , warning = ""
-      , steps = [ View.Step StepName, View.Step StepType ]
-      , step = View.Step StepName
+      , steps = [ Step.Step StepName, Step.Step StepType ]
+      , step = Step.Step StepName
       }
     , closeMenu s
     )
@@ -148,10 +149,10 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        View.Step StepType ->
+        Step.Step StepType ->
             nextOrValidate model NextPage Added (Ok model.flatselect)
 
-        View.Step StepName ->
+        Step.Step StepName ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
 
@@ -180,7 +181,7 @@ viewContent model s =
 
         step =
             case model.step of
-                View.Step StepType ->
+                Step.Step StepType ->
                     flatselect model
                         { all = Set.toList <| s.state.agentTypes
                         , toString = AT.toString
@@ -190,7 +191,7 @@ viewContent model s =
                         , explain = h2 "Choose the type of the new Agent Type (it can be hierarchical)"
                         }
 
-                View.Step StepName ->
+                Step.Step StepName ->
                     el [ alignTop ] <|
                         Input.text
                             [ width <| minimum 200 fill
