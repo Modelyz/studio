@@ -3,6 +3,7 @@ FROM debian:11 AS build
 ARG WSS
 ENV WSS $WSS
 WORKDIR /srv
+ADD https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz elm.gz
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         cabal-install \
@@ -23,7 +24,6 @@ RUN apt-get update \
         npm \
         rsync \
         uglifyjs \
-    && curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz \
     && gunzip elm.gz \
     && chmod +x elm \
     && mv elm /usr/local/bin/
