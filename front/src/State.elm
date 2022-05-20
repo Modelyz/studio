@@ -16,7 +16,7 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Identification as I exposing (Identification)
+import REA.Ident as Ident exposing (Identification, Identifier(..))
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -47,6 +47,7 @@ type alias State =
     , identifications : DictSet String Identification
     , agentTypes : DictSet String AgentType
     , agents : DictSet String Agent
+    , identifiers : DictSet String Identifier
     }
 
 
@@ -66,9 +67,10 @@ empty =
     , processType_commitmentTypes = Set.empty PTCT.compare
     , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
-    , identifications = Set.empty I.compare
+    , identifications = Set.empty Ident.compareIdentification
     , agentTypes = Set.empty AT.compare
     , agents = Set.empty A.compare
+    , identifiers = Set.empty Ident.compareIdentifier
     }
 
 
@@ -251,6 +253,14 @@ aggregate event state =
         AgentRemoved e b ->
             { state
                 | agents = Set.filter (\a -> a.name /= e) state.agents
+                , lastEventTime = b.when
+                , pendingEvents = updatePending event state.pendingEvents
+                , uuids = Set.insert (.uuid <| base event) state.uuids
+            }
+
+        IdentifierAdded i b ->
+            { state
+                | identifiers = Set.insert i state.identifiers
                 , lastEventTime = b.when
                 , pendingEvents = updatePending event state.pendingEvents
                 , uuids = Set.insert (.uuid <| base event) state.uuids

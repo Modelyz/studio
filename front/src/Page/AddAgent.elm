@@ -12,6 +12,7 @@ import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
+import REA.Ident as Ident exposing (Identifier)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -20,6 +21,7 @@ import Spa.Page
 import Style exposing (..)
 import View exposing (..)
 import View.FlatSelect exposing (flatselect)
+import View.InputIdentifiers exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
@@ -27,6 +29,7 @@ import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousSt
 
 type Msg
     = InputType (Maybe AgentType)
+    | InputIdentifiers (List Identifier)
     | Warning String
     | PreviousPage
     | NextPage
@@ -42,6 +45,7 @@ type alias Model =
     { route : Route
     , name : Uuid
     , flatselect : Maybe AgentType
+    , identifiers : List Identifier
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -50,7 +54,7 @@ type alias Model =
 
 type Step
     = StepType
-    | StepIdentifications
+    | StepIdentifiers
 
 
 validate : Model -> Result String Agent
@@ -90,9 +94,10 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , name = newUuid
+      , identifiers = []
       , warning = ""
       , step = Step.Step StepType
-      , steps = [ Step.Step StepType, Step.Step StepIdentifications ]
+      , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
       }
     , closeMenu s
     )
@@ -103,6 +108,9 @@ update s msg model =
     case msg of
         InputType x ->
             ( { model | flatselect = x }, Effect.none )
+
+        InputIdentifiers xs ->
+            ( { model | identifiers = List.append xs model.identifiers }, Effect.none )
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
@@ -155,8 +163,8 @@ buttonNext model =
         Step.Step StepType ->
             nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a name")
 
-        Step.Step StepIdentifications ->
-            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
+        Step.Step StepIdentifiers ->
+            nextOrValidate model NextPage Added (Ok model.identifiers)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -193,6 +201,9 @@ viewContent model s =
                         , label = "Type"
                         , explain = h2 "Choose the Type of the new Agent"
                         }
+
+                Step.Step StepIdentifiers ->
+                    inputIdentifiers s model
     in
     cardContent s
         "Adding an Agent"

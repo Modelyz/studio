@@ -1,6 +1,5 @@
 module Page.AddIdentification exposing (..)
 
-import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -10,8 +9,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.Identification as I exposing (..)
-import REA.Identification.Portion as Portion exposing (Portion(..))
+import REA.Ident as Ident exposing (Fragment(..), Identification)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -29,7 +27,7 @@ type Msg
     | InputEntity Entity
     | InputUnique Bool
     | InputMandatory Bool
-    | InputFormat (List Portion)
+    | InputFormat (List Fragment)
     | Warning String
     | PreviousPage
     | NextPage
@@ -48,7 +46,7 @@ type alias Model =
     , entity : Maybe Entity
     , unique : Bool
     , mandatory : Bool
-    , taglist : List Portion
+    , taglist : List Fragment
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -251,9 +249,9 @@ viewContent model s =
 
                 Step.Step Format ->
                     taglist model
-                        { all = Portion.all
-                        , toString = Portion.toString
-                        , toDesc = Portion.toDesc
+                        { all = Ident.allFragments
+                        , toString = Ident.fragmentToString
+                        , toDesc = Ident.fragmentToDesc
                         , inputmsg = InputFormat
                         , label = "Format: "
                         , explain = h2 "Construct the format of your identification by clicking on the items below"

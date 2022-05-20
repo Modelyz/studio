@@ -11,8 +11,7 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Entity exposing (Entity)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
-import REA.Identification as Identification exposing (Identification)
-import REA.Identification.Portion as Portion exposing (Portion)
+import REA.Ident as Ident exposing (Fragment, Identifier(..), encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.ProcessType as PT exposing (ProcessType)
 import Result exposing (Result(..))
@@ -67,12 +66,13 @@ type Event
     | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String } EventBase
     | GroupAdded { name : String, entity : Entity } EventBase
     | GroupRemoved { name : String, entity : Entity } EventBase
-    | IdentificationAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, format : List Portion } EventBase
-    | IdentificationRemoved String EventBase --TODO also simplify other *Removed
+    | IdentificationAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, format : List Fragment } EventBase
+    | IdentificationRemoved String EventBase
     | AgentTypeAdded { name : String, type_ : Maybe String } EventBase
     | AgentTypeRemoved String EventBase
     | AgentAdded { name : Uuid, type_ : String } EventBase
     | AgentRemoved Uuid EventBase
+    | IdentifierAdded Identifier EventBase -- TODO also simplify others?
 
 
 base : Event -> EventBase
@@ -136,6 +136,9 @@ base event =
             b
 
         AgentRemoved _ b ->
+            b
+
+        IdentifierAdded _ b ->
             b
 
 
@@ -279,7 +282,7 @@ groupRemoved uuid when flow name entity =
         (EventBase uuid when flow)
 
 
-identificationAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Portion -> Event
+identificationAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Fragment -> Event
 identificationAdded uuid when flow name entity unique mandatory format =
     IdentificationAdded
         { name = name
@@ -314,6 +317,11 @@ agentAdded uuid when flow name type_ =
 agentRemoved : Uuid -> Time.Posix -> EventFlow -> Uuid -> Event
 agentRemoved uuid when flow name =
     AgentRemoved name (EventBase uuid when flow)
+
+
+identifierAdded : Uuid -> Time.Posix -> EventFlow -> Entity -> Ident.Name -> List Fragment -> Event
+identifierAdded uuid when flow entity name value =
+    IdentifierAdded (Identifier entity name value) (EventBase uuid when flow)
 
 
 
@@ -467,7 +475,7 @@ encode event =
                 , ( "entity", REA.Entity.encode e.entity )
                 , ( "unique", Encode.bool e.unique )
                 , ( "mandatory", Encode.bool e.mandatory )
-                , ( "format", Encode.list Portion.encode e.format )
+                , ( "format", Encode.list encodeFragment e.format )
                 ]
 
         IdentificationRemoved e b ->
@@ -517,6 +525,17 @@ encode event =
                 , ( "name", Uuid.encode e )
                 ]
 
+        IdentifierAdded (Identifier e n v) b ->
+            Encode.object
+                [ ( "what", Encode.string "IdentifierAdded" )
+                , ( "uuid", Uuid.encode b.uuid )
+                , ( "when", Encode.int <| posixToMillis b.when )
+                , ( "flow", EventFlow.encode b.flow )
+                , ( "entity", REA.Entity.encode e )
+                , ( "name", Encode.string n )
+                , ( "value", Encode.list encodeFragment v )
+                ]
+
 
 decodelist : Decode.Value -> List Event
 decodelist =
@@ -532,8 +551,8 @@ decoder =
     in
     Decode.field "what" Decode.string
         |> andThen
-            (\s ->
-                case s of
+            (\t ->
+                case t of
                     "ProcessTypeChanged" ->
                         Decode.map4 processTypeChanged
                             (Decode.field "uuid" Uuid.decoder)
@@ -649,7 +668,7 @@ decoder =
                             (Decode.field "entity" REA.Entity.decoder)
                             (Decode.field "unique" Decode.bool)
                             (Decode.field "mandatory" Decode.bool)
-                            (Decode.field "format" (Decode.list Portion.decoder))
+                            (Decode.field "format" (Decode.list fragmentDecoder))
 
                     "IdentificationRemoved" ->
                         Decode.map4 identificationRemoved
@@ -688,6 +707,15 @@ decoder =
                             (Decode.field "flow" EventFlow.decoder)
                             (Decode.field "name" Uuid.decoder)
 
+                    "IdentifierAdded" ->
+                        Decode.map6 identifierAdded
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "when" Decode.int |> andThen toPosix)
+                            (Decode.field "flow" EventFlow.decoder)
+                            (Decode.field "entity" REA.Entity.decoder)
+                            (Decode.field "name" Decode.string)
+                            (Decode.field "value" (Decode.list fragmentDecoder))
+
                     _ ->
-                        Decode.fail "Unknown Event type"
+                        Decode.fail <| "Unknown Event type: " ++ t
             )

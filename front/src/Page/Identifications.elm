@@ -9,8 +9,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.Identification as I exposing (..)
-import REA.Identification.Portion as Portion exposing (Portion(..))
+import REA.Ident as Ident exposing (Fragment(..))
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared

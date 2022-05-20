@@ -5,11 +5,16 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Style exposing (..)
-import View exposing (..)
+import View exposing (button, h2)
 
 
 type alias Model m a =
     { m | taglist : List a }
+
+
+type alias TagStrings =
+    -- different representations of a Fragment
+    { type_ : String, name : String, value : String, desc : String }
 
 
 type alias Config a msg =
