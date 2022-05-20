@@ -16,7 +16,7 @@ import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as Ident exposing (Identification, Identifier(..))
+import REA.Ident as Ident exposing (Identifier)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -44,7 +44,7 @@ type alias State =
     , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
     , processType_eventTypes : DictSet String ProcessTypeEventType
     , groups : DictSet String Group
-    , identifications : DictSet String Identification
+    , identifications : DictSet String Identifier
     , agentTypes : DictSet String AgentType
     , agents : DictSet String Agent
     , identifiers : DictSet String Identifier
@@ -67,7 +67,7 @@ empty =
     , processType_commitmentTypes = Set.empty PTCT.compare
     , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
-    , identifications = Set.empty Ident.compareIdentification
+    , identifications = Set.empty Ident.compareIdentifier
     , agentTypes = Set.empty AT.compare
     , agents = Set.empty A.compare
     , identifiers = Set.empty Ident.compareIdentifier

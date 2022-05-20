@@ -9,7 +9,7 @@ import View exposing (button, h2)
 
 
 type alias Model m a =
-    { m | taglist : List a }
+    { m | tags : List a }
 
 
 type alias TagStrings =
@@ -27,13 +27,13 @@ type alias Config a msg =
     }
 
 
-taglist : Model m a -> Config a msg -> Element msg
-taglist model c =
+inputTags : Model m a -> Config a msg -> Element msg
+inputTags model c =
     column [ alignTop, spacing 10, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
             h2 c.label
                 :: List.append
-                    (if List.isEmpty model.taglist then
+                    (if List.isEmpty model.tags then
                         [ el [ padding 5, Font.color color.text.disabled ] (text "Empty") ]
 
                      else
@@ -45,7 +45,7 @@ taglist model c =
                                 [ el [ padding 5 ] (text <| c.toString p)
                                 , button.secondary
                                     (c.inputmsg
-                                        (model.taglist
+                                        (model.tags
                                             |> List.indexedMap Tuple.pair
                                             |> List.filter (\( j, _ ) -> j /= i)
                                             |> List.map Tuple.second
@@ -54,7 +54,7 @@ taglist model c =
                                     "×"
                                 ]
                         )
-                        model.taglist
+                        model.tags
                     )
         , c.explain
         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
@@ -62,7 +62,7 @@ taglist model c =
                 (\p ->
                     column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 250), height (px 150) ]
                         [ row [ alignLeft ]
-                            [ button.primary (c.inputmsg <| model.taglist ++ [ p ]) "+"
+                            [ button.primary (c.inputmsg <| model.tags ++ [ p ]) "+"
                             , el [ paddingXY 10 0 ] (text <| c.toString p)
                             ]
                         , paragraph [ padding 10, Font.size size.text.main ] [ text <| c.toDesc p ]

@@ -12,6 +12,7 @@ import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
+import REA.Entity as Entity
 import REA.Ident as Ident exposing (Identifier)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
@@ -24,12 +25,12 @@ import View.FlatSelect exposing (flatselect)
 import View.InputIdentifiers exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
-import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
+import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, previousStep)
 
 
 type Msg
     = InputType (Maybe AgentType)
-    | InputIdentifiers (List Identifier)
+    | InputIdentifier Identifier
     | Warning String
     | PreviousPage
     | NextPage
@@ -45,7 +46,7 @@ type alias Model =
     { route : Route
     , name : Uuid
     , flatselect : Maybe AgentType
-    , identifiers : List Identifier
+    , identifiers : DictSet String Identifier
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -94,7 +95,7 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , name = newUuid
-      , identifiers = []
+      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifications
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -109,8 +110,8 @@ update s msg model =
         InputType x ->
             ( { model | flatselect = x }, Effect.none )
 
-        InputIdentifiers xs ->
-            ( { model | identifiers = List.append xs model.identifiers }, Effect.none )
+        InputIdentifier i ->
+            ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
@@ -203,7 +204,7 @@ viewContent model s =
                         }
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers s model
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } Entity.Agent model
     in
     cardContent s
         "Adding an Agent"

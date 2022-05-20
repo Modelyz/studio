@@ -9,7 +9,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.Ident as Ident exposing (Fragment(..), Identification)
+import REA.Ident as Ident exposing (Fragment(..), Identifier)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -22,7 +22,9 @@ import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousSt
 import View.TagList exposing (..)
 
 
-type Msg
+type
+    Msg
+    -- TODO replace with Input Identifier
     = InputName String
     | InputEntity Entity
     | InputUnique Bool
@@ -41,12 +43,11 @@ type alias Flags =
 
 type alias Model =
     { route : Route
-    , previous : Route
     , name : String
     , entity : Maybe Entity
     , unique : Bool
     , mandatory : Bool
-    , taglist : List Fragment
+    , tags : List Fragment
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -60,15 +61,13 @@ type Step
     | Format
 
 
-validate : Model -> Result String Identification
+validate : Model -> Result String Identifier
 validate m =
-    Result.map5
-        Identification
+    Result.map2
+        -- avoid map6 which doesn't exist
+        (\name entity -> { name = name, entity = entity, unique = m.unique, mandatory = m.mandatory, fragments = m.tags })
         (checkEmptyString m.name "The name is Empty")
         (checkNothing m.entity "You must select an entity")
-        (Ok m.unique)
-        (Ok m.mandatory)
-        (Ok m.taglist)
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -95,12 +94,11 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
-      , previous = Route.Identifications
       , name = ""
       , entity = Nothing
       , unique = False
       , mandatory = False
-      , taglist = []
+      , tags = []
       , warning = ""
       , steps = [ Step.Step Entity, Step.Step Options, Step.Step Format, Step.Step Name ]
       , step = Step.Step Entity
@@ -125,7 +123,7 @@ update s msg model =
             ( { model | mandatory = x }, Effect.none )
 
         InputFormat x ->
-            ( { model | taglist = x }, Effect.none )
+            ( { model | tags = x }, Effect.none )
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
@@ -182,7 +180,7 @@ buttonNext model =
             nextOrValidate model NextPage Added (Ok model.name)
 
         Step.Step Format ->
-            nextOrValidate model NextPage Added (checkEmptyList model.taglist "The format is still empty")
+            nextOrValidate model NextPage Added (checkEmptyList model.tags "The format is still empty")
 
         Step.Step Name ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
@@ -248,7 +246,7 @@ viewContent model s =
                         ]
 
                 Step.Step Format ->
-                    taglist model
+                    inputTags model
                         { all = Ident.allFragments
                         , toString = Ident.fragmentToString
                         , toDesc = Ident.fragmentToDesc

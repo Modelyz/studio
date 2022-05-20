@@ -1,6 +1,7 @@
 module REA.Ident exposing (..)
 
 import DateTime exposing (..)
+import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import REA.Entity as Entity exposing (Entity)
@@ -16,77 +17,14 @@ type alias Name =
     String
 
 
-type alias Identification =
+type alias Identifier =
+    -- This is the configuration of an identifier
     { name : Name
     , entity : Entity
     , unique : Bool
     , mandatory : Bool
-    , format : List Fragment
+    , fragments : List Fragment
     }
-
-
-
--- The identification can be applied on:
-
-
-compareIdentification : Identification -> String
-compareIdentification =
-    .name
-
-
-
--- an identifier is the association between an entity, an identification name and an identifier value
--- ex: Identifier Agent "Firstname" "John"
--- the Entity + Name allows to uniquely select the identication
-
-
-type Identifier
-    = Identifier Entity Name (List Fragment)
-
-
-compareIdentifier : Identifier -> String
-compareIdentifier (Identifier e n v) =
-    Entity.toString e ++ " " ++ n
-
-
-
-{- A Fragment is a part of a generated identification
-
-   It can be :
-
-   - a free string (such as: Free "prefix")
-   - a constrained string
-   - a sequence number
-   - an pre-format fetched from the server
-
-   Example for an sale order number:
-
-   { name = "Sale Order Sequence"
-   , entity = CommitmentType
-   , unique = True
-   , mandatory = True
-   , format =
-    [ Free "Prefix" "SO-"
-    , YYYY
-    , MM
-    , DoM
-    , Sequence "Number" 4 1 12
-    , Free "Suffix" "/CAT3"
-    ]
-
-   should lead to a Sale Order Number of: "SO-20220508-0012i/CAT3"
-
-   For a single "firstname" field it would be:
-
-   { name = "Firstname"
-   , entity = AgentType
-   , type_ = "Person"
-   , unique = False
-   , mandatory = False
-   , format = [ Free "" "John]
-   }
-
--}
 
 
 type Fragment
@@ -112,6 +50,11 @@ type alias Padding =
 
 type alias Step =
     Int
+
+
+compareIdentifier : Identifier -> String
+compareIdentifier i =
+    Entity.toString i.entity ++ " " ++ i.name
 
 
 allFragments : List Fragment
@@ -421,3 +364,32 @@ fragmentDecoder =
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
             )
+
+
+selectFrom : DictSet String Identifier -> Entity -> Name -> Maybe Identifier
+selectFrom xs entity name =
+    -- select an identifier given its entity and name (should be unique, given the compare function)
+    Set.filter (\i -> i.entity == entity && i.name == name) xs |> Set.toList |> List.head
+
+
+identifierValue : Identifier -> String
+identifierValue i =
+    i.fragments |> List.map fragmentToValue |> String.concat
+
+
+updateIdentifier : Int -> Fragment -> Identifier -> Identifier
+updateIdentifier index fragment identifier =
+    let
+        fragments =
+            identifier.fragments
+                |> List.indexedMap Tuple.pair
+                |> List.map
+                    (\( i, f ) ->
+                        if i == index then
+                            fragment
+
+                        else
+                            f
+                    )
+    in
+    { identifier | fragments = fragments }
