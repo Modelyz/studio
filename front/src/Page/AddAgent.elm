@@ -122,7 +122,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Event.AgentAdded { name = a.name, type_ = a.type_ }
-                        , goTo s Route.Agents
+                        , redirect s Route.Agents
                         ]
                     )
 
@@ -135,7 +135,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Agents )
+                    ( model, redirect s Route.Agents )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -143,10 +143,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Agents )
+                    ( model, redirect s Route.Agents )
 
         Cancel ->
-            ( model, goTo s Route.Agents )
+            ( model, redirect s Route.Agents )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -204,7 +204,12 @@ viewContent model s =
                         }
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } Entity.Agent model
+                    inputIdentifiers
+                        { onEnter = Added
+                        , onInput = InputIdentifier
+                        }
+                        Entity.Agent
+                        model
     in
     cardContent s
         "Adding an Agent"

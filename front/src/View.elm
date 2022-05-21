@@ -170,8 +170,8 @@ button =
     }
 
 
-goTo : Shared.Model -> Route -> Effect Shared.Msg msg
-goTo s =
+redirect : Shared.Model -> Route -> Effect Shared.Msg msg
+redirect s =
     Route.toString >> Nav.pushUrl s.navkey >> Effect.fromCmd
 
 

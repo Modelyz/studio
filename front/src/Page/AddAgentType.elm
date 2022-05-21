@@ -110,7 +110,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Event.AgentTypeAdded i
-                        , goTo s Route.AgentTypes
+                        , redirect s Route.AgentTypes
                         ]
                     )
 
@@ -123,7 +123,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.AgentTypes )
+                    ( model, redirect s Route.AgentTypes )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -131,10 +131,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.AgentTypes )
+                    ( model, redirect s Route.AgentTypes )
 
         Cancel ->
-            ( model, goTo s Route.AgentTypes )
+            ( model, redirect s Route.AgentTypes )
 
 
 view : Shared.Model -> Model -> View Msg

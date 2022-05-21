@@ -1,6 +1,6 @@
 module View.Step exposing (..)
 
-import Element exposing (Element)
+import Element exposing (Attribute, Element)
 import View exposing (button)
 
 
@@ -24,6 +24,21 @@ nextOrValidate m next validate result =
 
         Err err ->
             button.disabled err "Next →"
+
+
+onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String field -> Attribute msg
+onEnter next validate warning m result =
+    View.onEnter <|
+        case result of
+            Ok _ ->
+                if isLast m.step m.steps then
+                    validate
+
+                else
+                    next
+
+            Err err ->
+                warning err
 
 
 indexOf : a -> List a -> Maybe Int

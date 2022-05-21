@@ -100,8 +100,8 @@ init s f =
       , mandatory = False
       , fragments = []
       , warning = ""
-      , steps = [ Step.Step Entity, Step.Step Options, Step.Step Format, Step.Step Name ]
-      , step = Step.Step Entity
+      , steps = [ Step.Step Name, Step.Step Entity, Step.Step Options, Step.Step Format ]
+      , step = Step.Step Name
       }
     , closeMenu s
     )
@@ -134,7 +134,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Event.IdentificationAdded i
-                        , goTo s Route.Identifications
+                        , redirect s Route.Identifications
                         ]
                     )
 
@@ -147,7 +147,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Identifications )
+                    ( model, redirect s Route.Identifications )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -155,10 +155,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, goTo s Route.Identifications )
+                    ( model, redirect s Route.Identifications )
 
         Cancel ->
-            ( model, goTo s Route.Identifications )
+            ( model, redirect s Route.Identifications )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -253,7 +253,7 @@ viewContent model s =
                         Input.text
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
-                            , View.onEnter Added
+                            , Step.onEnter NextPage Added Warning model (checkEmptyString model.name "Please enter a name")
                             ]
                             { onChange = InputName
                             , text = model.name

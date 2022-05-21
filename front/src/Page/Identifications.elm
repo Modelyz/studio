@@ -67,7 +67,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, goTo s Route.AddIdentification )
+            ( model, redirect s Route.AddIdentification )
 
 
 view : Shared.Model -> Model -> View Msg
