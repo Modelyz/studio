@@ -39,7 +39,7 @@ links s r =
     , menuitem s r ContractTypes "Contract Types"
     , menuitem s r ContractTypes "Contract Types"
     , menuitem s r Groups "Groups"
-    , menuitem s r Identifications "Identifications"
+    , menuitem s r Identifications "Identifiers"
     , menuitem s r Agents "Agents"
     ]
         ++ (if Set.size s.state.processTypes > 0 then

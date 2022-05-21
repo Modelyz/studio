@@ -8,7 +8,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.Entity as Entity exposing (Entity, toPluralString)
+import REA.Entity as Entity exposing (Entity, toString)
 import REA.Ident as Ident exposing (Fragment(..), Identifier)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -215,7 +215,7 @@ viewContent model s =
                     row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                         [ Radio.view
                             { title = "Apply to Which Entity?"
-                            , options = Entity.all |> List.map (\e -> ( e, toPluralString e ))
+                            , options = Entity.all |> List.map (\e -> ( e, toString e ))
                             , selected = model.entity
                             , msg =
                                 \e -> InputEntity e
@@ -249,10 +249,12 @@ viewContent model s =
                     inputTags model
                         { all = Ident.allFragments
                         , toString = Ident.fragmentToString
-                        , toDesc = Ident.fragmentToDesc
-                        , inputmsg = InputFormat
+                        , toDesc = Ident.fragmentToDesc model.entity
+                        , toName = Ident.fragmentToName
+                        , setName = Ident.setName
+                        , onInput = InputFormat
                         , label = "Format: "
-                        , explain = h2 "Construct the format of your identification by clicking on the items below"
+                        , explain = h2 "Click on the items below to construct the format of your identifier"
                         }
 
                 Step.Step Name ->

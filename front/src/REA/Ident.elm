@@ -29,7 +29,7 @@ type alias Identifier =
 
 type Fragment
     = Free Name String
-    | Fixed String
+    | Fixed Name String
     | Sequence Name Padding Step Int
     | Existing Name String
     | YYYY Int
@@ -60,7 +60,7 @@ compareIdentifier i =
 allFragments : List Fragment
 allFragments =
     [ Free "" ""
-    , Fixed ""
+    , Fixed "" ""
     , Sequence "" 4 1 0
     , Existing "" ""
     , YYYY 0
@@ -77,18 +77,18 @@ allFragments =
 
 
 fragmentToString : Fragment -> String
-fragmentToString p =
-    case p of
+fragmentToString f =
+    case f of
         Free name value ->
             "Free"
 
-        Fixed value ->
+        Fixed name value ->
             "Fixed"
 
         Sequence name padding step value ->
             "Sequence"
 
-        Existing str value ->
+        Existing name value ->
             "Existing"
 
         YYYY value ->
@@ -122,19 +122,65 @@ fragmentToString p =
             "Date from: " ++ from
 
 
+fragmentToName : Fragment -> Maybe String
+fragmentToName f =
+    case f of
+        Free name value ->
+            Just name
+
+        Fixed name value ->
+            Just name
+
+        Sequence name padding step value ->
+            Just name
+
+        Existing name value ->
+            Just name
+
+        YYYY value ->
+            Nothing
+
+        YY value ->
+            Nothing
+
+        MMMM value ->
+            Nothing
+
+        MM value ->
+            Nothing
+
+        Weekday value ->
+            Nothing
+
+        DoM value ->
+            Nothing
+
+        Hour value ->
+            Nothing
+
+        Minute value ->
+            Nothing
+
+        Second value ->
+            Nothing
+
+        DateFrom from value ->
+            Nothing
+
+
 fragmentToValue : Fragment -> String
-fragmentToValue p =
-    case p of
+fragmentToValue f =
+    case f of
         Free name value ->
             value
 
-        Fixed value ->
+        Fixed name value ->
             value
 
         Sequence name padding step value ->
             String.padLeft padding '0' <| String.fromInt value
 
-        Existing str value ->
+        Existing name value ->
             value
 
         YYYY value ->
@@ -168,20 +214,70 @@ fragmentToValue p =
             String.fromInt <| posixToMillis value
 
 
-fragmentToDesc : Fragment -> String
-fragmentToDesc p =
-    case p of
-        Free _ _ ->
-            "A free text that you will be able to enter when adding a new TODO. For instance a firstname of an Agent"
+setName : String -> Fragment -> Fragment
+setName n f =
+    case f of
+        Free name value ->
+            Free n value
 
-        Fixed _ ->
+        Fixed name value ->
+            Fixed n value
+
+        Sequence name padding step value ->
+            Sequence n padding step value
+
+        Existing name value ->
+            Existing n value
+
+        YYYY value ->
+            YYYY value
+
+        YY value ->
+            YY value
+
+        MMMM value ->
+            MMMM value
+
+        MM value ->
+            MM value
+
+        Weekday value ->
+            Weekday value
+
+        DoM value ->
+            DoM value
+
+        Hour value ->
+            Hour value
+
+        Minute value ->
+            Minute value
+
+        Second value ->
+            Second value
+
+        DateFrom from value ->
+            DateFrom from value
+
+
+fragmentToDesc : Maybe Entity -> Fragment -> String
+fragmentToDesc e f =
+    let
+        entity =
+            Maybe.map Entity.toString e |> Maybe.withDefault "entity"
+    in
+    case f of
+        Free _ _ ->
+            "A free text that you will be able to enter to identify a new " ++ entity ++ "."
+
+        Fixed _ _ ->
             "A fixed text that you must configure now and that will be always the same. For instance it can be a prefix or a suffix"
 
         Sequence _ _ _ _ ->
-            "A sequence number"
+            "A sequence number used to identify a " ++ entity ++ "."
 
-        Existing str _ ->
-            "An existing identification"
+        Existing name _ ->
+            "An existing identification for a " ++ entity ++ "."
 
         YYYY _ ->
             "The year on 4 digits"
@@ -211,13 +307,13 @@ fragmentToDesc p =
             "Second on 2 digits"
 
         DateFrom from _ ->
-            "Date coming from another entity: " ++ from
+            "Date coming from another field: " ++ from
 
 
 encodeFragment : Fragment -> Encode.Value
 encodeFragment =
-    \p ->
-        case p of
+    \f ->
+        case f of
             Free name value ->
                 Encode.object
                     [ ( "type", Encode.string "Free" )
@@ -225,9 +321,10 @@ encodeFragment =
                     , ( "value", Encode.string value )
                     ]
 
-            Fixed value ->
+            Fixed name value ->
                 Encode.object
                     [ ( "type", Encode.string "Fixed" )
+                    , ( "name", Encode.string name )
                     , ( "value", Encode.string value )
                     ]
 
@@ -319,7 +416,7 @@ fragmentDecoder =
                         Decode.map2 Free (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
 
                     "Fixed" ->
-                        Decode.map Fixed (Decode.field "value" Decode.string)
+                        Decode.map2 Fixed (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
 
                     "Sequence" ->
                         Decode.map4 Sequence

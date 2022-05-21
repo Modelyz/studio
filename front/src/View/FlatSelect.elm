@@ -16,7 +16,7 @@ type alias Config a msg =
     { all : List a
     , toString : a -> String
     , toDesc : a -> Maybe String
-    , inputmsg : Maybe a -> msg
+    , onInput : Maybe a -> msg
     , label : String
     , explain : Element msg
     }
@@ -31,7 +31,7 @@ flatselect model c =
                 (\x ->
                     row [ Background.color color.item.selected ]
                         [ el [ padding 5 ] (text <| c.toString x)
-                        , button.secondary (c.inputmsg Nothing) "×"
+                        , button.secondary (c.onInput Nothing) "×"
                         ]
                 )
                 model.flatselect
@@ -47,7 +47,7 @@ flatselect model c =
                 (\x ->
                     column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
                         [ row [ alignLeft ]
-                            [ button.primary (c.inputmsg <| Just x) "+"
+                            [ button.primary (c.onInput <| Just x) "+"
                             , el [ paddingXY 10 0 ] (text <| c.toString x)
                             ]
                         , c.toDesc x |> Maybe.map (\d -> paragraph [ padding 10, Font.size size.text.main ] [ text d ]) |> Maybe.withDefault none

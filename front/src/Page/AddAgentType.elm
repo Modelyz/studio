@@ -186,7 +186,7 @@ viewContent model s =
                         { all = Set.toList <| s.state.agentTypes
                         , toString = AT.toString
                         , toDesc = AT.toDesc
-                        , inputmsg = InputType
+                        , onInput = InputType
                         , label = "Type"
                         , explain = h2 "Choose the type of the new Agent Type (it can be hierarchical)"
                         }
