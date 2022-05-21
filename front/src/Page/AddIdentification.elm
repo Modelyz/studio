@@ -4,12 +4,13 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toString)
-import REA.Ident as Ident exposing (Fragment(..), Identifier)
+import REA.Ident as Ident exposing (Fragment(..), Identifier, allFragments, fragmentToDesc, fragmentToName, fragmentToString, setName)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -19,7 +20,6 @@ import View exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
-import View.TagList exposing (..)
 
 
 type
@@ -47,7 +47,7 @@ type alias Model =
     , entity : Maybe Entity
     , unique : Bool
     , mandatory : Bool
-    , tags : List Fragment
+    , fragments : List Fragment
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -65,7 +65,7 @@ validate : Model -> Result String Identifier
 validate m =
     Result.map2
         -- avoid map6 which doesn't exist
-        (\name entity -> { name = name, entity = entity, unique = m.unique, mandatory = m.mandatory, fragments = m.tags })
+        (\name entity -> { name = name, entity = entity, unique = m.unique, mandatory = m.mandatory, fragments = m.fragments })
         (checkEmptyString m.name "The name is Empty")
         (checkNothing m.entity "You must select an entity")
 
@@ -98,7 +98,7 @@ init s f =
       , entity = Nothing
       , unique = False
       , mandatory = False
-      , tags = []
+      , fragments = []
       , warning = ""
       , steps = [ Step.Step Entity, Step.Step Options, Step.Step Format, Step.Step Name ]
       , step = Step.Step Entity
@@ -123,7 +123,7 @@ update s msg model =
             ( { model | mandatory = x }, Effect.none )
 
         InputFormat x ->
-            ( { model | tags = x }, Effect.none )
+            ( { model | fragments = x }, Effect.none )
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
@@ -180,7 +180,7 @@ buttonNext model =
             nextOrValidate model NextPage Added (Ok model.name)
 
         Step.Step Format ->
-            nextOrValidate model NextPage Added (checkEmptyList model.tags "The format is still empty")
+            nextOrValidate model NextPage Added (checkEmptyList model.fragments "The format is still empty")
 
         Step.Step Name ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
@@ -247,15 +247,6 @@ viewContent model s =
 
                 Step.Step Format ->
                     inputTags model
-                        { all = Ident.allFragments
-                        , toString = Ident.fragmentToString
-                        , toDesc = Ident.fragmentToDesc model.entity
-                        , toName = Ident.fragmentToName
-                        , setName = Ident.setName
-                        , onInput = InputFormat
-                        , label = "Format: "
-                        , explain = h2 "Click on the items below to construct the format of your identifier"
-                        }
 
                 Step.Step Name ->
                     el [ alignTop ] <|
@@ -275,4 +266,79 @@ viewContent model s =
         "Adding an identification"
         buttons
         [ step
+        ]
+
+
+inputTags : Model -> Element Msg
+inputTags model =
+    column [ alignTop, spacing 20, width <| minimum 200 fill ]
+        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
+            (el [ paddingXY 10 0 ] <| h2 "Format: ")
+                :: List.append
+                    (if List.isEmpty model.fragments then
+                        [ el [ padding 10, Font.color color.text.disabled ] (text "Empty") ]
+
+                     else
+                        []
+                    )
+                    (model.fragments
+                        |> List.indexedMap
+                            (\i fragment ->
+                                row [ Background.color color.item.background ]
+                                    [ el [ paddingXY 10 2 ] (text <| fragmentToString fragment)
+                                    , fragmentToName fragment
+                                        |> Maybe.map
+                                            (\name ->
+                                                Input.text [ width (px 75) ]
+                                                    { onChange =
+                                                        \v ->
+                                                            InputFormat
+                                                                (model.fragments
+                                                                    |> List.indexedMap
+                                                                        (\index f ->
+                                                                            if index == i then
+                                                                                setName v f
+
+                                                                            else
+                                                                                f
+                                                                        )
+                                                                )
+                                                    , text = name
+                                                    , placeholder =
+                                                        Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                                                    , label = Input.labelHidden <| name
+                                                    }
+                                            )
+                                        |> Maybe.withDefault none
+                                    , button.primary
+                                        (InputFormat
+                                            (model.fragments
+                                                |> List.indexedMap Tuple.pair
+                                                |> List.filter (\( j, _ ) -> j /= i)
+                                                |> List.map Tuple.second
+                                            )
+                                        )
+                                        "×"
+                                    ]
+                            )
+                    )
+        , h2 "Click on the items below to construct the format of your identifier"
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
+            List.map
+                (\f ->
+                    column
+                        [ Background.color color.item.background
+                        , mouseOver itemHoverstyle
+                        , width (px 250)
+                        , onClick (InputFormat <| model.fragments ++ [ f ])
+                        , pointer
+                        , padding 10
+                        , spacing 10
+                        , height (px 150)
+                        ]
+                        [ el [] (text <| fragmentToString f)
+                        , paragraph [ Font.size size.text.main ] [ text <| fragmentToDesc model.entity f ]
+                        ]
+                )
+                allFragments
         ]
