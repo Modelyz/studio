@@ -104,7 +104,7 @@ update s msg model =
                 | form = empty
               }
             , Shared.dispatchMany s <|
-                Event.CommitmentTypeAdded { commitmentType = CommitmentType ctype.name ctype.type_ }
+                Event.CommitmentTypeAdded (CommitmentType ctype.name ctype.type_)
                     :: List.map (\pt -> Event.LinkedCommitmentTypeToProcessType { ctype = ctype.name, ptype = pt.name }) ptypes
             )
 

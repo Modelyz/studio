@@ -103,7 +103,7 @@ update s msg model =
                     model.form
             in
             ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.GroupRemoved { name = group.name, entity = group.entity }
+            , Shared.dispatch s <| Event.GroupRemoved group.name
             )
 
         Warning w ->

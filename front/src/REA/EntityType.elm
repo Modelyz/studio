@@ -1,8 +1,8 @@
-module REA.EntityType exposing (EntityType(..), EntityTypes(..), decoder, encode, fromEntity, getNames, insert, remove, toPluralString, toString)
+module REA.EntityType exposing (EntityType(..), EntityTypes(..), decoder, encode, encodeType, fromEntity, fromList, getNames, insert, remove, toPluralString, toString, typesDecoder)
 
 import DictSet as Set exposing (DictSet)
-import Json.Decode exposing (Decoder)
-import Json.Encode exposing (Value)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 import REA.AgentType exposing (AgentType)
 import REA.CommitmentType exposing (CommitmentType)
 import REA.ContractType exposing (ContractType)
@@ -19,6 +19,19 @@ type EntityType
     | CommitmentType
     | ContractType
     | ProcessType
+
+
+type alias Name =
+    String
+
+
+type EntityTypes
+    = ResourceTypes (DictSet String String)
+    | EventTypes (DictSet String String)
+    | AgentTypes (DictSet String String)
+    | CommitmentTypes (DictSet String String)
+    | ContractTypes (DictSet String String)
+    | ProcessTypes (DictSet String String)
 
 
 fromEntity : Entity -> EntityType
@@ -44,31 +57,74 @@ fromEntity e =
             ProcessType
 
 
-type alias Name =
-    String
-
-
-type EntityTypes
-    = ResourceTypes (DictSet String String)
-    | EventTypes (DictSet String String)
-    | AgentTypes (DictSet String String)
-    | CommitmentTypes (DictSet String String)
-    | ContractTypes (DictSet String String)
-    | ProcessTypes (DictSet String String)
-
-
 encode : EntityType -> Value
 encode =
-    toString >> Json.Encode.string
+    toString >> Encode.string
 
 
 decoder : Decoder EntityType
 decoder =
-    Json.Decode.string
-        |> Json.Decode.andThen
+    Decode.string
+        |> Decode.andThen
             (fromString
-                >> Maybe.map Json.Decode.succeed
-                >> Maybe.withDefault (Json.Decode.fail "Unknown entity")
+                >> Maybe.map Decode.succeed
+                >> Maybe.withDefault (Decode.fail "Unknown entity")
+            )
+
+
+encodeType : EntityTypes -> Value
+encodeType ets =
+    case ets of
+        ResourceTypes xs ->
+            Encode.object [ ( "type", Encode.string "ResourceTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+        EventTypes xs ->
+            Encode.object [ ( "type", Encode.string "AgentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+        AgentTypes xs ->
+            Encode.object [ ( "type", Encode.string "EventTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+        CommitmentTypes xs ->
+            Encode.object [ ( "type", Encode.string "CommitmentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+        ContractTypes xs ->
+            Encode.object [ ( "type", Encode.string "ContractTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+        ProcessTypes xs ->
+            Encode.object [ ( "type", Encode.string "ProcessTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+
+
+typesDecoder : Decoder EntityTypes
+typesDecoder =
+    let
+        toSet : List String -> Decoder (DictSet String String)
+        toSet ns =
+            Decode.succeed (Set.fromList identity ns)
+    in
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\t ->
+                case t of
+                    "ResourceTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    "AgentTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    "EventTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    "CommitmentTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    "ContractTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    "ProcessTypes" ->
+                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+
+                    _ ->
+                        Decode.fail "unknown Entity Type"
             )
 
 
@@ -206,3 +262,25 @@ remove et ets =
 
         ProcessTypes xs ->
             ProcessTypes <| Set.remove et xs
+
+
+fromList : Entity -> List String -> EntityTypes
+fromList entity names =
+    case entity of
+        Resource ->
+            ResourceTypes <| Set.fromList identity names
+
+        Event ->
+            EventTypes <| Set.fromList identity names
+
+        Agent ->
+            AgentTypes <| Set.fromList identity names
+
+        Commitment ->
+            CommitmentTypes <| Set.fromList identity names
+
+        Contract ->
+            ContractTypes <| Set.fromList identity names
+
+        Process ->
+            ProcessTypes <| Set.fromList identity names

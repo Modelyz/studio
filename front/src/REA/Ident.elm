@@ -5,6 +5,7 @@ import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import REA.Entity as Entity exposing (Entity)
+import REA.EntityType as ENT
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
@@ -17,12 +18,22 @@ type alias Name =
     String
 
 
-type alias Identifier =
+type alias Identification =
     -- This is the configuration of an identifier
-    { name : Name
-    , entity : Entity
+    -- TODO rename to IdentifierType
+    { entity : Entity
+    , name : Name
+    , fragments : List Fragment
+    , applyTo : ENT.EntityTypes
     , unique : Bool
     , mandatory : Bool
+    }
+
+
+type alias Identifier =
+    -- This is the value of an idenfitier
+    { entity : Entity
+    , name : Name
     , fragments : List Fragment
     }
 
@@ -54,6 +65,11 @@ type alias Step =
 
 compareIdentifier : Identifier -> String
 compareIdentifier i =
+    Entity.toString i.entity ++ " " ++ i.name
+
+
+compareIdentification : Identification -> String
+compareIdentification i =
     Entity.toString i.entity ++ " " ++ i.name
 
 
@@ -406,6 +422,46 @@ encodeFragment =
                     ]
 
 
+encodeIdentification : Identification -> Encode.Value
+encodeIdentification e =
+    Encode.object
+        [ ( "entity", Entity.encode e.entity )
+        , ( "name", Encode.string e.name )
+        , ( "fragments", Encode.list encodeFragment e.fragments )
+        , ( "applyTo", ENT.encodeType e.applyTo )
+        , ( "unique", Encode.bool e.unique )
+        , ( "mandatory", Encode.bool e.mandatory )
+        ]
+
+
+encodeIdentifier : Identifier -> Encode.Value
+encodeIdentifier e =
+    Encode.object
+        [ ( "entity", Entity.encode e.entity )
+        , ( "name", Encode.string e.name )
+        , ( "fragments", Encode.list encodeFragment e.fragments )
+        ]
+
+
+identificationDecoder : Decoder Identification
+identificationDecoder =
+    Decode.map6 Identification
+        (Decode.field "entity" Entity.decoder)
+        (Decode.field "name" Decode.string)
+        (Decode.field "fragments" (Decode.list fragmentDecoder))
+        (Decode.field "applyTo" ENT.typesDecoder)
+        (Decode.field "unique" Decode.bool)
+        (Decode.field "mandatory" Decode.bool)
+
+
+identifierDecoder : Decoder Identifier
+identifierDecoder =
+    Decode.map3 Identifier
+        (Decode.field "entity" Entity.decoder)
+        (Decode.field "name" Decode.string)
+        (Decode.field "fragments" (Decode.list fragmentDecoder))
+
+
 fragmentDecoder : Decoder Fragment
 fragmentDecoder =
     Decode.field "type" Decode.string
@@ -490,3 +546,8 @@ updateIdentifier index fragment identifier =
                     )
     in
     { identifier | fragments = fragments }
+
+
+fromIdentification : Identification -> Identifier
+fromIdentification i =
+    { entity = i.entity, name = i.name, fragments = i.fragments }

@@ -83,11 +83,11 @@ update s msg model =
         GotInput form ->
             ( { model | form = form }, Effect.none )
 
-        Added name ->
+        Added pt ->
             ( { model
                 | form = empty
               }
-            , Shared.dispatch s <| Event.ProcessTypeChanged { name = name }
+            , Shared.dispatch s <| Event.ProcessTypeChanged pt
             )
 
         Removed ptype ->
@@ -114,18 +114,6 @@ view s model =
     , element = viewContent model
     , route = model.route
     }
-
-
-viewThumbnail : ProcessType -> Element Msg
-viewThumbnail pt =
-    row
-        []
-        [ row
-            [ htmlAttribute <| Attr.id pt.name ]
-            [ Input.button []
-                { onPress = Just <| Removed pt.name, label = text pt.name }
-            ]
-        ]
 
 
 viewContent : Model -> Shared.Model -> Element Msg

@@ -3,7 +3,7 @@ module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, ident
 import Browser.Navigation as Nav
 import DictSet as Set
 import Effect exposing (Effect)
-import Event exposing (Event(..), EventBase, exceptCI, getTime)
+import Event exposing (Event(..), EventBase, EventPayload(..), exceptCI, getTime)
 import EventFlow as Flow
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Json exposing (decodeString, decodeValue, errorToString)
@@ -329,16 +329,18 @@ initiateConnection uuid model =
         Task.map
             (\t ->
                 List.singleton <|
-                    ConnectionInitiated
-                        { lastEventTime = model.state.lastEventTime
-                        , uuids = Set.insert uuid model.state.uuids
-                        }
+                    Event
                         { uuid = uuid, when = t, flow = Flow.Requested }
+                        (ConnectionInitiated
+                            { lastEventTime = model.state.lastEventTime
+                            , uuids = Set.insert uuid model.state.uuids
+                            }
+                        )
             )
             Time.now
 
 
-dispatch : Model -> (EventBase -> Event) -> Effect Msg msg
+dispatch : Model -> EventPayload -> Effect Msg msg
 dispatch model payload =
     -- take an Event payload and add the EventBase informations
     let
@@ -350,12 +352,12 @@ dispatch model payload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| payload { uuid = newUuid, when = t, flow = Flow.Requested })
+                (\t -> List.singleton <| Event { uuid = newUuid, when = t, flow = Flow.Requested } payload)
                 Time.now
 
 
-dispatchT : Model -> (Uuid -> Time.Posix -> EventBase -> Event) -> Effect Msg msg
-dispatchT model payload =
+dispatchT : Model -> (Uuid -> Time.Posix -> EventPayload) -> Effect Msg msg
+dispatchT model newPayload =
     -- take an Event payload, feed with a uuid and posixtime, and add the EventBase informations
     let
         ( newUuid, _ ) =
@@ -366,14 +368,14 @@ dispatchT model payload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| payload newUuid t { uuid = newUuid, when = t, flow = Flow.Requested })
+                (\t -> List.singleton <| Event { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
                 Time.now
 
 
-dispatchMany : Model -> List (EventBase -> Event) -> Effect Msg msg
+dispatchMany : Model -> List EventPayload -> Effect Msg msg
 dispatchMany model payloads =
     -- dispatch several events
-    Effect.batch <| List.map (\payload -> dispatch model payload) payloads
+    Effect.batch <| List.map (dispatch model) payloads
 
 
 identity : Model -> Maybe String

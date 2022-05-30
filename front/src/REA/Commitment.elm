@@ -8,10 +8,10 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Commitment =
-    { name : String
+    { type_ : CommitmentType
+    , name : String
     , uuid : Uuid
     , when : Time.Posix
-    , type_ : CommitmentType
 
     --        , qty: Float
     --        , rtype: ResourceType
@@ -33,10 +33,10 @@ encode c =
 decoder : Decode.Decoder Commitment
 decoder =
     Decode.map4 Commitment
+        (Decode.field "type" CT.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.field "type" CT.decoder)
 
 
 compare : Commitment -> Int

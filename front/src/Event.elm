@@ -1,4 +1,4 @@
-port module Event exposing (Event(..), EventBase, base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
+port module Event exposing (Event(..), EventBase, EventPayload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
@@ -6,14 +6,20 @@ import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.Commitment as C exposing (Commitment)
+import REA.Agent as A exposing (Agent)
+import REA.AgentType as AT exposing (AgentType)
+import REA.Commitment as CM exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Entity exposing (Entity)
+import REA.EntityType as ENT
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
-import REA.Ident as Ident exposing (Fragment, Identifier, encodeFragment, fragmentDecoder)
+import REA.Group as G exposing (Group)
+import REA.Ident as I exposing (Fragment, Identification, Identifier, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.ProcessType as PT exposing (ProcessType)
+import REA.ProcessTypeCommitmentType as PTCT
+import REA.ProcessTypeEventType as PTET
 import Result exposing (Result(..))
 import Time exposing (millisToPosix, posixToMillis)
 import Websocket exposing (WSStatus(..))
@@ -52,94 +58,108 @@ type alias EventBase =
 
 
 type Event
-    = ConnectionInitiated { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid } EventBase
-    | ProcessTypeChanged { name : ProcessType } EventBase
-    | ProcessTypeRemoved String EventBase
-    | ProcessAdded { type_ : String, name : String } EventBase
-    | CommitmentTypeAdded { commitmentType : CommitmentType } EventBase
-    | CommitmentTypeRemoved String EventBase
-    | CommitmentAdded { process : Process, commitment : Commitment } EventBase
-    | EventTypeAdded { eventType : EventType } EventBase
-    | EventTypeRemoved String EventBase
-    | EventAdded { process : Process, event : E.Event } EventBase
-    | LinkedEventTypeToProcessType { etype : String, ptype : String } EventBase
-    | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String } EventBase
-    | GroupAdded { name : String, entity : Entity } EventBase
-    | GroupRemoved { name : String, entity : Entity } EventBase
-    | IdentificationAdded { name : String, entity : Entity, unique : Bool, mandatory : Bool, fragments : List Fragment } EventBase
-    | IdentificationRemoved String EventBase
-    | AgentTypeAdded { name : String, type_ : Maybe String } EventBase
-    | AgentTypeRemoved String EventBase
-    | AgentAdded { name : Uuid, type_ : String } EventBase
-    | AgentRemoved Uuid EventBase
-    | IdentifierAdded Identifier EventBase -- TODO also simplify others?
+    = Event EventBase EventPayload
+
+
+type EventPayload
+    = ConnectionInitiated Connection
+    | ProcessTypeChanged ProcessType
+    | ProcessTypeRemoved String
+    | ProcessAdded Process
+    | CommitmentTypeAdded CommitmentType
+    | CommitmentTypeRemoved String
+    | CommitmentAdded Commitment
+    | EventTypeAdded EventType
+    | EventTypeRemoved String
+    | EventAdded E.Event
+    | LinkedEventTypeToProcessType { etype : String, ptype : String } -- TODO single Link event?
+    | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String }
+    | GroupAdded Group
+    | GroupRemoved String
+    | IdentificationAdded Identification
+    | IdentificationRemoved String
+    | AgentTypeAdded AgentType
+    | AgentTypeRemoved String
+    | AgentAdded Agent
+    | AgentRemoved Uuid
+    | IdentifierAdded Identifier
+
+
+toString : EventPayload -> String
+toString p =
+    case p of
+        ConnectionInitiated _ ->
+            "ConnectionInitiated"
+
+        ProcessTypeChanged _ ->
+            "ProcessTypeChanged"
+
+        ProcessTypeRemoved _ ->
+            "ProcessTypeRemoved"
+
+        ProcessAdded _ ->
+            "ProcessAdded"
+
+        CommitmentTypeAdded _ ->
+            "CommitmentTypeAdded"
+
+        CommitmentTypeRemoved _ ->
+            "CommitmentTypeRemoved"
+
+        CommitmentAdded _ ->
+            "CommitmentAdded"
+
+        EventTypeAdded _ ->
+            "EventTypeAdded"
+
+        EventTypeRemoved _ ->
+            "EventTypeRemoved"
+
+        EventAdded _ ->
+            "EventAdded"
+
+        LinkedEventTypeToProcessType _ ->
+            "LinkedEventTypeToProcessType"
+
+        LinkedCommitmentTypeToProcessType _ ->
+            "LinkedCommitmentTypeToProcessType"
+
+        GroupAdded _ ->
+            "GroupAdded"
+
+        GroupRemoved _ ->
+            "GroupRemoved"
+
+        IdentificationAdded _ ->
+            "IdentificationAdded"
+
+        IdentificationRemoved _ ->
+            "IdentificationRemoved"
+
+        AgentTypeAdded _ ->
+            "AgentTypeAdded"
+
+        AgentTypeRemoved _ ->
+            "AgentTypeRemoved"
+
+        AgentAdded _ ->
+            "AgentAdded"
+
+        AgentRemoved _ ->
+            "AgentRemoved"
+
+        IdentifierAdded _ ->
+            "IdentifierAdded"
+
+
+type alias Connection =
+    -- TODO move in its module?
+    { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid }
 
 
 base : Event -> EventBase
-base event =
-    case event of
-        ProcessTypeChanged _ b ->
-            b
-
-        ProcessTypeRemoved _ b ->
-            b
-
-        ProcessAdded _ b ->
-            b
-
-        CommitmentTypeAdded _ b ->
-            b
-
-        CommitmentTypeRemoved _ b ->
-            b
-
-        CommitmentAdded _ b ->
-            b
-
-        EventTypeAdded _ b ->
-            b
-
-        EventTypeRemoved _ b ->
-            b
-
-        EventAdded _ b ->
-            b
-
-        LinkedEventTypeToProcessType _ b ->
-            b
-
-        LinkedCommitmentTypeToProcessType _ b ->
-            b
-
-        ConnectionInitiated _ b ->
-            b
-
-        GroupAdded _ b ->
-            b
-
-        GroupRemoved _ b ->
-            b
-
-        IdentificationAdded _ b ->
-            b
-
-        IdentificationRemoved _ b ->
-            b
-
-        AgentTypeAdded _ b ->
-            b
-
-        AgentTypeRemoved _ b ->
-            b
-
-        AgentAdded _ b ->
-            b
-
-        AgentRemoved _ b ->
-            b
-
-        IdentifierAdded _ b ->
-            b
+base (Event b p) =
+    b
 
 
 compare : Event -> Int
@@ -155,9 +175,9 @@ getTime =
 exceptCI : List Event -> List Event
 exceptCI es =
     List.filter
-        (\e ->
-            case e of
-                ConnectionInitiated _ _ ->
+        (\(Event b p) ->
+            case p of
+                ConnectionInitiated _ ->
                     False
 
                 _ ->
@@ -167,376 +187,93 @@ exceptCI es =
 
 
 
--- Event constructors
-
-
-processTypeChanged : Uuid -> Time.Posix -> EventFlow -> ProcessType -> Event
-processTypeChanged uuid when flow name =
-    ProcessTypeChanged
-        { name = name
-        }
-        (EventBase uuid when flow)
-
-
-processTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-processTypeRemoved uuid when flow name =
-    ProcessTypeRemoved name
-        (EventBase uuid when flow)
-
-
-processAdded : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-processAdded uuid when flow name type_ =
-    ProcessAdded
-        { name = name
-        , type_ = type_
-        }
-        (EventBase uuid when flow)
-
-
-commitmentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-commitmentTypeRemoved uuid when flow name =
-    CommitmentTypeRemoved name (EventBase uuid when flow)
-
-
-commitmentTypeAdded : Uuid -> Time.Posix -> EventFlow -> CommitmentType -> Event
-commitmentTypeAdded uuid when flow commitmentType =
-    CommitmentTypeAdded
-        { commitmentType = commitmentType
-        }
-        (EventBase uuid when flow)
-
-
-commitmentAdded : Uuid -> Time.Posix -> EventFlow -> Process -> Commitment -> Event
-commitmentAdded uuid when flow process commitment =
-    CommitmentAdded
-        { commitment = commitment
-        , process = process
-        }
-        (EventBase uuid when flow)
-
-
-eventTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-eventTypeRemoved uuid when flow name =
-    EventTypeRemoved name (EventBase uuid when flow)
-
-
-linkedEventTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-linkedEventTypeToProcessType uuid when flow etype ptype =
-    LinkedEventTypeToProcessType
-        { etype = etype
-        , ptype = ptype
-        }
-        (EventBase uuid when flow)
-
-
-linkedCommitmentTypeToProcessType : Uuid -> Time.Posix -> EventFlow -> String -> String -> Event
-linkedCommitmentTypeToProcessType uuid when flow ctype ptype =
-    LinkedCommitmentTypeToProcessType
-        { ctype = ctype
-        , ptype = ptype
-        }
-        (EventBase uuid when flow)
-
-
-eventTypeAdded : Uuid -> Time.Posix -> EventFlow -> EventType -> Event
-eventTypeAdded uuid when flow eventType =
-    EventTypeAdded
-        { eventType = eventType
-        }
-        (EventBase uuid when flow)
-
-
-eventAdded : Uuid -> Time.Posix -> EventFlow -> Process -> E.Event -> Event
-eventAdded uuid when flow process event =
-    EventAdded
-        { event = event
-        , process = process
-        }
-        (EventBase uuid when flow)
-
-
-connectionInitiated : Uuid -> Time.Posix -> EventFlow -> Time.Posix -> Set.DictSet String Uuid -> Event
-connectionInitiated uuid when flow lastEventTime uuids =
-    ConnectionInitiated
-        { lastEventTime = lastEventTime
-        , uuids = uuids
-        }
-        (EventBase uuid when flow)
-
-
-groupAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
-groupAdded uuid when flow name entity =
-    GroupAdded
-        { name = name
-        , entity = entity
-        }
-        (EventBase uuid when flow)
-
-
-groupRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Event
-groupRemoved uuid when flow name entity =
-    GroupRemoved
-        { name = name
-        , entity = entity
-        }
-        (EventBase uuid when flow)
-
-
-identificationAdded : Uuid -> Time.Posix -> EventFlow -> String -> Entity -> Bool -> Bool -> List Fragment -> Event
-identificationAdded uuid when flow name entity unique mandatory fragments =
-    IdentificationAdded
-        { name = name
-        , entity = entity
-        , unique = unique
-        , mandatory = mandatory
-        , fragments = fragments
-        }
-        (EventBase uuid when flow)
-
-
-identificationRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-identificationRemoved uuid when flow name =
-    IdentificationRemoved name (EventBase uuid when flow)
-
-
-agentTypeAdded : Uuid -> Time.Posix -> EventFlow -> String -> Maybe String -> Event
-agentTypeAdded uuid when flow name type_ =
-    AgentTypeAdded { name = name, type_ = type_ } (EventBase uuid when flow)
-
-
-agentTypeRemoved : Uuid -> Time.Posix -> EventFlow -> String -> Event
-agentTypeRemoved uuid when flow name =
-    AgentTypeRemoved name (EventBase uuid when flow)
-
-
-agentAdded : Uuid -> Time.Posix -> EventFlow -> Uuid -> String -> Event
-agentAdded uuid when flow name type_ =
-    AgentAdded { name = name, type_ = type_ } (EventBase uuid when flow)
-
-
-agentRemoved : Uuid -> Time.Posix -> EventFlow -> Uuid -> Event
-agentRemoved uuid when flow name =
-    AgentRemoved name (EventBase uuid when flow)
-
-
-identifierAdded : Uuid -> Time.Posix -> EventFlow -> Entity -> Ident.Name -> List Fragment -> Bool -> Bool -> Event
-identifierAdded uuid when flow entity name fragments unique mandatory =
-    IdentifierAdded { entity = entity, name = name, fragments = fragments, unique = unique, mandatory = mandatory } (EventBase uuid when flow)
-
-
-
 -- JSON encoding / decoding
 
 
+encodeBase : String -> EventBase -> Encode.Value
+encodeBase t b =
+    Encode.object
+        [ ( "what", Encode.string t )
+        , ( "uuid", Uuid.encode b.uuid )
+        , ( "when", Encode.int <| posixToMillis b.when )
+        , ( "flow", EventFlow.encode b.flow )
+        ]
+
+
 encode : Event -> Encode.Value
-encode event =
-    case event of
-        ProcessTypeChanged e b ->
-            Encode.object
-                [ ( "what", Encode.string "ProcessTypeChanged" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "type", PT.encode e.name )
-                ]
+encode (Event b p) =
+    Encode.object
+        [ ( "what", Encode.string <| toString p )
+        , ( "meta", encodeBase "ProcessTypeChanged" b )
+        , case p of
+            ProcessTypeChanged e ->
+                ( "load", PT.encode e )
 
-        ProcessTypeRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "ProcessTypeRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
-                ]
+            ProcessTypeRemoved n ->
+                ( "load", Encode.string n )
 
-        ProcessAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "ProcessAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
-                , ( "type", Encode.string e.type_ )
-                ]
+            ProcessAdded e ->
+                ( "load", P.encode e )
 
-        CommitmentTypeAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "CommitmentTypeAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "commitmentType", CT.encode e.commitmentType )
-                ]
+            CommitmentTypeAdded e ->
+                ( "load", CT.encode e )
 
-        CommitmentTypeRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "CommitmentTypeRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
-                ]
+            CommitmentTypeRemoved e ->
+                ( "load", Encode.string e )
 
-        CommitmentAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "CommitmentAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "process", P.encode e.process )
-                , ( "commitment", C.encode e.commitment )
-                ]
+            CommitmentAdded e ->
+                ( "load", CM.encode e )
 
-        EventTypeAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "EventTypeAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "eventType", ET.encode e.eventType )
-                ]
+            EventTypeAdded e ->
+                ( "load", ET.encode e )
 
-        LinkedEventTypeToProcessType e b ->
-            Encode.object
-                [ ( "what", Encode.string "LinkedEventTypeToProcessType" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "etype", Encode.string e.etype )
-                , ( "ptype", Encode.string e.ptype )
-                ]
+            LinkedEventTypeToProcessType e ->
+                ( "load", PTET.encode e )
 
-        LinkedCommitmentTypeToProcessType e b ->
-            Encode.object
-                [ ( "what", Encode.string "LinkedCommitmentTypeToProcessType" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "ctype", Encode.string e.ctype )
-                , ( "ptype", Encode.string e.ptype )
-                ]
+            LinkedCommitmentTypeToProcessType e ->
+                ( "load", PTCT.encode e )
 
-        EventTypeRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "EventTypeRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
-                ]
+            EventTypeRemoved e ->
+                ( "load", Encode.string e )
 
-        EventAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "EventAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "process", P.encode e.process )
-                , ( "event", E.encode e.event )
-                ]
+            EventAdded e ->
+                ( "load", E.encode e )
 
-        ConnectionInitiated e b ->
-            Encode.object
-                [ ( "what", Encode.string "ConnectionInitiated" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
-                , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
-                ]
+            ConnectionInitiated e ->
+                ( "load"
+                , Encode.object
+                    [ ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
+                    , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
+                    ]
+                )
 
-        GroupAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "GroupAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
-                , ( "entity", REA.Entity.encode e.entity )
-                ]
+            GroupAdded e ->
+                ( "load", G.encode e )
 
-        GroupRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "GroupRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
-                , ( "entity", REA.Entity.encode e.entity )
-                ]
+            GroupRemoved e ->
+                ( "load", Encode.string e )
 
-        IdentificationAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "IdentificationAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
-                , ( "entity", REA.Entity.encode e.entity )
-                , ( "unique", Encode.bool e.unique )
-                , ( "mandatory", Encode.bool e.mandatory )
-                , ( "fragments", Encode.list encodeFragment e.fragments )
-                ]
+            IdentificationAdded e ->
+                ( "load", I.encodeIdentification e )
 
-        IdentificationRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "IdentificationRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
-                ]
+            IdentificationRemoved e ->
+                ( "load", Encode.string e )
 
-        AgentTypeAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "AgentTypeAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e.name )
-                , ( "type", Maybe.map Encode.string e.type_ |> Maybe.withDefault Encode.null )
-                ]
+            AgentTypeAdded e ->
+                ( "load", AT.encode e )
 
-        AgentTypeRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "AgentTypeRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Encode.string e )
-                ]
+            AgentTypeRemoved e ->
+                ( "load", Encode.string e )
 
-        AgentAdded e b ->
-            Encode.object
-                [ ( "what", Encode.string "AgentAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Uuid.encode e.name )
-                , ( "type", Encode.string e.type_ )
-                ]
+            AgentAdded e ->
+                ( "load", A.encode e )
 
-        AgentRemoved e b ->
-            Encode.object
-                [ ( "what", Encode.string "AgentRemoved" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "name", Uuid.encode e )
-                ]
+            AgentRemoved e ->
+                ( "load", Uuid.encode e )
 
-        IdentifierAdded i b ->
-            Encode.object
-                [ ( "what", Encode.string "IdentifierAdded" )
-                , ( "uuid", Uuid.encode b.uuid )
-                , ( "when", Encode.int <| posixToMillis b.when )
-                , ( "flow", EventFlow.encode b.flow )
-                , ( "entity", REA.Entity.encode i.entity )
-                , ( "name", Encode.string i.name )
-                , ( "value", Encode.list encodeFragment i.fragments )
-                , ( "unique", Encode.bool i.unique )
-                , ( "mandatory", Encode.bool i.mandatory )
-                ]
+            IdentifierAdded e ->
+                ( "load", I.encodeIdentifier e )
+        ]
 
 
 decodelist : Decode.Value -> List Event
@@ -544,182 +281,117 @@ decodelist =
     Result.withDefault [] << decodeValue (Decode.list decoder)
 
 
+toPosix : Int -> Decoder Time.Posix
+toPosix t =
+    Decode.succeed (millisToPosix t)
+
+
+baseDecoder : Decoder EventBase
+baseDecoder =
+    Decode.map3 EventBase
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "when" Decode.int |> andThen toPosix)
+        (Decode.field "flow" EventFlow.decoder)
+
+
 decoder : Decoder Event
 decoder =
-    let
-        toPosix : Int -> Decoder Time.Posix
-        toPosix t =
-            Decode.succeed (millisToPosix t)
-    in
-    Decode.field "what" Decode.string
-        |> andThen
-            (\t ->
-                case t of
-                    "ProcessTypeChanged" ->
-                        Decode.map4 processTypeChanged
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "type" PT.decoder)
+    Decode.map2 Event
+        (Decode.field "meta" baseDecoder)
+        (Decode.field "what" Decode.string
+            |> andThen
+                (\t ->
+                    case t of
+                        "ProcessTypeChanged" ->
+                            Decode.map ProcessTypeChanged
+                                (Decode.field "load" PT.decoder)
 
-                    "ProcessTypeRemoved" ->
-                        Decode.map4 processTypeRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "type" Decode.string)
+                        "ProcessTypeRemoved" ->
+                            Decode.map ProcessTypeRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "ProcessAdded" ->
-                        Decode.map5 processAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "type" Decode.string)
+                        "ProcessAdded" ->
+                            Decode.map ProcessAdded
+                                (Decode.field "load" P.decoder)
 
-                    "CommitmentTypeAdded" ->
-                        Decode.map4 commitmentTypeAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "commitmentType" CT.decoder)
+                        "CommitmentTypeAdded" ->
+                            Decode.map CommitmentTypeAdded
+                                (Decode.field "load" CT.decoder)
 
-                    "CommitmentTypeRemoved" ->
-                        Decode.map4 commitmentTypeRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                        "CommitmentTypeRemoved" ->
+                            Decode.map CommitmentTypeRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "CommitmentAdded" ->
-                        Decode.map5 commitmentAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "process" P.decoder)
-                            (Decode.field "commitment" C.decoder)
+                        "CommitmentAdded" ->
+                            Decode.map CommitmentAdded
+                                (Decode.field "load" CM.decoder)
 
-                    "EventTypeAdded" ->
-                        Decode.map4 eventTypeAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "eventType" ET.decoder)
+                        "EventTypeAdded" ->
+                            Decode.map EventTypeAdded
+                                (Decode.field "load" ET.decoder)
 
-                    "LinkedEventTypeToProcessType" ->
-                        Decode.map5 linkedEventTypeToProcessType
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "etype" Decode.string)
-                            (Decode.field "ptype" Decode.string)
+                        "LinkedEventTypeToProcessType" ->
+                            Decode.map LinkedEventTypeToProcessType
+                                (Decode.field "load" PTET.decoder)
 
-                    "LinkedCommitmentTypeToProcessType" ->
-                        Decode.map5 linkedCommitmentTypeToProcessType
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "ctype" Decode.string)
-                            (Decode.field "ptype" Decode.string)
+                        "LinkedCommitmentTypeToProcessType" ->
+                            Decode.map LinkedCommitmentTypeToProcessType
+                                (Decode.field "load" PTCT.decoder)
 
-                    "EventTypeRemoved" ->
-                        Decode.map4 eventTypeRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                        "EventTypeRemoved" ->
+                            Decode.map EventTypeRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "EventAdded" ->
-                        Decode.map5 eventAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "process" P.decoder)
-                            (Decode.field "event" E.decoder)
+                        "EventAdded" ->
+                            Decode.map EventAdded
+                                (Decode.field "load" E.decoder)
 
-                    "ConnectionInitiated" ->
-                        Decode.map5 connectionInitiated
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
-                            (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
+                        "ConnectionInitiated" ->
+                            Decode.map ConnectionInitiated
+                                (Decode.field "load"
+                                    (Decode.map2 Connection
+                                        (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
+                                        (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
+                                    )
+                                )
 
-                    "GroupAdded" ->
-                        Decode.map5 groupAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "entity" REA.Entity.decoder)
+                        "GroupAdded" ->
+                            Decode.map GroupAdded
+                                (Decode.field "load" G.decoder)
 
-                    "GroupRemoved" ->
-                        Decode.map5 groupRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "entity" REA.Entity.decoder)
+                        "GroupRemoved" ->
+                            Decode.map GroupRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "IdentificationAdded" ->
-                        Decode.map8 identificationAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "entity" REA.Entity.decoder)
-                            (Decode.field "unique" Decode.bool)
-                            (Decode.field "mandatory" Decode.bool)
-                            (Decode.field "fragments" (Decode.list fragmentDecoder))
+                        "IdentificationAdded" ->
+                            Decode.map IdentificationAdded
+                                (Decode.field "load" I.identificationDecoder)
 
-                    "IdentificationRemoved" ->
-                        Decode.map4 identificationRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                        "IdentificationRemoved" ->
+                            Decode.map IdentificationRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "AgentTypeAdded" ->
-                        Decode.map5 agentTypeAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "type" (Decode.maybe Decode.string))
+                        "AgentTypeAdded" ->
+                            Decode.map AgentTypeAdded
+                                (Decode.field "load" AT.decoder)
 
-                    "AgentTypeRemoved" ->
-                        Decode.map4 agentTypeRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Decode.string)
+                        "AgentTypeRemoved" ->
+                            Decode.map AgentTypeRemoved
+                                (Decode.field "load" Decode.string)
 
-                    "AgentAdded" ->
-                        Decode.map5 agentAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Uuid.decoder)
-                            (Decode.field "type" Decode.string)
+                        "AgentAdded" ->
+                            Decode.map AgentAdded
+                                (Decode.field "load" A.decoder)
 
-                    "AgentRemoved" ->
-                        Decode.map4 agentRemoved
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "name" Uuid.decoder)
+                        "AgentRemoved" ->
+                            Decode.map AgentRemoved
+                                (Decode.field "load" Uuid.decoder)
 
-                    "IdentifierAdded" ->
-                        Decode.map8 identifierAdded
-                            (Decode.field "uuid" Uuid.decoder)
-                            (Decode.field "when" Decode.int |> andThen toPosix)
-                            (Decode.field "flow" EventFlow.decoder)
-                            (Decode.field "entity" REA.Entity.decoder)
-                            (Decode.field "name" Decode.string)
-                            (Decode.field "fragments" (Decode.list fragmentDecoder))
-                            (Decode.field "unique" Decode.bool)
-                            (Decode.field "mandatory" Decode.bool)
+                        "IdentifierAdded" ->
+                            Decode.map IdentifierAdded
+                                (Decode.field "load" I.identifierDecoder)
 
-                    _ ->
-                        Decode.fail <| "Unknown Event type: " ++ t
-            )
+                        _ ->
+                            Decode.fail <| "Unknown Event type: " ++ t
+                )
+        )

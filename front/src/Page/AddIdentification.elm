@@ -17,10 +17,10 @@ import REA.CommitmentType as CMT exposing (CommitmentType)
 import REA.Contract as CN exposing (Contract)
 import REA.ContractType as CNT exposing (ContractType)
 import REA.Entity as EN exposing (toPluralString, toString)
-import REA.EntityType as ENT exposing (EntityType, EntityTypes(..), fromEntity)
+import REA.EntityType as ENT exposing (EntityType, EntityTypes(..))
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as Ident exposing (Fragment(..), Identifier, allFragments, fragmentToDesc, fragmentToName, fragmentToString, setName)
+import REA.Ident exposing (Fragment(..), Identification, allFragments, fragmentToDesc, fragmentToName, fragmentToString, setName)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -46,7 +46,7 @@ type
     -- TODO replace with Input Identifier
     = InputName String
     | InputEntity EN.Entity
-    | InputEntityTypes EntityTypes
+    | InputEntityTypes (List String)
     | InputUnique Bool
     | InputMandatory Bool
     | InputFormat (List Fragment)
@@ -68,7 +68,7 @@ type alias Model =
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , entityTypes : Maybe EntityTypes
+    , applyTo : List String
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -83,13 +83,13 @@ type Step
     | StepEntityTypes
 
 
-validate : Model -> Result String Identifier
+validate : Model -> Result String Identification
 validate m =
     Result.map2
-        -- avoid map6 which doesn't exist
-        (\name entity -> { name = name, entity = entity, unique = m.unique, mandatory = m.mandatory, fragments = m.fragments })
-        (checkEmptyString m.name "The name is Empty")
+        -- avoid map6 which doesn't exist:
+        (\entity name -> { entity = entity, name = name, fragments = m.fragments, applyTo = ENT.fromList entity m.applyTo, unique = m.unique, mandatory = m.mandatory })
         (checkNothing m.entity "You must select an entity")
+        (checkEmptyString m.name "The name is Empty")
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -118,7 +118,7 @@ init s f =
     ( { route = f.route
       , name = ""
       , entity = Nothing
-      , entityTypes = Nothing
+      , applyTo = []
       , unique = False
       , mandatory = False
       , fragments = []
@@ -139,31 +139,13 @@ update s msg model =
         InputEntity x ->
             ( { model
                 | entity = Just x
-                , entityTypes =
-                    case x of
-                        EN.Resource ->
-                            Just <| ResourceTypes <| Set.empty identity
-
-                        EN.Event ->
-                            Just <| EventTypes <| Set.empty identity
-
-                        EN.Agent ->
-                            Just <| AgentTypes <| Set.empty identity
-
-                        EN.Commitment ->
-                            Just <| CommitmentTypes <| Set.empty identity
-
-                        EN.Contract ->
-                            Just <| ContractTypes <| Set.empty identity
-
-                        EN.Process ->
-                            Just <| ProcessTypes <| Set.empty identity
+                , applyTo = []
               }
             , Effect.none
             )
 
         InputEntityTypes ts ->
-            ( { model | entityTypes = Just ts }, Effect.none )
+            ( { model | applyTo = ts }, Effect.none )
 
         InputUnique x ->
             ( { model | unique = x }, Effect.none )
@@ -235,7 +217,7 @@ buttonNext model =
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
         Step.Step StepEntityTypes ->
-            nextOrValidate model NextPage Added (Ok model.entityTypes)
+            nextOrValidate model NextPage Added (Ok model.applyTo)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -328,12 +310,7 @@ viewItem : Model -> String -> Element Msg
 viewItem model name =
     row [ Background.color color.item.background ]
         [ el [ paddingXY 10 2 ] (text <| name)
-        , case model.entityTypes of
-            Just ets ->
-                button.primary (InputEntityTypes <| ENT.remove name ets) "×"
-
-            Nothing ->
-                button.disabled "You must first select the entity type" "×"
+        , button.primary (InputEntityTypes <| List.filter (\e -> name /= e) model.applyTo) "×"
         ]
 
 
@@ -356,14 +333,9 @@ inputEntityTypes s model =
                      else
                         []
                     )
-                    (model.entityTypes
-                        |> Maybe.map
-                            ENT.getNames
-                        |> Maybe.map
-                            (List.map
-                                (\t -> viewItem model t)
-                            )
-                        |> Maybe.withDefault []
+                    (model.applyTo
+                        |> List.map
+                            (\t -> viewItem model t)
                     )
         , h2 <| "Select the " ++ eType ++ " types that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
@@ -371,22 +343,15 @@ inputEntityTypes s model =
                 |> List.map
                     (\et ->
                         column
-                            ([ Background.color color.item.background
-                             , mouseOver itemHoverstyle
-                             , width (px 250)
-                             , pointer
-                             , padding 10
-                             , spacing 10
-                             , height (px 150)
-                             ]
-                                ++ (case model.entityTypes of
-                                        Just ets ->
-                                            [ onClick <| InputEntityTypes <| ENT.insert et ets ]
-
-                                        Nothing ->
-                                            []
-                                   )
-                            )
+                            [ Background.color color.item.background
+                            , mouseOver itemHoverstyle
+                            , width (px 250)
+                            , pointer
+                            , padding 10
+                            , spacing 10
+                            , onClick <| InputEntityTypes <| et :: model.applyTo
+                            , height (px 150)
+                            ]
                             [ el [] (text et)
                             ]
                     )

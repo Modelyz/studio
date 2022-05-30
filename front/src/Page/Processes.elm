@@ -64,7 +64,7 @@ update s msg model =
     case msg of
         NewProcess ptype ->
             ( model
-            , Shared.dispatch s <| Event.ProcessAdded { name = "new process", type_ = ptype.name }
+            , Shared.dispatchT s <| \uuid t -> Event.ProcessAdded (Process "new process" ptype.name uuid t)
             )
 
 

@@ -100,7 +100,7 @@ update s msg model =
                 | form = empty
               }
             , Shared.dispatchMany s <|
-                Event.EventTypeAdded { eventType = EventType etype.name etype.type_ }
+                Event.EventTypeAdded (EventType etype.name etype.type_)
                     :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = etype.name, ptype = pt.name }) ptypes
             )
 

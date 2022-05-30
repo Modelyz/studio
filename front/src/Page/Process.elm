@@ -82,7 +82,7 @@ update s msg model =
                 Just ct ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.CommitmentAdded { process = process, commitment = Commitment ct.name uuid t ct }
+                        \uuid t -> Event.CommitmentAdded (Commitment ct ct.name uuid t)
                     )
 
                 Nothing ->
@@ -102,7 +102,7 @@ update s msg model =
                 Just et ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.EventAdded { process = process, event = E.new et.name uuid t et }
+                        \uuid t -> Event.EventAdded (E.Event et et.name uuid t)
                     )
 
                 Nothing ->

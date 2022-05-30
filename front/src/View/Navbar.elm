@@ -37,7 +37,6 @@ links s r =
     , menuitem s r AgentTypes "Agent Types"
     , menuitem s r CommitmentTypes "Commitment Types"
     , menuitem s r ContractTypes "Contract Types"
-    , menuitem s r ContractTypes "Contract Types"
     , menuitem s r Groups "Groups"
     , menuitem s r Identifications "Identifiers"
     , menuitem s r Agents "Agents"

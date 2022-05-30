@@ -13,7 +13,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
 import REA.Entity as Entity
-import REA.Ident as Ident exposing (Identifier)
+import REA.Ident as I exposing (Identifier)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -95,7 +95,7 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , name = newUuid
-      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifications
+      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifications |> Set.map I.compareIdentifier I.fromIdentification
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -121,7 +121,7 @@ update s msg model =
                 Ok a ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.AgentAdded { name = a.name, type_ = a.type_ }
+                        [ Shared.dispatch s <| Event.AgentAdded a
                         , redirect s Route.Agents
                         ]
                     )
