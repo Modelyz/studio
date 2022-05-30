@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, empty, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType)
+module State exposing (State, aggregate, allNames, empty, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType)
 
 --import REA.ProcessType as PT exposing (ProcessType)
 
@@ -11,8 +11,12 @@ import Json.Decode exposing (andThen)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
-import REA.Commitment as C exposing (Commitment)
-import REA.CommitmentType as CT exposing (CommitmentType)
+import REA.Commitment as CM exposing (Commitment)
+import REA.CommitmentType as CMT exposing (CommitmentType)
+import REA.Contract as CN exposing (Contract)
+import REA.ContractType as CNT exposing (ContractType)
+import REA.Entity as EN
+import REA.EntityType as ENT
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
@@ -23,6 +27,8 @@ import REA.ProcessEvents as PE exposing (ProcessEvents)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
 import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
+import REA.Resource as R exposing (Resource)
+import REA.ResourceType as RT exposing (ResourceType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (Result(..))
 import Time exposing (millisToPosix)
@@ -33,20 +39,30 @@ type alias State =
     { pendingEvents : DictSet Int Event
     , lastEventTime : Time.Posix
     , uuids : DictSet String Uuid
-    , processTypes : DictSet String ProcessType
-    , processes : DictSet Int Process
-    , commitmentTypes : DictSet String CommitmentType
-    , commitments : DictSet Int Commitment
-    , process_commitments : DictSet String ProcessCommitments
+
+    -- entity types
+    , resourceTypes : DictSet String ResourceType
     , eventTypes : DictSet String EventType
+    , agentTypes : DictSet String AgentType
+    , commitmentTypes : DictSet String CommitmentType
+    , contractTypes : DictSet String ContractType
+    , processTypes : DictSet String ProcessType
+
+    -- entities
+    , resources : DictSet String Resource
     , events : DictSet Int E.Event
+    , agents : DictSet String Agent
+    , commitments : DictSet Int Commitment
+    , contracts : DictSet String Contract
+    , processes : DictSet Int Process
+
+    -- links
+    , process_commitments : DictSet String ProcessCommitments
     , process_events : DictSet String ProcessEvents
     , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
     , processType_eventTypes : DictSet String ProcessTypeEventType
     , groups : DictSet String Group
     , identifications : DictSet String Identifier
-    , agentTypes : DictSet String AgentType
-    , agents : DictSet String Agent
     , identifiers : DictSet String Identifier
     }
 
@@ -56,20 +72,32 @@ empty =
     { pendingEvents = Set.empty Event.compare
     , lastEventTime = millisToPosix 0
     , uuids = Set.empty Uuid.toString
-    , processTypes = Set.empty PT.compare
-    , processes = Set.empty P.compare
-    , process_commitments = Set.empty PC.compare
-    , commitmentTypes = Set.empty CT.compare
-    , commitments = Set.empty C.compare
+
+    -- entity types
+    , resourceTypes = Set.empty RT.compare
     , eventTypes = Set.empty ET.compare
+    , agentTypes = Set.empty AT.compare
+    , commitmentTypes = Set.empty CMT.compare
+    , contractTypes = Set.empty CNT.compare
+    , processTypes = Set.empty PT.compare
+
+    -- entities
+    , resources = Set.empty R.compare
     , events = Set.empty E.compare
+    , agents = Set.empty A.compare
+    , commitments = Set.empty CM.compare
+    , contracts = Set.empty CN.compare
+    , processes = Set.empty P.compare
+
+    -- links
     , process_events = Set.empty PE.compare
     , processType_commitmentTypes = Set.empty PTCT.compare
+    , process_commitments = Set.empty PC.compare
     , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
+
+    -- behaviours
     , identifications = Set.empty Ident.compareIdentifier
-    , agentTypes = Set.empty AT.compare
-    , agents = Set.empty A.compare
     , identifiers = Set.empty Ident.compareIdentifier
     }
 
@@ -338,3 +366,29 @@ getProcessType state type_str =
         state.processTypes
         |> Set.values
         |> List.head
+
+
+allNames : State -> Maybe EN.Entity -> List String
+allNames s et =
+    Set.toList <|
+        case et of
+            Just EN.Resource ->
+                Set.map identity .name s.resourceTypes
+
+            Just EN.Event ->
+                Set.map identity .name s.eventTypes
+
+            Just EN.Agent ->
+                Set.map identity .name s.agentTypes
+
+            Just EN.Commitment ->
+                Set.map identity .name s.commitmentTypes
+
+            Just EN.Contract ->
+                Set.map identity .name s.contractTypes
+
+            Just EN.Process ->
+                Set.map identity .name s.processTypes
+
+            Nothing ->
+                Set.empty identity

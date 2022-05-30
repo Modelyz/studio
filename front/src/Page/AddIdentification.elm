@@ -1,5 +1,6 @@
 module Page.AddIdentification exposing (..)
 
+import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,12 +10,30 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.Entity as Entity exposing (Entity, toString)
+import REA.Agent as A exposing (Agent)
+import REA.AgentType as AT exposing (AgentType)
+import REA.Commitment as CM exposing (Commitment)
+import REA.CommitmentType as CMT exposing (CommitmentType)
+import REA.Contract as CN exposing (Contract)
+import REA.ContractType as CNT exposing (ContractType)
+import REA.Entity as EN exposing (toPluralString, toString)
+import REA.EntityType as ENT exposing (EntityType, EntityTypes(..), fromEntity)
+import REA.EventType as ET exposing (EventType)
+import REA.Group as G exposing (Group, compare)
 import REA.Ident as Ident exposing (Fragment(..), Identifier, allFragments, fragmentToDesc, fragmentToName, fragmentToString, setName)
+import REA.Process as P exposing (Process)
+import REA.ProcessCommitments as PC exposing (ProcessCommitments)
+import REA.ProcessEvents as PE exposing (ProcessEvents)
+import REA.ProcessType as PT exposing (ProcessType)
+import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
+import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
+import REA.Resource as R exposing (Resource)
+import REA.ResourceType as RT exposing (ResourceType)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
 import Spa.Page
+import State
 import Style exposing (..)
 import View exposing (..)
 import View.Navbar as Navbar
@@ -26,7 +45,8 @@ type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputEntity Entity
+    | InputEntity EN.Entity
+    | InputEntityTypes EntityTypes
     | InputUnique Bool
     | InputMandatory Bool
     | InputFormat (List Fragment)
@@ -44,10 +64,11 @@ type alias Flags =
 type alias Model =
     { route : Route
     , name : String
-    , entity : Maybe Entity
+    , entity : Maybe EN.Entity
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
+    , entityTypes : Maybe EntityTypes
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -55,10 +76,11 @@ type alias Model =
 
 
 type Step
-    = Name
-    | Entity
-    | Options
-    | Format
+    = StepName
+    | StepEntity
+    | StepOptions
+    | StepFormat
+    | StepEntityTypes
 
 
 validate : Model -> Result String Identifier
@@ -96,12 +118,13 @@ init s f =
     ( { route = f.route
       , name = ""
       , entity = Nothing
+      , entityTypes = Nothing
       , unique = False
       , mandatory = False
       , fragments = []
       , warning = ""
-      , steps = [ Step.Step Name, Step.Step Entity, Step.Step Options, Step.Step Format ]
-      , step = Step.Step Name
+      , steps = [ Step.Step StepName, Step.Step StepEntity, Step.Step StepEntityTypes, Step.Step StepOptions, Step.Step StepFormat ]
+      , step = Step.Step StepName
       }
     , closeMenu s
     )
@@ -114,7 +137,33 @@ update s msg model =
             ( { model | name = x }, Effect.none )
 
         InputEntity x ->
-            ( { model | entity = Just x }, Effect.none )
+            ( { model
+                | entity = Just x
+                , entityTypes =
+                    case x of
+                        EN.Resource ->
+                            Just <| ResourceTypes <| Set.empty identity
+
+                        EN.Event ->
+                            Just <| EventTypes <| Set.empty identity
+
+                        EN.Agent ->
+                            Just <| AgentTypes <| Set.empty identity
+
+                        EN.Commitment ->
+                            Just <| CommitmentTypes <| Set.empty identity
+
+                        EN.Contract ->
+                            Just <| ContractTypes <| Set.empty identity
+
+                        EN.Process ->
+                            Just <| ProcessTypes <| Set.empty identity
+              }
+            , Effect.none
+            )
+
+        InputEntityTypes ts ->
+            ( { model | entityTypes = Just ts }, Effect.none )
 
         InputUnique x ->
             ( { model | unique = x }, Effect.none )
@@ -173,17 +222,20 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        Step.Step Entity ->
+        Step.Step StepEntity ->
             nextOrValidate model NextPage Added (checkNothing model.entity "Please select an Entity")
 
-        Step.Step Options ->
+        Step.Step StepOptions ->
             nextOrValidate model NextPage Added (Ok model.name)
 
-        Step.Step Format ->
+        Step.Step StepFormat ->
             nextOrValidate model NextPage Added (checkEmptyList model.fragments "The format is still empty")
 
-        Step.Step Name ->
+        Step.Step StepName ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
+
+        Step.Step StepEntityTypes ->
+            nextOrValidate model NextPage Added (Ok model.entityTypes)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -211,18 +263,21 @@ viewContent model s =
 
         step =
             case model.step of
-                Step.Step Entity ->
+                Step.Step StepEntity ->
                     row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
                         [ Radio.view
                             { title = "Apply to Which Entity?"
-                            , options = Entity.all |> List.map (\e -> ( e, toString e ))
+                            , options = EN.all |> List.map (\e -> ( e, toString e ))
                             , selected = model.entity
                             , msg =
                                 \e -> InputEntity e
                             }
                         ]
 
-                Step.Step Options ->
+                Step.Step StepEntityTypes ->
+                    inputEntityTypes s model
+
+                Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                         [ h3 "Options:"
                         , row [ Font.size size.text.main ]
@@ -245,10 +300,10 @@ viewContent model s =
                             ]
                         ]
 
-                Step.Step Format ->
+                Step.Step StepFormat ->
                     inputTags model
 
-                Step.Step Name ->
+                Step.Step StepName ->
                     el [ alignTop ] <|
                         Input.text
                             [ width <| minimum 200 fill
@@ -266,6 +321,76 @@ viewContent model s =
         "Adding an identification"
         buttons
         [ step
+        ]
+
+
+viewItem : Model -> String -> Element Msg
+viewItem model name =
+    row [ Background.color color.item.background ]
+        [ el [ paddingXY 10 2 ] (text <| name)
+        , case model.entityTypes of
+            Just ets ->
+                button.primary (InputEntityTypes <| ENT.remove name ets) "×"
+
+            Nothing ->
+                button.disabled "You must first select the entity type" "×"
+        ]
+
+
+inputEntityTypes : Shared.Model -> Model -> Element Msg
+inputEntityTypes s model =
+    let
+        iName =
+            model.name
+
+        eType =
+            Maybe.withDefault "entity" <| Maybe.map toString model.entity
+    in
+    column [ alignTop, spacing 20, width <| minimum 200 fill ]
+        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
+            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
+                :: List.append
+                    (if List.isEmpty model.fragments then
+                        [ el [ padding 10, Font.color color.text.disabled ] (text <| "All " ++ eType ++ " types") ]
+
+                     else
+                        []
+                    )
+                    (model.entityTypes
+                        |> Maybe.map
+                            ENT.getNames
+                        |> Maybe.map
+                            (List.map
+                                (\t -> viewItem model t)
+                            )
+                        |> Maybe.withDefault []
+                    )
+        , h2 <| "Select the " ++ eType ++ " types that should have a \"" ++ iName ++ "\" identifier"
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+            (State.allNames s.state model.entity
+                |> List.map
+                    (\et ->
+                        column
+                            ([ Background.color color.item.background
+                             , mouseOver itemHoverstyle
+                             , width (px 250)
+                             , pointer
+                             , padding 10
+                             , spacing 10
+                             , height (px 150)
+                             ]
+                                ++ (case model.entityTypes of
+                                        Just ets ->
+                                            [ onClick <| InputEntityTypes <| ENT.insert et ets ]
+
+                                        Nothing ->
+                                            []
+                                   )
+                            )
+                            [ el [] (text et)
+                            ]
+                    )
+            )
         ]
 
 

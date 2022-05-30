@@ -1,4 +1,4 @@
-module REA.Contract exposing (Contract, decoder, encode)
+module REA.Contract exposing (Contract, compare, decoder, encode)
 
 import Json.Decode
 import Json.Encode
@@ -30,3 +30,8 @@ decoder =
     Json.Decode.map2 Contract
         (Json.Decode.field "name" Json.Decode.string)
         (Json.Decode.field "type" Json.Decode.string)
+
+
+compare : Contract -> String
+compare =
+    .name
