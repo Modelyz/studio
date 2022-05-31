@@ -22,9 +22,13 @@ excludeType t = filter (\ev -> not $ isType t ev)
 
 isAfter :: Time -> Event -> Bool
 isAfter t ev =
-    case getInt "posixtime" ev of
-        Just et -> et >= t
-        Nothing -> False
+    case ev of
+        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
+            Just m -> case getInt "posixtime" m of
+                Just et -> et >= t
+                Nothing -> False
+            _ -> False
+        _ -> False
 
 getInt :: T.Text -> Event -> Maybe Int
 getInt k e =
@@ -45,23 +49,28 @@ getString k e =
 getUuids :: Event -> [Uuid]
 getUuids e =
     case e of
-        (JSON.Object o) -> case (HashMap.lookup "uuids" o) of
-            Just (JSON.Array uuids) ->
-                Vector.toList
-                    ( fmap
-                        ( \v -> case v of
-                            JSON.String uuid -> T.unpack uuid
-                            _ -> ""
-                        )
-                        uuids
-                    )
+        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
+            (Just (JSON.Object m)) ->
+                case (HashMap.lookup "uuids" m) of
+                    Just (JSON.Array uuids) ->
+                        Vector.toList
+                            ( fmap
+                                ( \v -> case v of
+                                    JSON.String uuid -> T.unpack uuid
+                                    _ -> ""
+                                )
+                                uuids
+                            )
+                    _ -> []
             _ -> []
         _ -> []
 
 setProcessed :: Event -> Event
 setProcessed e =
     case e of
-        JSON.Object o -> JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" o
+        JSON.Object o -> case (HashMap.lookup "meta" o) of
+            Just (JSON.Object m) -> JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" m) "meta" o
+            _ -> e
         _ -> e
 
 --    case makeObj

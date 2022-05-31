@@ -4,6 +4,7 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Attr
 import REA.Entity exposing (Entity)
 import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToValue, identifierValue, selectFrom, updateIdentifier)
 import Style exposing (size)
@@ -50,6 +51,12 @@ inputFragment c index f i =
                     Just <| Input.placeholder [] <| text i.name
                 , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text i.name
                 }
+
+        Fixed name value ->
+            el [ htmlAttribute <| Attr.id name ] <| text value
+
+        Sequence name padding step value ->
+            el [] <| text <| String.fromInt value
 
         _ ->
             text "other"
