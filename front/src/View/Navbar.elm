@@ -90,7 +90,7 @@ menuitem : Shared.Model -> Route -> Route -> String -> Element msg
 menuitem s currentRoute linkRoute label =
     let
         active =
-            currentRoute == linkRoute
+            firstSegment currentRoute == firstSegment linkRoute
     in
     link
         ([ Font.size 15
