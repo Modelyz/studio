@@ -342,14 +342,13 @@ inputEntityTypes s model =
                         column
                             [ Background.color color.item.background
                             , mouseOver itemHoverstyle
-                            , width (px 250)
                             , pointer
-                            , padding 10
-                            , spacing 10
                             , onClick <| InputEntityTypes <| Set.insert et model.applyTo
-                            , height (px 150)
                             ]
-                            [ el [] (text et)
+                            [ row [ alignLeft ]
+                                [ button.primary (InputEntityTypes <| Set.insert et model.applyTo) "+"
+                                , el [ paddingXY 10 0 ] (text et)
+                                ]
                             ]
                     )
             )

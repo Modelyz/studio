@@ -3,6 +3,7 @@ module View.FlatSelect exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events exposing (onClick)
 import Element.Font as Font
 import Style exposing (..)
 import View exposing (..)
@@ -45,7 +46,7 @@ flatselect model c =
         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
                 (\x ->
-                    column [ Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
+                    column [ pointer, onClick (c.onInput <| Just x), Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
                         [ row [ alignLeft ]
                             [ button.primary (c.onInput <| Just x) "+"
                             , el [ paddingXY 10 0 ] (text <| c.toString x)
