@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (getUuids, Uuid, Event, getInt, setProcessed, getString, excludeType, isType, isAfter) where
+module Event (getUuids, Uuid, Event, getInt, setProcessed, getMetaString, excludeType, isType, isAfter) where
 
 import qualified Data.Aeson as JSON (Value (..), toJSON)
 import qualified Data.HashMap.Lazy as HashMap
@@ -38,6 +38,16 @@ getInt k e =
             _ -> Nothing
         _ -> Nothing
 
+getMetaString :: T.Text -> Event -> Maybe T.Text
+getMetaString k e =
+    case e of
+        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
+            (Just (JSON.Object m)) -> case (HashMap.lookup k m) of
+                Just (JSON.String s) -> Just s
+                _ -> Nothing
+            _ -> Nothing
+        _ -> Nothing
+
 getString :: T.Text -> Event -> Maybe T.Text
 getString k e =
     case e of
@@ -49,7 +59,7 @@ getString k e =
 getUuids :: Event -> [Uuid]
 getUuids e =
     case e of
-        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
+        (JSON.Object o) -> case (HashMap.lookup "load" o) of
             (Just (JSON.Object m)) ->
                 case (HashMap.lookup "uuids" m) of
                     Just (JSON.Array uuids) ->

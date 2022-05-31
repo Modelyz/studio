@@ -190,11 +190,10 @@ exceptCI es =
 -- JSON encoding / decoding
 
 
-encodeBase : String -> EventBase -> Encode.Value
-encodeBase t b =
+encodeBase : EventBase -> Encode.Value
+encodeBase b =
     Encode.object
-        [ ( "what", Encode.string t )
-        , ( "uuid", Uuid.encode b.uuid )
+        [ ( "uuid", Uuid.encode b.uuid )
         , ( "when", Encode.int <| posixToMillis b.when )
         , ( "flow", EventFlow.encode b.flow )
         ]
@@ -204,7 +203,7 @@ encode : Event -> Encode.Value
 encode (Event b p) =
     Encode.object
         [ ( "what", Encode.string <| toString p )
-        , ( "meta", encodeBase "ProcessTypeChanged" b )
+        , ( "meta", encodeBase b )
         , case p of
             ProcessTypeChanged e ->
                 ( "load", PT.encode e )

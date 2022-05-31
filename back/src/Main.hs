@@ -20,7 +20,7 @@ import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Event (Event, getString, getUuids, isType, setProcessed)
+import Event (Event, getMetaString, getUuids, isType, setProcessed)
 import qualified EventStore as ES
 import Network.HTTP.Types (status200)
 import Network.Wai (
@@ -119,7 +119,7 @@ handleEvent f conn nc chan ev =
                 esevs <- ES.readEvents f
                 let evs =
                         filter
-                            ( \e -> case getString "uuid" e of
+                            ( \e -> case getMetaString "uuid" e of
                                 Just u -> not $ elem (T.unpack u) uuids
                                 Nothing -> False
                             )
