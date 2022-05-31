@@ -1,4 +1,4 @@
-module REA.EntityType exposing (EntityType(..), EntityTypes(..), decoder, encode, encodeType, fromEntity, fromList, getNames, insert, remove, toPluralString, toString, typesDecoder)
+module REA.EntityType exposing (EntityType(..), EntityTypes(..), decoder, encode, encodeType, fromEntity, fromSet, getNames, insert, remove, toPluralString, toString, typesDecoder)
 
 import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
@@ -264,23 +264,23 @@ remove et ets =
             ProcessTypes <| Set.remove et xs
 
 
-fromList : Entity -> List String -> EntityTypes
-fromList entity names =
+fromSet : Entity -> DictSet String String -> EntityTypes
+fromSet entity names =
     case entity of
         Resource ->
-            ResourceTypes <| Set.fromList identity names
+            ResourceTypes names
 
         Event ->
-            EventTypes <| Set.fromList identity names
+            EventTypes names
 
         Agent ->
-            AgentTypes <| Set.fromList identity names
+            AgentTypes names
 
         Commitment ->
-            CommitmentTypes <| Set.fromList identity names
+            CommitmentTypes names
 
         Contract ->
-            ContractTypes <| Set.fromList identity names
+            ContractTypes names
 
         Process ->
-            ProcessTypes <| Set.fromList identity names
+            ProcessTypes names

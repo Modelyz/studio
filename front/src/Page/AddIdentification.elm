@@ -46,7 +46,7 @@ type
     -- TODO replace with Input Identifier
     = InputName String
     | InputEntity EN.Entity
-    | InputEntityTypes (List String)
+    | InputEntityTypes (DictSet String String)
     | InputUnique Bool
     | InputMandatory Bool
     | InputFormat (List Fragment)
@@ -68,7 +68,7 @@ type alias Model =
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , applyTo : List String
+    , applyTo : DictSet String String
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -87,7 +87,7 @@ validate : Model -> Result String Identification
 validate m =
     Result.map2
         -- avoid map6 which doesn't exist:
-        (\entity name -> { entity = entity, name = name, fragments = m.fragments, applyTo = ENT.fromList entity m.applyTo, unique = m.unique, mandatory = m.mandatory })
+        (\entity name -> { entity = entity, name = name, fragments = m.fragments, applyTo = ENT.fromSet entity m.applyTo, unique = m.unique, mandatory = m.mandatory })
         (checkNothing m.entity "You must select an entity")
         (checkEmptyString m.name "The name is Empty")
 
@@ -118,7 +118,7 @@ init s f =
     ( { route = f.route
       , name = ""
       , entity = Nothing
-      , applyTo = []
+      , applyTo = Set.empty identity
       , unique = False
       , mandatory = False
       , fragments = []
@@ -139,7 +139,7 @@ update s msg model =
         InputEntity x ->
             ( { model
                 | entity = Just x
-                , applyTo = []
+                , applyTo = Set.empty identity
               }
             , Effect.none
             )
@@ -310,7 +310,7 @@ viewItem : Model -> String -> Element Msg
 viewItem model name =
     row [ Background.color color.item.background ]
         [ el [ paddingXY 10 2 ] (text <| name)
-        , button.primary (InputEntityTypes <| List.filter (\e -> name /= e) model.applyTo) "×"
+        , button.primary (InputEntityTypes <| Set.remove name model.applyTo) "×"
         ]
 
 
@@ -333,10 +333,7 @@ inputEntityTypes s model =
                      else
                         []
                     )
-                    (model.applyTo
-                        |> List.map
-                            (\t -> viewItem model t)
-                    )
+                    (List.map (\t -> viewItem model t) <| Set.toList model.applyTo)
         , h2 <| "Select the " ++ eType ++ " types that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (State.allNames s.state model.entity
@@ -349,7 +346,7 @@ inputEntityTypes s model =
                             , pointer
                             , padding 10
                             , spacing 10
-                            , onClick <| InputEntityTypes <| et :: model.applyTo
+                            , onClick <| InputEntityTypes <| Set.insert et model.applyTo
                             , height (px 150)
                             ]
                             [ el [] (text et)
