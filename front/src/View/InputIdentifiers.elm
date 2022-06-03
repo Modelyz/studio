@@ -6,7 +6,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
 import REA.Entity exposing (Entity)
-import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToValue, identifierValue, selectFrom, updateIdentifier)
+import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, identifierValue, selectFrom, updateIdentifier)
 import Style exposing (size)
 import View
 
@@ -37,26 +37,20 @@ inputIdentifier c m i =
 
 
 inputFragment : Config msg -> Int -> Fragment -> Identifier -> Element msg
-inputFragment c index f i =
-    case f of
-        Free name value ->
+inputFragment c index fragment ident =
+    case fragment of
+        Free value ->
             Input.text
                 [ width <| minimum 200 fill
                 , Input.focusedOnLoad
                 , View.onEnter c.onEnter
                 ]
-                { onChange = \v -> c.onInput <| updateIdentifier index (Free name v) i
+                { onChange = \v -> c.onInput <| updateIdentifier index (Free v) ident
                 , text = value
                 , placeholder =
-                    Just <| Input.placeholder [] <| text i.name
-                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text i.name
+                    Just <| Input.placeholder [] <| text ident.name
+                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text ident.name
                 }
-
-        Fixed name value ->
-            el [ htmlAttribute <| Attr.id name ] <| text value
-
-        Sequence name padding step value ->
-            el [] <| text <| String.fromInt value
 
         _ ->
             text "other"

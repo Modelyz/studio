@@ -20,8 +20,8 @@ type Route
     | Agents
     | AddAgent
     | Groups
-    | Identifications
-    | AddIdentification
+    | IdentifierTypes
+    | AddIdentifierType
 
 
 routeParser : Parser (Route -> a) a
@@ -35,8 +35,8 @@ routeParser =
         , map CommitmentTypes (s "commitment-types")
         , map EventTypes (s "event-types")
         , map Groups (s "groups")
-        , map Identifications (s "identifications")
-        , map AddIdentification (s "identifications" </> s "add")
+        , map IdentifierTypes (s "identifierTypes")
+        , map AddIdentifierType (s "identifierTypes" </> s "add")
         , map AgentTypes (s "agent-types")
         , map AddAgentType (s "agent-types" </> s "add")
         , map Agents (s "agents")
@@ -94,11 +94,11 @@ toString r =
         Groups ->
             "/groups"
 
-        Identifications ->
-            "/identifications"
+        IdentifierTypes ->
+            "/identifierTypes"
 
-        AddIdentification ->
-            "/identifications/add"
+        AddIdentifierType ->
+            "/identifierTypes/add"
 
         Agents ->
             "/agents"

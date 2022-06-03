@@ -1,4 +1,4 @@
-module Page.AddIdentification exposing (..)
+module Page.AddIdentifierType exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -20,7 +20,7 @@ import REA.Entity as EN exposing (toPluralString, toString)
 import REA.EntityType as ENT exposing (EntityType, EntityTypes(..))
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Ident exposing (Fragment(..), Identification, allFragments, fragmentToDesc, fragmentToName, fragmentToString, setName)
+import REA.Ident exposing (Fragment(..), IdentifierType, allFragments, fragmentToDesc, fragmentToName, fragmentToString)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -83,7 +83,7 @@ type Step
     | StepEntityTypes
 
 
-validate : Model -> Result String Identification
+validate : Model -> Result String IdentifierType
 validate m =
     Result.map2
         -- avoid map6 which doesn't exist:
@@ -104,9 +104,9 @@ page s =
 
 match : Route -> Maybe Flags
 match route =
-    -- TODO give the entity to create through the flags? /add/identification?step=2
+    -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
-        Route.AddIdentification ->
+        Route.AddIdentifierType ->
             Just { route = route }
 
         _ ->
@@ -164,8 +164,8 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.IdentificationAdded i
-                        , redirect s Route.Identifications
+                        [ Shared.dispatch s <| Event.IdentifierTypeAdded i
+                        , redirect s Route.IdentifierTypes
                         ]
                     )
 
@@ -178,7 +178,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.Identifications )
+                    ( model, redirect s Route.IdentifierTypes )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -186,15 +186,15 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.Identifications )
+                    ( model, redirect s Route.IdentifierTypes )
 
         Cancel ->
-            ( model, redirect s Route.Identifications )
+            ( model, redirect s Route.IdentifierTypes )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Identification"
+    { title = "Adding an IdentifierType"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -277,13 +277,13 @@ viewContent model s =
                                 { onChange = InputMandatory
                                 , icon = Input.defaultCheckbox
                                 , checked = model.mandatory
-                                , label = Input.labelRight [] <| text "This identification is mandatory"
+                                , label = Input.labelRight [] <| text "This identifierType is mandatory"
                                 }
                             ]
                         ]
 
                 Step.Step StepFormat ->
-                    inputTags model
+                    inputFragmentConfs model
 
                 Step.Step StepName ->
                     el [ alignTop ] <|
@@ -296,11 +296,11 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identification"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifierType"
                             }
     in
     cardContent s
-        "Adding an identification"
+        "Adding an identifierType"
         buttons
         [ step
         ]
@@ -355,8 +355,8 @@ inputEntityTypes s model =
         ]
 
 
-inputTags : Model -> Element Msg
-inputTags model =
+inputFragmentConfs : Model -> Element Msg
+inputFragmentConfs model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0 ] <| h2 "Format: ")
@@ -372,30 +372,7 @@ inputTags model =
                             (\i fragment ->
                                 row [ Background.color color.item.background ]
                                     [ el [ paddingXY 10 2 ] (text <| fragmentToString fragment)
-                                    , fragmentToName fragment
-                                        |> Maybe.map
-                                            (\name ->
-                                                Input.text [ width (px 75) ]
-                                                    { onChange =
-                                                        \v ->
-                                                            InputFormat
-                                                                (model.fragments
-                                                                    |> List.indexedMap
-                                                                        (\index f ->
-                                                                            if index == i then
-                                                                                setName v f
-
-                                                                            else
-                                                                                f
-                                                                        )
-                                                                )
-                                                    , text = name
-                                                    , placeholder =
-                                                        Just <| Input.placeholder [] <| text <| fragmentToString fragment
-                                                    , label = Input.labelHidden <| name
-                                                    }
-                                            )
-                                        |> Maybe.withDefault none
+                                    , inputFragmentConf model.fragments i fragment
                                     , button.primary
                                         (InputFormat
                                             (model.fragments
@@ -428,3 +405,98 @@ inputTags model =
                 )
                 allFragments
         ]
+
+
+inputFragmentConf : List Fragment -> Int -> Fragment -> Element Msg
+inputFragmentConf fragments index fragment =
+    case fragment of
+        Fixed value ->
+            Input.text [ width (px 75) ]
+                { onChange =
+                    \v ->
+                        InputFormat
+                            (fragments
+                                |> List.indexedMap
+                                    (\i f ->
+                                        if i == index then
+                                            Fixed v
+
+                                        else
+                                            f
+                                    )
+                            )
+                , text = value
+                , placeholder =
+                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                , label = Input.labelHidden <| "Fixed"
+                }
+
+        Sequence padding step value ->
+            row []
+                [ Input.text [ width (px 50) ]
+                    { onChange =
+                        \x ->
+                            InputFormat
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                String.toInt x
+                                                    |> Maybe.map (\v -> Sequence v step value)
+                                                    |> Maybe.withDefault (Sequence padding step value)
+
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = String.fromInt padding
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text "Padding"
+                    , label = Input.labelHidden <| "Padding"
+                    }
+                , Input.text [ width (px 50) ]
+                    { onChange =
+                        \x ->
+                            InputFormat
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                String.toInt x
+                                                    |> Maybe.map (\v -> Sequence padding v value)
+                                                    |> Maybe.withDefault (Sequence padding step value)
+
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = String.fromInt step
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text "Step"
+                    , label = Input.labelHidden <| "Step"
+                    }
+                , Input.text [ width (px 50) ]
+                    { onChange =
+                        \x ->
+                            InputFormat
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                String.toInt x
+                                                    |> Maybe.map (\v -> Sequence padding step v)
+                                                    |> Maybe.withDefault (Sequence padding step value)
+
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = String.fromInt value
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text "First value"
+                    , label = Input.labelHidden <| "First value"
+                    }
+                ]
+
+        _ ->
+            none

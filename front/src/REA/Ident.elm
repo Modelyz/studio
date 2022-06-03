@@ -11,14 +11,14 @@ import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMilli
 
 
 -- Where do we get the date from
--- The IDntifier is the definition of an identification
+-- The IDntifier is the definition of an identifierType
 
 
 type alias Name =
     String
 
 
-type alias Identification =
+type alias IdentifierType =
     -- This is the configuration of an identifier
     -- TODO rename to IdentifierType
     { entity : Entity
@@ -39,9 +39,9 @@ type alias Identifier =
 
 
 type Fragment
-    = Free Name String
-    | Fixed Name String
-    | Sequence Name Padding Step Int
+    = Free String
+    | Fixed String
+    | Sequence Padding Step Int
     | Existing Name String
     | YYYY Int
     | YY Int
@@ -68,16 +68,16 @@ compareIdentifier i =
     Entity.toString i.entity ++ " " ++ i.name
 
 
-compareIdentification : Identification -> String
-compareIdentification i =
+compareIdentifierType : IdentifierType -> String
+compareIdentifierType i =
     Entity.toString i.entity ++ " " ++ i.name
 
 
 allFragments : List Fragment
 allFragments =
-    [ Free "" ""
-    , Fixed "" ""
-    , Sequence "" 4 1 0
+    [ Free ""
+    , Fixed ""
+    , Sequence 4 1 0
     , Existing "" ""
     , YYYY 0
     , YY 0
@@ -95,13 +95,13 @@ allFragments =
 fragmentToString : Fragment -> String
 fragmentToString f =
     case f of
-        Free name value ->
+        Free value ->
             "Free"
 
-        Fixed name value ->
+        Fixed value ->
             "Fixed"
 
-        Sequence name padding step value ->
+        Sequence padding step value ->
             "Sequence"
 
         Existing name value ->
@@ -141,14 +141,14 @@ fragmentToString f =
 fragmentToName : Fragment -> Maybe String
 fragmentToName f =
     case f of
-        Free name value ->
-            Just name
+        Free value ->
+            Nothing
 
-        Fixed name value ->
-            Just name
+        Fixed value ->
+            Nothing
 
-        Sequence name padding step value ->
-            Just name
+        Sequence padding step value ->
+            Nothing
 
         Existing name value ->
             Just name
@@ -187,13 +187,13 @@ fragmentToName f =
 fragmentToValue : Fragment -> String
 fragmentToValue f =
     case f of
-        Free name value ->
+        Free value ->
             value
 
-        Fixed name value ->
+        Fixed value ->
             value
 
-        Sequence name padding step value ->
+        Sequence padding step value ->
             String.padLeft padding '0' <| String.fromInt value
 
         Existing name value ->
@@ -230,52 +230,6 @@ fragmentToValue f =
             String.fromInt <| posixToMillis value
 
 
-setName : String -> Fragment -> Fragment
-setName n f =
-    case f of
-        Free name value ->
-            Free n value
-
-        Fixed name value ->
-            Fixed n value
-
-        Sequence name padding step value ->
-            Sequence n padding step value
-
-        Existing name value ->
-            Existing n value
-
-        YYYY value ->
-            YYYY value
-
-        YY value ->
-            YY value
-
-        MMMM value ->
-            MMMM value
-
-        MM value ->
-            MM value
-
-        Weekday value ->
-            Weekday value
-
-        DoM value ->
-            DoM value
-
-        Hour value ->
-            Hour value
-
-        Minute value ->
-            Minute value
-
-        Second value ->
-            Second value
-
-        DateFrom from value ->
-            DateFrom from value
-
-
 fragmentToDesc : Maybe Entity -> Fragment -> String
 fragmentToDesc e f =
     let
@@ -283,17 +237,17 @@ fragmentToDesc e f =
             Maybe.map Entity.toString e |> Maybe.withDefault "entity"
     in
     case f of
-        Free _ _ ->
+        Free _ ->
             "A free text that you will be able to enter to identify a new " ++ entity ++ "."
 
-        Fixed _ _ ->
+        Fixed _ ->
             "A fixed text that you must configure now and that will be always the same. For instance it can be a prefix or a suffix"
 
-        Sequence _ _ _ _ ->
+        Sequence _ _ _ ->
             "A sequence number used to identify a " ++ entity ++ "."
 
         Existing name _ ->
-            "An existing identification for a " ++ entity ++ "."
+            "An existing identifierType for a " ++ entity ++ "."
 
         YYYY _ ->
             "The year on 4 digits"
@@ -330,24 +284,21 @@ encodeFragment : Fragment -> Encode.Value
 encodeFragment =
     \f ->
         case f of
-            Free name value ->
+            Free value ->
                 Encode.object
                     [ ( "type", Encode.string "Free" )
-                    , ( "name", Encode.string name )
                     , ( "value", Encode.string value )
                     ]
 
-            Fixed name value ->
+            Fixed value ->
                 Encode.object
                     [ ( "type", Encode.string "Fixed" )
-                    , ( "name", Encode.string name )
                     , ( "value", Encode.string value )
                     ]
 
-            Sequence name padding step value ->
+            Sequence padding step value ->
                 Encode.object
                     [ ( "type", Encode.string "Sequence" )
-                    , ( "name", Encode.string name )
                     , ( "padding", Encode.int padding )
                     , ( "step", Encode.int step )
                     , ( "value", Encode.int value )
@@ -422,8 +373,8 @@ encodeFragment =
                     ]
 
 
-encodeIdentification : Identification -> Encode.Value
-encodeIdentification e =
+encodeIdentifierType : IdentifierType -> Encode.Value
+encodeIdentifierType e =
     Encode.object
         [ ( "entity", Entity.encode e.entity )
         , ( "name", Encode.string e.name )
@@ -443,9 +394,9 @@ encodeIdentifier e =
         ]
 
 
-identificationDecoder : Decoder Identification
-identificationDecoder =
-    Decode.map6 Identification
+identifierTypeDecoder : Decoder IdentifierType
+identifierTypeDecoder =
+    Decode.map6 IdentifierType
         (Decode.field "entity" Entity.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
@@ -469,14 +420,13 @@ fragmentDecoder =
             (\t ->
                 case t of
                     "Free" ->
-                        Decode.map2 Free (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
+                        Decode.map Free (Decode.field "value" Decode.string)
 
                     "Fixed" ->
-                        Decode.map2 Fixed (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
+                        Decode.map Fixed (Decode.field "value" Decode.string)
 
                     "Sequence" ->
-                        Decode.map4 Sequence
-                            (Decode.field "name" Decode.string)
+                        Decode.map3 Sequence
                             (Decode.field "padding" Decode.int)
                             (Decode.field "step" Decode.int)
                             (Decode.field "value" Decode.int)
@@ -530,6 +480,24 @@ identifierValue i =
     i.fragments |> List.map fragmentToValue |> String.concat
 
 
+updateIdentifierType : Int -> Fragment -> IdentifierType -> IdentifierType
+updateIdentifierType index fragment identifierType =
+    let
+        fragments =
+            identifierType.fragments
+                |> List.indexedMap Tuple.pair
+                |> List.map
+                    (\( i, f ) ->
+                        if i == index then
+                            fragment
+
+                        else
+                            f
+                    )
+    in
+    { identifierType | fragments = fragments }
+
+
 updateIdentifier : Int -> Fragment -> Identifier -> Identifier
 updateIdentifier index fragment identifier =
     let
@@ -548,6 +516,6 @@ updateIdentifier index fragment identifier =
     { identifier | fragments = fragments }
 
 
-fromIdentification : Identification -> Identifier
-fromIdentification i =
+fromIdentifierType : IdentifierType -> Identifier
+fromIdentifierType i =
     { entity = i.entity, name = i.name, fragments = i.fragments }

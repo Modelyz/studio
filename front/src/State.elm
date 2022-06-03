@@ -20,7 +20,7 @@ import REA.EntityType as ENT
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as Ident exposing (Identification, Identifier)
+import REA.Ident as Ident exposing (Identifier, IdentifierType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -61,8 +61,10 @@ type alias State =
     , process_events : DictSet String ProcessEvents
     , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
     , processType_eventTypes : DictSet String ProcessTypeEventType
+
+    -- behaviours
     , groups : DictSet String Group
-    , identifications : DictSet String Identification
+    , identifierTypes : DictSet String IdentifierType
     , identifiers : DictSet String Identifier
     }
 
@@ -97,7 +99,7 @@ empty =
     , groups = Set.empty G.compare
 
     -- behaviours
-    , identifications = Set.empty Ident.compareIdentification
+    , identifierTypes = Set.empty Ident.compareIdentifierType
     , identifiers = Set.empty Ident.compareIdentifier
     }
 
@@ -226,17 +228,17 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        IdentificationAdded e ->
+        IdentifierTypeAdded e ->
             { state
-                | identifications = Set.insert e state.identifications
+                | identifierTypes = Set.insert e state.identifierTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        IdentificationRemoved e ->
+        IdentifierTypeRemoved e ->
             { state
-                | identifications = Set.filter (\i -> i.name /= e) state.identifications
+                | identifierTypes = Set.filter (\i -> i.name /= e) state.identifierTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids

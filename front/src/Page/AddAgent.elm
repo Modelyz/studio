@@ -95,7 +95,7 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , name = newUuid
-      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifications |> Set.map I.compareIdentifier I.fromIdentification
+      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifierTypes |> Set.map I.compareIdentifier I.fromIdentifierType
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]

@@ -15,7 +15,7 @@ import REA.EntityType as ENT
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group)
-import REA.Ident as I exposing (Fragment, Identification, Identifier, encodeFragment, fragmentDecoder)
+import REA.Ident as I exposing (Fragment, IdentifierType, Identifier, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT
@@ -76,8 +76,8 @@ type EventPayload
     | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String }
     | GroupAdded Group
     | GroupRemoved String
-    | IdentificationAdded Identification
-    | IdentificationRemoved String
+    | IdentifierTypeAdded IdentifierType
+    | IdentifierTypeRemoved String
     | AgentTypeAdded AgentType
     | AgentTypeRemoved String
     | AgentAdded Agent
@@ -130,11 +130,11 @@ toString p =
         GroupRemoved _ ->
             "GroupRemoved"
 
-        IdentificationAdded _ ->
-            "IdentificationAdded"
+        IdentifierTypeAdded _ ->
+            "IdentifierTypeAdded"
 
-        IdentificationRemoved _ ->
-            "IdentificationRemoved"
+        IdentifierTypeRemoved _ ->
+            "IdentifierTypeRemoved"
 
         AgentTypeAdded _ ->
             "AgentTypeAdded"
@@ -252,10 +252,10 @@ encode (Event b p) =
             GroupRemoved e ->
                 ( "load", Encode.string e )
 
-            IdentificationAdded e ->
-                ( "load", I.encodeIdentification e )
+            IdentifierTypeAdded e ->
+                ( "load", I.encodeIdentifierType e )
 
-            IdentificationRemoved e ->
+            IdentifierTypeRemoved e ->
                 ( "load", Encode.string e )
 
             AgentTypeAdded e ->
@@ -362,12 +362,12 @@ decoder =
                             Decode.map GroupRemoved
                                 (Decode.field "load" Decode.string)
 
-                        "IdentificationAdded" ->
-                            Decode.map IdentificationAdded
-                                (Decode.field "load" I.identificationDecoder)
+                        "IdentifierTypeAdded" ->
+                            Decode.map IdentifierTypeAdded
+                                (Decode.field "load" I.identifierTypeDecoder)
 
-                        "IdentificationRemoved" ->
-                            Decode.map IdentificationRemoved
+                        "IdentifierTypeRemoved" ->
+                            Decode.map IdentifierTypeRemoved
                                 (Decode.field "load" Decode.string)
 
                         "AgentTypeAdded" ->

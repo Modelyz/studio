@@ -1,4 +1,4 @@
-module Page.Identifications exposing (match, page, view)
+module Page.IdentifierTypes exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -46,7 +46,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Identifications ->
+        Route.IdentifierTypes ->
             Just { route = route }
 
         _ ->
@@ -63,34 +63,34 @@ update s msg model =
     case msg of
         Removed i ->
             ( model
-            , Shared.dispatch s <| Event.IdentificationRemoved i
+            , Shared.dispatch s <| Event.IdentifierTypeRemoved i
             )
 
         Add ->
-            ( model, redirect s Route.AddIdentification )
+            ( model, redirect s Route.AddIdentifierType )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Identifications"
+    { title = "IdentifierTypes"
     , attributes = []
     , element = viewContent model
-    , route = Route.Identifications
+    , route = Route.IdentifierTypes
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "Identifications"
+        "IdentifierTypes"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.identifications
+            (s.state.identifierTypes
                 |> Set.toList
                 |> List.sortBy .name
                 |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
-                |> withDefaultContent (p "There are no Identifications yet. Create your first one!")
+                |> withDefaultContent (p "There are no IdentifierTypes yet. Create your first one!")
             )
         ]
