@@ -35,6 +35,7 @@ import Shared
 import Spa.Page
 import State
 import Style exposing (..)
+import Time exposing (posixToMillis)
 import View exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
@@ -429,6 +430,48 @@ inputFragmentConf fragments index fragment =
                 , placeholder =
                     Just <| Input.placeholder [] <| text <| fragmentToString fragment
                 , label = Input.labelHidden <| "Fixed"
+                }
+
+        Existing name value ->
+            Input.text [ width (px 75) ]
+                { onChange =
+                    \n ->
+                        InputFormat
+                            (fragments
+                                |> List.indexedMap
+                                    (\i f ->
+                                        if i == index then
+                                            Existing n value
+
+                                        else
+                                            f
+                                    )
+                            )
+                , text = value
+                , placeholder =
+                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                , label = Input.labelHidden <| "Existing"
+                }
+
+        DateFrom name posix ->
+            Input.text [ width (px 75) ]
+                { onChange =
+                    \n ->
+                        InputFormat
+                            (fragments
+                                |> List.indexedMap
+                                    (\i f ->
+                                        if i == index then
+                                            DateFrom n posix
+
+                                        else
+                                            f
+                                    )
+                            )
+                , text = name
+                , placeholder =
+                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                , label = Input.labelHidden <| "Existing"
                 }
 
         Sequence padding step value ->

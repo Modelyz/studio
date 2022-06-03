@@ -135,7 +135,7 @@ fragmentToString f =
             "ss"
 
         DateFrom from value ->
-            "Date from: " ++ from
+            "Date from: "
 
 
 fragmentToName : Fragment -> Maybe String
