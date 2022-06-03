@@ -110,7 +110,12 @@ isChildOfAny s ets at =
     -- the agent type (of the new agent) must be a child of one of the entity types of the identifier type
     case ets of
         ENT.AgentTypes ats ->
-            ats |> Set.toList |> List.any (isChild s at)
+            if Set.isEmpty ats then
+                -- identifier valid for all agent types
+                True
+
+            else
+                ats |> Set.toList |> List.any (isChild s at)
 
         _ ->
             False
@@ -119,25 +124,16 @@ isChildOfAny s ets at =
 isChild : Shared.Model -> AgentType -> String -> Bool
 isChild s child item =
     -- true if child is really a child of item
-    let
-        mitem =
-            getAgentType s item
-    in
-    Maybe.map
-        (\at ->
-            if at.name == child.name then
-                True
+    if child.name == item then
+        True
 
-            else
-                Maybe.map (\p -> isChild s at p) child.type_ |> Maybe.withDefault False
-        )
-        mitem
-        |> Maybe.withDefault False
+    else
+        child.type_ |> Maybe.andThen (getAgentType s) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
 
 
 getAgentType : Shared.Model -> String -> Maybe AgentType
 getAgentType s name =
-    Set.filter (\at -> at.name == name) s.state.agentTypes |> Set.toList |> List.head
+    List.head <| Set.toList <| Set.filter (\at -> at.name == name) s.state.agentTypes
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
