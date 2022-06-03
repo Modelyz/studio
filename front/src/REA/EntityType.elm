@@ -79,10 +79,10 @@ encodeType ets =
             Encode.object [ ( "type", Encode.string "ResourceTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
 
         EventTypes xs ->
-            Encode.object [ ( "type", Encode.string "AgentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+            Encode.object [ ( "type", Encode.string "EventTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
 
         AgentTypes xs ->
-            Encode.object [ ( "type", Encode.string "EventTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
+            Encode.object [ ( "type", Encode.string "AgentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
 
         CommitmentTypes xs ->
             Encode.object [ ( "type", Encode.string "CommitmentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
@@ -109,19 +109,19 @@ typesDecoder =
                         Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     "AgentTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        Decode.map AgentTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     "EventTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        Decode.map EventTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     "CommitmentTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        Decode.map CommitmentTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     "ContractTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        Decode.map ContractTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     "ProcessTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        Decode.map ProcessTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
 
                     _ ->
                         Decode.fail "unknown Entity Type"

@@ -328,7 +328,7 @@ inputEntityTypes s model =
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
                 :: List.append
-                    (if List.isEmpty model.fragments then
+                    (if Set.isEmpty model.applyTo then
                         [ el [ padding 10, Font.color color.text.disabled ] (text <| "All " ++ eType ++ " types") ]
 
                      else

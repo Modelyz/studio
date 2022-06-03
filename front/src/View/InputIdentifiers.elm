@@ -52,5 +52,18 @@ inputFragment c index fragment ident =
                 , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text ident.name
                 }
 
+        Sequence padding step value ->
+            Input.text
+                [ width <| minimum 200 fill
+                , Input.focusedOnLoad
+                , View.onEnter c.onEnter
+                ]
+                { onChange = \v -> c.onInput <| updateIdentifier index (Sequence padding step value) ident
+                , text = ""
+                , placeholder =
+                    Just <| Input.placeholder [] <| text "(Automatically generated)"
+                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text ident.name
+                }
+
         _ ->
             text "other"

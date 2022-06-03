@@ -13,6 +13,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
 import REA.Entity as Entity
+import REA.EntityType as ENT
 import REA.Ident as I exposing (Identifier)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
@@ -104,11 +105,58 @@ init s f =
     )
 
 
+isChildOfAny : Shared.Model -> ENT.EntityTypes -> AgentType -> Bool
+isChildOfAny s ets at =
+    -- the agent type (of the new agent) must be a child of one of the entity types of the identifier type
+    case ets of
+        ENT.AgentTypes ats ->
+            ats |> Set.toList |> List.any (isChild s at)
+
+        _ ->
+            False
+
+
+isChild : Shared.Model -> AgentType -> String -> Bool
+isChild s child item =
+    -- true if child is really a child of item
+    let
+        mitem =
+            getAgentType s item
+    in
+    Maybe.map
+        (\at ->
+            if at.name == child.name then
+                True
+
+            else
+                Maybe.map (\p -> isChild s at p) child.type_ |> Maybe.withDefault False
+        )
+        mitem
+        |> Maybe.withDefault False
+
+
+getAgentType : Shared.Model -> String -> Maybe AgentType
+getAgentType s name =
+    Set.filter (\at -> at.name == name) s.state.agentTypes |> Set.toList |> List.head
+
+
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType x ->
-            ( { model | flatselect = x }, Effect.none )
+        InputType mat ->
+            ( { model
+                | flatselect = mat
+                , identifiers =
+                    Set.filter
+                        (\it ->
+                            (it.entity == Entity.Agent)
+                                && (Maybe.map (\at -> isChildOfAny s it.applyTo at) mat |> Maybe.withDefault False)
+                        )
+                        s.state.identifierTypes
+                        |> Set.map I.compareIdentifier I.fromIdentifierType
+              }
+            , Effect.none
+            )
 
         InputIdentifier i ->
             ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
