@@ -10,6 +10,7 @@ import REA.Entity exposing (Entity(..))
 import REA.EventType as ET exposing (EventType)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ResourceType as RT exposing (ResourceType)
+import REA.Type exposing (Type)
 
 type alias Type =
     { name : String
@@ -70,27 +71,47 @@ toString et =
 
 encode : EntityType -> Value
 encode et =
+
     case et of
-        ResourceType x ->
-            RT.encode x
+        ResourceType t ->
+            Encode.object
+            [ ("type", Encode.string "ResourceType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
-        EventType x ->
-            ET.encode x
+        EventType t ->
+            [ ("type", Encode.string "EventType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
-        AgentType x ->
-            AT.encode x
+        AgentType t ->
+            [ ("type", Encode.string "AgentType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
-        CommitmentType x ->
-            CMT.encode x
+        CommitmentType t ->
+            [ ("type", Encode.string "CommitmentType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
-        ContractType x ->
-            CNT.encode x
+        ContractType t ->
+            [ ("type", Encode.string "ContractType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
-        ProcessType x ->
-            PT.encode x
+        ProcessType t ->
+            [ ("type", Encode.string "ProcessType")
+            , ( "name", Json.Encode.string t.name )
+            , ( "parent", Maybe.map Json.Encode.string t.parent |> Maybe.withDefault Json.Encode.null )
+            ]
 
 decoder : Decoder EntityType
-decoder = 
+decoder = Decode.
 
 
 getNames : DictSet String EntityType -> List String
