@@ -182,6 +182,12 @@ redirectParent navkey route =
     ("/" ++ Route.firstSegment route) |> Nav.pushUrl navkey |> Effect.fromCmd
 
 
+redirectAdd : String -> Nav.Key -> Route -> Effect Shared.Msg msg
+redirectAdd path navkey route =
+    -- redirect to a subpath
+    Route.toString route ++ "/" ++ path |> Nav.pushUrl navkey |> Effect.fromCmd
+
+
 closeMenu : Shared.Model -> Effect Shared.Msg msg
 closeMenu s =
     if s.menu == MobileOpen then

@@ -283,7 +283,7 @@ viewContent model s =
 viewItem : Model -> EntityType -> Element Msg
 viewItem model et =
     row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| ENT.toString et)
+        [ el [ paddingXY 10 2 ] (text <| ENT.toName et)
         , button.primary (InputEntityTypes <| Set.remove et model.applyTo) "×"
         ]
 

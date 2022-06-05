@@ -14,6 +14,7 @@ import Page.AddIdentifierType
 import Page.AgentTypes
 import Page.Agents
 import Page.CommitmentTypes
+import Page.ContractTypes
 import Page.EventTypes
 import Page.Groups
 import Page.Home
@@ -22,6 +23,7 @@ import Page.Process
 import Page.ProcessType
 import Page.ProcessTypes
 import Page.Processes
+import Page.ResourceTypes
 import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)
@@ -110,16 +112,18 @@ main =
         , extractIdentity = Shared.identity
         }
         |> Spa.addPublicPage mappers Page.Home.match Page.Home.page
-        |> Spa.addPublicPage mappers Page.CommitmentTypes.match Page.CommitmentTypes.page
-        |> Spa.addPublicPage mappers Page.EventTypes.match Page.EventTypes.page
         |> Spa.addPublicPage mappers Page.ProcessTypes.match Page.ProcessTypes.page
+        |> Spa.addPublicPage mappers Page.ResourceTypes.match Page.ResourceTypes.page
+        |> Spa.addPublicPage mappers Page.EventTypes.match Page.EventTypes.page
+        |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
+        |> Spa.addPublicPage mappers Page.CommitmentTypes.match Page.CommitmentTypes.page
+        |> Spa.addPublicPage mappers Page.ContractTypes.match Page.ContractTypes.page
         |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
         |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
         |> Spa.addPublicPage mappers Page.IdentifierTypes.match Page.IdentifierTypes.page
         |> Spa.addPublicPage mappers Page.AddIdentifierType.match Page.AddIdentifierType.page
-        |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
         |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
         |> Spa.addPublicPage mappers Page.Agents.match Page.Agents.page
         |> Spa.addPublicPage mappers Page.AddAgent.match Page.AddAgent.page

@@ -32,10 +32,18 @@ routeParser : Parser (Route -> a) a
 routeParser =
     oneOf
         [ map Home top
-        , map Groups (s "groups")
+
+        -- list types
+        , map ResourceTypes (s "resource-types")
+        , map EventTypes (s "event-types")
+        , map AgentTypes (s "agent-types")
+        , map CommitmentTypes (s "commitment-types")
+        , map ContractTypes (s "contract-types")
+        , map ProcessTypes (s "process-types")
 
         -- list behaviours
         , map IdentifierTypes (s "identifierTypes")
+        , map Groups (s "groups")
 
         -- add behaviours
         , map AddIdentifierType (s "identifierTypes" </> s "add")
@@ -46,12 +54,6 @@ routeParser =
         , map AddAgentType (s "agent-types" </> s "add")
         , map AddCommitmentType (s "commitment-types" </> s "add")
         , map AddContractType (s "contract-types" </> s "add")
-
-        -- list types
-        , map EventTypes (s "event-types")
-        , map AgentTypes (s "agent-types")
-        , map CommitmentTypes (s "commitment-types")
-        , map ProcessTypes (s "process-types")
 
         -- add entities
         , map AddAgent (s "agents" </> s "add")
@@ -97,8 +99,17 @@ toString r =
         ResourceTypes ->
             "/resource-types"
 
+        EventTypes ->
+            "/event-types"
+
         AgentTypes ->
             "/agent-types"
+
+        CommitmentTypes ->
+            "/commitment-types"
+
+        ContractTypes ->
+            "/contract-types"
 
         AddResourceType ->
             "/resource-types/add"
@@ -115,17 +126,8 @@ toString r =
         AddContractType ->
             "/contract-type/add"
 
-        ContractTypes ->
-            "/contract-types"
-
         Process p ->
             "/process/" ++ p
-
-        CommitmentTypes ->
-            "/commitment-types"
-
-        EventTypes ->
-            "/event-types"
 
         Groups ->
             "/groups"

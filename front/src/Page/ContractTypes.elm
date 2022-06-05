@@ -1,4 +1,4 @@
-module Page.AgentTypes exposing (match, page)
+module Page.ContractTypes exposing (match, page)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -8,7 +8,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.AgentType as AT exposing (..)
+import REA.ContractType as AT exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.EntityType as ENT exposing (EntityType)
 import Result exposing (andThen)
@@ -24,9 +24,9 @@ import View.Radio as Radio
 
 config : Config
 config =
-    { pageTitle = "Agent Types"
-    , entityType = "AgentType"
-    , emptyText = "There are no AgentTypes yet. Create your first one!"
+    { pageTitle = "Contract Types"
+    , entityType = "ContractType"
+    , emptyText = "There are no Contract Types yet. Create your first one!"
     }
 
 
@@ -43,7 +43,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentTypes ->
+        Route.ContractTypes ->
             Just { route = route }
 
         _ ->
