@@ -8,9 +8,8 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Commitment =
-    { type_ : CommitmentType
-    , name : String
-    , uuid : Uuid
+    { uuid : Uuid
+    , type_ : String
     , when : Time.Posix
 
     --        , qty: Float
@@ -23,19 +22,17 @@ type alias Commitment =
 encode : Commitment -> Encode.Value
 encode c =
     Encode.object
-        [ ( "name", Encode.string c.name )
-        , ( "uuid", Uuid.encode c.uuid )
+        [ ( "uuid", Uuid.encode c.uuid )
+        , ( "type", Encode.string c.type_ )
         , ( "when", Encode.int <| posixToMillis c.when )
-        , ( "type", CT.encode c.type_ )
         ]
 
 
 decoder : Decode.Decoder Commitment
 decoder =
-    Decode.map4 Commitment
-        (Decode.field "type" CT.decoder)
-        (Decode.field "name" Decode.string)
+    Decode.map3 Commitment
         (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "type" Decode.string)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
 
 

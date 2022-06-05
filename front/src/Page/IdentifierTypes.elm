@@ -9,6 +9,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.Entity as Entity exposing (Entity, toPluralString)
+import REA.EntityType as ENT
 import REA.Ident as Ident exposing (Fragment(..))
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -90,7 +91,21 @@ viewContent model s =
             (s.state.identifierTypes
                 |> Set.toList
                 |> List.sortBy .name
-                |> List.map (\i -> viewSmallCard (Removed i.name) i.name ("for " ++ Entity.toPluralString i.entity))
+                |> List.map
+                    (\i ->
+                        let
+                            ets =
+                                Set.toList i.applyTo
+                        in
+                        viewSmallCard (Removed i.name)
+                            i.name
+                            (if List.isEmpty ets then
+                                "for everything"
+
+                             else
+                                "for any " ++ (String.join ", " <| List.map ENT.toName ets)
+                            )
+                    )
                 |> withDefaultContent (p "There are no IdentifierTypes yet. Create your first one!")
             )
         ]

@@ -1,286 +1,184 @@
-module REA.EntityType exposing (EntityType(..), EntityTypes(..), decoder, encode, encodeType, fromEntity, fromSet, getNames, insert, remove, toPluralString, toString, typesDecoder)
+module REA.EntityType exposing (EntityType(..), compare, decoder, encode, toName, toParent, toPluralString, toString, toType)
 
 import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import REA.AgentType exposing (AgentType)
-import REA.CommitmentType exposing (CommitmentType)
-import REA.ContractType exposing (ContractType)
+import REA.AgentType as AT exposing (AgentType)
+import REA.CommitmentType as CMT exposing (CommitmentType)
+import REA.ContractType as CNT exposing (ContractType)
 import REA.Entity exposing (Entity(..))
-import REA.EventType exposing (EventType)
-import REA.ProcessType exposing (ProcessType)
+import REA.EventType as ET exposing (EventType)
+import REA.ProcessType as PT exposing (ProcessType)
 import REA.ResourceType as RT exposing (ResourceType)
+import REA.Type as T exposing (Type)
 
 
 type EntityType
-    = ResourceType
-    | EventType
-    | AgentType
-    | CommitmentType
-    | ContractType
-    | ProcessType
+    = ResourceType Type
+    | EventType Type
+    | AgentType Type
+    | CommitmentType Type
+    | ContractType Type
+    | ProcessType Type
 
 
-type alias Name =
-    String
+toEntityString : EntityType -> String
+toEntityString =
+    toString >> String.slice 0 -4
 
 
-type EntityTypes
-    = ResourceTypes (DictSet String String)
-    | EventTypes (DictSet String String)
-    | AgentTypes (DictSet String String)
-    | CommitmentTypes (DictSet String String)
-    | ContractTypes (DictSet String String)
-    | ProcessTypes (DictSet String String)
+toString : EntityType -> String
+toString et =
+    case et of
+        ProcessType _ ->
+            "ProcessType"
+
+        ResourceType _ ->
+            "ResourceType"
+
+        EventType _ ->
+            "EventType"
+
+        AgentType _ ->
+            "AgentType"
+
+        CommitmentType _ ->
+            "CommitmentType"
+
+        ContractType _ ->
+            "ContractType"
 
 
-fromEntity : Entity -> EntityType
-fromEntity e =
-    -- starts to stink. Maybe define a separated type Type (such as Type Agent)
-    case e of
-        Resource ->
-            ResourceType
+toType : EntityType -> Type
+toType et =
+    case et of
+        ResourceType t ->
+            t
 
-        Event ->
-            EventType
+        EventType t ->
+            t
 
-        Agent ->
-            AgentType
+        AgentType t ->
+            t
 
-        Commitment ->
-            CommitmentType
+        CommitmentType t ->
+            t
 
-        Contract ->
-            ContractType
+        ContractType t ->
+            t
 
-        Process ->
-            ProcessType
+        ProcessType t ->
+            t
+
+
+toParent : EntityType -> Maybe String
+toParent =
+    toType >> .parent
+
+
+toDesc : EntityType -> String
+toDesc et =
+    toEntityString et ++ " of type " ++ toName et
+
+
+toName : EntityType -> String
+toName =
+    toType >> .name
 
 
 encode : EntityType -> Value
-encode =
-    toString >> Encode.string
+encode et =
+    case et of
+        ResourceType t ->
+            Encode.object
+                [ ( "what", Encode.string "ResourceType" )
+                , ( "type", T.encode t )
+                ]
+
+        EventType t ->
+            Encode.object
+                [ ( "what", Encode.string "EventType" )
+                , ( "type", T.encode t )
+                ]
+
+        AgentType t ->
+            Encode.object
+                [ ( "what", Encode.string "AgentType" )
+                , ( "type", T.encode t )
+                ]
+
+        CommitmentType t ->
+            Encode.object
+                [ ( "what", Encode.string "CommitmentType" )
+                , ( "type", T.encode t )
+                ]
+
+        ContractType t ->
+            Encode.object
+                [ ( "what", Encode.string "ContractType" )
+                , ( "type", T.encode t )
+                ]
+
+        ProcessType t ->
+            Encode.object
+                [ ( "what", Encode.string "ProcessType" )
+                , ( "type", T.encode t )
+                ]
 
 
 decoder : Decoder EntityType
 decoder =
-    Decode.string
-        |> Decode.andThen
-            (fromString
-                >> Maybe.map Decode.succeed
-                >> Maybe.withDefault (Decode.fail "Unknown entity")
-            )
-
-
-encodeType : EntityTypes -> Value
-encodeType ets =
-    case ets of
-        ResourceTypes xs ->
-            Encode.object [ ( "type", Encode.string "ResourceTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-        EventTypes xs ->
-            Encode.object [ ( "type", Encode.string "EventTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-        AgentTypes xs ->
-            Encode.object [ ( "type", Encode.string "AgentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-        CommitmentTypes xs ->
-            Encode.object [ ( "type", Encode.string "CommitmentTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-        ContractTypes xs ->
-            Encode.object [ ( "type", Encode.string "ContractTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-        ProcessTypes xs ->
-            Encode.object [ ( "type", Encode.string "ProcessTypes" ), ( "names", Encode.list Encode.string (Set.toList xs) ) ]
-
-
-typesDecoder : Decoder EntityTypes
-typesDecoder =
-    let
-        toSet : List String -> Decoder (DictSet String String)
-        toSet ns =
-            Decode.succeed (Set.fromList identity ns)
-    in
-    Decode.field "type" Decode.string
+    Decode.field "what" Decode.string
         |> Decode.andThen
             (\t ->
-                case t of
-                    "ResourceTypes" ->
-                        Decode.map ResourceTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                Decode.field "type"
+                    (case t of
+                        "ResourceType" ->
+                            Decode.map ResourceType T.decode
 
-                    "AgentTypes" ->
-                        Decode.map AgentTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        "EventType" ->
+                            Decode.map EventType T.decode
 
-                    "EventTypes" ->
-                        Decode.map EventTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        "AgentType" ->
+                            Decode.map AgentType T.decode
 
-                    "CommitmentTypes" ->
-                        Decode.map CommitmentTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        "CommitmentType" ->
+                            Decode.map CommitmentType T.decode
 
-                    "ContractTypes" ->
-                        Decode.map ContractTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        "ContractType" ->
+                            Decode.map ContractType T.decode
 
-                    "ProcessTypes" ->
-                        Decode.map ProcessTypes (Decode.field "names" (Decode.list Decode.string) |> Decode.andThen toSet)
+                        "ProcessType" ->
+                            Decode.map ProcessType T.decode
 
-                    _ ->
-                        Decode.fail "unknown Entity Type"
+                        _ ->
+                            Decode.fail "Unknown entity type"
+                    )
             )
-
-
-fromString : String -> Maybe EntityType
-fromString s =
-    case s of
-        "ProcessType" ->
-            Just ProcessType
-
-        "ResourceType" ->
-            Just ResourceType
-
-        "EventType" ->
-            Just EventType
-
-        "AgentType" ->
-            Just AgentType
-
-        "CommitmentType" ->
-            Just CommitmentType
-
-        "ContractType" ->
-            Just ContractType
-
-        _ ->
-            Nothing
-
-
-toString : EntityType -> String
-toString e =
-    case e of
-        ProcessType ->
-            "ProcessType"
-
-        ResourceType ->
-            "ResourceType"
-
-        EventType ->
-            "EventType"
-
-        AgentType ->
-            "AgentType"
-
-        CommitmentType ->
-            "CommitmentType"
-
-        ContractType ->
-            "ContractType"
 
 
 toPluralString : EntityType -> String
-toPluralString e =
-    case e of
-        ProcessType ->
+toPluralString ets =
+    case ets of
+        ProcessType _ ->
             "ProcessTypes"
 
-        ResourceType ->
+        ResourceType _ ->
             "ResourceTypes"
 
-        EventType ->
+        EventType _ ->
             "EventTypes"
 
-        AgentType ->
+        AgentType _ ->
             "AgentTypes"
 
-        CommitmentType ->
+        CommitmentType _ ->
             "CommitmentTypes"
 
-        ContractType ->
+        ContractType _ ->
             "ContractTypes"
 
 
-getNames : EntityTypes -> List String
-getNames ets =
-    Set.toList <|
-        case ets of
-            ResourceTypes xs ->
-                xs
-
-            EventTypes xs ->
-                xs
-
-            AgentTypes xs ->
-                xs
-
-            CommitmentTypes xs ->
-                xs
-
-            ContractTypes xs ->
-                xs
-
-            ProcessTypes xs ->
-                xs
-
-
-insert : String -> EntityTypes -> EntityTypes
-insert et ets =
-    case ets of
-        ResourceTypes xs ->
-            ResourceTypes <| Set.insert et xs
-
-        EventTypes xs ->
-            EventTypes <| Set.insert et xs
-
-        AgentTypes xs ->
-            AgentTypes <| Set.insert et xs
-
-        CommitmentTypes xs ->
-            CommitmentTypes <| Set.insert et xs
-
-        ContractTypes xs ->
-            ContractTypes <| Set.insert et xs
-
-        ProcessTypes xs ->
-            ProcessTypes <| Set.insert et xs
-
-
-remove : String -> EntityTypes -> EntityTypes
-remove et ets =
-    case ets of
-        ResourceTypes xs ->
-            ResourceTypes <| Set.remove et xs
-
-        EventTypes xs ->
-            EventTypes <| Set.remove et xs
-
-        AgentTypes xs ->
-            AgentTypes <| Set.remove et xs
-
-        CommitmentTypes xs ->
-            CommitmentTypes <| Set.remove et xs
-
-        ContractTypes xs ->
-            ContractTypes <| Set.remove et xs
-
-        ProcessTypes xs ->
-            ProcessTypes <| Set.remove et xs
-
-
-fromSet : Entity -> DictSet String String -> EntityTypes
-fromSet entity names =
-    case entity of
-        Resource ->
-            ResourceTypes names
-
-        Event ->
-            EventTypes names
-
-        Agent ->
-            AgentTypes names
-
-        Commitment ->
-            CommitmentTypes names
-
-        Contract ->
-            ContractTypes names
-
-        Process ->
-            ProcessTypes names
+compare : EntityType -> String
+compare =
+    toName

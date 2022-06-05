@@ -1,6 +1,6 @@
 module REA.Event exposing (Event, compare, decoder, encode)
 
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.EventType as ET exposing (EventType)
@@ -8,9 +8,8 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Event =
-    { type_ : EventType
-    , name : String
-    , uuid : Uuid
+    { uuid : Uuid
+    , type_ : String
     , when : Time.Posix
 
     --    , qty: Float
@@ -23,19 +22,17 @@ type alias Event =
 encode : Event -> Encode.Value
 encode e =
     Encode.object
-        [ ( "name", Encode.string e.name )
-        , ( "uuid", Uuid.encode e.uuid )
+        [ ( "uuid", Uuid.encode e.uuid )
+        , ( "type", Encode.string e.type_ )
         , ( "when", Encode.int <| posixToMillis e.when )
-        , ( "type", ET.encode e.type_ )
         ]
 
 
-decoder : Decode.Decoder Event
+decoder : Decoder Event
 decoder =
-    Decode.map4 Event
-        (Decode.field "type" ET.decoder)
-        (Decode.field "name" Decode.string)
+    Decode.map3 Event
         (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "type" Decode.string)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
 
 

@@ -80,6 +80,8 @@ desktop s r =
                     , el [ Font.size 15, htmlAttribute <| Attr.id "LastEvenTime" ] (text <| "LastEvenTime=" ++ (String.fromInt <| posixToMillis s.state.lastEventTime))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingEvents))
+                    , el [ Font.size 15, htmlAttribute <| Attr.id "eventTypes" ] (text <| "types=" ++ (String.fromInt <| Set.size s.state.entityTypes))
+                    , el [ Font.size 15, htmlAttribute <| Attr.id "entities" ] (text <| "entities=" ++ (String.fromInt <| Set.size s.state.entities))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString r)
                     ]

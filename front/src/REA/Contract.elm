@@ -1,12 +1,13 @@
 module REA.Contract exposing (Contract, compare, decoder, encode)
 
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.ContractType as CT exposing (ContractType)
 
 
 type alias Contract =
-    { name : String
+    { uuid : Uuid
     , type_ : String
 
     --    , parties: List Agent
@@ -15,23 +16,23 @@ type alias Contract =
     }
 
 
-encode : Contract -> Json.Encode.Value
+encode : Contract -> Encode.Value
 encode c =
-    Json.Encode.object
-        [ ( "name", Json.Encode.string c.name )
-        , ( "type", Json.Encode.string c.type_ )
+    Encode.object
+        [ ( "uuid", Uuid.encode c.uuid )
+        , ( "type", Encode.string c.type_ )
 
-        --        , ("parties", Json.Encode.list Agent.encode c.parties)
+        --        , ("parties", Encode.list Agent.encode c.parties)
         ]
 
 
-decoder : Json.Decode.Decoder Contract
+decoder : Decode.Decoder Contract
 decoder =
-    Json.Decode.map2 Contract
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "type" Json.Decode.string)
+    Decode.map2 Contract
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "type" Decode.string)
 
 
 compare : Contract -> String
 compare =
-    .name
+    .uuid >> Uuid.toString

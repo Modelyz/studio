@@ -11,7 +11,7 @@ import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
 import REA.AgentType as AT
-import REA.Entity as Entity exposing (Entity, toPluralString)
+import REA.Entity as EN exposing (Entity, toPluralString)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -27,7 +27,7 @@ type alias Model =
 
 
 type Msg
-    = Removed Uuid
+    = Removed Entity
     | Add
 
 
@@ -63,9 +63,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed i ->
+        Removed a ->
             ( model
-            , Shared.dispatch s <| Event.AgentRemoved i
+            , Shared.dispatch s <| Event.Removed a
             )
 
         Add ->
@@ -89,10 +89,9 @@ viewContent model s =
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.agents
+            (s.state.entities
                 |> Set.toList
-                |> List.sortBy A.compare
-                |> List.map (\at -> viewSmallCard (Removed at.name) (Uuid.toString at.name) <| "of type: " ++ at.type_)
+                |> List.map (\e -> viewSmallCard (Removed e) (EN.toString e) ("Type: " ++ EN.toTypeString e))
                 |> withDefaultContent (p "There are no Agents yet. Create your first one!")
             )
         ]

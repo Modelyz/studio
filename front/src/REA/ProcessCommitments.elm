@@ -1,14 +1,18 @@
 module REA.ProcessCommitments exposing (ProcessCommitments, compare)
 
--- Represent the link between processes and commitments
+import Prng.Uuid as Uuid exposing (Uuid)
+
+
+
+-- Represents the link between processes and commitments
 
 
 type alias ProcessCommitments =
-    { process : String
-    , commitment : String
+    { process : Uuid
+    , commitment : Uuid
     }
 
 
 compare : ProcessCommitments -> String
 compare pc =
-    pc.process ++ " " ++ pc.commitment
+    Uuid.toString pc.process ++ " " ++ Uuid.toString pc.commitment

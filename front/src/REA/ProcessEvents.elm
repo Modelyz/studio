@@ -1,14 +1,18 @@
 module REA.ProcessEvents exposing (ProcessEvents, compare)
 
--- Represent the link between processes and events
+import Prng.Uuid as Uuid exposing (Uuid)
+
+
+
+-- Represents the link between processes and events
 
 
 type alias ProcessEvents =
-    { process : String
-    , event : String
+    { process : Uuid
+    , event : Uuid
     }
 
 
 compare : ProcessEvents -> String
 compare pe =
-    pe.process ++ " " ++ pe.event
+    Uuid.toString pe.process ++ " " ++ Uuid.toString pe.event

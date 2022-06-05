@@ -10,6 +10,7 @@ import Event
 import Html.Attributes as Attr
 import REA.AgentType as AT exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
+import REA.EntityType as ENT exposing (EntityType)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -25,7 +26,7 @@ type alias Model =
 
 
 type Msg
-    = Removed String
+    = Removed EntityType
     | Add
 
 
@@ -61,9 +62,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed i ->
+        Removed et ->
             ( model
-            , Shared.dispatch s <| Event.AgentTypeRemoved i
+            , Shared.dispatch s <| Event.TypeRemoved et
             )
 
         Add ->
@@ -81,16 +82,19 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        entityTypes =
+            Set.filter (\et -> ENT.toString et == "AgentType") s.state.entityTypes
+    in
     flatContent s
         "AgentTypes"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.agentTypes
+            (entityTypes
                 |> Set.toList
-                |> List.sortBy .name
-                |> List.map (\at -> viewSmallCard (Removed at.name) at.name <| Maybe.withDefault "" <| Maybe.map (\t -> "of type: " ++ t) at.type_)
+                |> List.map (\et -> viewSmallCard (Removed et) (ENT.toName et) <| Maybe.withDefault "(Root type)" <| Maybe.map (\t -> "Type: " ++ t) (ENT.toParent et))
                 |> withDefaultContent (p "There are no AgentTypes yet. Create your first one!")
             )
         ]

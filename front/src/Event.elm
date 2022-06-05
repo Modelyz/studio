@@ -10,12 +10,12 @@ import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as CM exposing (Commitment)
 import REA.CommitmentType as CT exposing (CommitmentType)
-import REA.Entity exposing (Entity)
-import REA.EntityType as ENT
+import REA.Entity as EN exposing (Entity)
+import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group)
-import REA.Ident as I exposing (Fragment, IdentifierType, Identifier, encodeFragment, fragmentDecoder)
+import REA.Ident as I exposing (EntityIdentifier, Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ProcessTypeCommitmentType as PTCT
@@ -69,20 +69,18 @@ type EventPayload
     | CommitmentTypeAdded CommitmentType
     | CommitmentTypeRemoved String
     | CommitmentAdded Commitment
-    | EventTypeAdded EventType
-    | EventTypeRemoved String
     | EventAdded E.Event
-    | LinkedEventTypeToProcessType { etype : String, ptype : String } -- TODO single Link event?
+    | LinkedEventTypeToProcessType { etype : String, ptype : String } -- TODO single Link event? (see sowa)
     | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String }
     | GroupAdded Group
     | GroupRemoved String
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved String
-    | AgentTypeAdded AgentType
-    | AgentTypeRemoved String
-    | AgentAdded Agent
-    | AgentRemoved Uuid
-    | IdentifierAdded Identifier
+    | Added Entity
+    | Removed Entity
+    | TypeAdded EntityType
+    | TypeRemoved EntityType
+    | IdentifierAdded EntityIdentifier
 
 
 toString : EventPayload -> String
@@ -109,11 +107,8 @@ toString p =
         CommitmentAdded _ ->
             "CommitmentAdded"
 
-        EventTypeAdded _ ->
-            "EventTypeAdded"
-
-        EventTypeRemoved _ ->
-            "EventTypeRemoved"
+        TypeRemoved _ ->
+            "TypeRemoved"
 
         EventAdded _ ->
             "EventAdded"
@@ -136,17 +131,14 @@ toString p =
         IdentifierTypeRemoved _ ->
             "IdentifierTypeRemoved"
 
-        AgentTypeAdded _ ->
-            "AgentTypeAdded"
+        TypeAdded _ ->
+            "TypeAdded"
 
-        AgentTypeRemoved _ ->
-            "AgentTypeRemoved"
+        Added _ ->
+            "Added"
 
-        AgentAdded _ ->
-            "AgentAdded"
-
-        AgentRemoved _ ->
-            "AgentRemoved"
+        Removed _ ->
+            "Removed"
 
         IdentifierAdded _ ->
             "IdentifierAdded"
@@ -205,35 +197,32 @@ encode (Event b p) =
         [ ( "what", Encode.string <| toString p )
         , ( "meta", encodeBase b )
         , case p of
-            ProcessTypeChanged e ->
-                ( "load", PT.encode e )
+            ProcessTypeChanged pt ->
+                ( "load", PT.encode pt )
 
-            ProcessTypeRemoved n ->
-                ( "load", Encode.string n )
+            ProcessTypeRemoved pt ->
+                ( "load", Encode.string pt )
 
-            ProcessAdded e ->
-                ( "load", P.encode e )
+            ProcessAdded pr ->
+                ( "load", P.encode pr )
 
-            CommitmentTypeAdded e ->
-                ( "load", CT.encode e )
+            CommitmentTypeAdded cmt ->
+                ( "load", CT.encode cmt )
 
-            CommitmentTypeRemoved e ->
-                ( "load", Encode.string e )
+            CommitmentTypeRemoved cmt ->
+                ( "load", Encode.string cmt )
 
-            CommitmentAdded e ->
-                ( "load", CM.encode e )
+            CommitmentAdded cm ->
+                ( "load", CM.encode cm )
 
-            EventTypeAdded e ->
-                ( "load", ET.encode e )
+            LinkedEventTypeToProcessType ptet ->
+                ( "load", PTET.encode ptet )
 
-            LinkedEventTypeToProcessType e ->
-                ( "load", PTET.encode e )
+            LinkedCommitmentTypeToProcessType ptct ->
+                ( "load", PTCT.encode ptct )
 
-            LinkedCommitmentTypeToProcessType e ->
-                ( "load", PTCT.encode e )
-
-            EventTypeRemoved e ->
-                ( "load", Encode.string e )
+            TypeRemoved et ->
+                ( "load", ENT.encode et )
 
             EventAdded e ->
                 ( "load", E.encode e )
@@ -246,32 +235,29 @@ encode (Event b p) =
                     ]
                 )
 
-            GroupAdded e ->
-                ( "load", G.encode e )
+            GroupAdded g ->
+                ( "load", G.encode g )
 
-            GroupRemoved e ->
-                ( "load", Encode.string e )
+            GroupRemoved g ->
+                ( "load", Encode.string g )
 
-            IdentifierTypeAdded e ->
-                ( "load", I.encodeIdentifierType e )
+            IdentifierTypeAdded it ->
+                ( "load", I.encodeIdentifierType it )
 
-            IdentifierTypeRemoved e ->
-                ( "load", Encode.string e )
+            IdentifierTypeRemoved it ->
+                ( "load", Encode.string it )
 
-            AgentTypeAdded e ->
-                ( "load", AT.encode e )
+            TypeAdded e ->
+                ( "load", ENT.encode e )
 
-            AgentTypeRemoved e ->
-                ( "load", Encode.string e )
+            Added e ->
+                ( "load", EN.encode e )
 
-            AgentAdded e ->
-                ( "load", A.encode e )
+            Removed e ->
+                ( "load", EN.encode e )
 
-            AgentRemoved e ->
-                ( "load", Uuid.encode e )
-
-            IdentifierAdded e ->
-                ( "load", I.encodeIdentifier e )
+            IdentifierAdded eid ->
+                ( "load", I.encodeEntityIdentifier eid )
         ]
 
 
@@ -325,10 +311,6 @@ decoder =
                             Decode.map CommitmentAdded
                                 (Decode.field "load" CM.decoder)
 
-                        "EventTypeAdded" ->
-                            Decode.map EventTypeAdded
-                                (Decode.field "load" ET.decoder)
-
                         "LinkedEventTypeToProcessType" ->
                             Decode.map LinkedEventTypeToProcessType
                                 (Decode.field "load" PTET.decoder)
@@ -337,9 +319,9 @@ decoder =
                             Decode.map LinkedCommitmentTypeToProcessType
                                 (Decode.field "load" PTCT.decoder)
 
-                        "EventTypeRemoved" ->
-                            Decode.map EventTypeRemoved
-                                (Decode.field "load" Decode.string)
+                        "TypeRemoved" ->
+                            Decode.map TypeRemoved
+                                (Decode.field "load" ENT.decoder)
 
                         "EventAdded" ->
                             Decode.map EventAdded
@@ -370,25 +352,21 @@ decoder =
                             Decode.map IdentifierTypeRemoved
                                 (Decode.field "load" Decode.string)
 
-                        "AgentTypeAdded" ->
-                            Decode.map AgentTypeAdded
-                                (Decode.field "load" AT.decoder)
+                        "TypeAdded" ->
+                            Decode.map TypeAdded
+                                (Decode.field "load" ENT.decoder)
 
-                        "AgentTypeRemoved" ->
-                            Decode.map AgentTypeRemoved
-                                (Decode.field "load" Decode.string)
+                        "Added" ->
+                            Decode.map Added
+                                (Decode.field "load" EN.decoder)
 
-                        "AgentAdded" ->
-                            Decode.map AgentAdded
-                                (Decode.field "load" A.decoder)
-
-                        "AgentRemoved" ->
-                            Decode.map AgentRemoved
-                                (Decode.field "load" Uuid.decoder)
+                        "Removed" ->
+                            Decode.map Removed
+                                (Decode.field "load" EN.decoder)
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
-                                (Decode.field "load" I.identifierDecoder)
+                                (Decode.field "load" I.entityIdentifierDecoder)
 
                         _ ->
                             Decode.fail <| "Unknown Event type: " ++ t

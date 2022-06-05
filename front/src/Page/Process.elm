@@ -82,7 +82,7 @@ update s msg model =
                 Just ct ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.CommitmentAdded (Commitment ct ct.name uuid t)
+                        \uuid t -> Event.CommitmentAdded (Commitment uuid ct.name t)
                     )
 
                 Nothing ->
@@ -102,7 +102,7 @@ update s msg model =
                 Just et ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.EventAdded (E.Event et et.name uuid t)
+                        \uuid t -> Event.EventAdded (E.Event uuid et.name t)
                     )
 
                 Nothing ->
@@ -217,12 +217,11 @@ viewCommitmentThumbnail c =
         [ link
             []
             { url = "/commitment/" ++ Uuid.toString c.uuid
-            , label = text c.name
+            , label = text <| Uuid.toString c.uuid
             }
         , row
             []
-            [ text c.name
-            , text <| Uuid.toString c.uuid
+            [ text <| Uuid.toString c.uuid
             ]
         ]
 
@@ -233,11 +232,10 @@ viewEventThumbnail c =
         [ link
             []
             { url = "/event/" ++ Uuid.toString c.uuid
-            , label = text c.name
+            , label = text <| Uuid.toString c.uuid
             }
         , row
             []
-            [ text c.name
-            , text <| Uuid.toString c.uuid
+            [ text <| Uuid.toString c.uuid
             ]
         ]

@@ -8,9 +8,12 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import REA.Entity as EN exposing (Entity)
+import REA.EntityType as ENT exposing (EntityType)
 import REA.EventType as ET exposing (EventType)
 import REA.ProcessType as PT exposing (ProcessType)
 import REA.ProcessTypeEventType exposing (ProcessTypeEventType)
+import REA.Type exposing (Type)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -26,8 +29,8 @@ type alias Model =
 
 
 type Msg
-    = Removed String
-    | Added ( EventType, List ProcessType )
+    = Removed EntityType
+    | Added ( EntityType, List ProcessType )
     | GotInput Form
     | Warning String
     | Link String
@@ -51,7 +54,7 @@ empty =
     { name = "", type_ = Nothing, processTypes = Set.empty identity, warning = "" }
 
 
-validate : Form -> Maybe ( EventType, List ProcessType )
+validate : Form -> Maybe ( EntityType, List ProcessType )
 validate f =
     -- TODO replace with Either with the error on the Left
     if f.name == "" || Set.size f.processTypes == 0 then
@@ -59,7 +62,7 @@ validate f =
 
     else
         Just
-            ( { name = f.name, type_ = f.type_ }
+            ( ENT.EventType { name = f.name, parent = f.type_ }
             , f.processTypes |> Set.toList |> List.map (\pt -> { name = pt })
             )
 
@@ -95,23 +98,23 @@ update s msg model =
         GotInput form ->
             ( { model | form = form }, Effect.none )
 
-        Added ( etype, ptypes ) ->
+        Added ( et, pts ) ->
             ( { model
                 | form = empty
               }
             , Shared.dispatchMany s <|
-                Event.EventTypeAdded (EventType etype.name etype.type_)
-                    :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = etype.name, ptype = pt.name }) ptypes
+                Event.TypeAdded et
+                    :: List.map (\pt -> Event.LinkedEventTypeToProcessType { etype = ENT.toName et, ptype = pt.name }) pts
             )
 
-        Removed etype ->
+        Removed et ->
             let
                 form =
                     model.form
             in
             -- TODO UnlinkedEventTypeToProcessType ?
             ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.EventTypeRemoved etype
+            , Shared.dispatch s <| Event.TypeRemoved et
             )
 
         Warning w ->
@@ -150,22 +153,25 @@ viewContent model s =
     let
         form =
             model.form
+
+        entityTypes =
+            Set.filter (\et -> ENT.toString et == "EventType") s.state.entityTypes
     in
     column [ width fill, alignTop, padding 20 ]
         [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop ]
             [ column
                 [ spacing 20 ]
                 [ h1 "Event Types"
-                , if Set.size s.state.eventTypes > 0 then
+                , if Set.size entityTypes > 0 then
                     p "Existing Event Types:"
 
                   else
                     p "There are no Event Types yet. Create your first one!"
                 , wrappedRow
                     [ spacing 10 ]
-                    (s.state.eventTypes
+                    (entityTypes
                         |> Set.toList
-                        |> List.map (\pt -> viewSmallCard (Removed pt.name) pt.name "")
+                        |> List.map (\et -> viewSmallCard (Removed et) (ENT.toName et) "")
                     )
                 , column
                     [ spacing 20 ]

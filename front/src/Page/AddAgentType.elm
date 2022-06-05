@@ -9,7 +9,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.AgentType as AT exposing (AgentType)
+import REA.EntityType as ENT exposing (EntityType(..))
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -24,7 +24,7 @@ import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousSt
 
 type Msg
     = InputName String
-    | InputType (Maybe AgentType)
+    | InputType (Maybe EntityType)
     | Warning String
     | PreviousPage
     | NextPage
@@ -39,7 +39,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , name : String
-    , flatselect : Maybe AgentType
+    , flatselect : Maybe EntityType
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -51,12 +51,12 @@ type Step
     | StepType
 
 
-validate : Model -> Result String AgentType
+validate : Model -> Result String EntityType
 validate m =
     Result.map2
-        AgentType
+        (\n p -> AgentType { name = n, parent = p |> Maybe.map ENT.toName })
         (checkEmptyString m.name "The name is Empty")
-        (Ok <| Maybe.map .name m.flatselect)
+        (Ok m.flatselect)
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -106,10 +106,10 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok i ->
+                Ok t ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.AgentTypeAdded i
+                        [ Shared.dispatch s <| Event.TypeAdded t
                         , redirect s Route.AgentTypes
                         ]
                     )
@@ -183,9 +183,9 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     flatselect model
-                        { all = Set.toList <| s.state.agentTypes
-                        , toString = AT.toString
-                        , toDesc = AT.toDesc
+                        { all = Set.toList <| s.state.entityTypes
+                        , toString = ENT.toName
+                        , toDesc = ENT.toParent
                         , onInput = InputType
                         , label = "Type"
                         , explain = h2 "Choose the type of the new Agent Type (it can be hierarchical)"

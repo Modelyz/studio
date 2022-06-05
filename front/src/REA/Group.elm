@@ -7,7 +7,8 @@ import REA.Entity exposing (Entity)
 
 type alias Group =
     { name : String
-    , entity : Entity
+
+    -- TODO how to define what is in the group?
     }
 
 
@@ -15,15 +16,13 @@ encode : Group -> Value
 encode a =
     Json.Encode.object
         [ ( "name", Json.Encode.string a.name )
-        , ( "entity", REA.Entity.encode a.entity )
         ]
 
 
 decoder : Decoder Group
 decoder =
-    Json.Decode.map2 Group
+    Json.Decode.map Group
         (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "entity" REA.Entity.decoder)
 
 
 compare : Group -> String

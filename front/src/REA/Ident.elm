@@ -4,7 +4,7 @@ import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import REA.Entity as Entity exposing (Entity)
+import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
@@ -20,21 +20,24 @@ type alias Name =
 
 type alias IdentifierType =
     -- This is the configuration of an identifier
-    -- TODO rename to IdentifierType
-    { entity : Entity
-    , name : Name
+    { name : Name
     , fragments : List Fragment
-    , applyTo : ENT.EntityTypes
+    , applyTo : DictSet String ENT.EntityType
     , unique : Bool
     , mandatory : Bool
     }
 
 
 type alias Identifier =
-    -- This is the value of an idenfitier
-    { entity : Entity
-    , name : Name
+    -- This is the value of an idenfiier
+    { name : Name
     , fragments : List Fragment
+    }
+
+
+type alias EntityIdentifier =
+    { entity : Entity
+    , identifier : Identifier
     }
 
 
@@ -64,13 +67,18 @@ type alias Step =
 
 
 compareIdentifier : Identifier -> String
-compareIdentifier i =
-    Entity.toString i.entity ++ " " ++ i.name
+compareIdentifier =
+    .name
+
+
+compareEntityIdentifier : EntityIdentifier -> String
+compareEntityIdentifier ei =
+    EN.toString ei.entity ++ ei.identifier.name
 
 
 compareIdentifierType : IdentifierType -> String
-compareIdentifierType i =
-    Entity.toString i.entity ++ " " ++ i.name
+compareIdentifierType =
+    .name
 
 
 allFragments : List Fragment
@@ -230,24 +238,20 @@ fragmentToValue f =
             String.fromInt <| posixToMillis value
 
 
-fragmentToDesc : Maybe Entity -> Fragment -> String
-fragmentToDesc e f =
-    let
-        entity =
-            Maybe.map Entity.toString e |> Maybe.withDefault "entity"
-    in
+fragmentToDesc : Fragment -> String
+fragmentToDesc f =
     case f of
         Free _ ->
-            "A free text that you will be able to enter to identify a new " ++ entity ++ "."
+            "A free text that you will be able to enter to identify a new entity."
 
         Fixed _ ->
-            "A fixed text that you must configure now and that will be always the same. For instance it can be a prefix or a suffix"
+            "A fixed text that you define now and that will be always the same. For instance it can be a prefix, a suffix, a separator."
 
         Sequence _ _ _ ->
-            "A sequence number used to identify a " ++ entity ++ "."
+            "A sequence number used to identify an entity."
 
         Existing name _ ->
-            "An existing identifierType for a " ++ entity ++ "."
+            "An existing identifierType for an entity."
 
         YYYY _ ->
             "The year on 4 digits"
@@ -376,10 +380,9 @@ encodeFragment =
 encodeIdentifierType : IdentifierType -> Encode.Value
 encodeIdentifierType e =
     Encode.object
-        [ ( "entity", Entity.encode e.entity )
-        , ( "name", Encode.string e.name )
+        [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list encodeFragment e.fragments )
-        , ( "applyTo", ENT.encodeType e.applyTo )
+        , ( "applyTo", Encode.list ENT.encode <| Set.toList e.applyTo )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
@@ -388,29 +391,41 @@ encodeIdentifierType e =
 encodeIdentifier : Identifier -> Encode.Value
 encodeIdentifier e =
     Encode.object
-        [ ( "entity", Entity.encode e.entity )
-        , ( "name", Encode.string e.name )
+        [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list encodeFragment e.fragments )
+        ]
+
+
+encodeEntityIdentifier : EntityIdentifier -> Encode.Value
+encodeEntityIdentifier ei =
+    Encode.object
+        [ ( "entity", EN.encode ei.entity )
+        , ( "identifier", encodeIdentifier ei.identifier )
         ]
 
 
 identifierTypeDecoder : Decoder IdentifierType
 identifierTypeDecoder =
-    Decode.map6 IdentifierType
-        (Decode.field "entity" Entity.decoder)
+    Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
-        (Decode.field "applyTo" ENT.typesDecoder)
+        (Decode.field "applyTo" (Decode.list ENT.decoder |> Decode.andThen (Set.fromList ENT.compare >> Decode.succeed)))
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
 
 
 identifierDecoder : Decoder Identifier
 identifierDecoder =
-    Decode.map3 Identifier
-        (Decode.field "entity" Entity.decoder)
+    Decode.map2 Identifier
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
+
+
+entityIdentifierDecoder : Decoder EntityIdentifier
+entityIdentifierDecoder =
+    Decode.map2 EntityIdentifier
+        (Decode.field "entity" EN.decoder)
+        (Decode.field "identifier" identifierDecoder)
 
 
 fragmentDecoder : Decoder Fragment
@@ -469,12 +484,6 @@ fragmentDecoder =
             )
 
 
-selectFrom : DictSet String Identifier -> Entity -> Name -> Maybe Identifier
-selectFrom xs entity name =
-    -- select an identifier given its entity and name (should be unique, given the compare function)
-    Set.filter (\i -> i.entity == entity && i.name == name) xs |> Set.toList |> List.head
-
-
 identifierValue : Identifier -> String
 identifierValue i =
     i.fragments |> List.map fragmentToValue |> String.concat
@@ -518,4 +527,4 @@ updateIdentifier index fragment identifier =
 
 fromIdentifierType : IdentifierType -> Identifier
 fromIdentifierType i =
-    { entity = i.entity, name = i.name, fragments = i.fragments }
+    { name = i.name, fragments = i.fragments }

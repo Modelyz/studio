@@ -17,7 +17,7 @@ import REA.CommitmentType as CMT exposing (CommitmentType)
 import REA.Contract as CN exposing (Contract)
 import REA.ContractType as CNT exposing (ContractType)
 import REA.Entity as EN exposing (toPluralString, toString)
-import REA.EntityType as ENT exposing (EntityType, EntityTypes(..))
+import REA.EntityType as ENT exposing (EntityType(..))
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
 import REA.Ident exposing (Fragment(..), IdentifierType, allFragments, fragmentToDesc, fragmentToName, fragmentToString)
@@ -46,8 +46,7 @@ type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputEntity EN.Entity
-    | InputEntityTypes (DictSet String String)
+    | InputEntityTypes (DictSet String EntityType)
     | InputUnique Bool
     | InputMandatory Bool
     | InputFormat (List Fragment)
@@ -65,11 +64,10 @@ type alias Flags =
 type alias Model =
     { route : Route
     , name : String
-    , entity : Maybe EN.Entity
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , applyTo : DictSet String String
+    , applyTo : DictSet String EntityType
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -78,18 +76,16 @@ type alias Model =
 
 type Step
     = StepName
-    | StepEntity
+    | StepEntityTypes
     | StepOptions
     | StepFormat
-    | StepEntityTypes
 
 
 validate : Model -> Result String IdentifierType
 validate m =
-    Result.map2
+    Result.map
         -- avoid map6 which doesn't exist:
-        (\entity name -> { entity = entity, name = name, fragments = m.fragments, applyTo = ENT.fromSet entity m.applyTo, unique = m.unique, mandatory = m.mandatory })
-        (checkNothing m.entity "You must select an entity")
+        (\name -> { name = name, applyTo = m.applyTo, fragments = m.fragments, unique = m.unique, mandatory = m.mandatory })
         (checkEmptyString m.name "The name is Empty")
 
 
@@ -118,13 +114,12 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
       , name = ""
-      , entity = Nothing
-      , applyTo = Set.empty identity
+      , applyTo = Set.empty ENT.compare
       , unique = False
       , mandatory = False
       , fragments = []
       , warning = ""
-      , steps = [ Step.Step StepName, Step.Step StepEntity, Step.Step StepEntityTypes, Step.Step StepOptions, Step.Step StepFormat ]
+      , steps = [ Step.Step StepName, Step.Step StepEntityTypes, Step.Step StepOptions, Step.Step StepFormat ]
       , step = Step.Step StepName
       }
     , closeMenu s
@@ -136,14 +131,6 @@ update s msg model =
     case msg of
         InputName x ->
             ( { model | name = x }, Effect.none )
-
-        InputEntity x ->
-            ( { model
-                | entity = Just x
-                , applyTo = Set.empty identity
-              }
-            , Effect.none
-            )
 
         InputEntityTypes ts ->
             ( { model | applyTo = ts }, Effect.none )
@@ -205,9 +192,6 @@ view s model =
 buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
-        Step.Step StepEntity ->
-            nextOrValidate model NextPage Added (checkNothing model.entity "Please select an Entity")
-
         Step.Step StepOptions ->
             nextOrValidate model NextPage Added (Ok model.name)
 
@@ -246,17 +230,6 @@ viewContent model s =
 
         step =
             case model.step of
-                Step.Step StepEntity ->
-                    row [ alignTop, width <| minimum 200 fill, Font.size size.text.h3 ]
-                        [ Radio.view
-                            { title = "Apply to Which Entity?"
-                            , options = EN.all |> List.map (\e -> ( e, toString e ))
-                            , selected = model.entity
-                            , msg =
-                                \e -> InputEntity e
-                            }
-                        ]
-
                 Step.Step StepEntityTypes ->
                     inputEntityTypes s model
 
@@ -307,11 +280,11 @@ viewContent model s =
         ]
 
 
-viewItem : Model -> String -> Element Msg
-viewItem model name =
+viewItem : Model -> EntityType -> Element Msg
+viewItem model et =
     row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| name)
-        , button.primary (InputEntityTypes <| Set.remove name model.applyTo) "×"
+        [ el [ paddingXY 10 2 ] (text <| ENT.toString et)
+        , button.primary (InputEntityTypes <| Set.remove et model.applyTo) "×"
         ]
 
 
@@ -320,37 +293,24 @@ inputEntityTypes s model =
     let
         iName =
             model.name
-
-        eType =
-            Maybe.withDefault "entity" <| Maybe.map toString model.entity
     in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
                 :: List.append
                     (if Set.isEmpty model.applyTo then
-                        [ el [ padding 10, Font.color color.text.disabled ] (text <| "All " ++ eType ++ " types") ]
+                        [ el [ padding 10, Font.color color.text.disabled ] (text <| "All types") ]
 
                      else
                         []
                     )
-                    (List.map (\t -> viewItem model t) <| Set.toList model.applyTo)
-        , h2 <| "Select the " ++ eType ++ " types that should have a \"" ++ iName ++ "\" identifier"
+                    (model.applyTo |> Set.toList |> List.map (viewItem model))
+        , h2 <| "Select the types that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (State.allNames s.state model.entity
+            (Set.toList s.state.entityTypes
                 |> List.map
                     (\et ->
-                        column
-                            [ Background.color color.item.background
-                            , mouseOver itemHoverstyle
-                            , pointer
-                            , onClick <| InputEntityTypes <| Set.insert et model.applyTo
-                            ]
-                            [ row [ alignLeft ]
-                                [ button.primary (InputEntityTypes <| Set.insert et model.applyTo) "+"
-                                , el [ paddingXY 10 0 ] (text et)
-                                ]
-                            ]
+                        clickableCard (InputEntityTypes <| Set.insert et model.applyTo) (ENT.toName et) (ENT.toParent et |> Maybe.map (\t -> "Type: " ++ t))
                     )
             )
         ]
@@ -401,7 +361,7 @@ inputFragmentConfs model =
                         , height (px 150)
                         ]
                         [ el [] (text <| fragmentToString f)
-                        , paragraph [ Font.size size.text.main ] [ text <| fragmentToDesc model.entity f ]
+                        , paragraph [ Font.size size.text.main ] [ text <| fragmentToDesc f ]
                         ]
                 )
                 allFragments

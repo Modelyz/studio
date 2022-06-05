@@ -6,7 +6,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
 import REA.Entity exposing (Entity)
-import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, identifierValue, selectFrom, updateIdentifier)
+import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, identifierValue, updateIdentifier)
 import Style exposing (size)
 import View
 
@@ -21,19 +21,18 @@ type alias Config msg =
     }
 
 
-inputIdentifiers : Config msg -> Entity -> Model a -> Element msg
-inputIdentifiers c entity model =
+inputIdentifiers : Config msg -> Model a -> Element msg
+inputIdentifiers c model =
+    -- display an input field for each relevant identifier
     column []
         (model.identifiers
             |> Set.toList
-            |> List.map (inputIdentifier c model)
+            |> List.map
+                (\identifier ->
+                    row [] <|
+                        List.indexedMap (\i f -> inputFragment c i f identifier) identifier.fragments
+                )
         )
-
-
-inputIdentifier : Config msg -> Model a -> Identifier -> Element msg
-inputIdentifier c m i =
-    row [] <|
-        List.indexedMap (\index fragment -> inputFragment c index fragment i) i.fragments
 
 
 inputFragment : Config msg -> Int -> Fragment -> Identifier -> Element msg

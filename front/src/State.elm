@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, allNames, empty, getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess, getProcessType)
+module State exposing (State, aggregate, empty, getCommitmentTypes, getCommitments, getEntityType, getEventTypes, getEvents, getProcess, getProcessType)
 
 --import REA.ProcessType as PT exposing (ProcessType)
 
@@ -15,12 +15,12 @@ import REA.Commitment as CM exposing (Commitment)
 import REA.CommitmentType as CMT exposing (CommitmentType)
 import REA.Contract as CN exposing (Contract)
 import REA.ContractType as CNT exposing (ContractType)
-import REA.Entity as EN
-import REA.EntityType as ENT
+import REA.Entity as EN exposing (Entity)
+import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as Ident exposing (Identifier, IdentifierType)
+import REA.Ident as Ident exposing (EntityIdentifier, Identifier, IdentifierType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -41,6 +41,7 @@ type alias State =
     , uuids : DictSet String Uuid
 
     -- entity types
+    , entityTypes : DictSet String EntityType -- TODO remove others below
     , resourceTypes : DictSet String ResourceType
     , eventTypes : DictSet String EventType
     , agentTypes : DictSet String AgentType
@@ -49,6 +50,7 @@ type alias State =
     , processTypes : DictSet String ProcessType
 
     -- entities
+    , entities : DictSet String Entity
     , resources : DictSet String Resource
     , events : DictSet Int E.Event
     , agents : DictSet String Agent
@@ -65,7 +67,7 @@ type alias State =
     -- behaviours
     , groups : DictSet String Group
     , identifierTypes : DictSet String IdentifierType
-    , identifiers : DictSet String Identifier
+    , identifiers : DictSet String EntityIdentifier
     }
 
 
@@ -76,6 +78,7 @@ empty =
     , uuids = Set.empty Uuid.toString
 
     -- entity types
+    , entityTypes = Set.empty ENT.compare
     , resourceTypes = Set.empty RT.compare
     , eventTypes = Set.empty ET.compare
     , agentTypes = Set.empty AT.compare
@@ -84,6 +87,7 @@ empty =
     , processTypes = Set.empty PT.compare
 
     -- entities
+    , entities = Set.empty EN.compare
     , resources = Set.empty R.compare
     , events = Set.empty E.compare
     , agents = Set.empty A.compare
@@ -100,7 +104,7 @@ empty =
 
     -- behaviours
     , identifierTypes = Set.empty Ident.compareIdentifierType
-    , identifiers = Set.empty Ident.compareIdentifier
+    , identifiers = Set.empty Ident.compareEntityIdentifier
     }
 
 
@@ -149,16 +153,7 @@ aggregate (Event b p) state =
 
         CommitmentAdded e ->
             { state
-              -- TODO link the commitment to a process (cf process_commitments)
                 | commitments = Set.insert e state.commitments
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        EventTypeAdded e ->
-            { state
-                | eventTypes = Set.insert e state.eventTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
@@ -188,14 +183,6 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        EventTypeRemoved e ->
-            { state
-                | eventTypes = Set.filter (\et -> et.name /= e) state.eventTypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
         EventAdded e ->
             -- TODO : link the Event to a Process (cf process_events)
             { state
@@ -214,7 +201,7 @@ aggregate (Event b p) state =
 
         GroupAdded e ->
             { state
-                | groups = Set.insert (Group e.name e.entity) state.groups
+                | groups = Set.insert (Group e.name) state.groups
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
@@ -244,41 +231,33 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        AgentTypeAdded e ->
-            let
-                a =
-                    { name = e.name, type_ = e.type_ }
-            in
+        TypeAdded e ->
             { state
-                | agentTypes = Set.insert a state.agentTypes
+                | entityTypes = Set.insert e state.entityTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        AgentTypeRemoved e ->
+        Added e ->
             { state
-                | agentTypes = Set.filter (\a -> a.name /= e) state.agentTypes
+                | entities = Set.insert e state.entities
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        AgentAdded e ->
-            let
-                a =
-                    { name = e.name, type_ = e.type_ }
-            in
+        Removed e ->
             { state
-                | agents = Set.insert a state.agents
+                | entities = Set.remove e state.entities
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        AgentRemoved e ->
+        TypeRemoved et ->
             { state
-                | agents = Set.filter (\a -> a.name /= e) state.agents
+                | entityTypes = Set.remove et state.entityTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
@@ -317,6 +296,13 @@ getProcess state str =
             )
 
 
+getEntityType : State -> String -> Maybe EntityType
+getEntityType state name =
+    Set.filter (\et -> ENT.toName et == name) state.entityTypes
+        |> Set.toList
+        |> List.head
+
+
 getEventTypes : State -> String -> DictSet String EventType
 getEventTypes state name =
     let
@@ -340,21 +326,21 @@ getCommitmentTypes state ptype =
 getCommitments : State -> Process -> DictSet Int Commitment
 getCommitments state process =
     let
-        cnames =
-            Set.filter (\pc -> pc.process == process.name) state.process_commitments
-                |> Set.map identity (\pc -> pc.commitment)
+        cs =
+            Set.filter (\pc -> pc.process == process.uuid) state.process_commitments
+                |> Set.map Uuid.toString (\pc -> pc.commitment)
     in
-    Set.filter (\c -> Set.member c.name cnames) state.commitments
+    Set.filter (\c -> Set.member c.uuid cs) state.commitments
 
 
 getEvents : State -> Process -> DictSet Int E.Event
 getEvents state process =
     let
-        enames =
-            Set.filter (\pe -> pe.process == process.name) state.process_events
-                |> Set.map identity (\pe -> pe.event)
+        es =
+            Set.filter (\pe -> pe.process == process.uuid) state.process_events
+                |> Set.map Uuid.toString (\pe -> pe.event)
     in
-    Set.filter (\e -> Set.member e.name enames) state.events
+    Set.filter (\e -> Set.member e.uuid es) state.events
 
 
 getProcessType : State -> String -> Maybe ProcessType
@@ -364,29 +350,3 @@ getProcessType state type_str =
         state.processTypes
         |> Set.values
         |> List.head
-
-
-allNames : State -> Maybe EN.Entity -> List String
-allNames s et =
-    Set.toList <|
-        case et of
-            Just EN.Resource ->
-                Set.map identity .name s.resourceTypes
-
-            Just EN.Event ->
-                Set.map identity .name s.eventTypes
-
-            Just EN.Agent ->
-                Set.map identity .name s.agentTypes
-
-            Just EN.Commitment ->
-                Set.map identity .name s.commitmentTypes
-
-            Just EN.Contract ->
-                Set.map identity .name s.contractTypes
-
-            Just EN.Process ->
-                Set.map identity .name s.processTypes
-
-            Nothing ->
-                Set.empty identity

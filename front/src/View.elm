@@ -6,7 +6,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events as Events
+import Element.Events as Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -254,3 +254,14 @@ checkNothing field err =
 
         Just x ->
             Ok x
+
+
+clickableCard : msg -> String -> Maybe String -> Element msg
+clickableCard onInput title desc =
+    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
+        [ row [ alignLeft ]
+            [ button.primary onInput "+"
+            , el [ paddingXY 10 0 ] (text title)
+            ]
+        , desc |> Maybe.map (\d -> paragraph [ padding 10, Font.size size.text.main ] [ text d ]) |> Maybe.withDefault none
+        ]

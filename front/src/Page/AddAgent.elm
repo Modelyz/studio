@@ -12,15 +12,25 @@ import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.AgentType as AT exposing (AgentType)
-import REA.Entity as Entity
-import REA.EntityType as ENT
+import REA.Commitment as CM exposing (Commitment)
+import REA.CommitmentType as CMT exposing (CommitmentType)
+import REA.Contract as CN exposing (Contract)
+import REA.Entity as EN exposing (Entity)
+import REA.EntityType as ENT exposing (EntityType)
+import REA.Event as E exposing (Event)
+import REA.EventType as ET exposing (EventType)
 import REA.Ident as I exposing (Identifier)
+import REA.Process as P exposing (Process)
+import REA.ProcessType as PT exposing (ProcessType)
+import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
 import Spa.Page
+import State exposing (getEntityType)
 import Style exposing (..)
+import Time exposing (millisToPosix)
 import View exposing (..)
 import View.FlatSelect exposing (flatselect)
 import View.InputIdentifiers exposing (..)
@@ -30,7 +40,7 @@ import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, prev
 
 
 type Msg
-    = InputType (Maybe AgentType)
+    = InputType (Maybe EntityType)
     | InputIdentifier Identifier
     | Warning String
     | PreviousPage
@@ -45,8 +55,8 @@ type alias Flags =
 
 type alias Model =
     { route : Route
-    , name : Uuid
-    , flatselect : Maybe AgentType
+    , uuid : Uuid
+    , flatselect : Maybe EntityType
     , identifiers : DictSet String Identifier
     , warning : String
     , step : Step.Step Step
@@ -59,12 +69,29 @@ type Step
     | StepIdentifiers
 
 
-validate : Model -> Result String Agent
+validate : Model -> Result String Entity
 validate m =
-    Result.map2
-        Agent
-        (Ok m.name)
-        (checkNothing m.flatselect "You must select an Agent Type" |> Result.map .name)
+    case m.flatselect of
+        Just (ENT.ResourceType t) ->
+            Ok (EN.Resource (Resource m.uuid t.name))
+
+        Just (ENT.EventType t) ->
+            Ok (EN.Event (Event m.uuid t.name (millisToPosix 0)))
+
+        Just (ENT.AgentType t) ->
+            Ok (EN.Agent (Agent m.uuid t.name))
+
+        Just (ENT.CommitmentType t) ->
+            Ok (EN.Commitment (Commitment m.uuid t.name (millisToPosix 0)))
+
+        Just (ENT.ContractType t) ->
+            Ok (EN.Contract (Contract m.uuid t.name))
+
+        Just (ENT.ProcessType t) ->
+            Ok (EN.Process (Process m.uuid t.name (millisToPosix 0)))
+
+        Nothing ->
+            Err "You must select an Entity Type"
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -95,8 +122,8 @@ init s f =
     in
     ( { route = f.route
       , flatselect = Nothing
-      , name = newUuid
-      , identifiers = Set.filter (\i -> i.entity == Entity.Agent) s.state.identifierTypes |> Set.map I.compareIdentifier I.fromIdentifierType
+      , uuid = newUuid
+      , identifiers = Set.empty I.compareIdentifier
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -105,48 +132,37 @@ init s f =
     )
 
 
-isChildOfAny : Shared.Model -> ENT.EntityTypes -> AgentType -> Bool
-isChildOfAny s ets at =
+isChildOfAny : Shared.Model -> DictSet String EntityType -> EntityType -> Bool
+isChildOfAny s ets et =
     -- the agent type (of the new agent) must be a child of one of the entity types of the identifier type
-    case ets of
-        ENT.AgentTypes ats ->
-            if Set.isEmpty ats then
-                -- identifier valid for all agent types
-                True
-
-            else
-                ats |> Set.toList |> List.any (isChild s at)
-
-        _ ->
-            False
-
-
-isChild : Shared.Model -> AgentType -> String -> Bool
-isChild s child item =
-    -- true if child is really a child of item
-    if child.name == item then
+    if Set.isEmpty ets then
+        -- identifier valid for all agent types
         True
 
     else
-        child.type_ |> Maybe.andThen (getAgentType s) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
+        ets |> Set.toList |> List.any (isChild s et)
 
 
-getAgentType : Shared.Model -> String -> Maybe AgentType
-getAgentType s name =
-    List.head <| Set.toList <| Set.filter (\at -> at.name == name) s.state.agentTypes
+isChild : Shared.Model -> EntityType -> EntityType -> Bool
+isChild s child item =
+    -- true if child is really a child of item
+    if child == item then
+        True
+
+    else
+        ENT.toType child |> .parent |> Maybe.andThen (getEntityType s.state) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mat ->
+        InputType met ->
             ( { model
-                | flatselect = mat
+                | flatselect = met
                 , identifiers =
                     Set.filter
                         (\it ->
-                            (it.entity == Entity.Agent)
-                                && (Maybe.map (\at -> isChildOfAny s it.applyTo at) mat |> Maybe.withDefault False)
+                            Maybe.map (\et -> isChildOfAny s it.applyTo et) met |> Maybe.withDefault False
                         )
                         s.state.identifierTypes
                         |> Set.map I.compareIdentifier I.fromIdentifierType
@@ -162,10 +178,13 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok a ->
+                Ok e ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.AgentAdded a
+                        [ Shared.dispatchMany s
+                            (Event.Added e
+                                :: List.map (\i -> Event.IdentifierAdded { entity = e, identifier = i }) (Set.toList model.identifiers)
+                            )
                         , redirect s Route.Agents
                         ]
                     )
@@ -206,7 +225,7 @@ buttonNext : Model -> Element Msg
 buttonNext model =
     case model.step of
         Step.Step StepType ->
-            nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a name")
+            nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a type")
 
         Step.Step StepIdentifiers ->
             nextOrValidate model NextPage Added (Ok model.identifiers)
@@ -239,9 +258,9 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     flatselect model
-                        { all = Set.toList <| s.state.agentTypes
-                        , toString = AT.toString
-                        , toDesc = AT.toDesc
+                        { all = Set.toList <| s.state.entityTypes
+                        , toString = ENT.toName
+                        , toDesc = ENT.toParent
                         , onInput = InputType
                         , label = "Type"
                         , explain = h2 "Choose the Type of the new Agent"
@@ -252,7 +271,6 @@ viewContent model s =
                         { onEnter = Added
                         , onInput = InputIdentifier
                         }
-                        Entity.Agent
                         model
     in
     cardContent s

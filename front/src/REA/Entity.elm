@@ -1,102 +1,162 @@
-module REA.Entity exposing (Entity(..), all, decoder, encode, toPluralString, toString)
+module REA.Entity exposing (Entity(..), compare, decoder, encode, toPluralString, toString, toTypeString)
 
-import Json.Decode exposing (Decoder)
-import Json.Encode exposing (Value)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import Prng.Uuid as Uuid
+import REA.Agent as A exposing (Agent)
+import REA.Commitment as CM exposing (Commitment)
+import REA.Contract as CN exposing (Contract)
+import REA.Event as E exposing (Event)
+import REA.Process as P exposing (Process)
+import REA.Resource as R exposing (Resource)
 
 
 type Entity
-    = Resource
-    | Event
-    | Agent
-    | Commitment
-    | Contract
-    | Process
+    = Resource Resource
+    | Event Event
+    | Agent Agent
+    | Commitment Commitment
+    | Contract Contract
+    | Process Process
 
 
-all : List Entity
-all =
-    [ Resource, Event, Agent, Commitment, Contract, Process ]
+toTypeString : Entity -> String
+toTypeString entity =
+    case entity of
+        Resource x ->
+            x.type_
+
+        Event x ->
+            x.type_
+
+        Agent x ->
+            x.type_
+
+        Commitment x ->
+            x.type_
+
+        Contract x ->
+            x.type_
+
+        Process x ->
+            x.type_
 
 
 encode : Entity -> Value
-encode =
-    toString >> Json.Encode.string
+encode entity =
+    case entity of
+        Resource r ->
+            Encode.object
+                [ ( "what", Encode.string "Resource" )
+                , ( "type", R.encode r )
+                ]
+
+        Event e ->
+            Encode.object
+                [ ( "what", Encode.string "Event" )
+                , ( "type", E.encode e )
+                ]
+
+        Agent a ->
+            Encode.object
+                [ ( "what", Encode.string "Agent" )
+                , ( "type", A.encode a )
+                ]
+
+        Commitment cm ->
+            Encode.object
+                [ ( "what", Encode.string "Commitment" )
+                , ( "type", CM.encode cm )
+                ]
+
+        Contract cn ->
+            Encode.object
+                [ ( "what", Encode.string "Contract" )
+                , ( "type", CN.encode cn )
+                ]
+
+        Process p ->
+            Encode.object
+                [ ( "what", Encode.string "Process" )
+                , ( "type", P.encode p )
+                ]
 
 
 decoder : Decoder Entity
 decoder =
-    Json.Decode.string
-        |> Json.Decode.andThen
-            (fromString
-                >> Maybe.map Json.Decode.succeed
-                >> Maybe.withDefault (Json.Decode.fail "Unknown entity")
+    Decode.field "what" Decode.string
+        |> Decode.andThen
+            (\t ->
+                Decode.field "type"
+                    (case t of
+                        "Resource" ->
+                            Decode.map Resource R.decoder
+
+                        "Event" ->
+                            Decode.map Event E.decoder
+
+                        "Agent" ->
+                            Decode.map Agent A.decoder
+
+                        "Commitment" ->
+                            Decode.map Commitment CM.decoder
+
+                        "Contract" ->
+                            Decode.map Contract CN.decoder
+
+                        "Process" ->
+                            Decode.map Process P.decoder
+
+                        _ ->
+                            Decode.fail "Unknown entity"
+                    )
             )
-
-
-fromString : String -> Maybe Entity
-fromString s =
-    case s of
-        "Process" ->
-            Just Process
-
-        "Resource" ->
-            Just Resource
-
-        "Event" ->
-            Just Event
-
-        "Agent" ->
-            Just Agent
-
-        "Commitment" ->
-            Just Commitment
-
-        "Contract" ->
-            Just Contract
-
-        _ ->
-            Nothing
 
 
 toString : Entity -> String
 toString e =
     case e of
-        Process ->
-            "Process"
+        Process p ->
+            "Process " ++ Uuid.toString p.uuid
 
-        Resource ->
-            "Resource"
+        Resource r ->
+            "Resource " ++ Uuid.toString r.uuid
 
-        Event ->
-            "Event"
+        Event ev ->
+            "Event " ++ Uuid.toString ev.uuid
 
-        Agent ->
-            "Agent"
+        Agent a ->
+            "Agent " ++ Uuid.toString a.uuid
 
-        Commitment ->
-            "Commitment"
+        Commitment cm ->
+            "Commitment " ++ Uuid.toString cm.uuid
 
-        Contract ->
-            "Contract"
+        Contract cn ->
+            "Contract " ++ Uuid.toString cn.uuid
 
 
 toPluralString : Entity -> String
 toPluralString e =
     case e of
-        Process ->
+        Process _ ->
             "Processes"
 
-        Resource ->
+        Resource _ ->
             "Resources"
 
-        Event ->
+        Event _ ->
             "Events"
 
-        Agent ->
+        Agent _ ->
             "Agents"
 
-        Commitment ->
+        Commitment _ ->
             "Commitments"
 
-        Contract ->
+        Contract _ ->
             "Contracts"
+
+
+compare : Entity -> String
+compare =
+    toString

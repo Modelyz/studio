@@ -1,16 +1,32 @@
-module REA.Resource exposing (Resource, compare)
+module REA.Resource exposing (Resource, compare, decoder, encode)
 
-import Prng.Uuid exposing (Uuid)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.ResourceType exposing (ResourceType)
 
 
 type alias Resource =
-    { name : String
-    , uuid : Uuid
+    { uuid : Uuid
     , type_ : String
     }
 
 
 compare : Resource -> String
 compare =
-    .name
+    .uuid >> Uuid.toString
+
+
+encode : Resource -> Encode.Value
+encode r =
+    Encode.object
+        [ ( "uuid", Uuid.encode r.uuid )
+        , ( "type", Encode.string r.type_ )
+        ]
+
+
+decoder : Decoder Resource
+decoder =
+    Decode.map2 Resource
+        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "type" Decode.string)

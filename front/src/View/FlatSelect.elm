@@ -45,14 +45,6 @@ flatselect model c =
         , c.explain
         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
-                (\x ->
-                    column [ pointer, onClick (c.onInput <| Just x), Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
-                        [ row [ alignLeft ]
-                            [ button.primary (c.onInput <| Just x) "+"
-                            , el [ paddingXY 10 0 ] (text <| c.toString x)
-                            ]
-                        , c.toDesc x |> Maybe.map (\d -> paragraph [ padding 10, Font.size size.text.main ] [ text d ]) |> Maybe.withDefault none
-                        ]
-                )
+                (\x -> clickableCard (c.onInput <| Just x) (c.toString x) (c.toDesc x))
                 c.all
         ]

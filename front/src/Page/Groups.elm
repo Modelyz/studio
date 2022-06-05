@@ -1,6 +1,6 @@
 module Page.Groups exposing (match, page, view)
 
-import DictSet as Set
+import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,7 +9,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Event
-import REA.Entity as Entity exposing (Entity(..), toString)
+import REA.Entity as EN exposing (Entity(..), toString)
 import REA.Group exposing (Group)
 import Route exposing (Route)
 import Shared
@@ -39,14 +39,14 @@ type alias Flags =
 
 type alias Form =
     { name : String
-    , entity : Maybe Entity
+    , entities : DictSet String Entity
     , warning : String
     }
 
 
 empty : Form
 empty =
-    { name = "", entity = Nothing, warning = "" }
+    { name = "", entities = Set.empty EN.compare, warning = "" }
 
 
 validate : Form -> Maybe Group
@@ -55,8 +55,7 @@ validate f =
         Nothing
 
     else
-        f.entity
-            |> Maybe.andThen (\e -> Just { name = f.name, entity = e })
+        Just { name = f.name }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -94,7 +93,7 @@ update s msg model =
             ( { model
                 | form = empty
               }
-            , Shared.dispatch s <| Event.GroupAdded { name = group.name, entity = group.entity }
+            , Shared.dispatch s <| Event.GroupAdded { name = group.name }
             )
 
         Removed group ->
@@ -143,7 +142,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Set.toList
-                        |> List.map (\g -> viewSmallCard (Removed g) g.name ("(Group of " ++ Entity.toPluralString g.entity ++ ")"))
+                        |> List.map (\g -> viewSmallCard (Removed g) g.name ("(Group of " ++ ")"))
                     )
                 , column
                     [ spacing 20 ]
@@ -160,22 +159,6 @@ viewContent model s =
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name of the new group"
                             , label = Input.labelLeft [] <| text "Name"
-                            }
-                        ]
-                    , row [ Font.size size.text.main ]
-                        [ Radio.view
-                            { title = "This will be a Group of:"
-                            , options =
-                                [ ( Process, "Processes" )
-                                , ( Resource, "Resources" )
-                                , ( Event, "Events" )
-                                , ( Agent, "Agents" )
-                                , ( Commitment, "Commitments" )
-                                , ( Contract, "Contracts" )
-                                ]
-                            , selected = model.form.entity
-                            , msg =
-                                \e -> GotInput { form | entity = Just e }
                             }
                         ]
                     ]
