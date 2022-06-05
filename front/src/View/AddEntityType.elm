@@ -55,7 +55,6 @@ type alias Config =
     { typeExplain : String
     , nameExplain : String
     , pageTitle : String
-    , validate : Model -> Result String EntityType
     }
 
 
@@ -102,7 +101,7 @@ update c s msg model =
             ( { model | warning = err }, Effect.none )
 
         Added ->
-            case c.validate model of
+            case validate model of
                 Ok t ->
                     ( model
                     , Effect.batch

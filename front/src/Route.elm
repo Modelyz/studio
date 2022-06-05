@@ -13,7 +13,11 @@ type Route
     | Process String
     | ResourceTypes
     | AgentTypes
+    | AddResourceType
+    | AddEventType
     | AddAgentType
+    | AddCommitmentType
+    | AddContractType
     | ContractTypes
     | CommitmentTypes
     | EventTypes
@@ -28,19 +32,39 @@ routeParser : Parser (Route -> a) a
 routeParser =
     oneOf
         [ map Home top
-        , map ProcessTypes (s "process-types")
-        , map ProcessType (s "process-type" </> string)
-        , map Processes (s "processes" <?> Query.string "type")
-        , map Process (s "process" </> string)
-        , map CommitmentTypes (s "commitment-types")
-        , map EventTypes (s "event-types")
         , map Groups (s "groups")
+
+        -- list behaviours
         , map IdentifierTypes (s "identifierTypes")
+
+        -- add behaviours
         , map AddIdentifierType (s "identifierTypes" </> s "add")
-        , map AgentTypes (s "agent-types")
+
+        -- add types
+        , map AddResourceType (s "resource-types" </> s "add")
+        , map AddEventType (s "event-types" </> s "add")
         , map AddAgentType (s "agent-types" </> s "add")
-        , map Agents (s "agents")
+        , map AddCommitmentType (s "commitment-types" </> s "add")
+        , map AddContractType (s "contract-types" </> s "add")
+
+        -- list types
+        , map EventTypes (s "event-types")
+        , map AgentTypes (s "agent-types")
+        , map CommitmentTypes (s "commitment-types")
+        , map ProcessTypes (s "process-types")
+
+        -- add entities
         , map AddAgent (s "agents" </> s "add")
+
+        -- list entities
+        , map Agents (s "agents")
+        , map Processes (s "processes" <?> Query.string "type")
+
+        -- edit types
+        , map ProcessType (s "process-type" </> string)
+
+        -- edit entities
+        , map Process (s "process" </> string)
         ]
 
 
@@ -76,8 +100,20 @@ toString r =
         AgentTypes ->
             "/agent-types"
 
+        AddResourceType ->
+            "/resource-types/add"
+
+        AddEventType ->
+            "/event-types/add"
+
         AddAgentType ->
             "/agent-types/add"
+
+        AddCommitmentType ->
+            "/commitment-types/add"
+
+        AddContractType ->
+            "/contract-type/add"
 
         ContractTypes ->
             "/contract-types"
