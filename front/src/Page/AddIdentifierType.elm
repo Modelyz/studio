@@ -153,7 +153,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Event.IdentifierTypeAdded i
-                        , redirect s Route.IdentifierTypes
+                        , redirect s.navkey Route.IdentifierTypes
                         ]
                     )
 
@@ -166,7 +166,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.IdentifierTypes )
+                    ( model, redirect s.navkey Route.IdentifierTypes )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -174,10 +174,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.IdentifierTypes )
+                    ( model, redirect s.navkey Route.IdentifierTypes )
 
         Cancel ->
-            ( model, redirect s Route.IdentifierTypes )
+            ( model, redirect s.navkey Route.IdentifierTypes )
 
 
 view : Shared.Model -> Model -> View Msg

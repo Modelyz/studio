@@ -170,9 +170,16 @@ button =
     }
 
 
-redirect : Shared.Model -> Route -> Effect Shared.Msg msg
-redirect s =
-    Route.toString >> Nav.pushUrl s.navkey >> Effect.fromCmd
+redirect : Nav.Key -> Route -> Effect Shared.Msg msg
+redirect navkey =
+    -- redirect to the specified route
+    Route.toString >> Nav.pushUrl navkey >> Effect.fromCmd
+
+
+redirectParent : Nav.Key -> Route -> Effect Shared.Msg msg
+redirectParent navkey route =
+    -- redirect to the parent route of the specified (one level up the path)
+    ("/" ++ Route.firstSegment route) |> Nav.pushUrl navkey |> Effect.fromCmd
 
 
 closeMenu : Shared.Model -> Effect Shared.Msg msg

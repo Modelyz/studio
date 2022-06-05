@@ -68,7 +68,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, redirect s Route.AddIdentifierType )
+            ( model, redirect s.navkey Route.AddIdentifierType )
 
 
 view : Shared.Model -> Model -> View Msg

@@ -185,7 +185,7 @@ update s msg model =
                             (Event.Added e
                                 :: List.map (\i -> Event.IdentifierAdded { entity = e, identifier = i }) (Set.toList model.identifiers)
                             )
-                        , redirect s Route.Agents
+                        , redirect s.navkey Route.Agents
                         ]
                     )
 
@@ -198,7 +198,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.Agents )
+                    ( model, redirect s.navkey Route.Agents )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -206,10 +206,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s Route.Agents )
+                    ( model, redirect s.navkey Route.Agents )
 
         Cancel ->
-            ( model, redirect s Route.Agents )
+            ( model, redirect s.navkey Route.Agents )
 
 
 view : Shared.Model -> Model -> View Msg
