@@ -3,7 +3,6 @@ module REA.Resource exposing (Resource, compare, decoder, encode)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.ResourceType exposing (ResourceType)
 
 
 type alias Resource =

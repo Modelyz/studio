@@ -5,7 +5,7 @@ import Element exposing (..)
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.ProcessType exposing (ProcessType)
+import REA.EntityType as ENT exposing (EntityType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -15,13 +15,13 @@ import View.Navbar as Navbar
 
 type alias Model =
     { route : Route
-    , inputProcessType : ProcessType
-    , ptype : ProcessType
+    , inputProcessType : EntityType
+    , ptype : EntityType
     }
 
 
 type Msg
-    = ProcessTypeChanged ProcessType
+    = ProcessTypeChanged EntityType
     | InputProcessName String
 
 
@@ -52,8 +52,8 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
-      , inputProcessType = ProcessType ""
-      , ptype = ProcessType ""
+      , inputProcessType = ENT.ProcessType { name = "", parent = Nothing }
+      , ptype = ENT.ProcessType { name = "", parent = Nothing }
       }
     , closeMenu s
     )
@@ -67,11 +67,11 @@ update s msg model =
                 ptype =
                     model.inputProcessType
             in
-            ( { model | inputProcessType = { ptype | name = name } }, Effect.none )
+            ( { model | inputProcessType = ENT.ProcessType { name = name, parent = ENT.toParent ptype } }, Effect.none )
 
         ProcessTypeChanged pt ->
             ( { model
-                | inputProcessType = { name = "" }
+                | inputProcessType = pt
               }
             , Shared.dispatch s <| Event.ProcessTypeChanged pt
             )
@@ -88,6 +88,10 @@ view _ model =
 
 viewContent : Model -> Element Msg
 viewContent model =
+    let
+        name =
+            ENT.toName model.inputProcessType
+    in
     column
         []
         [ column
@@ -107,9 +111,9 @@ viewContent model =
             , column []
                 [ Input.text [ View.onEnter <| ProcessTypeChanged model.inputProcessType ]
                     { onChange = InputProcessName
-                    , text = model.inputProcessType.name
+                    , text = name
                     , placeholder =
-                        if model.inputProcessType.name == "" then
+                        if name == "" then
                             Just <| Input.placeholder [] <| text "Enter the name of the processes to create"
 
                         else

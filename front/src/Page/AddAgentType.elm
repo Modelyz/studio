@@ -1,5 +1,6 @@
 module Page.AddAgentType exposing (..)
 
+import REA.EntityType as ENT
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -12,6 +13,8 @@ config =
     { typeExplain = "Choose the type of the new Agent Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Agent Type"
     , pageTitle = "Adding an Agent Type"
+    , processRestriction = "This Agent Type will be usable from the following Process Types:"
+    , typeConstructor = ENT.AgentType
     }
 
 

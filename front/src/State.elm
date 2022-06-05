@@ -1,6 +1,4 @@
-module State exposing (State, aggregate, empty, getCommitmentTypes, getCommitments, getEntityType, getEventTypes, getEvents, getProcess, getProcessType)
-
---import REA.ProcessType as PT exposing (ProcessType)
+module State exposing (State, aggregate, empty, getCommitments, getEntityType, getEvents, getProcess, getRestricted)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -10,25 +8,18 @@ import IOStatus exposing (IOStatus(..))
 import Json.Decode exposing (andThen)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
-import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as CM exposing (Commitment)
-import REA.CommitmentType as CMT exposing (CommitmentType)
 import REA.Contract as CN exposing (Contract)
-import REA.ContractType as CNT exposing (ContractType)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
-import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group, compare)
 import REA.Ident as Ident exposing (EntityIdentifier, Identifier, IdentifierType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
-import REA.ProcessType as PT exposing (ProcessType)
-import REA.ProcessTypeCommitmentType as PTCT exposing (ProcessTypeCommitmentType)
-import REA.ProcessTypeEventType as PTET exposing (ProcessTypeEventType)
 import REA.Resource as R exposing (Resource)
-import REA.ResourceType as RT exposing (ResourceType)
+import REA.Restriction as Restriction exposing (Restriction)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (Result(..))
 import Time exposing (millisToPosix)
@@ -42,12 +33,7 @@ type alias State =
 
     -- entity types
     , entityTypes : DictSet String EntityType -- TODO remove others below
-    , resourceTypes : DictSet String ResourceType
-    , eventTypes : DictSet String EventType
-    , agentTypes : DictSet String AgentType
-    , commitmentTypes : DictSet String CommitmentType
-    , contractTypes : DictSet String ContractType
-    , processTypes : DictSet String ProcessType
+    , processTypes : DictSet String EntityType
 
     -- entities
     , entities : DictSet String Entity
@@ -61,8 +47,7 @@ type alias State =
     -- links
     , process_commitments : DictSet String ProcessCommitments
     , process_events : DictSet String ProcessEvents
-    , processType_commitmentTypes : DictSet String ProcessTypeCommitmentType
-    , processType_eventTypes : DictSet String ProcessTypeEventType
+    , restrictions : DictSet String Restriction
 
     -- behaviours
     , groups : DictSet String Group
@@ -79,12 +64,7 @@ empty =
 
     -- entity types
     , entityTypes = Set.empty ENT.compare
-    , resourceTypes = Set.empty RT.compare
-    , eventTypes = Set.empty ET.compare
-    , agentTypes = Set.empty AT.compare
-    , commitmentTypes = Set.empty CMT.compare
-    , contractTypes = Set.empty CNT.compare
-    , processTypes = Set.empty PT.compare
+    , processTypes = Set.empty ENT.compare
 
     -- entities
     , entities = Set.empty EN.compare
@@ -97,9 +77,8 @@ empty =
 
     -- links
     , process_events = Set.empty PE.compare
-    , processType_commitmentTypes = Set.empty PTCT.compare
+    , restrictions = Set.empty Restriction.compare
     , process_commitments = Set.empty PC.compare
-    , processType_eventTypes = Set.empty PTET.compare
     , groups = Set.empty G.compare
 
     -- behaviours
@@ -121,7 +100,7 @@ aggregate (Event b p) state =
 
         ProcessTypeRemoved e ->
             { state
-                | processTypes = Set.filter (\pt -> pt.name /= e) state.processTypes
+                | processTypes = Set.filter (\pt -> ENT.toName pt /= e) state.processTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
@@ -135,22 +114,6 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        CommitmentTypeAdded e ->
-            { state
-                | commitmentTypes = Set.insert e state.commitmentTypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        CommitmentTypeRemoved e ->
-            { state
-                | commitmentTypes = Set.filter (\ct -> ct.name /= e) state.commitmentTypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
         CommitmentAdded e ->
             { state
                 | commitments = Set.insert e state.commitments
@@ -159,25 +122,9 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        LinkedEventTypeToProcessType e ->
-            let
-                ptet =
-                    { etype = e.etype, ptype = e.ptype }
-            in
+        Restricted r ->
             { state
-                | processType_eventTypes = Set.insert ptet state.processType_eventTypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        LinkedCommitmentTypeToProcessType e ->
-            let
-                ptct =
-                    { ctype = e.ctype, ptype = e.ptype }
-            in
-            { state
-                | processType_commitmentTypes = Set.insert ptct state.processType_commitmentTypes
+                | restrictions = Set.insert r state.restrictions
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
@@ -296,31 +243,18 @@ getProcess state str =
             )
 
 
-getEntityType : State -> String -> Maybe EntityType
-getEntityType state name =
-    Set.filter (\et -> ENT.toName et == name) state.entityTypes
+getEntityType : String -> DictSet String EntityType -> Maybe EntityType
+getEntityType name ets =
+    Set.filter (\et -> ENT.toName et == name) ets
         |> Set.toList
         |> List.head
 
 
-getEventTypes : State -> String -> DictSet String EventType
-getEventTypes state name =
-    let
-        etnames =
-            Set.filter (\ptet -> ptet.ptype == name) state.processType_eventTypes
-                |> Set.map identity (\ptet -> ptet.etype)
-    in
-    Set.filter (\et -> Set.member et.name etnames) state.eventTypes
-
-
-getCommitmentTypes : State -> String -> DictSet String CommitmentType
-getCommitmentTypes state ptype =
-    let
-        ctnames =
-            Set.filter (\ptct -> ptct.ptype == ptype) state.processType_commitmentTypes
-                |> Set.map identity (\ptct -> ptct.ctype)
-    in
-    Set.filter (\ct -> Set.member ct.name ctnames) state.commitmentTypes
+getRestricted : String -> DictSet String Restriction -> String -> DictSet String EntityType
+getRestricted typeString rs scopeName =
+    -- get the entityTypes what restricted by the EntityType scope
+    Set.filter (\r -> ENT.toName r.scope == scopeName && ENT.toString r.what == typeString) rs
+        |> Set.map ENT.compare (\r -> r.what)
 
 
 getCommitments : State -> Process -> DictSet Int Commitment
@@ -341,12 +275,3 @@ getEvents state process =
                 |> Set.map Uuid.toString (\pe -> pe.event)
     in
     Set.filter (\e -> Set.member e.uuid es) state.events
-
-
-getProcessType : State -> String -> Maybe ProcessType
-getProcessType state type_str =
-    Set.filter
-        (\pt -> pt.name == type_str)
-        state.processTypes
-        |> Set.values
-        |> List.head

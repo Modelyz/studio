@@ -1,4 +1,4 @@
-module Page.AddAgentType exposing (..)
+module Page.AddProcessType exposing (..)
 
 import REA.EntityType as ENT
 import Route exposing (Route)
@@ -10,11 +10,11 @@ import View.AddEntityType exposing (Flags, Model, Msg)
 
 config : View.AddEntityType.Config
 config =
-    { typeExplain = "Choose the type of the new Agent Type (it can be hierarchical)"
-    , nameExplain = "Give a name to this new Agent Type"
-    , pageTitle = "Adding an Agent Type"
-    , processRestriction = "This Agent Type will be usable from the following Process Types:"
-    , typeConstructor = ENT.AgentType
+    { typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
+    , nameExplain = "Give a name to this new Process Type"
+    , pageTitle = "Adding a Process Type"
+    , processRestriction = "This Process Type will be usable from the following Process Types:"
+    , typeConstructor = ENT.ProcessType
     }
 
 
@@ -31,7 +31,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddAgentType ->
+        Route.AddProcessType ->
             Just { route = route }
 
         _ ->

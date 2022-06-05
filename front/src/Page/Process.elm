@@ -9,14 +9,13 @@ import EventFlow exposing (EventFlow(..))
 import IOStatus exposing (IOStatus(..))
 import Prng.Uuid as Uuid
 import REA.Commitment as C exposing (Commitment)
-import REA.CommitmentType exposing (CommitmentType)
+import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E exposing (Event)
-import REA.EventType exposing (EventType)
 import REA.Process exposing (Process)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import State exposing (getCommitmentTypes, getCommitments, getEventTypes, getEvents, getProcess)
+import State exposing (getCommitments, getEvents, getProcess, getRestricted)
 import View exposing (View, closeMenu)
 import View.Navbar as Navbar
 
@@ -73,16 +72,15 @@ update s msg model =
         NewCommitment process ctype ->
             let
                 commitmentType =
-                    s.state.commitmentTypes
-                        |> Set.toList
-                        |> List.filter (\ct -> ct.name == ctype)
-                        |> List.head
+                    s.state.entityTypes
+                        |> ENT.onlyType "CommitmentType"
+                        |> State.getEntityType ctype
             in
             case commitmentType of
                 Just ct ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.CommitmentAdded (Commitment uuid ct.name t)
+                        \uuid t -> Event.CommitmentAdded (Commitment uuid (ENT.toName ct) t)
                     )
 
                 Nothing ->
@@ -93,16 +91,15 @@ update s msg model =
         NewEvent process etype ->
             let
                 eventType =
-                    s.state.eventTypes
-                        |> Set.toList
-                        |> List.filter (\et -> et.name == etype)
-                        |> List.head
+                    s.state.entityTypes
+                        |> ENT.onlyType "EventType"
+                        |> State.getEntityType etype
             in
             case eventType of
                 Just et ->
                     ( model
                     , Shared.dispatchT s <|
-                        \uuid t -> Event.EventAdded (E.Event uuid et.name t)
+                        \uuid t -> Event.EventAdded (E.Event uuid (ENT.toName et) t)
                     )
 
                 Nothing ->
@@ -118,19 +115,27 @@ view s model =
     }
 
 
-newCommitmentButton : Process -> CommitmentType -> Element Msg
+newCommitmentButton : Process -> EntityType -> Element Msg
 newCommitmentButton process ct =
+    let
+        name =
+            ENT.toName ct
+    in
     Input.button []
-        { onPress = Just <| NewCommitment process ct.name
-        , label = text ct.name
+        { onPress = Just <| NewCommitment process name
+        , label = text name
         }
 
 
-newEventButton : Process -> EventType -> Element Msg
+newEventButton : Process -> EntityType -> Element Msg
 newEventButton process et =
+    let
+        name =
+            ENT.toName et
+    in
     Input.button []
-        { onPress = Just <| NewEvent process et.name
-        , label = text et.name
+        { onPress = Just <| NewEvent process name
+        , label = text name
         }
 
 
@@ -143,14 +148,14 @@ viewContent model s =
         commitmentTypes =
             process
                 |> Maybe.map .type_
-                |> Maybe.map (getCommitmentTypes s.state)
-                |> Maybe.withDefault (Set.empty .name)
+                |> Maybe.map (getRestricted "CommitmentType" s.state.restrictions)
+                |> Maybe.withDefault (Set.empty ENT.toName)
 
         eventTypes =
             process
                 |> Maybe.map .type_
-                |> Maybe.map (getEventTypes s.state)
-                |> Maybe.withDefault (Set.empty .name)
+                |> Maybe.map (getRestricted "EventType" s.state.restrictions)
+                |> Maybe.withDefault (Set.empty ENT.toName)
     in
     case process of
         Nothing ->
@@ -173,7 +178,8 @@ viewContent model s =
                         , column [] <|
                             List.map
                                 (newCommitmentButton proc)
-                                (s.state.commitmentTypes
+                                (s.state.entityTypes
+                                    |> ENT.onlyType "CommitmentType"
                                     |> Set.filter (\ct -> Set.member ct commitmentTypes)
                                     |> Set.toList
                                 )
@@ -193,7 +199,8 @@ viewContent model s =
                         , column [] <|
                             List.map
                                 (newEventButton proc)
-                                (s.state.eventTypes
+                                (s.state.entityTypes
+                                    |> ENT.onlyType "EventType"
                                     |> Set.filter (\et -> Set.member et eventTypes)
                                     |> Set.toList
                                 )

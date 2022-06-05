@@ -10,7 +10,6 @@ import Event
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
-import REA.AgentType as AT
 import REA.Entity as EN exposing (Entity, toPluralString)
 import Result exposing (andThen)
 import Route exposing (Route)

@@ -1,5 +1,6 @@
 module Page.AddResourceType exposing (..)
 
+import REA.EntityType as ENT
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -11,7 +12,9 @@ config : View.AddEntityType.Config
 config =
     { typeExplain = "Choose the type of the new Resource Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Resource Type"
-    , pageTitle = "Adding an Resource Type"
+    , pageTitle = "Adding a Resource Type"
+    , processRestriction = "This Resource Type will be usable from the following Process Types:"
+    , typeConstructor = ENT.ResourceType
     }
 
 

@@ -8,7 +8,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.AgentType as AT exposing (..)
 import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.EntityType as ENT exposing (EntityType)
 import Result exposing (andThen)
@@ -26,7 +25,7 @@ config : Config
 config =
     { pageTitle = "Agent Types"
     , entityType = "AgentType"
-    , emptyText = "There are no AgentTypes yet. Create your first one!"
+    , emptyText = "There are no Agent Types yet. Create your first one!"
     }
 
 

@@ -1,35 +1,36 @@
-module REA.ProcessTypeCommitmentType exposing (ProcessTypeCommitmentType, compare, decoder, encode)
+module REA.Restriction exposing (Restriction, compare, decoder, encode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import REA.ProcessTypeEventType as PTET
+import REA.EntityType as ENT exposing (EntityType)
 
 
 
--- Represent the link between processes and commitments
+-- Represent the link between two entity types, the what restricted by the scope
+-- TODO replace with a Typed Link? (The type being the event)
 
 
-type alias ProcessTypeCommitmentType =
-    { ptype : String
-    , ctype : String
+type alias Restriction =
+    { what : EntityType
+    , scope : EntityType
     }
 
 
-compare : ProcessTypeCommitmentType -> String
-compare ptct =
-    ptct.ptype ++ "_" ++ ptct.ctype
+compare : Restriction -> String
+compare r =
+    ENT.compare r.what ++ "_" ++ ENT.compare r.scope
 
 
-encode : ProcessTypeCommitmentType -> Encode.Value
-encode ptct =
+encode : Restriction -> Encode.Value
+encode r =
     Encode.object
-        [ ( "ptype", Encode.string ptct.ptype )
-        , ( "ctype", Encode.string ptct.ctype )
+        [ ( "what", ENT.encode r.what )
+        , ( "scope", ENT.encode r.scope )
         ]
 
 
-decoder : Decoder ProcessTypeCommitmentType
+decoder : Decoder Restriction
 decoder =
-    Decode.map2 ProcessTypeCommitmentType
-        (Decode.field "ptype" Decode.string)
-        (Decode.field "ctype" Decode.string)
+    Decode.map2 Restriction
+        (Decode.field "what" ENT.decoder)
+        (Decode.field "scope" ENT.decoder)

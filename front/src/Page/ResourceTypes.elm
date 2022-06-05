@@ -11,7 +11,7 @@ config : Config
 config =
     { pageTitle = "Resource Types"
     , entityType = "ResourceType"
-    , emptyText = "There are no ResourceTypes yet. Create your first one!"
+    , emptyText = "There are no Resource Types yet. Create your first one!"
     }
 
 

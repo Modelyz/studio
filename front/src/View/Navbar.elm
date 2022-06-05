@@ -7,6 +7,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
+import REA.EntityType as ENT
 import Route exposing (Route(..), firstSegment, toString)
 import Shared
 import Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
@@ -41,10 +42,21 @@ links s r =
     , menuitem s r IdentifierTypes "Identifiers"
     , menuitem s r Agents "Agents"
     ]
-        ++ (if Set.size s.state.processTypes > 0 then
-                s.state.processTypes
+        ++ (let
+                processTypes =
+                    s.state.entityTypes |> ENT.onlyType "ProcessType"
+            in
+            if Set.size processTypes > 0 then
+                processTypes
                     |> Set.toList
-                    |> List.map (\pt -> menuitem s r (ProcessType pt.name) pt.name)
+                    |> List.map
+                        (\pt ->
+                            let
+                                name =
+                                    ENT.toName pt
+                            in
+                            menuitem s r (ProcessType name) name
+                        )
 
             else
                 []

@@ -106,6 +106,6 @@ viewContent model s =
                                 "for any " ++ (String.join ", " <| List.map ENT.toName ets)
                             )
                     )
-                |> withDefaultContent (p "There are no IdentifierTypes yet. Create your first one!")
+                |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")
             )
         ]

@@ -3,7 +3,6 @@ module REA.Commitment exposing (Commitment, compare, decoder, encode)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.CommitmentType as CT exposing (CommitmentType)
 import Time exposing (millisToPosix, posixToMillis)
 
 

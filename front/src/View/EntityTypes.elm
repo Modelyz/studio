@@ -26,7 +26,7 @@ type alias Model =
 
 type Msg
     = Removed EntityType
-    | Add
+    | Added
 
 
 type alias Flags =
@@ -53,7 +53,7 @@ update s msg model =
             , Shared.dispatch s <| Event.TypeRemoved et
             )
 
-        Add ->
+        Added ->
             ( model, redirectAdd "add" s.navkey model.route )
 
 
@@ -74,7 +74,7 @@ viewContent c model s =
     in
     flatContent s
         c.pageTitle
-        [ button.primary Add "Add..."
+        [ button.primary Added "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]

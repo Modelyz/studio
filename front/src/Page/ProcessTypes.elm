@@ -1,63 +1,40 @@
-module Page.ProcessTypes exposing (match, page, view)
+module Page.ProcessTypes exposing (match, page)
 
-import DictSet as Set
+import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Border as Border
+import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.ProcessType exposing (ProcessType)
+import REA.Entity as Entity exposing (Entity, toPluralString)
+import REA.EntityType as ENT exposing (EntityType)
+import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import Style exposing (..)
 import View exposing (..)
+import View.EntityTypes exposing (Config, Flags, Model, Msg)
 import View.Navbar as Navbar
+import View.Radio as Radio
 
 
-type alias Model =
-    { route : Route
-    , form : Form
+config : Config
+config =
+    { pageTitle = "Process Types"
+    , entityType = "ProcessType"
+    , emptyText = "There are no Process Types yet. Create your first one!"
     }
-
-
-type Msg
-    = Removed String
-    | Added ProcessType
-    | GotInput Form
-    | Warning String
-
-
-type alias Flags =
-    { route : Route }
-
-
-type alias Form =
-    { name : String, warning : String }
-
-
-empty : Form
-empty =
-    { name = "", warning = "" }
-
-
-validate : Form -> Maybe ProcessType
-validate f =
-    if f.name == "" then
-        Nothing
-
-    else
-        Just { name = f.name }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = init s
-        , update = update s
-        , view = view s
+        { init = View.EntityTypes.init s
+        , update = View.EntityTypes.update s
+        , view = View.EntityTypes.view config s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -70,104 +47,3 @@ match route =
 
         _ ->
             Nothing
-
-
-init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
-init s f =
-    ( { route = f.route, form = empty }, closeMenu s )
-
-
-update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update s msg model =
-    case msg of
-        GotInput form ->
-            ( { model | form = form }, Effect.none )
-
-        Added pt ->
-            ( { model
-                | form = empty
-              }
-            , Shared.dispatch s <| Event.ProcessTypeChanged pt
-            )
-
-        Removed ptype ->
-            let
-                form =
-                    model.form
-            in
-            ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.ProcessTypeRemoved ptype
-            )
-
-        Warning w ->
-            let
-                form =
-                    model.form
-            in
-            ( { model | form = { form | warning = w } }, Effect.none )
-
-
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "Process Types"
-    , attributes = []
-    , element = viewContent model
-    , route = model.route
-    }
-
-
-viewContent : Model -> Shared.Model -> Element Msg
-viewContent model s =
-    let
-        form =
-            model.form
-    in
-    column [ width fill, alignTop, padding 20 ]
-        [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop ]
-            [ column
-                [ spacing 20 ]
-                [ h1 "Process Types"
-                , if Set.size s.state.processTypes > 0 then
-                    p "Existing Process Types:"
-
-                  else
-                    p "There are no Process Types yet. Create your first one!"
-                , wrappedRow
-                    [ spacing 10 ]
-                    (s.state.processTypes
-                        |> Set.toList
-                        |> List.map (\pt -> viewSmallCard (Removed pt.name) pt.name "")
-                    )
-                , column
-                    [ spacing 20 ]
-                    [ text "Add a new Process Type:"
-                    , row []
-                        [ Input.text
-                            [ Input.focusedOnLoad
-                            , Maybe.map Added (validate model.form)
-                                |> Maybe.withDefault (Warning "Incomplete form")
-                                |> View.onEnter
-                            ]
-                            { onChange = \n -> GotInput { form | name = n }
-                            , text = model.form.name
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Name of the new Process Type"
-                            , label = Input.labelLeft [] <| text "Name"
-                            }
-                        ]
-                    , row [ spacing 20 ]
-                        [ button.primary
-                            (Maybe.map Added (validate model.form)
-                                |> Maybe.withDefault (Warning "Incomplete form")
-                            )
-                            "Add"
-                        , if model.form.warning /= "" then
-                            paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
-
-                          else
-                            none
-                        ]
-                    ]
-                ]
-            ]
-        ]

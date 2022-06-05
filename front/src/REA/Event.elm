@@ -3,7 +3,6 @@ module REA.Event exposing (Event, compare, decoder, encode)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.EventType as ET exposing (EventType)
 import Time exposing (millisToPosix, posixToMillis)
 
 

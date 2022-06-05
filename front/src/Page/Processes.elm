@@ -7,8 +7,8 @@ import Element.Input as Input
 import Event
 import IOStatus exposing (IOStatus(..))
 import Prng.Uuid as Uuid
+import REA.EntityType as ENT exposing (EntityType)
 import REA.Process as P exposing (Process)
-import REA.ProcessType exposing (ProcessType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -18,12 +18,12 @@ import View.Navbar as Navbar
 
 type alias Model =
     { route : Route
-    , ptype : ProcessType
+    , ptype : EntityType
     }
 
 
 type Msg
-    = NewProcess ProcessType
+    = NewProcess EntityType
 
 
 type alias Flags =
@@ -53,7 +53,7 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
-      , ptype = ProcessType ""
+      , ptype = ENT.ProcessType { name = "", parent = Nothing }
       }
     , closeMenu s
     )
@@ -64,7 +64,7 @@ update s msg model =
     case msg of
         NewProcess ptype ->
             ( model
-            , Shared.dispatchT s <| \uuid t -> Event.ProcessAdded (Process uuid ptype.name t)
+            , Shared.dispatchT s <| \uuid t -> Event.ProcessAdded (Process uuid (ENT.toName ptype) t)
             )
 
 
@@ -82,10 +82,10 @@ viewContent model s =
     column []
         [ Input.button []
             { onPress = Just (NewProcess model.ptype)
-            , label = text ("New " ++ model.ptype.name)
+            , label = text ("New " ++ ENT.toName model.ptype)
             }
         , column []
-            (DictSet.filter (\p -> p.type_ == model.ptype.name) s.state.processes
+            (DictSet.filter (\p -> p.type_ == ENT.toName model.ptype) s.state.processes
                 |> DictSet.toList
                 |> List.sortBy P.compare
                 |> List.reverse

@@ -13,6 +13,7 @@ type Route
     | Process String
     | ResourceTypes
     | AgentTypes
+    | AddProcessType
     | AddResourceType
     | AddEventType
     | AddAgentType
@@ -54,6 +55,7 @@ routeParser =
         , map AddAgentType (s "agent-types" </> s "add")
         , map AddCommitmentType (s "commitment-types" </> s "add")
         , map AddContractType (s "contract-types" </> s "add")
+        , map AddProcessType (s "process-types" </> s "add")
 
         -- add entities
         , map AddAgent (s "agents" </> s "add")
@@ -110,6 +112,9 @@ toString r =
 
         ContractTypes ->
             "/contract-types"
+
+        AddProcessType ->
+            "/process-types/add"
 
         AddResourceType ->
             "/resource-types/add"

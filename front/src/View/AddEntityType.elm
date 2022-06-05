@@ -10,6 +10,7 @@ import Element.Input as Input
 import Event
 import Html.Attributes as Attr
 import REA.EntityType as ENT exposing (EntityType(..))
+import REA.Type exposing (Type)
 import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
@@ -25,6 +26,8 @@ import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousSt
 type Msg
     = InputName String
     | InputType (Maybe EntityType)
+    | InputRestrict EntityType
+    | InputUnrestrict EntityType
     | Warning String
     | PreviousPage
     | NextPage
@@ -39,12 +42,14 @@ type alias Flags =
 type Step
     = StepName
     | StepType
+    | StepProcesses
 
 
 type alias Model =
     { route : Route
     , name : String
     , flatselect : Maybe EntityType
+    , processTypes : DictSet String EntityType
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -55,6 +60,8 @@ type alias Config =
     { typeExplain : String
     , nameExplain : String
     , pageTitle : String
+    , processRestriction : String
+    , typeConstructor : Type -> EntityType
     }
 
 
@@ -67,12 +74,13 @@ view c s model =
     }
 
 
-validate : Model -> Result String EntityType
-validate m =
-    Result.map2
-        (\n p -> AgentType { name = n, parent = p |> Maybe.map ENT.toName })
+validate : Config -> Model -> Result String EntityType
+validate c m =
+    Result.map3
+        (\n p pts -> c.typeConstructor { name = n, parent = p |> Maybe.map ENT.toName })
         (checkEmptyString m.name "The name is Empty")
         (Ok m.flatselect)
+        (Ok m.processTypes)
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
@@ -80,8 +88,9 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , name = ""
+      , processTypes = Set.empty ENT.compare
       , warning = ""
-      , steps = [ Step.Step StepName, Step.Step StepType ]
+      , steps = [ Step.Step StepName, Step.Step StepType, Step.Step StepProcesses ]
       , step = Step.Step StepName
       }
     , closeMenu s
@@ -97,15 +106,21 @@ update c s msg model =
         InputType x ->
             ( { model | flatselect = x }, Effect.none )
 
+        InputRestrict pt ->
+            ( { model | processTypes = Set.insert pt model.processTypes }, Effect.none )
+
+        InputUnrestrict pt ->
+            ( { model | processTypes = Set.remove pt model.processTypes }, Effect.none )
+
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
         Added ->
-            case validate model of
+            case validate c model of
                 Ok t ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.TypeAdded t
+                        [ Shared.dispatchMany s <| Event.TypeAdded t :: List.map (\pt -> Event.Restricted { what = t, scope = pt }) (Set.toList model.processTypes)
                         , redirectParent s.navkey model.route
                         ]
                     )
@@ -141,6 +156,9 @@ buttonNext model =
 
         Step.Step StepName ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
+
+        Step.Step StepProcesses ->
+            nextOrValidate model NextPage Added (Ok model.processTypes)
 
 
 viewContent : Config -> Model -> Shared.Model -> Element Msg
@@ -191,6 +209,38 @@ viewContent c model s =
                                 Just <| Input.placeholder [] <| text "Name"
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text c.nameExplain
                             }
+
+                Step.Step StepProcesses ->
+                    column
+                        [ spacing 10 ]
+                        [ p c.processRestriction
+                        , column [ spacing 10 ]
+                            (s.state.entityTypes
+                                |> Set.filter (\et -> ENT.toString et == "ProcessType")
+                                |> Set.toList
+                                |> List.sortBy ENT.compare
+                                |> List.map
+                                    (\pt ->
+                                        row []
+                                            [ row []
+                                                [ Input.checkbox
+                                                    []
+                                                    { onChange =
+                                                        \b ->
+                                                            if b then
+                                                                InputRestrict pt
+
+                                                            else
+                                                                InputUnrestrict pt
+                                                    , icon = Input.defaultCheckbox
+                                                    , checked = Set.member pt model.processTypes
+                                                    , label = Input.labelRight [] <| text (ENT.toName pt)
+                                                    }
+                                                ]
+                                            ]
+                                    )
+                            )
+                        ]
     in
     cardContent s
         c.pageTitle

@@ -3,7 +3,6 @@ module REA.Contract exposing (Contract, compare, decoder, encode)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.ContractType as CT exposing (ContractType)
 
 
 type alias Contract =

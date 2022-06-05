@@ -1,5 +1,6 @@
 module Page.AddContractType exposing (..)
 
+import REA.EntityType as ENT
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -11,7 +12,9 @@ config : View.AddEntityType.Config
 config =
     { typeExplain = "Choose the type of the new Contract Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Contract Type"
-    , pageTitle = "Adding an Contract Type"
+    , pageTitle = "Adding a Contract Type"
+    , processRestriction = "This Contract Type will be usable from the following Process Types:"
+    , typeConstructor = ENT.ContractType
     }
 
 

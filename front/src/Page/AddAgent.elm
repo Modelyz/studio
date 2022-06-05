@@ -11,17 +11,13 @@ import Event
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
-import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as CM exposing (Commitment)
-import REA.CommitmentType as CMT exposing (CommitmentType)
 import REA.Contract as CN exposing (Contract)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E exposing (Event)
-import REA.EventType as ET exposing (EventType)
 import REA.Ident as I exposing (Identifier)
 import REA.Process as P exposing (Process)
-import REA.ProcessType as PT exposing (ProcessType)
 import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
@@ -150,7 +146,7 @@ isChild s child item =
         True
 
     else
-        ENT.toType child |> .parent |> Maybe.andThen (getEntityType s.state) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
+        ENT.toType child |> .parent |> Maybe.andThen (\et -> getEntityType et s.state.entityTypes) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )

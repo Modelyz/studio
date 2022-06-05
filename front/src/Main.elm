@@ -10,7 +10,12 @@ import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Page.AddAgent
 import Page.AddAgentType
+import Page.AddCommitmentType
+import Page.AddContractType
+import Page.AddEventType
 import Page.AddIdentifierType
+import Page.AddProcessType
+import Page.AddResourceType
 import Page.AgentTypes
 import Page.Agents
 import Page.CommitmentTypes
@@ -118,12 +123,17 @@ main =
         |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
         |> Spa.addPublicPage mappers Page.CommitmentTypes.match Page.CommitmentTypes.page
         |> Spa.addPublicPage mappers Page.ContractTypes.match Page.ContractTypes.page
+        |> Spa.addPublicPage mappers Page.AddContractType.match Page.AddContractType.page
         |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
         |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
         |> Spa.addPublicPage mappers Page.IdentifierTypes.match Page.IdentifierTypes.page
         |> Spa.addPublicPage mappers Page.AddIdentifierType.match Page.AddIdentifierType.page
+        |> Spa.addPublicPage mappers Page.AddResourceType.match Page.AddResourceType.page
+        |> Spa.addPublicPage mappers Page.AddEventType.match Page.AddEventType.page
+        |> Spa.addPublicPage mappers Page.AddProcessType.match Page.AddProcessType.page
+        |> Spa.addPublicPage mappers Page.AddCommitmentType.match Page.AddCommitmentType.page
         |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
         |> Spa.addPublicPage mappers Page.Agents.match Page.Agents.page
         |> Spa.addPublicPage mappers Page.AddAgent.match Page.AddAgent.page

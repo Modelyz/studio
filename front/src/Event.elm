@@ -7,19 +7,14 @@ import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
-import REA.AgentType as AT exposing (AgentType)
 import REA.Commitment as CM exposing (Commitment)
-import REA.CommitmentType as CT exposing (CommitmentType)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
-import REA.EventType as ET exposing (EventType)
 import REA.Group as G exposing (Group)
 import REA.Ident as I exposing (EntityIdentifier, Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
-import REA.ProcessType as PT exposing (ProcessType)
-import REA.ProcessTypeCommitmentType as PTCT
-import REA.ProcessTypeEventType as PTET
+import REA.Restriction as Restriction exposing (Restriction)
 import Result exposing (Result(..))
 import Time exposing (millisToPosix, posixToMillis)
 import Websocket exposing (WSStatus(..))
@@ -63,15 +58,12 @@ type Event
 
 type EventPayload
     = ConnectionInitiated Connection
-    | ProcessTypeChanged ProcessType
+    | ProcessTypeChanged EntityType
     | ProcessTypeRemoved String
     | ProcessAdded Process
-    | CommitmentTypeAdded CommitmentType
-    | CommitmentTypeRemoved String
     | CommitmentAdded Commitment
     | EventAdded E.Event
-    | LinkedEventTypeToProcessType { etype : String, ptype : String } -- TODO single Link event? (see sowa)
-    | LinkedCommitmentTypeToProcessType { ctype : String, ptype : String }
+    | Restricted Restriction
     | GroupAdded Group
     | GroupRemoved String
     | IdentifierTypeAdded IdentifierType
@@ -98,12 +90,6 @@ toString p =
         ProcessAdded _ ->
             "ProcessAdded"
 
-        CommitmentTypeAdded _ ->
-            "CommitmentTypeAdded"
-
-        CommitmentTypeRemoved _ ->
-            "CommitmentTypeRemoved"
-
         CommitmentAdded _ ->
             "CommitmentAdded"
 
@@ -113,11 +99,8 @@ toString p =
         EventAdded _ ->
             "EventAdded"
 
-        LinkedEventTypeToProcessType _ ->
-            "LinkedEventTypeToProcessType"
-
-        LinkedCommitmentTypeToProcessType _ ->
-            "LinkedCommitmentTypeToProcessType"
+        Restricted _ ->
+            "Restricted"
 
         GroupAdded _ ->
             "GroupAdded"
@@ -198,7 +181,7 @@ encode (Event b p) =
         , ( "meta", encodeBase b )
         , case p of
             ProcessTypeChanged pt ->
-                ( "load", PT.encode pt )
+                ( "load", ENT.encode pt )
 
             ProcessTypeRemoved pt ->
                 ( "load", Encode.string pt )
@@ -206,20 +189,11 @@ encode (Event b p) =
             ProcessAdded pr ->
                 ( "load", P.encode pr )
 
-            CommitmentTypeAdded cmt ->
-                ( "load", CT.encode cmt )
-
-            CommitmentTypeRemoved cmt ->
-                ( "load", Encode.string cmt )
-
             CommitmentAdded cm ->
                 ( "load", CM.encode cm )
 
-            LinkedEventTypeToProcessType ptet ->
-                ( "load", PTET.encode ptet )
-
-            LinkedCommitmentTypeToProcessType ptct ->
-                ( "load", PTCT.encode ptct )
+            Restricted r ->
+                ( "load", Restriction.encode r )
 
             TypeRemoved et ->
                 ( "load", ENT.encode et )
@@ -289,7 +263,7 @@ decoder =
                     case t of
                         "ProcessTypeChanged" ->
                             Decode.map ProcessTypeChanged
-                                (Decode.field "load" PT.decoder)
+                                (Decode.field "load" ENT.decoder)
 
                         "ProcessTypeRemoved" ->
                             Decode.map ProcessTypeRemoved
@@ -299,25 +273,13 @@ decoder =
                             Decode.map ProcessAdded
                                 (Decode.field "load" P.decoder)
 
-                        "CommitmentTypeAdded" ->
-                            Decode.map CommitmentTypeAdded
-                                (Decode.field "load" CT.decoder)
-
-                        "CommitmentTypeRemoved" ->
-                            Decode.map CommitmentTypeRemoved
-                                (Decode.field "load" Decode.string)
-
                         "CommitmentAdded" ->
                             Decode.map CommitmentAdded
                                 (Decode.field "load" CM.decoder)
 
-                        "LinkedEventTypeToProcessType" ->
-                            Decode.map LinkedEventTypeToProcessType
-                                (Decode.field "load" PTET.decoder)
-
-                        "LinkedCommitmentTypeToProcessType" ->
-                            Decode.map LinkedCommitmentTypeToProcessType
-                                (Decode.field "load" PTCT.decoder)
+                        "Restricted" ->
+                            Decode.map Restricted
+                                (Decode.field "load" Restriction.decoder)
 
                         "TypeRemoved" ->
                             Decode.map TypeRemoved

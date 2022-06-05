@@ -2,7 +2,7 @@ module REA.Entity exposing (Entity(..), compare, decoder, encode, toPluralString
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Prng.Uuid as Uuid
+import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.Commitment as CM exposing (Commitment)
 import REA.Contract as CN exposing (Contract)
@@ -113,6 +113,28 @@ decoder =
             )
 
 
+toUuid : Entity -> Uuid
+toUuid e =
+    case e of
+        Process p ->
+            p.uuid
+
+        Resource r ->
+            r.uuid
+
+        Event ev ->
+            ev.uuid
+
+        Agent a ->
+            a.uuid
+
+        Commitment cm ->
+            cm.uuid
+
+        Contract cn ->
+            cn.uuid
+
+
 toString : Entity -> String
 toString e =
     case e of
@@ -159,4 +181,4 @@ toPluralString e =
 
 compare : Entity -> String
 compare =
-    toString
+    toUuid >> Uuid.toString
