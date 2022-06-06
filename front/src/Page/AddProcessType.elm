@@ -1,6 +1,6 @@
 module Page.AddProcessType exposing (..)
 
-import REA.EntityType as ENT
+import REA.EntityType as ENT exposing (onlyType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -10,7 +10,8 @@ import View.AddEntityType exposing (Flags, Model, Msg)
 
 config : View.AddEntityType.Config
 config =
-    { typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
+    { filter = onlyType "ProcessType"
+    , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Process Type"
     , pageTitle = "Adding a Process Type"
     , processRestriction = "This Process Type will be usable from the following Process Types:"

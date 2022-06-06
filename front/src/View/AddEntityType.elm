@@ -9,7 +9,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.EntityType as ENT exposing (EntityType(..))
+import REA.EntityType as ENT exposing (EntityType(..), onlyType)
 import REA.Type exposing (Type)
 import Result exposing (andThen)
 import Route exposing (Route)
@@ -57,7 +57,8 @@ type alias Model =
 
 
 type alias Config =
-    { typeExplain : String
+    { filter : DictSet String EntityType -> DictSet String EntityType
+    , typeExplain : String
     , nameExplain : String
     , pageTitle : String
     , processRestriction : String
@@ -188,11 +189,11 @@ viewContent c model s =
             case model.step of
                 Step.Step StepType ->
                     flatselect model
-                        { all = Set.toList <| s.state.entityTypes
+                        { all = Set.toList <| c.filter <| s.state.entityTypes
                         , toString = ENT.toName
                         , toDesc = ENT.toParent
                         , onInput = InputType
-                        , label = "Type"
+                        , label = "Type: "
                         , explain = h2 c.typeExplain
                         }
 
