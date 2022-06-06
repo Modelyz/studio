@@ -3,7 +3,6 @@ module View.FlatSelect exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
 import Style exposing (..)
 import View exposing (..)

@@ -4,8 +4,6 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import Html.Attributes as Attr
-import REA.Entity exposing (Entity)
 import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, identifierValue, updateIdentifier)
 import Style exposing (size)
 import View

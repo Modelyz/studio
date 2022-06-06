@@ -3,21 +3,11 @@ module View.EntityTypes exposing (Config, Flags, Model, Msg, init, update, view)
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Font as Font
-import Element.Input as Input
 import Event
-import Html.Attributes as Attr
-import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.EntityType as ENT exposing (EntityType)
-import Result exposing (andThen)
 import Route exposing (Route)
 import Shared
-import Spa.Page
-import Style exposing (..)
 import View exposing (..)
-import View.Navbar as Navbar
-import View.Radio as Radio
 
 
 type alias Model =

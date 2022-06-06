@@ -1,7 +1,6 @@
 module View exposing (..)
 
 import Browser.Navigation as Nav
-import DictSet as Set
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -15,7 +14,6 @@ import Html.Events
 import Json.Decode exposing (..)
 import Route exposing (Route)
 import Shared
-import Spa exposing (mapSharedMsg)
 import Style exposing (..)
 
 

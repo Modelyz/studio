@@ -3,7 +3,6 @@ module View.Navbar exposing (view)
 import DictSet as Set
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)

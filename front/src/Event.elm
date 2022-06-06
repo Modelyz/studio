@@ -2,11 +2,9 @@ port module Event exposing (Event(..), EventBase, EventPayload(..), base, compar
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
-import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.Agent as A exposing (Agent)
 import REA.Commitment as CM exposing (Commitment)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
@@ -15,9 +13,7 @@ import REA.Group as G exposing (Group)
 import REA.Ident as I exposing (EntityIdentifier, Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.Restriction as Restriction exposing (Restriction)
-import Result exposing (Result(..))
 import Time exposing (millisToPosix, posixToMillis)
-import Websocket exposing (WSStatus(..))
 
 
 

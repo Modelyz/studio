@@ -3,11 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Events as Events
 import Element exposing (..)
-import Event exposing (Event(..))
-import EventFlow exposing (EventFlow(..))
-import IOStatus exposing (IOStatus(..))
 import Json.Encode as Encode
-import Maybe exposing (Maybe(..))
 import Page.AddAgent
 import Page.AddAgentType
 import Page.AddCommitmentType
