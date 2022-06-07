@@ -80,3 +80,7 @@ view s model =
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
     model.entityType |> Maybe.map ENT.toName |> Maybe.withDefault "not found" |> text
+
+
+
+--d

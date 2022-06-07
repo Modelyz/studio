@@ -6,7 +6,7 @@ import Effect exposing (Effect)
 import Event exposing (Event(..), EventBase, EventPayload(..), exceptCI, getTime)
 import EventFlow as Flow
 import IOStatus exposing (IOStatus(..))
-import Json.Decode as Json exposing (decodeString, decodeValue, errorToString)
+import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
@@ -17,6 +17,8 @@ import State exposing (State)
 import Style exposing (Menu(..), WindowSize, isMobile)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
+import Url as Url exposing (Url)
+import Url.Parser as Parser
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
@@ -48,42 +50,44 @@ type Msg
     | SetRoute Route
     | PushRoute Route
     | ReplaceRoute Route
-    | WSDisconnected Json.Value
-    | WSError Json.Value
+    | WSDisconnected Decode.Value
+    | WSError Decode.Value
     | WSConnect ()
-    | WSConnected Json.Value
+    | WSConnected Decode.Value
     | StoreEventsToSend (List Event.Event)
     | SendEvents (List Event.Event)
-    | EventsStored Json.Value
-    | EventsStoredTosend Json.Value
-    | EventsRead Json.Value
-    | EventsSent Json.Value
+    | EventsStored Decode.Value
+    | EventsStoredTosend Decode.Value
+    | EventsRead Decode.Value
+    | EventsSent Decode.Value
     | EventsReceived String
 
 
 type alias Flags =
     { seed : Int
     , seedExtension : List Int
+    , url : Maybe Url
     , windowSize : WindowSize
     }
 
 
-flagsDecoder : Json.Decoder Flags
+flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Json.map3 Flags
-        (Json.field "seed" Json.int)
-        (Json.field "seedExtension" (Json.list Json.int))
-        (Json.field "windowSize"
-            (Json.map2 WindowSize (Json.field "w" Json.int) (Json.field "h" Json.int))
+    Decode.map4 Flags
+        (Decode.field "seed" Decode.int)
+        (Decode.field "seedExtension" (Decode.list Decode.int))
+        (Decode.field "url" Decode.string |> Decode.andThen (\u -> Url.fromString u |> Decode.succeed))
+        (Decode.field "windowSize"
+            (Decode.map2 WindowSize (Decode.field "w" Decode.int) (Decode.field "h" Decode.int))
         )
 
 
-init : Json.Value -> Nav.Key -> ( Model, Cmd Msg )
+init : Decode.Value -> Nav.Key -> ( Model, Cmd Msg )
 init value navkey =
-    case Json.decodeValue flagsDecoder value of
+    case Decode.decodeValue flagsDecoder value of
         Ok f ->
             ( { currentSeed = initialSeed f.seed f.seedExtension
-              , route = Route.Home
+              , route = Maybe.map Route.toRoute f.url |> Maybe.withDefault Home
               , navkey = navkey
               , windowSize = f.windowSize
               , menu =
@@ -207,7 +211,7 @@ update msg model =
             )
 
         EventsRead results ->
-            case decodeValue (Json.list Event.decoder) results of
+            case decodeValue (Decode.list Event.decoder) results of
                 Ok events ->
                     let
                         newstate =
@@ -267,7 +271,7 @@ update msg model =
             ( { model | currentSeed = newSeed, iostatus = ESStoring }, Event.storeEventsToSend (Encode.list Event.encode events) )
 
         EventsStoredTosend events ->
-            case decodeValue (Json.list Event.decoder) events of
+            case decodeValue (Decode.list Event.decoder) events of
                 Ok evs ->
                     if model.wsstatus == WSOpen then
                         ( { model | iostatus = ESReading }
@@ -298,7 +302,7 @@ update msg model =
             )
 
         EventsSent status ->
-            case decodeValue Json.string status of
+            case decodeValue Decode.string status of
                 Ok str ->
                     if str == "OK" then
                         ( { model | iostatus = ESReading }, Cmd.none )
@@ -310,7 +314,7 @@ update msg model =
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
         EventsReceived ms ->
-            case decodeString (Json.list Event.decoder) ms of
+            case decodeString (Decode.list Event.decoder) ms of
                 Ok messages ->
                     let
                         msgs =

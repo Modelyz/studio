@@ -3,7 +3,7 @@ module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectP
 import Browser.Navigation as Nav
 import Effect exposing (Effect)
 import Url exposing (Url, percentEncode)
-import Url.Builder exposing (absolute)
+import Url.Builder as Builder exposing (absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
 import Url.Parser.Query as Query
 
@@ -103,7 +103,7 @@ toString r =
         Processes ps ->
             case ps of
                 Just t ->
-                    absolute [ "processes?type=", percentEncode t ] []
+                    absolute [ "processes" ] [ Builder.string "type" t ]
 
                 Nothing ->
                     absolute [ "processes" ] []
@@ -124,28 +124,28 @@ toString r =
             absolute [ "contract-types" ] []
 
         AddProcessType ->
-            absolute [ "process-types/add" ] []
+            absolute [ "process-types", "add" ] []
 
         AddResourceType ->
-            absolute [ "resource-types/add" ] []
+            absolute [ "resource-types", "add" ] []
 
         AddEventType ->
-            absolute [ "event-types/add" ] []
+            absolute [ "event-types", "add" ] []
 
         AddAgentType ->
-            absolute [ "agent-types/add" ] []
+            absolute [ "agent-types", "add" ] []
 
         AddCommitmentType ->
-            absolute [ "commitment-types/add" ] []
+            absolute [ "commitment-types", "add" ] []
 
         AddContractType ->
-            absolute [ "contract-type/add" ] []
+            absolute [ "contract-type", "add" ] []
 
         AgentType at ->
-            absolute [ "agent-type/", percentEncode at ] []
+            absolute [ "agent-type", percentEncode at ] []
 
         Process p ->
-            absolute [ "process/", percentEncode p ] []
+            absolute [ "process", percentEncode p ] []
 
         Groups ->
             absolute [ "groups" ] []
@@ -154,13 +154,13 @@ toString r =
             absolute [ "identifierTypes" ] []
 
         AddIdentifierType ->
-            absolute [ "identifierTypes/add" ] []
+            absolute [ "identifierTypes", "add" ] []
 
         Agents ->
             absolute [ "agents" ] []
 
         AddAgent ->
-            absolute [ "agents/add" ] []
+            absolute [ "agents", "add" ] []
 
 
 firstSegment : Route -> String
