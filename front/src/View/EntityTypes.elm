@@ -5,7 +5,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Event
 import REA.EntityType as ENT exposing (EntityType)
-import Route exposing (Route)
+import Route exposing (Route, redirectAdd)
 import Shared
 import View exposing (..)
 
@@ -32,7 +32,7 @@ type alias Config =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route }, closeMenu s )
+    ( { route = f.route }, closeMenu s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -44,7 +44,7 @@ update s msg model =
             )
 
         Added ->
-            ( model, redirectAdd "add" s.navkey model.route )
+            ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
 
 
 view : Config -> Shared.Model -> Model -> View Msg

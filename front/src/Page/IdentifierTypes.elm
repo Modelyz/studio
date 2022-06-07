@@ -12,7 +12,7 @@ import REA.Entity as Entity exposing (Entity, toPluralString)
 import REA.EntityType as ENT
 import REA.Ident as Ident exposing (Fragment(..))
 import Result exposing (andThen)
-import Route exposing (Route)
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Style exposing (..)
@@ -56,7 +56,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route }, closeMenu s )
+    ( { route = f.route }, closeMenu s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -68,7 +68,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, redirect s.navkey Route.AddIdentifierType )
+            ( model, redirect s.navkey Route.AddIdentifierType |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

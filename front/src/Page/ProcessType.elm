@@ -55,7 +55,7 @@ init s f =
       , inputProcessType = ENT.ProcessType { name = "", parent = Nothing }
       , ptype = ENT.ProcessType { name = "", parent = Nothing }
       }
-    , closeMenu s
+    , closeMenu s.menu
     )
 
 

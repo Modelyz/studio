@@ -9,28 +9,13 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Event
-import Html.Attributes as Attr
-import REA.Agent as A exposing (Agent)
-import REA.Commitment as CM exposing (Commitment)
-import REA.Contract as CN exposing (Contract)
-import REA.Entity as EN exposing (toPluralString, toString)
 import REA.EntityType as ENT exposing (EntityType(..))
-import REA.Group as G exposing (Group, compare)
 import REA.Ident exposing (Fragment(..), IdentifierType, allFragments, fragmentToDesc, fragmentToName, fragmentToString)
-import REA.Process as P exposing (Process)
-import REA.ProcessCommitments as PC exposing (ProcessCommitments)
-import REA.ProcessEvents as PE exposing (ProcessEvents)
-import REA.Resource as R exposing (Resource)
-import Result exposing (andThen)
-import Route exposing (Route)
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import State
 import Style exposing (..)
-import Time exposing (posixToMillis)
 import View exposing (..)
-import View.Navbar as Navbar
-import View.Radio as Radio
 import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
 
 
@@ -114,7 +99,7 @@ init s f =
       , steps = [ Step.Step StepName, Step.Step StepEntityTypes, Step.Step StepOptions, Step.Step StepFormat ]
       , step = Step.Step StepName
       }
-    , closeMenu s
+    , closeMenu s.menu
     )
 
 
@@ -145,7 +130,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Event.IdentifierTypeAdded i
-                        , redirect s.navkey Route.IdentifierTypes
+                        , redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd
                         ]
                     )
 
@@ -158,7 +143,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypes )
+                    ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -166,10 +151,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypes )
+                    ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirect s.navkey Route.IdentifierTypes )
+            ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

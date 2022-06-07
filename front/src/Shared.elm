@@ -1,7 +1,7 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, findEntityType, identity, init, isChild, isChildOfAny, restrictBy, update)
 
 import Browser.Navigation as Nav
-import DictSet as Set
+import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Event exposing (Event(..), EventBase, EventPayload(..), exceptCI, getTime)
 import EventFlow as Flow
@@ -10,6 +10,7 @@ import Json.Decode as Json exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
+import REA.EntityType as ENT exposing (EntityType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route(..), toString)
 import State exposing (State)
@@ -381,3 +382,53 @@ dispatchMany model payloads =
 identity : Model -> Maybe String
 identity =
     .identity
+
+
+restrictBy : Model -> EntityType -> DictSet String EntityType -> DictSet String EntityType
+restrictBy s scope ets =
+    -- keep only the entityTypes which are children of the entityTypes of the scopes which are children of the given scope
+    let
+        parentTypes =
+            s.state.restrictions
+                |> Set.map ENT.compare .scope
+                |> Set.filter (isChild s scope)
+    in
+    ets |> Set.filter (isChildOfAny s parentTypes)
+
+
+isChildOfAny : Model -> DictSet String EntityType -> EntityType -> Bool
+isChildOfAny s ets et =
+    -- the entity type must be a child of one of the entity types of the identifier type
+    if Set.isEmpty ets then
+        -- identifier valid for all entity types
+        True
+
+    else
+        ets |> Set.toList |> List.any (isParent s et)
+
+
+isParent : Model -> EntityType -> EntityType -> Bool
+isParent s child item =
+    -- true if item is parent of the child
+    if child == item then
+        True
+
+    else
+        ENT.toType child
+            |> .parent
+            |> Maybe.andThen (\et -> findEntityType et s.state.entityTypes)
+            |> Maybe.map (\x -> isParent s x item)
+            |> Maybe.withDefault False
+
+
+isChild : Model -> EntityType -> EntityType -> Bool
+isChild s parent item =
+    -- true if item is a child of parent
+    isChild s item parent
+
+
+findEntityType : String -> DictSet String EntityType -> Maybe EntityType
+findEntityType name ets =
+    Set.filter (\et -> ENT.toName et == name) ets
+        |> Set.toList
+        |> List.head

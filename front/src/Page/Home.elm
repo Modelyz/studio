@@ -46,7 +46,7 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route }
-    , closeMenu s
+    , closeMenu s.menu
     )
 
 

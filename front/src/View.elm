@@ -1,6 +1,5 @@
 module View exposing (..)
 
-import Browser.Navigation as Nav
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -168,27 +167,9 @@ button =
     }
 
 
-redirect : Nav.Key -> Route -> Effect Shared.Msg msg
-redirect navkey =
-    -- redirect to the specified route
-    Route.toString >> Nav.pushUrl navkey >> Effect.fromCmd
-
-
-redirectParent : Nav.Key -> Route -> Effect Shared.Msg msg
-redirectParent navkey route =
-    -- redirect to the parent route of the specified (one level up the path)
-    ("/" ++ Route.firstSegment route) |> Nav.pushUrl navkey |> Effect.fromCmd
-
-
-redirectAdd : String -> Nav.Key -> Route -> Effect Shared.Msg msg
-redirectAdd path navkey route =
-    -- redirect to a subpath
-    Route.toString route ++ "/" ++ path |> Nav.pushUrl navkey |> Effect.fromCmd
-
-
-closeMenu : Shared.Model -> Effect Shared.Msg msg
-closeMenu s =
-    if s.menu == MobileOpen then
+closeMenu : Style.Menu -> Effect Shared.Msg msg
+closeMenu menu =
+    if menu == MobileOpen then
         Effect.fromShared Shared.ToggleMenu
 
     else

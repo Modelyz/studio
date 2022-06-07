@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, empty, getCommitments, getEntityType, getEvents, getProcess, getRestricted)
+module State exposing (State, aggregate, empty, getCommitments, getEvents, getProcess)
 
 import DictSet as Set exposing (DictSet)
 import Event exposing (Event(..), EventPayload(..), base)
@@ -26,7 +26,7 @@ type alias State =
     , uuids : DictSet String Uuid
 
     -- entity types
-    , entityTypes : DictSet String EntityType -- TODO remove others below
+    , entityTypes : DictSet String EntityType
     , processTypes : DictSet String EntityType
 
     -- entities
@@ -225,7 +225,6 @@ updatePending e es =
 
 getProcess : State -> String -> Maybe Process
 getProcess state str =
-    -- TODO : move to Page/Process?
     Uuid.fromString str
         |> Maybe.andThen
             (\uuid ->
@@ -235,20 +234,6 @@ getProcess state str =
                     |> Set.values
                     |> List.head
             )
-
-
-getEntityType : String -> DictSet String EntityType -> Maybe EntityType
-getEntityType name ets =
-    Set.filter (\et -> ENT.toName et == name) ets
-        |> Set.toList
-        |> List.head
-
-
-getRestricted : String -> DictSet String Restriction -> String -> DictSet String EntityType
-getRestricted typeString rs scopeName =
-    -- get the entityTypes what restricted by the EntityType scope
-    Set.filter (\r -> ENT.toName r.scope == scopeName && ENT.toString r.what == typeString) rs
-        |> Set.map ENT.compare (\r -> r.what)
 
 
 getCommitments : State -> Process -> DictSet Int Commitment

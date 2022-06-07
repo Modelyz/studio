@@ -80,7 +80,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, form = empty }, closeMenu s )
+    ( { route = f.route, form = empty }, closeMenu s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )

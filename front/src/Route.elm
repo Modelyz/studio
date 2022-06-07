@@ -1,5 +1,7 @@
-module Route exposing (Route(..), firstSegment, routeParser, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectParent, routeParser, toRoute, toString)
 
+import Browser.Navigation as Nav
+import Effect exposing (Effect)
 import Url exposing (Url)
 import Url.Parser exposing ((</>), (<?>), Parser, map, oneOf, s, string, top)
 import Url.Parser.Query as Query
@@ -8,7 +10,6 @@ import Url.Parser.Query as Query
 type Route
     = Home
     | ProcessTypes
-    | ProcessType String
     | Processes (Maybe String)
     | Process String
     | ResourceTypes
@@ -19,6 +20,8 @@ type Route
     | AddAgentType
     | AddCommitmentType
     | AddContractType
+    | ProcessType String
+    | AgentType String
     | ContractTypes
     | CommitmentTypes
     | EventTypes
@@ -69,6 +72,7 @@ routeParser =
 
         -- edit entities
         , map Process (s "process" </> string)
+        , map AgentType (s "agent-type" </> string)
         ]
 
 
@@ -131,6 +135,9 @@ toString r =
         AddContractType ->
             "/contract-type/add"
 
+        AgentType at ->
+            "/agent-type/" ++ at
+
         Process p ->
             "/process/" ++ p
 
@@ -153,3 +160,21 @@ toString r =
 firstSegment : Route -> String
 firstSegment =
     toString >> String.split "/" >> List.drop 1 >> List.head >> Maybe.withDefault "#"
+
+
+redirect : Nav.Key -> Route -> Cmd msg
+redirect navkey =
+    -- redirect to the specified route
+    toString >> Nav.pushUrl navkey
+
+
+redirectParent : Nav.Key -> Route -> Cmd msg
+redirectParent navkey route =
+    -- redirect to the parent route of the specified (one level up the path)
+    ("/" ++ firstSegment route) |> Nav.pushUrl navkey
+
+
+redirectAdd : String -> Nav.Key -> Route -> Cmd msg
+redirectAdd path navkey route =
+    -- redirect to a subpath
+    toString route ++ "/" ++ path |> Nav.pushUrl navkey

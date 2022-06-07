@@ -8,7 +8,7 @@ import Element.Input as Input
 import Event
 import REA.EntityType as ENT exposing (EntityType(..), onlyType)
 import REA.Type exposing (Type)
-import Route exposing (Route)
+import Route exposing (Route, redirect, redirectParent)
 import Shared
 import Style exposing (..)
 import View exposing (..)
@@ -87,7 +87,7 @@ init s f =
       , steps = [ Step.Step StepName, Step.Step StepType, Step.Step StepProcesses ]
       , step = Step.Step StepName
       }
-    , closeMenu s
+    , closeMenu s.menu
     )
 
 
@@ -115,7 +115,7 @@ update c s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s <| Event.TypeAdded t :: List.map (\pt -> Event.Restricted { what = t, scope = pt }) (Set.toList model.processTypes)
-                        , redirectParent s.navkey model.route
+                        , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
                     )
 
@@ -128,7 +128,7 @@ update c s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectParent s.navkey model.route )
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -136,10 +136,10 @@ update c s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectParent s.navkey model.route )
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirectParent s.navkey model.route )
+            ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
 
 buttonNext : Model -> Element Msg

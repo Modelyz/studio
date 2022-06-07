@@ -15,7 +15,7 @@ import REA.Process exposing (Process)
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import State exposing (getCommitments, getEvents, getProcess, getRestricted)
+import State exposing (getCommitments, getEvents, getProcess)
 import View exposing (View, closeMenu)
 import View.Navbar as Navbar
 
@@ -62,7 +62,7 @@ init s f =
     ( { route = f.route
       , process = f.process
       }
-    , closeMenu s
+    , closeMenu s.menu
     )
 
 
@@ -74,7 +74,7 @@ update s msg model =
                 commitmentType =
                     s.state.entityTypes
                         |> ENT.onlyType "CommitmentType"
-                        |> State.getEntityType ctype
+                        |> Shared.findEntityType ctype
             in
             case commitmentType of
                 Just ct ->
@@ -93,7 +93,7 @@ update s msg model =
                 eventType =
                     s.state.entityTypes
                         |> ENT.onlyType "EventType"
-                        |> State.getEntityType etype
+                        |> Shared.findEntityType etype
             in
             case eventType of
                 Just et ->
@@ -145,17 +145,28 @@ viewContent model s =
         process =
             getProcess s.state model.process
 
+        processType =
+            process |> Maybe.map .type_ |> Maybe.andThen (\et -> Shared.findEntityType et s.state.entityTypes)
+
         commitmentTypes =
-            process
-                |> Maybe.map .type_
-                |> Maybe.map (getRestricted "CommitmentType" s.state.restrictions)
-                |> Maybe.withDefault (Set.empty ENT.toName)
+            processType
+                |> Maybe.map
+                    (\pt ->
+                        s.state.entityTypes
+                            |> ENT.onlyType "CommitmentType"
+                            |> Shared.restrictBy s pt
+                    )
+                |> Maybe.withDefault (Set.empty ENT.compare)
 
         eventTypes =
-            process
-                |> Maybe.map .type_
-                |> Maybe.map (getRestricted "EventType" s.state.restrictions)
-                |> Maybe.withDefault (Set.empty ENT.toName)
+            processType
+                |> Maybe.map
+                    (\pt ->
+                        s.state.entityTypes
+                            |> ENT.onlyType "EventType"
+                            |> Shared.restrictBy s pt
+                    )
+                |> Maybe.withDefault (Set.empty ENT.compare)
     in
     case process of
         Nothing ->

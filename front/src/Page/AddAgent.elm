@@ -21,10 +21,9 @@ import REA.Process as P exposing (Process)
 import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Result exposing (andThen)
-import Route exposing (Route)
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import State exposing (getEntityType)
 import Style exposing (..)
 import Time exposing (millisToPosix)
 import View exposing (..)
@@ -124,29 +123,8 @@ init s f =
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
       }
-    , closeMenu s
+    , closeMenu s.menu
     )
-
-
-isChildOfAny : Shared.Model -> DictSet String EntityType -> EntityType -> Bool
-isChildOfAny s ets et =
-    -- the agent type (of the new agent) must be a child of one of the entity types of the identifier type
-    if Set.isEmpty ets then
-        -- identifier valid for all agent types
-        True
-
-    else
-        ets |> Set.toList |> List.any (isChild s et)
-
-
-isChild : Shared.Model -> EntityType -> EntityType -> Bool
-isChild s child item =
-    -- true if child is really a child of item
-    if child == item then
-        True
-
-    else
-        ENT.toType child |> .parent |> Maybe.andThen (\et -> getEntityType et s.state.entityTypes) |> Maybe.map (\x -> isChild s x item) |> Maybe.withDefault False
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -158,7 +136,7 @@ update s msg model =
                 , identifiers =
                     Set.filter
                         (\it ->
-                            Maybe.map (\et -> isChildOfAny s it.applyTo et) met |> Maybe.withDefault False
+                            Maybe.map (\et -> Shared.isChildOfAny s it.applyTo et) met |> Maybe.withDefault False
                         )
                         s.state.identifierTypes
                         |> Set.map I.compareIdentifier I.fromIdentifierType
@@ -181,7 +159,7 @@ update s msg model =
                             (Event.Added e
                                 :: List.map (\i -> Event.IdentifierAdded { entity = e, identifier = i }) (Set.toList model.identifiers)
                             )
-                        , redirect s.navkey Route.Agents
+                        , redirect s.navkey Route.Agents |> Effect.fromCmd
                         ]
                     )
 
@@ -194,7 +172,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Agents )
+                    ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -202,10 +180,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Agents )
+                    ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirect s.navkey Route.Agents )
+            ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

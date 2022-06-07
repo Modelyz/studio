@@ -12,6 +12,7 @@ import Page.AddEventType
 import Page.AddIdentifierType
 import Page.AddProcessType
 import Page.AddResourceType
+import Page.AgentType
 import Page.AgentTypes
 import Page.Agents
 import Page.CommitmentTypes
@@ -34,7 +35,7 @@ import View.Navbar as Navbar
 
 
 
--- TODO gather ports in a single typed one
+-- TODO gather ports into a single typed one
 
 
 port eventsReader : (Encode.Value -> msg) -> Sub msg
@@ -113,25 +114,32 @@ main =
         , extractIdentity = Shared.identity
         }
         |> Spa.addPublicPage mappers Page.Home.match Page.Home.page
+        -- list entity types
         |> Spa.addPublicPage mappers Page.ProcessTypes.match Page.ProcessTypes.page
         |> Spa.addPublicPage mappers Page.ResourceTypes.match Page.ResourceTypes.page
         |> Spa.addPublicPage mappers Page.EventTypes.match Page.EventTypes.page
         |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
         |> Spa.addPublicPage mappers Page.CommitmentTypes.match Page.CommitmentTypes.page
         |> Spa.addPublicPage mappers Page.ContractTypes.match Page.ContractTypes.page
-        |> Spa.addPublicPage mappers Page.AddContractType.match Page.AddContractType.page
-        |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
+        -- behaviours
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
         |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
         |> Spa.addPublicPage mappers Page.IdentifierTypes.match Page.IdentifierTypes.page
         |> Spa.addPublicPage mappers Page.AddIdentifierType.match Page.AddIdentifierType.page
+        -- add entity type
+        |> Spa.addPublicPage mappers Page.AddProcessType.match Page.AddProcessType.page
         |> Spa.addPublicPage mappers Page.AddResourceType.match Page.AddResourceType.page
         |> Spa.addPublicPage mappers Page.AddEventType.match Page.AddEventType.page
-        |> Spa.addPublicPage mappers Page.AddProcessType.match Page.AddProcessType.page
-        |> Spa.addPublicPage mappers Page.AddCommitmentType.match Page.AddCommitmentType.page
         |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
+        |> Spa.addPublicPage mappers Page.AddCommitmentType.match Page.AddCommitmentType.page
+        |> Spa.addPublicPage mappers Page.AddContractType.match Page.AddContractType.page
+        -- view entity type
+        |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
+        |> Spa.addPublicPage mappers Page.AgentType.match Page.AgentType.page
+        -- list entities
         |> Spa.addPublicPage mappers Page.Agents.match Page.Agents.page
+        -- add entity
         |> Spa.addPublicPage mappers Page.AddAgent.match Page.AddAgent.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
