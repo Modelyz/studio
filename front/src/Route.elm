@@ -2,8 +2,9 @@ module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectP
 
 import Browser.Navigation as Nav
 import Effect exposing (Effect)
-import Url exposing (Url)
-import Url.Parser exposing ((</>), (<?>), Parser, map, oneOf, s, string, top)
+import Url exposing (Url, percentEncode)
+import Url.Builder exposing (absolute)
+import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
 import Url.Parser.Query as Query
 
 
@@ -68,12 +69,17 @@ routeParser =
         , map Processes (s "processes" <?> Query.string "type")
 
         -- edit types
-        , map ProcessType (s "process-type" </> string)
+        , map ProcessType (s "process-type" </> encodedString)
 
         -- edit entities
-        , map Process (s "process" </> string)
-        , map AgentType (s "agent-type" </> string)
+        , map Process (s "process" </> encodedString)
+        , map AgentType (s "agent-type" </> encodedString)
         ]
+
+
+encodedString : Parser (String -> a) a
+encodedString =
+    custom "ENCODED STRING" Url.percentDecode
 
 
 toRoute : Url -> Route
@@ -86,75 +92,75 @@ toString : Route -> String
 toString r =
     case r of
         Home ->
-            "/"
+            absolute [] []
 
         ProcessTypes ->
-            "/process-types"
+            absolute [ "process-types" ] []
 
         ProcessType ptype ->
-            "/process-type/" ++ ptype
+            absolute [ "process-type", percentEncode ptype ] []
 
         Processes ps ->
             case ps of
                 Just t ->
-                    "/processes?type=" ++ t
+                    absolute [ "processes?type=", percentEncode t ] []
 
                 Nothing ->
-                    "/processes"
+                    absolute [ "processes" ] []
 
         ResourceTypes ->
-            "/resource-types"
+            absolute [ "resource-types" ] []
 
         EventTypes ->
-            "/event-types"
+            absolute [ "event-types" ] []
 
         AgentTypes ->
-            "/agent-types"
+            absolute [ "agent-types" ] []
 
         CommitmentTypes ->
-            "/commitment-types"
+            absolute [ "commitment-types" ] []
 
         ContractTypes ->
-            "/contract-types"
+            absolute [ "contract-types" ] []
 
         AddProcessType ->
-            "/process-types/add"
+            absolute [ "process-types/add" ] []
 
         AddResourceType ->
-            "/resource-types/add"
+            absolute [ "resource-types/add" ] []
 
         AddEventType ->
-            "/event-types/add"
+            absolute [ "event-types/add" ] []
 
         AddAgentType ->
-            "/agent-types/add"
+            absolute [ "agent-types/add" ] []
 
         AddCommitmentType ->
-            "/commitment-types/add"
+            absolute [ "commitment-types/add" ] []
 
         AddContractType ->
-            "/contract-type/add"
+            absolute [ "contract-type/add" ] []
 
         AgentType at ->
-            "/agent-type/" ++ at
+            absolute [ "agent-type/", percentEncode at ] []
 
         Process p ->
-            "/process/" ++ p
+            absolute [ "process/", percentEncode p ] []
 
         Groups ->
-            "/groups"
+            absolute [ "groups" ] []
 
         IdentifierTypes ->
-            "/identifierTypes"
+            absolute [ "identifierTypes" ] []
 
         AddIdentifierType ->
-            "/identifierTypes/add"
+            absolute [ "identifierTypes/add" ] []
 
         Agents ->
-            "/agents"
+            absolute [ "agents" ] []
 
         AddAgent ->
-            "/agents/add"
+            absolute [ "agents/add" ] []
 
 
 firstSegment : Route -> String

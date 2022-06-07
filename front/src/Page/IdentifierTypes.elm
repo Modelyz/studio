@@ -98,6 +98,7 @@ viewContent model s =
                                 Set.toList i.applyTo
                         in
                         viewSmallCard (Removed i.name)
+                            Nothing
                             i.name
                             (if List.isEmpty ets then
                                 "for everything"

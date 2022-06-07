@@ -70,7 +70,7 @@ viewContent c model s =
             [ spacing 10 ]
             (entityTypes
                 |> Set.toList
-                |> List.map (\et -> viewSmallCard (Removed et) (ENT.toName et) <| Maybe.withDefault "(Root type)" <| Maybe.map (\t -> "Type: " ++ t) (ENT.toParent et))
+                |> List.map (\et -> viewSmallCard (Removed et) (Just <| ENT.toUrl et) (ENT.toName et) <| Maybe.withDefault "(Root type)" <| Maybe.map (\t -> "Type: " ++ t) (ENT.toParent et))
                 |> withDefaultContent (p c.emptyText)
             )
         ]
