@@ -23,6 +23,7 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 type alias Model =
     -- ui model related
     { currentSeed : Seed
+    , route : Route
     , navkey : Nav.Key
     , windowSize : WindowSize
     , menu : Menu
@@ -44,6 +45,7 @@ type Msg
     = None ()
     | WindowResized WindowSize
     | ToggleMenu
+    | SetRoute Route
     | PushRoute Route
     | ReplaceRoute Route
     | WSDisconnected Json.Value
@@ -81,6 +83,7 @@ init value navkey =
     case Json.decodeValue flagsDecoder value of
         Ok f ->
             ( { currentSeed = initialSeed f.seed f.seedExtension
+              , route = Route.Home
               , navkey = navkey
               , windowSize = f.windowSize
               , menu =
@@ -100,10 +103,11 @@ init value navkey =
 
         Err err ->
             ( { currentSeed = initialSeed 0 [ 0, 0 ]
+              , route = Route.Home
               , navkey = navkey
               , windowSize = WindowSize 1024 768
               , menu = Desktop
-              , iostatus = IOError "Wrong init flags"
+              , iostatus = IOError <| "Wrong init flags: " ++ errorToString err
               , wsstatus = WSClosed
               , timeoutReconnect = 1
               , identity = Nothing
@@ -147,6 +151,10 @@ update msg model =
               }
             , Cmd.none
             )
+
+        SetRoute route ->
+            -- store the route to reload page init to the same route after reading events
+            ( { model | route = route }, Cmd.none )
 
         PushRoute route ->
             ( model, Nav.pushUrl model.navkey <| Route.toString route )
@@ -223,12 +231,18 @@ update msg model =
                                     model.wsstatus
                         , state = { newstate | lastEventTime = lastEventTime }
                       }
-                    , case model.wsstatus of
-                        WSClosed ->
-                            wsConnect ()
+                    , Cmd.batch
+                        [ case model.wsstatus of
+                            WSClosed ->
+                                wsConnect ()
 
-                        _ ->
-                            Cmd.none
+                            _ ->
+                                Cmd.none
+
+                        -- trigger a page init so that the page init build its local model
+                        -- after the shared state has been loaded from indexeddb
+                        , Nav.pushUrl model.navkey <| Route.toString model.route
+                        ]
                     )
 
                 Err str ->

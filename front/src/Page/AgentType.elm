@@ -4,7 +4,7 @@ import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (Element, text)
 import REA.EntityType as ENT exposing (EntityType)
-import Route exposing (Route, redirectAdd)
+import Route exposing (Route, redirect, redirectAdd)
 import Shared exposing (findEntityType)
 import Spa.Page
 import View exposing (View, closeMenu)
@@ -12,7 +12,7 @@ import View exposing (View, closeMenu)
 
 type alias Model =
     { route : Route
-    , name : Maybe String
+    , entityType : Maybe EntityType
     }
 
 
@@ -46,12 +46,18 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    Debug.log "INIT"
-        ( { name = Just f.name
-          , route = f.route
-          }
-        , closeMenu s.menu
-        )
+    ( { route = f.route
+      , entityType =
+            Just f.name |> Maybe.andThen (\etname -> s.state.entityTypes |> ENT.onlyType "AgentType" |> findEntityType etname)
+      }
+    , Effect.batch
+        [ closeMenu s.menu
+
+        -- store the route to reload page init to the same route after reading events
+        -- on the first run the entityType is Nothing, and it is found at the second
+        , Effect.fromShared (Shared.SetRoute f.route)
+        ]
+    )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -72,8 +78,4 @@ view s model =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
-    let
-        et =
-            model.name |> Maybe.andThen (\etname -> s.state.entityTypes |> ENT.onlyType "AgentType" |> findEntityType etname)
-    in
-    et |> Maybe.map ENT.toName |> Maybe.withDefault "not found" |> text
+    model.entityType |> Maybe.map ENT.toName |> Maybe.withDefault "not found" |> text
