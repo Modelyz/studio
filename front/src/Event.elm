@@ -63,7 +63,7 @@ type EventPayload
     | GroupAdded Group
     | GroupRemoved String
     | IdentifierTypeAdded IdentifierType
-    | IdentifierTypeRemoved String
+    | IdentifierTypeRemoved IdentifierType
     | Added Entity
     | Removed Entity
     | TypeAdded EntityType
@@ -215,7 +215,7 @@ encode (Event b p) =
                 ( "load", I.encodeIdentifierType it )
 
             IdentifierTypeRemoved it ->
-                ( "load", Encode.string it )
+                ( "load", I.encodeIdentifierType it )
 
             TypeAdded e ->
                 ( "load", ENT.encode e )
@@ -308,7 +308,7 @@ decoder =
 
                         "IdentifierTypeRemoved" ->
                             Decode.map IdentifierTypeRemoved
-                                (Decode.field "load" Decode.string)
+                                (Decode.field "load" I.identifierTypeDecoder)
 
                         "TypeAdded" ->
                             Decode.map TypeAdded

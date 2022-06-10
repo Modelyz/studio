@@ -4,25 +4,37 @@ import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import REA.Entity as EN exposing (Entity)
-import REA.EntityType as ENT
+import Prng.Uuid as Uuid
+import REA.Entity as EN exposing (Entity, toUuid)
+import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
-
-
-
--- Where do we get the date from
--- The IDntifier is the definition of an identifierType
 
 
 type alias Name =
     String
 
 
+type
+    Identified
+    -- We can identify a particular entity
+    = OneEntity EN.Entity
+      -- or a certain entity type
+    | OneEntityType ENT.EntityType
+      -- or all the entities of a certain type
+    | AllEntityTypes ENT.EntityType
+      -- or all the entity types of a certain type
+    | AllEntities ENT.EntityType
+
+
+
+-- TODO: also identify all entities or of a group ?
+
+
 type alias IdentifierType =
     -- This is the configuration of an identifier
     { name : Name
     , fragments : List Fragment
-    , applyTo : DictSet String ENT.EntityType
+    , applyTo : DictSet String Identified
     , unique : Bool
     , mandatory : Bool
     }
@@ -64,6 +76,38 @@ type alias Padding =
 
 type alias Step =
     Int
+
+
+toDesc : Identified -> String
+toDesc id =
+    case id of
+        OneEntity e ->
+            "entity " ++ Uuid.toString (toUuid e)
+
+        OneEntityType et ->
+            toName et
+
+        AllEntities et ->
+            "entities of type " ++ toName et
+
+        AllEntityTypes et ->
+            "types whose parent type is " ++ toName et
+
+
+toString : Identified -> String
+toString id =
+    case id of
+        OneEntity e ->
+            "OneEntity"
+
+        OneEntityType et ->
+            "OneEntityType"
+
+        AllEntities et ->
+            "AllEntities"
+
+        AllEntityTypes et ->
+            "AllEntityTypes"
 
 
 compareIdentifier : Identifier -> String
@@ -382,10 +426,61 @@ encodeIdentifierType e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list encodeFragment e.fragments )
-        , ( "applyTo", Encode.list ENT.encode <| Set.toList e.applyTo )
+        , ( "applyTo", Encode.list encodeIdentified <| Set.toList e.applyTo )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
+
+
+encodeIdentified : Identified -> Encode.Value
+encodeIdentified e =
+    case e of
+        OneEntity entity ->
+            Encode.object
+                [ ( "for", Encode.string "OneEntity" )
+                , ( "entity", EN.encode entity )
+                ]
+
+        OneEntityType entityType ->
+            Encode.object
+                [ ( "for", Encode.string "OneEntityType" )
+                , ( "type", ENT.encode entityType )
+                ]
+
+        AllEntities entityType ->
+            Encode.object
+                [ ( "for", Encode.string "AllEntities" )
+                , ( "type", ENT.encode entityType )
+                ]
+
+        AllEntityTypes entityType ->
+            Encode.object
+                [ ( "for", Encode.string "AllEntityTypes" )
+                , ( "type", ENT.encode entityType )
+                ]
+
+
+identifiedDecoder : Decoder Identified
+identifiedDecoder =
+    Decode.field "for" Decode.string
+        |> Decode.andThen
+            (\for ->
+                case for of
+                    "OneEntity" ->
+                        Decode.field "type" (Decode.map OneEntity EN.decoder)
+
+                    "OneEntityType" ->
+                        Decode.field "type" (Decode.map OneEntityType ENT.decoder)
+
+                    "AllEntities" ->
+                        Decode.field "type" (Decode.map AllEntities ENT.decoder)
+
+                    "AllEntityTypes" ->
+                        Decode.field "type" (Decode.map AllEntityTypes ENT.decoder)
+
+                    _ ->
+                        Decode.fail "Cannot find out what is Identified"
+            )
 
 
 encodeIdentifier : Identifier -> Encode.Value
@@ -409,7 +504,7 @@ identifierTypeDecoder =
     Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
-        (Decode.field "applyTo" (Decode.list ENT.decoder |> Decode.andThen (Set.fromList ENT.compare >> Decode.succeed)))
+        (Decode.field "applyTo" (Decode.list identifiedDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
 
@@ -528,3 +623,22 @@ updateIdentifier index fragment identifier =
 fromIdentifierType : IdentifierType -> Identifier
 fromIdentifierType i =
     { name = i.name, fragments = i.fragments }
+
+
+compare : Identified -> String
+compare i =
+    toString i
+        ++ " "
+        ++ (case i of
+                OneEntity e ->
+                    EN.compare e
+
+                OneEntityType et ->
+                    ENT.compare et
+
+                AllEntities et ->
+                    ENT.compare et
+
+                AllEntityTypes et ->
+                    ENT.compare et
+           )

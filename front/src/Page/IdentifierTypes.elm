@@ -8,9 +8,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import REA.Entity as Entity exposing (Entity, toPluralString)
-import REA.EntityType as ENT
-import REA.Ident as Ident exposing (Fragment(..))
+import Prng.Uuid as Uuid
+import REA.Entity as Entity exposing (Entity, toPluralString, toUuid)
+import REA.Ident as Ident exposing (Fragment(..), Identified(..), IdentifierType, toString)
 import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared
@@ -26,7 +26,7 @@ type alias Model =
 
 
 type Msg
-    = Removed String
+    = Removed IdentifierType
     | Add
 
 
@@ -56,7 +56,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route }, closeMenu s.menu )
+    ( { route = f.route }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -94,17 +94,17 @@ viewContent model s =
                 |> List.map
                     (\i ->
                         let
-                            ets =
+                            ids =
                                 Set.toList i.applyTo
                         in
-                        viewSmallCard (Removed i.name)
+                        viewSmallCard (Removed i)
                             Nothing
                             i.name
-                            (if List.isEmpty ets then
+                            (if List.isEmpty ids then
                                 "for everything"
 
                              else
-                                "for any " ++ (String.join ", " <| List.map ENT.toName ets)
+                                "for " ++ (ids |> List.map toString |> String.join ", ")
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

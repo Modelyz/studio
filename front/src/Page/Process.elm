@@ -62,7 +62,7 @@ init s f =
     ( { route = f.route
       , process = f.process
       }
-    , closeMenu s.menu
+    , closeMenu f s.menu
     )
 
 

@@ -56,7 +56,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route }, closeMenu s.menu )
+    ( { route = f.route }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -90,7 +90,7 @@ viewContent model s =
             [ spacing 10 ]
             (s.state.entities
                 |> Set.toList
-                |> List.map (\e -> viewSmallCard (Removed e) Nothing (EN.toString e) ("Type: " ++ EN.toTypeString e))
+                |> List.map (\e -> viewSmallCard (Removed e) Nothing (EN.toString e) ("Type: " ++ EN.toType e))
                 |> withDefaultContent (p "There are no Agents yet. Create your first one!")
             )
         ]

@@ -9,8 +9,10 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Event
+import Prng.Uuid as Uuid exposing (Uuid)
+import REA.Entity as EN exposing (toType, toUuid)
 import REA.EntityType as ENT exposing (EntityType(..))
-import REA.Ident exposing (Fragment(..), IdentifierType, allFragments, fragmentToDesc, fragmentToName, fragmentToString)
+import REA.Ident as Ident exposing (Fragment(..), Identified(..), IdentifierType, allFragments, fragmentToDesc, fragmentToName, fragmentToString)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -23,7 +25,7 @@ type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputEntityTypes (DictSet String EntityType)
+    | InputIdentified (DictSet String Identified)
     | InputUnique Bool
     | InputMandatory Bool
     | InputFormat (List Fragment)
@@ -44,7 +46,7 @@ type alias Model =
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , applyTo : DictSet String EntityType
+    , applyTo : DictSet String Identified
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -53,7 +55,7 @@ type alias Model =
 
 type Step
     = StepName
-    | StepEntityTypes
+    | StepIdentified
     | StepOptions
     | StepFormat
 
@@ -91,15 +93,15 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
       , name = ""
-      , applyTo = Set.empty ENT.compare
+      , applyTo = Set.empty Ident.compare
       , unique = False
       , mandatory = False
       , fragments = []
       , warning = ""
-      , steps = [ Step.Step StepName, Step.Step StepEntityTypes, Step.Step StepOptions, Step.Step StepFormat ]
+      , steps = [ Step.Step StepName, Step.Step StepIdentified, Step.Step StepOptions, Step.Step StepFormat ]
       , step = Step.Step StepName
       }
-    , closeMenu s.menu
+    , closeMenu f s.menu
     )
 
 
@@ -109,8 +111,8 @@ update s msg model =
         InputName x ->
             ( { model | name = x }, Effect.none )
 
-        InputEntityTypes ts ->
-            ( { model | applyTo = ts }, Effect.none )
+        InputIdentified i ->
+            ( { model | applyTo = i }, Effect.none )
 
         InputUnique x ->
             ( { model | unique = x }, Effect.none )
@@ -178,7 +180,7 @@ buttonNext model =
         Step.Step StepName ->
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
-        Step.Step StepEntityTypes ->
+        Step.Step StepIdentified ->
             nextOrValidate model NextPage Added (Ok model.applyTo)
 
 
@@ -207,7 +209,7 @@ viewContent model s =
 
         step =
             case model.step of
-                Step.Step StepEntityTypes ->
+                Step.Step StepIdentified ->
                     inputEntityTypes s model
 
                 Step.Step StepOptions ->
@@ -257,11 +259,11 @@ viewContent model s =
         ]
 
 
-viewItem : Model -> EntityType -> Element Msg
-viewItem model et =
+viewItem : Model -> Identified -> Element Msg
+viewItem model i =
     row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| ENT.toName et)
-        , button.primary (InputEntityTypes <| Set.remove et model.applyTo) "×"
+        [ el [ paddingXY 10 2 ] (text <| Ident.toDesc i)
+        , button.primary (InputIdentified <| Set.remove i model.applyTo) "×"
         ]
 
 
@@ -282,12 +284,36 @@ inputEntityTypes s model =
                         []
                     )
                     (model.applyTo |> Set.toList |> List.map (viewItem model))
-        , h2 <| "Select the types that should have a \"" ++ iName ++ "\" identifier"
+        , h2 <| "Select the entities that should have a \"" ++ iName ++ "\" identifier"
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+            (Set.toList s.state.entities
+                |> List.map
+                    (\e ->
+                        clickableCard (InputIdentified <| Set.insert (OneEntity e) model.applyTo) (Uuid.toString <| toUuid e) (Just <| "Type: " ++ toType e)
+                    )
+            )
+        , h2 <| "Select the entity types that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (Set.toList s.state.entityTypes
                 |> List.map
                     (\et ->
-                        clickableCard (InputEntityTypes <| Set.insert et model.applyTo) (ENT.toName et) (ENT.toParent et |> Maybe.map (\t -> "Type: " ++ t))
+                        clickableCard (InputIdentified <| Set.insert (OneEntityType et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
+                    )
+            )
+        , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+            (Set.toList s.state.entityTypes
+                |> List.map
+                    (\et ->
+                        clickableCard (InputIdentified <| Set.insert (AllEntities et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
+                    )
+            )
+        , h2 <| "Select the types of the entity types that should have a \"" ++ iName ++ "\" identifier"
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+            (Set.toList s.state.entityTypes
+                |> List.map
+                    (\et ->
+                        clickableCard (InputIdentified <| Set.insert (AllEntityTypes et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
                     )
             )
         ]

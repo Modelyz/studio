@@ -52,7 +52,7 @@ init s f =
             Just f.name |> Maybe.andThen (\etname -> s.state.entityTypes |> ENT.onlyType "AgentType" |> findEntityType etname)
       }
     , Effect.batch
-        [ closeMenu s.menu
+        [ closeMenu f s.menu
 
         -- store the route to reload page init to the same route after reading events
         -- on the first run the entityType is Nothing, and it is found at the second
@@ -79,8 +79,13 @@ view s model =
 
 viewContent : Shared.Model -> Model -> Element Msg
 viewContent s model =
+    let
+        identifiers =
+            s.state.identifiers
+    in
     model.entityType |> Maybe.map ENT.toName |> Maybe.withDefault "not found" |> text
 
 
 
---d
+-- depuis l'et, retrouver la liste des identifier
+--

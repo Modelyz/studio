@@ -55,7 +55,7 @@ init s f =
     ( { route = f.route
       , ptype = ENT.ProcessType { name = "", parent = Nothing }
       }
-    , closeMenu s.menu
+    , closeMenu f s.menu
     )
 
 

@@ -87,7 +87,7 @@ init s f =
       , steps = [ Step.Step StepName, Step.Step StepType, Step.Step StepProcesses ]
       , step = Step.Step StepName
       }
-    , closeMenu s.menu
+    , closeMenu f s.menu
     )
 
 

@@ -167,13 +167,16 @@ button =
     }
 
 
-closeMenu : Style.Menu -> Effect Shared.Msg msg
-closeMenu menu =
-    if menu == MobileOpen then
-        Effect.fromShared Shared.ToggleMenu
+closeMenu : { flags | route : Route } -> Style.Menu -> Effect Shared.Msg msg
+closeMenu f menu =
+    Effect.batch
+        [ Effect.fromShared (Shared.SetRoute f.route)
+        , if menu == MobileOpen then
+            Effect.fromShared Shared.ToggleMenu
 
-    else
-        Effect.none
+          else
+            Effect.none
+        ]
 
 
 map : (a -> b) -> View a -> View b

@@ -1,4 +1,4 @@
-module REA.Entity exposing (Entity(..), compare, decoder, encode, toPluralString, toString, toTypeString)
+module REA.Entity exposing (Entity(..), compare, decoder, encode, toPluralString, toString, toType, toUuid)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -20,8 +20,8 @@ type Entity
     | Process Process
 
 
-toTypeString : Entity -> String
-toTypeString entity =
+toType : Entity -> String
+toType entity =
     case entity of
         Resource x ->
             x.type_

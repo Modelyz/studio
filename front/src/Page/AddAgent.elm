@@ -16,7 +16,7 @@ import REA.Contract as CN exposing (Contract)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E exposing (Event)
-import REA.Ident as I exposing (Identifier)
+import REA.Ident as I exposing (Identified(..), Identifier)
 import REA.Process as P exposing (Process)
 import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -123,7 +123,7 @@ init s f =
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
       }
-    , closeMenu s.menu
+    , closeMenu f s.menu
     )
 
 
@@ -131,18 +131,45 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         InputType met ->
-            ( { model
-                | flatselect = met
-                , identifiers =
-                    Set.filter
-                        (\it ->
-                            Maybe.map (\et -> Shared.isChildOfAny s it.applyTo et) met |> Maybe.withDefault False
-                        )
-                        s.state.identifierTypes
-                        |> Set.map I.compareIdentifier I.fromIdentifierType
-              }
-            , Effect.none
-            )
+            case met of
+                Nothing ->
+                    ( { model
+                        | flatselect = Nothing
+                        , identifiers = Set.empty I.compareIdentifier
+                      }
+                    , Effect.none
+                    )
+
+                Just et ->
+                    ( { model
+                        | flatselect = Just et
+                        , identifiers =
+                            s.state.identifierTypes
+                                |> Set.filter
+                                    (\it ->
+                                        Shared.isChildOfAny s
+                                            (it.applyTo
+                                                |> Set.toList
+                                                |> List.concatMap
+                                                    (\i ->
+                                                        case i of
+                                                            AllEntities e ->
+                                                                [ e ]
+
+                                                            AllEntityTypes e ->
+                                                                [ e ]
+
+                                                            _ ->
+                                                                []
+                                                    )
+                                                |> Set.fromList ENT.compare
+                                            )
+                                            et
+                                    )
+                                |> Set.map I.compareIdentifier I.fromIdentifierType
+                      }
+                    , Effect.none
+                    )
 
         InputIdentifier i ->
             ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )

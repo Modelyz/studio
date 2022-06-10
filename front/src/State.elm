@@ -166,7 +166,7 @@ aggregate (Event b p) state =
 
         IdentifierTypeRemoved e ->
             { state
-                | identifierTypes = Set.filter (\i -> i.name /= e) state.identifierTypes
+                | identifierTypes = Set.filter (\i -> i /= e) state.identifierTypes
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
