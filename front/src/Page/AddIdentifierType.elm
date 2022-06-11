@@ -416,6 +416,27 @@ inputFragmentConf fragments index fragment =
                 , label = Input.labelHidden <| "Existing"
                 }
 
+        OtherIdentifier name ->
+            Input.text [ width (px 75) ]
+                { onChange =
+                    \n ->
+                        InputFormat
+                            (fragments
+                                |> List.indexedMap
+                                    (\i f ->
+                                        if i == index then
+                                            OtherIdentifier n
+
+                                        else
+                                            f
+                                    )
+                            )
+                , text = name
+                , placeholder =
+                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                , label = Input.labelHidden <| "Other identifier"
+                }
+
         DateFrom name posix ->
             Input.text [ width (px 75) ]
                 { onChange =

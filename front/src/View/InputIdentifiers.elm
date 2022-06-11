@@ -4,7 +4,7 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, identifierValue, updateIdentifier)
+import REA.Ident exposing (Fragment(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, getIdentifier, identifierValue, updateIdentifier)
 import Style exposing (size)
 import View
 
@@ -22,19 +22,22 @@ type alias Config msg =
 inputIdentifiers : Config msg -> Model a -> Element msg
 inputIdentifiers c model =
     -- display an input field for each relevant identifier
-    column []
+    column [ spacing 10 ]
         (model.identifiers
             |> Set.toList
             |> List.map
                 (\identifier ->
-                    row [] <|
-                        List.indexedMap (\i f -> inputFragment c i f identifier) identifier.fragments
+                    column []
+                        [ el [ paddingXY 0 10 ] <| text identifier.name
+                        , row [ spacing 5 ] <|
+                            List.indexedMap (\i f -> inputFragment c model i f identifier) identifier.fragments
+                        ]
                 )
         )
 
 
-inputFragment : Config msg -> Int -> Fragment -> Identifier -> Element msg
-inputFragment c index fragment ident =
+inputFragment : Config msg -> Model a -> Int -> Fragment -> Identifier -> Element msg
+inputFragment c model index fragment ident =
     case fragment of
         Free value ->
             Input.text
@@ -46,8 +49,17 @@ inputFragment c index fragment ident =
                 , text = value
                 , placeholder =
                     Just <| Input.placeholder [] <| text ident.name
-                , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text ident.name
+                , label = Input.labelHidden ident.name
                 }
+
+        Fixed value ->
+            row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
+
+        OtherIdentifier name ->
+            getIdentifier name model.identifiers
+                |> Maybe.map (\i -> String.join " " <| List.map fragmentToValue i.fragments)
+                |> Maybe.withDefault ("(Error in this identifier: " ++ name ++ " does not exist)")
+                |> text
 
         Sequence padding step value ->
             Input.text

@@ -68,6 +68,7 @@ type Fragment
     | Minute Int
     | Second Int
     | DateFrom Name Posix
+    | OtherIdentifier Name
 
 
 type alias Padding =
@@ -76,6 +77,11 @@ type alias Padding =
 
 type alias Step =
     Int
+
+
+getIdentifier : String -> DictSet String Identifier -> Maybe Identifier
+getIdentifier name =
+    Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
 toDesc : Identified -> String
@@ -141,6 +147,7 @@ allFragments =
     , Minute 0
     , Second 0
     , DateFrom "" (millisToPosix 0)
+    , OtherIdentifier ""
     ]
 
 
@@ -187,7 +194,10 @@ fragmentToString f =
             "ss"
 
         DateFrom from value ->
-            "Date from: "
+            "Date from another field"
+
+        OtherIdentifier name ->
+            "Value from another identifier"
 
 
 fragmentToName : Fragment -> Maybe String
@@ -235,6 +245,9 @@ fragmentToName f =
         DateFrom from value ->
             Nothing
 
+        OtherIdentifier name ->
+            Just name
+
 
 fragmentToValue : Fragment -> String
 fragmentToValue f =
@@ -281,6 +294,9 @@ fragmentToValue f =
         DateFrom from value ->
             String.fromInt <| posixToMillis value
 
+        OtherIdentifier name ->
+            "??"
+
 
 fragmentToDesc : Fragment -> String
 fragmentToDesc f =
@@ -326,6 +342,9 @@ fragmentToDesc f =
 
         DateFrom from _ ->
             "Date coming from another field: " ++ from
+
+        OtherIdentifier name ->
+            "Value from the identifier: " ++ name
 
 
 encodeFragment : Fragment -> Encode.Value
@@ -418,6 +437,12 @@ encodeFragment =
                     [ ( "type", Encode.string "DateFrom" )
                     , ( "name", Encode.string name )
                     , ( "value", Encode.int (posixToMillis value) )
+                    ]
+
+            OtherIdentifier name ->
+                Encode.object
+                    [ ( "type", Encode.string "OtherIdentifier" )
+                    , ( "name", Encode.string name )
                     ]
 
 
@@ -573,6 +598,9 @@ fragmentDecoder =
 
                     "DateFrom" ->
                         Decode.map2 DateFrom (Decode.field "name" Decode.string) (Decode.field "value" Decode.int |> Decode.andThen (millisToPosix >> Decode.succeed))
+
+                    "OtherIdentifier" ->
+                        Decode.map OtherIdentifier (Decode.field "name" Decode.string)
 
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
