@@ -210,31 +210,23 @@ onEnter msg =
 viewSmallCard : msg -> Maybe String -> String -> String -> Element msg
 viewSmallCard deleteMsg url title description =
     let
-        card =
-            row
-                [ htmlAttribute <| Attr.id title ]
-                [ column [ Background.color color.item.background ]
-                    [ row [ spacing 10, width fill ]
-                        [ row [ Font.size size.text.main, padding 10 ] [ text title ]
-                        , el [ alignRight ] (button.primary deleteMsg "×")
-                        ]
-                    , if description == "" then
-                        none
-
-                      else
-                        row [ padding 10, Font.size size.text.small ] [ text description ]
-                    ]
-                ]
+        titleelm =
+            row [ Font.size size.text.main, padding 10 ] [ text title ]
     in
-    url
-        |> Maybe.map
-            (\u ->
-                link []
-                    { url = u
-                    , label = card
-                    }
-            )
-        |> Maybe.withDefault card
+    row
+        [ htmlAttribute <| Attr.id title ]
+        [ column [ Background.color color.item.background ]
+            [ row [ spacing 10, width fill ]
+                [ Maybe.withDefault titleelm <| Maybe.map (\u -> link [] { url = u, label = titleelm }) url
+                , el [ alignRight ] (button.primary deleteMsg "×")
+                ]
+            , if description == "" then
+                none
+
+              else
+                row [ padding 10, Font.size size.text.small ] [ text description ]
+            ]
+        ]
 
 
 checkEmptyString : String -> String -> Result String String
