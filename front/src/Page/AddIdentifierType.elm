@@ -458,7 +458,7 @@ inputFragmentConf fragments index fragment =
                 , label = Input.labelHidden <| "Existing"
                 }
 
-        Sequence padding step value ->
+        Sequence padding step start value ->
             row []
                 [ Input.text [ width (px 50) ]
                     { onChange =
@@ -469,8 +469,8 @@ inputFragmentConf fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\v -> Sequence v step value)
-                                                    |> Maybe.withDefault (Sequence padding step value)
+                                                    |> Maybe.map (\p -> Sequence p step start value)
+                                                    |> Maybe.withDefault (Sequence padding step start value)
 
                                             else
                                                 f
@@ -490,8 +490,8 @@ inputFragmentConf fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\v -> Sequence padding v value)
-                                                    |> Maybe.withDefault (Sequence padding step value)
+                                                    |> Maybe.map (\s -> Sequence padding s start value)
+                                                    |> Maybe.withDefault (Sequence padding step start value)
 
                                             else
                                                 f
@@ -511,14 +511,14 @@ inputFragmentConf fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\v -> Sequence padding step v)
-                                                    |> Maybe.withDefault (Sequence padding step value)
+                                                    |> Maybe.map (\s -> Sequence padding step s value)
+                                                    |> Maybe.withDefault (Sequence padding step start value)
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = String.fromInt value
+                    , text = String.fromInt start
                     , placeholder =
                         Just <| Input.placeholder [] <| text "First value"
                     , label = Input.labelHidden <| "First value"

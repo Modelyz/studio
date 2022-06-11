@@ -56,7 +56,7 @@ type alias EntityIdentifier =
 type Fragment
     = Free String
     | Fixed String
-    | Sequence Padding Step Int
+    | Sequence Padding Step Start (Maybe String)
     | Existing Name String
     | YYYY Int
     | YY Int
@@ -72,6 +72,10 @@ type Fragment
 
 
 type alias Padding =
+    Int
+
+
+type alias Start =
     Int
 
 
@@ -135,7 +139,7 @@ allFragments : List Fragment
 allFragments =
     [ Free ""
     , Fixed ""
-    , Sequence 4 1 0
+    , Sequence 4 1 0 Nothing
     , Existing "" ""
     , YYYY 0
     , YY 0
@@ -160,7 +164,7 @@ fragmentToString f =
         Fixed value ->
             "Fixed"
 
-        Sequence padding step value ->
+        Sequence padding step start value ->
             "Sequence"
 
         Existing name value ->
@@ -209,7 +213,7 @@ fragmentToName f =
         Fixed value ->
             Nothing
 
-        Sequence padding step value ->
+        Sequence padding step start value ->
             Nothing
 
         Existing name value ->
@@ -258,8 +262,8 @@ fragmentToValue f =
         Fixed value ->
             value
 
-        Sequence padding step value ->
-            String.padLeft padding '0' <| String.fromInt value
+        Sequence padding step start value ->
+            Maybe.withDefault "(Not yet assigned)" value
 
         Existing name value ->
             value
@@ -307,7 +311,7 @@ fragmentToDesc f =
         Fixed _ ->
             "A fixed text that you define now and that will be always the same. For instance it can be a prefix, a suffix, a separator."
 
-        Sequence _ _ _ ->
+        Sequence _ _ _ _ ->
             "A sequence number used to identify an entity."
 
         Existing name _ ->
@@ -363,12 +367,13 @@ encodeFragment =
                     , ( "value", Encode.string value )
                     ]
 
-            Sequence padding step value ->
+            Sequence padding step start value ->
                 Encode.object
                     [ ( "type", Encode.string "Sequence" )
                     , ( "padding", Encode.int padding )
                     , ( "step", Encode.int step )
-                    , ( "value", Encode.int value )
+                    , ( "start", Encode.int start )
+                    , ( "value", Maybe.map Encode.string value |> Maybe.withDefault Encode.null )
                     ]
 
             Existing name value ->
@@ -561,10 +566,11 @@ fragmentDecoder =
                         Decode.map Fixed (Decode.field "value" Decode.string)
 
                     "Sequence" ->
-                        Decode.map3 Sequence
+                        Decode.map4 Sequence
                             (Decode.field "padding" Decode.int)
                             (Decode.field "step" Decode.int)
-                            (Decode.field "value" Decode.int)
+                            (Decode.field "start" Decode.int)
+                            (Decode.field "value" (Decode.maybe Decode.string))
 
                     "Existing" ->
                         Decode.map2 Existing (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
