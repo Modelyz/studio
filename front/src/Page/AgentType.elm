@@ -51,13 +51,7 @@ init s f =
       , entityType =
             Just f.name |> Maybe.andThen (\etname -> s.state.entityTypes |> ENT.onlyType "AgentType" |> findEntityType etname)
       }
-    , Effect.batch
-        [ closeMenu f s.menu
-
-        -- store the route to reload page init to the same route after reading events
-        -- on the first run the entityType is Nothing, and it is found at the second
-        , Effect.fromShared (Shared.SetRoute f.route)
-        ]
+    , closeMenu f s.menu
     )
 
 

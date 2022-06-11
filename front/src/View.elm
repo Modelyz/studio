@@ -170,6 +170,8 @@ button =
 closeMenu : { flags | route : Route } -> Style.Menu -> Effect Shared.Msg msg
 closeMenu f menu =
     Effect.batch
+        -- store the route to reload page init to the same route after reading events
+        -- on the first run the entityType is Nothing, and it is found at the second
         [ Effect.fromShared (Shared.SetRoute f.route)
         , if menu == MobileOpen then
             Effect.fromShared Shared.ToggleMenu
