@@ -10,7 +10,7 @@ import Event
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid
 import REA.Entity as Entity exposing (Entity, toPluralString, toUuid)
-import REA.Ident as Ident exposing (Fragment(..), Identified(..), IdentifierType, toDesc)
+import REA.Ident as Ident exposing (Fragment(..), Identifiable(..), IdentifierType, toDesc)
 import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared

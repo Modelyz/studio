@@ -1,5 +1,6 @@
 module State exposing (State, aggregate, empty, getCommitments, getEvents, getProcess)
 
+import Dict exposing (Dict)
 import DictSet as Set exposing (DictSet)
 import Event exposing (Event(..), EventPayload(..), base)
 import EventFlow exposing (EventFlow(..))

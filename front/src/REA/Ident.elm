@@ -15,7 +15,7 @@ type alias Name =
 
 
 type
-    Identified
+    Identifiable
     -- We can identify a particular entity
     = OneEntity EN.Entity
       -- or a certain entity type
@@ -34,7 +34,7 @@ type alias IdentifierType =
     -- This is the configuration of an identifier
     { name : Name
     , fragments : List Fragment
-    , applyTo : DictSet String Identified
+    , applyTo : DictSet String Identifiable
     , unique : Bool
     , mandatory : Bool
     }
@@ -88,7 +88,7 @@ getIdentifier name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
-toDesc : Identified -> String
+toDesc : Identifiable -> String
 toDesc id =
     case id of
         OneEntity e ->
@@ -104,7 +104,7 @@ toDesc id =
             "types whose parent type is " ++ toName et
 
 
-toString : Identified -> String
+toString : Identifiable -> String
 toString id =
     case id of
         OneEntity e ->
@@ -456,14 +456,14 @@ encodeIdentifierType e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list encodeFragment e.fragments )
-        , ( "applyTo", Encode.list encodeIdentified <| Set.toList e.applyTo )
+        , ( "applyTo", Encode.list encodeIdentifiable <| Set.toList e.applyTo )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
 
 
-encodeIdentified : Identified -> Encode.Value
-encodeIdentified e =
+encodeIdentifiable : Identifiable -> Encode.Value
+encodeIdentifiable e =
     case e of
         OneEntity entity ->
             Encode.object
@@ -490,8 +490,8 @@ encodeIdentified e =
                 ]
 
 
-identifiedDecoder : Decoder Identified
-identifiedDecoder =
+identifiableDecoder : Decoder Identifiable
+identifiableDecoder =
     Decode.field "for" Decode.string
         |> Decode.andThen
             (\for ->
@@ -509,7 +509,7 @@ identifiedDecoder =
                         Decode.field "type" (Decode.map AllEntityTypes ENT.decoder)
 
                     _ ->
-                        Decode.fail "Cannot find out what is Identified"
+                        Decode.fail "Cannot find out what is Identifiable"
             )
 
 
@@ -534,7 +534,7 @@ identifierTypeDecoder =
     Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
-        (Decode.field "applyTo" (Decode.list identifiedDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
+        (Decode.field "applyTo" (Decode.list identifiableDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
 
@@ -659,7 +659,7 @@ fromIdentifierType i =
     { name = i.name, fragments = i.fragments }
 
 
-compare : Identified -> String
+compare : Identifiable -> String
 compare i =
     toString i
         ++ " "
