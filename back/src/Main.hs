@@ -12,7 +12,7 @@ import Control.Concurrent (
     takeMVar,
     writeChan,
  )
-import Control.Monad (forever, when)
+import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString as BS (append)
@@ -81,7 +81,7 @@ wsApp f chan st pending_conn = do
     -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
     _ <-
         forkIO $
-            fix $
+            fix
                 ( \loop -> do
                     (n, ev) <- readChan chan'
                     when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
@@ -95,20 +95,20 @@ wsApp f chan st pending_conn = do
             do
                 messages <- receiveDataMessage conn
                 putStrLn $ "Received string from websocket from client " ++ show nc ++ ". Handling it : " ++ show messages
-                case JSON.decode $
+                case JSON.decode
                     ( case messages of
-                        Text bs _ -> (fromLazyByteString bs)
-                        Binary bs -> (fromLazyByteString bs)
+                        Text bs _ -> fromLazyByteString bs
+                        Binary bs -> fromLazyByteString bs
                     ) of
                     Just evs -> mapM (handleEvent f conn nc chan') evs
-                    Nothing -> mapM id [putStrLn $ "Error decoding incoming message"]
+                    Nothing -> sequence [putStrLn "Error decoding incoming message"]
 
 handleEvent :: FilePath -> Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
 handleEvent f conn nc chan ev =
     do
         -- store the event in the event store
-        when
-            (not $ isType "ConnectionInitiated" ev)
+        unless
+            (isType "ConnectionInitiated" ev)
             (ES.appendEvent f ev)
         -- if the event is a ConnectionInitiated, get the uuid list from it,
         -- and send back all the missing events (with an added ack)
@@ -120,19 +120,20 @@ handleEvent f conn nc chan ev =
                 let evs =
                         filter
                             ( \e -> case getMetaString "uuid" e of
-                                Just u -> not $ elem (T.unpack u) uuids
+                                Just u -> T.unpack u `notElem` uuids
                                 Nothing -> False
                             )
                             esevs
                 sendTextData conn $ JSON.encode evs
-                putStrLn $ "Sent all missing " ++ (show $ length evs) ++ " messsages to client " ++ (show nc)
+                putStrLn $ "Sent all missing " ++ show (length evs) ++ " messsages to client " ++ show nc
             )
         -- Send back and store an ACK to let the client know the message has been stored
+        -- Except for events that should be handled by another service
         let ev' = setProcessed ev
-        if not $ isType "ConnectionInitiated" ev then ES.appendEvent f ev' else return ()
+        unless (isType "ConnectionInitiated" ev || isType "IdentifierAdded" ev) $ ES.appendEvent f ev'
         sendTextData conn $ JSON.encode [ev']
         -- send the msg to other connected clients
-        putStrLn $ "Writing to the chan as client " ++ (show nc)
+        putStrLn $ "Writing to the chan as client " ++ show nc
         writeChan chan (nc, ev)
         writeChan chan (nc, ev')
 
@@ -155,7 +156,7 @@ httpApp (Options d _ _) request respond = do
 
 serve :: Options -> IO ()
 serve (Options d p f) = do
-    print $ "http://localhost:" ++ (show p) ++ "/"
+    print $ "http://localhost:" ++ show p ++ "/"
     st <- newMVar 0
     chan <- newChan
     run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)

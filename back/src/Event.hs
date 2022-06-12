@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Event (getUuids, Uuid, Event, getInt, setProcessed, getMetaString, excludeType, isType, isAfter) where
@@ -18,12 +19,12 @@ isType :: T.Text -> Event -> Bool
 isType t ev = getString "what" ev == Just t
 
 excludeType :: T.Text -> [Event] -> [Event]
-excludeType t = filter (\ev -> not $ isType t ev)
+excludeType t = filter (not . isType t)
 
 isAfter :: Time -> Event -> Bool
 isAfter t ev =
     case ev of
-        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
+        (JSON.Object o) -> case HashMap.lookup "meta" o of
             Just m -> case getInt "posixtime" m of
                 Just et -> et >= t
                 Nothing -> False
@@ -33,7 +34,7 @@ isAfter t ev =
 getInt :: T.Text -> Event -> Maybe Int
 getInt k e =
     case e of
-        (JSON.Object o) -> case (HashMap.lookup k o) of
+        (JSON.Object o) -> case HashMap.lookup k o of
             Just (JSON.Number n) -> Just n >>= toBoundedInteger
             _ -> Nothing
         _ -> Nothing
@@ -41,8 +42,8 @@ getInt k e =
 getMetaString :: T.Text -> Event -> Maybe T.Text
 getMetaString k e =
     case e of
-        (JSON.Object o) -> case (HashMap.lookup "meta" o) of
-            (Just (JSON.Object m)) -> case (HashMap.lookup k m) of
+        (JSON.Object o) -> case HashMap.lookup "meta" o of
+            (Just (JSON.Object m)) -> case HashMap.lookup k m of
                 Just (JSON.String s) -> Just s
                 _ -> Nothing
             _ -> Nothing
@@ -59,13 +60,13 @@ getString k e =
 getUuids :: Event -> [Uuid]
 getUuids e =
     case e of
-        (JSON.Object o) -> case (HashMap.lookup "load" o) of
+        (JSON.Object o) -> case HashMap.lookup "load" o of
             (Just (JSON.Object m)) ->
-                case (HashMap.lookup "uuids" m) of
+                case HashMap.lookup "uuids" m of
                     Just (JSON.Array uuids) ->
                         Vector.toList
                             ( fmap
-                                ( \v -> case v of
+                                ( \case
                                     JSON.String uuid -> T.unpack uuid
                                     _ -> ""
                                 )
@@ -78,7 +79,7 @@ getUuids e =
 setProcessed :: Event -> Event
 setProcessed e =
     case e of
-        JSON.Object o -> case (HashMap.lookup "meta" o) of
+        JSON.Object o -> case HashMap.lookup "meta" o of
             Just (JSON.Object m) -> JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" m) "meta" o
             _ -> e
         _ -> e

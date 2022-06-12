@@ -11,14 +11,14 @@ import Event (Event)
 
 appendEvent :: FilePath -> Event -> IO ()
 appendEvent f event =
-    IO.appendFile f $ (decodeUtf8 $ JSON.encode event) `T.append` "\n"
+    IO.appendFile f $ decodeUtf8 (JSON.encode event) `T.append` "\n"
 
 -- read the event store
 readEvents :: FilePath -> IO [Event]
 readEvents f =
     do
         es <- catch (IO.readFile f) handleMissing
-        case JSON.decode $ encodeUtf8 $ "[" `T.append` (T.intercalate "," $ T.lines es) `T.append` "]" of
+        case JSON.decode $ encodeUtf8 $ "[" `T.append` T.intercalate "," (T.lines es) `T.append` "]" of
             Just evs -> return evs
             Nothing -> return []
   where
