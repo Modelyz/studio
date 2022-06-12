@@ -48,37 +48,37 @@ encode entity =
         Resource r ->
             Encode.object
                 [ ( "what", Encode.string "Resource" )
-                , ( "type", R.encode r )
+                , ( "value", R.encode r )
                 ]
 
         Event e ->
             Encode.object
                 [ ( "what", Encode.string "Event" )
-                , ( "type", E.encode e )
+                , ( "value", E.encode e )
                 ]
 
         Agent a ->
             Encode.object
                 [ ( "what", Encode.string "Agent" )
-                , ( "type", A.encode a )
+                , ( "value", A.encode a )
                 ]
 
         Commitment cm ->
             Encode.object
                 [ ( "what", Encode.string "Commitment" )
-                , ( "type", CM.encode cm )
+                , ( "value", CM.encode cm )
                 ]
 
         Contract cn ->
             Encode.object
                 [ ( "what", Encode.string "Contract" )
-                , ( "type", CN.encode cn )
+                , ( "value", CN.encode cn )
                 ]
 
         Process p ->
             Encode.object
                 [ ( "what", Encode.string "Process" )
-                , ( "type", P.encode p )
+                , ( "value", P.encode p )
                 ]
 
 
@@ -87,7 +87,7 @@ decoder =
     Decode.field "what" Decode.string
         |> Decode.andThen
             (\t ->
-                Decode.field "type"
+                Decode.field "value"
                     (case t of
                         "Resource" ->
                             Decode.map Resource R.decoder

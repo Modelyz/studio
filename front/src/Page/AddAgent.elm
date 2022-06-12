@@ -16,7 +16,7 @@ import REA.Contract as CN exposing (Contract)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E exposing (Event)
-import REA.Ident as I exposing (Identifiable(..), Identifier)
+import REA.Ident as I exposing (Identifier, Scope(..))
 import REA.Process as P exposing (Process)
 import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -184,7 +184,7 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Event.Added e
-                                :: List.map (\i -> Event.IdentifierAdded { entity = e, identifier = i }) (Set.toList model.identifiers)
+                                :: List.map (\i -> Event.IdentifierAdded { identifiable = I.Entity e, identifier = i }) (Set.toList model.identifiers)
                             )
                         , redirect s.navkey Route.Agents |> Effect.fromCmd
                         ]

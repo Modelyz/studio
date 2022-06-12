@@ -12,7 +12,7 @@ import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as Ident exposing (EntityIdentifier, Identifier, IdentifierType)
+import REA.Ident as I exposing (Identifier, IdentifierType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -47,7 +47,7 @@ type alias State =
     -- behaviours
     , groups : DictSet String Group
     , identifierTypes : DictSet String IdentifierType
-    , identifiers : DictSet String EntityIdentifier
+    , identifiers : DictSet String I.EntityIdentifier
     }
 
 
@@ -77,8 +77,8 @@ empty =
     , groups = Set.empty G.compare
 
     -- behaviours
-    , identifierTypes = Set.empty Ident.compareIdentifierType
-    , identifiers = Set.empty Ident.compareEntityIdentifier
+    , identifierTypes = Set.empty I.compareIdentifierType
+    , identifiers = Set.empty I.compareEntityIdentifier
     }
 
 
@@ -205,9 +205,9 @@ aggregate (Event b p) state =
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        IdentifierAdded e ->
+        IdentifierAdded ei ->
             { state
-                | identifiers = Set.insert e state.identifiers
+                | identifiers = Set.insert ei state.identifiers
                 , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids

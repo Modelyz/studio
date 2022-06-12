@@ -15,14 +15,15 @@ type alias Name =
 
 
 type
-    Identifiable
-    -- We can identify a particular entity
+    Scope
+    -- This is the scope of an identifier
+    -- We can identify a particular entity:
     = OneEntity EN.Entity
-      -- or a certain entity type
+      -- or a certain entity type:
     | OneEntityType ENT.EntityType
-      -- or all the entities of a certain type
+      -- or all the entities of a certain type:
     | AllEntityTypes ENT.EntityType
-      -- or all the entity types of a certain type
+      -- or all the entity types of a certain type:
     | AllEntities ENT.EntityType
 
 
@@ -34,21 +35,29 @@ type alias IdentifierType =
     -- This is the configuration of an identifier
     { name : Name
     , fragments : List Fragment
-    , applyTo : DictSet String Identifiable
+    , applyTo : DictSet String Scope
     , unique : Bool
     , mandatory : Bool
     }
 
 
 type alias Identifier =
-    -- This is the value of an idenfiier
+    -- This is the value of an idenfiier (maybe before the entity even exists)
     { name : Name
     , fragments : List Fragment
     }
 
 
+type
+    Identifiable
+    -- What is identified
+    = Entity EN.Entity
+    | EntityType ENT.EntityType
+
+
 type alias EntityIdentifier =
-    { entity : Entity
+    -- the link between an identifiable and its identifier
+    { identifiable : Identifiable
     , identifier : Identifier
     }
 
@@ -88,7 +97,7 @@ getIdentifier name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
-toDesc : Identifiable -> String
+toDesc : Scope -> String
 toDesc id =
     case id of
         OneEntity e ->
@@ -104,7 +113,7 @@ toDesc id =
             "types whose parent type is " ++ toName et
 
 
-toString : Identifiable -> String
+toString : Scope -> String
 toString id =
     case id of
         OneEntity e ->
@@ -120,14 +129,24 @@ toString id =
             "AllEntityTypes"
 
 
+compareEntityIdentifier : EntityIdentifier -> String
+compareEntityIdentifier ei =
+    compareIdentifiable ei.identifiable ++ ei.identifier.name
+
+
+compareIdentifiable : Identifiable -> String
+compareIdentifiable i =
+    case i of
+        Entity e ->
+            "Entity " ++ EN.compare e
+
+        EntityType et ->
+            "EntityType " ++ ENT.compare et
+
+
 compareIdentifier : Identifier -> String
 compareIdentifier =
     .name
-
-
-compareEntityIdentifier : EntityIdentifier -> String
-compareEntityIdentifier ei =
-    EN.toString ei.entity ++ ei.identifier.name
 
 
 compareIdentifierType : IdentifierType -> String
@@ -352,103 +371,102 @@ fragmentToDesc f =
 
 
 encodeFragment : Fragment -> Encode.Value
-encodeFragment =
-    \f ->
-        case f of
-            Free value ->
-                Encode.object
-                    [ ( "type", Encode.string "Free" )
-                    , ( "value", Encode.string value )
-                    ]
+encodeFragment f =
+    case f of
+        Free value ->
+            Encode.object
+                [ ( "type", Encode.string "Free" )
+                , ( "value", Encode.string value )
+                ]
 
-            Fixed value ->
-                Encode.object
-                    [ ( "type", Encode.string "Fixed" )
-                    , ( "value", Encode.string value )
-                    ]
+        Fixed value ->
+            Encode.object
+                [ ( "type", Encode.string "Fixed" )
+                , ( "value", Encode.string value )
+                ]
 
-            Sequence padding step start value ->
-                Encode.object
-                    [ ( "type", Encode.string "Sequence" )
-                    , ( "padding", Encode.int padding )
-                    , ( "step", Encode.int step )
-                    , ( "start", Encode.int start )
-                    , ( "value", Maybe.map Encode.string value |> Maybe.withDefault Encode.null )
-                    ]
+        Sequence padding step start value ->
+            Encode.object
+                [ ( "type", Encode.string "Sequence" )
+                , ( "padding", Encode.int padding )
+                , ( "step", Encode.int step )
+                , ( "start", Encode.int start )
+                , ( "value", Maybe.map Encode.string value |> Maybe.withDefault Encode.null )
+                ]
 
-            Existing name value ->
-                Encode.object
-                    [ ( "type", Encode.string "Existing" )
-                    , ( "name", Encode.string name )
-                    , ( "value", Encode.string value )
-                    ]
+        Existing name value ->
+            Encode.object
+                [ ( "type", Encode.string "Existing" )
+                , ( "name", Encode.string name )
+                , ( "value", Encode.string value )
+                ]
 
-            YYYY value ->
-                Encode.object
-                    [ ( "type", Encode.string "YYYY" )
-                    , ( "value", Encode.int value )
-                    ]
+        YYYY value ->
+            Encode.object
+                [ ( "type", Encode.string "YYYY" )
+                , ( "value", Encode.int value )
+                ]
 
-            YY value ->
-                Encode.object
-                    [ ( "type", Encode.string "YY" )
-                    , ( "value", Encode.int value )
-                    ]
+        YY value ->
+            Encode.object
+                [ ( "type", Encode.string "YY" )
+                , ( "value", Encode.int value )
+                ]
 
-            MMMM value ->
-                Encode.object
-                    [ ( "type", Encode.string "MMMM" )
-                    , ( "value", encodeMonth value )
-                    ]
+        MMMM value ->
+            Encode.object
+                [ ( "type", Encode.string "MMMM" )
+                , ( "value", encodeMonth value )
+                ]
 
-            MM value ->
-                Encode.object
-                    [ ( "type", Encode.string "MM" )
-                    , ( "value", encodeMonth value )
-                    ]
+        MM value ->
+            Encode.object
+                [ ( "type", Encode.string "MM" )
+                , ( "value", encodeMonth value )
+                ]
 
-            Weekday value ->
-                Encode.object
-                    [ ( "type", Encode.string "Weekday" )
-                    , ( "value", encodeWeekday value )
-                    ]
+        Weekday value ->
+            Encode.object
+                [ ( "type", Encode.string "Weekday" )
+                , ( "value", encodeWeekday value )
+                ]
 
-            DoM value ->
-                Encode.object
-                    [ ( "type", Encode.string "DoM" )
-                    , ( "value", Encode.int value )
-                    ]
+        DoM value ->
+            Encode.object
+                [ ( "type", Encode.string "DoM" )
+                , ( "value", Encode.int value )
+                ]
 
-            Hour value ->
-                Encode.object
-                    [ ( "type", Encode.string "Hour" )
-                    , ( "value", Encode.int value )
-                    ]
+        Hour value ->
+            Encode.object
+                [ ( "type", Encode.string "Hour" )
+                , ( "value", Encode.int value )
+                ]
 
-            Minute value ->
-                Encode.object
-                    [ ( "type", Encode.string "Minute" )
-                    , ( "value", Encode.int value )
-                    ]
+        Minute value ->
+            Encode.object
+                [ ( "type", Encode.string "Minute" )
+                , ( "value", Encode.int value )
+                ]
 
-            Second value ->
-                Encode.object
-                    [ ( "type", Encode.string "Second" )
-                    , ( "value", Encode.int value )
-                    ]
+        Second value ->
+            Encode.object
+                [ ( "type", Encode.string "Second" )
+                , ( "value", Encode.int value )
+                ]
 
-            DateFrom name value ->
-                Encode.object
-                    [ ( "type", Encode.string "DateFrom" )
-                    , ( "name", Encode.string name )
-                    , ( "value", Encode.int (posixToMillis value) )
-                    ]
+        DateFrom name value ->
+            Encode.object
+                [ ( "type", Encode.string "DateFrom" )
+                , ( "name", Encode.string name )
+                , ( "value", Encode.int (posixToMillis value) )
+                ]
 
-            OtherIdentifier name ->
-                Encode.object
-                    [ ( "type", Encode.string "OtherIdentifier" )
-                    , ( "name", Encode.string name )
-                    ]
+        OtherIdentifier name ->
+            Encode.object
+                [ ( "type", Encode.string "OtherIdentifier" )
+                , ( "name", Encode.string name )
+                ]
 
 
 encodeIdentifierType : IdentifierType -> Encode.Value
@@ -456,14 +474,24 @@ encodeIdentifierType e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list encodeFragment e.fragments )
-        , ( "applyTo", Encode.list encodeIdentifiable <| Set.toList e.applyTo )
+        , ( "applyTo", Encode.list encodeScope <| Set.toList e.applyTo )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
 
 
 encodeIdentifiable : Identifiable -> Encode.Value
-encodeIdentifiable e =
+encodeIdentifiable i =
+    case i of
+        Entity e ->
+            EN.encode e
+
+        EntityType et ->
+            ENT.encode et
+
+
+encodeScope : Scope -> Encode.Value
+encodeScope e =
     case e of
         OneEntity entity ->
             Encode.object
@@ -490,8 +518,23 @@ encodeIdentifiable e =
                 ]
 
 
-identifiableDecoder : Decoder Identifiable
-identifiableDecoder =
+encodeEntityIdentifier : EntityIdentifier -> Encode.Value
+encodeEntityIdentifier ei =
+    Encode.object
+        [ ( "identifiable", encodeIdentifiable ei.identifiable )
+        , ( "identifier", encodeIdentifier ei.identifier )
+        ]
+
+
+entityIdentifierDecoder : Decoder EntityIdentifier
+entityIdentifierDecoder =
+    Decode.map2 EntityIdentifier
+        (Decode.field "identifiable" identifiableDecoder)
+        (Decode.field "identifier" identifierDecoder)
+
+
+scopeDecoder : Decoder Scope
+scopeDecoder =
     Decode.field "for" Decode.string
         |> Decode.andThen
             (\for ->
@@ -509,7 +552,7 @@ identifiableDecoder =
                         Decode.field "type" (Decode.map AllEntityTypes ENT.decoder)
 
                     _ ->
-                        Decode.fail "Cannot find out what is Identifiable"
+                        Decode.fail "Cannot decode the scope of this identifier type"
             )
 
 
@@ -521,22 +564,28 @@ encodeIdentifier e =
         ]
 
 
-encodeEntityIdentifier : EntityIdentifier -> Encode.Value
-encodeEntityIdentifier ei =
-    Encode.object
-        [ ( "entity", EN.encode ei.entity )
-        , ( "identifier", encodeIdentifier ei.identifier )
-        ]
-
-
 identifierTypeDecoder : Decoder IdentifierType
 identifierTypeDecoder =
     Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
-        (Decode.field "applyTo" (Decode.list identifiableDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
+        (Decode.field "applyTo" (Decode.list scopeDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
+
+
+identifiableDecoder : Decoder Identifiable
+identifiableDecoder =
+    -- some kind of intrusion into EN and ENT decoders
+    Decode.field "what" Decode.string
+        |> Decode.andThen
+            (\w ->
+                if (String.slice 0 4 <| String.reverse w) == "Type" then
+                    Decode.map EntityType ENT.decoder
+
+                else
+                    Decode.map Entity EN.decoder
+            )
 
 
 identifierDecoder : Decoder Identifier
@@ -544,13 +593,6 @@ identifierDecoder =
     Decode.map2 Identifier
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list fragmentDecoder))
-
-
-entityIdentifierDecoder : Decoder EntityIdentifier
-entityIdentifierDecoder =
-    Decode.map2 EntityIdentifier
-        (Decode.field "entity" EN.decoder)
-        (Decode.field "identifier" identifierDecoder)
 
 
 fragmentDecoder : Decoder Fragment
@@ -655,11 +697,11 @@ updateIdentifier index fragment identifier =
 
 
 fromIdentifierType : IdentifierType -> Identifier
-fromIdentifierType i =
-    { name = i.name, fragments = i.fragments }
+fromIdentifierType it =
+    { name = it.name, fragments = it.fragments }
 
 
-compare : Identifiable -> String
+compare : Scope -> String
 compare i =
     toString i
         ++ " "

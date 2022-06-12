@@ -10,7 +10,7 @@ import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.Group as G exposing (Group)
-import REA.Ident as I exposing (EntityIdentifier, Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
+import REA.Ident as I exposing (Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
@@ -68,7 +68,7 @@ type EventPayload
     | Removed Entity
     | TypeAdded EntityType
     | TypeRemoved EntityType
-    | IdentifierAdded EntityIdentifier
+    | IdentifierAdded I.EntityIdentifier
 
 
 toString : EventPayload -> String
