@@ -14,12 +14,14 @@ import Control.Concurrent (
  )
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
-import qualified Data.Aeson as JSON
+import Control.Monad.Trans (liftIO)
+import qualified Data.Aeson as JSON (decode, encode)
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Data.Text.IO as T
 import Event (Event, getMetaString, getUuids, isType, setProcessed)
 import qualified EventStore as ES
 import Network.HTTP.Types (status200)
@@ -40,9 +42,11 @@ import Network.WebSockets (
     defaultConnectionOptions,
     fromLazyByteString,
     receiveDataMessage,
+    runClient,
     sendTextData,
     withPingThread,
  )
+import qualified Network.WebSockets as WS
 import Options.Applicative
 
 -- dir, port, file
@@ -71,7 +75,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 wsApp :: FilePath -> Chan (NumClient, Event) -> WSState -> ServerApp
 wsApp f chan st pending_conn = do
-    chan' <- dupChan chan
+    elmChan <- dupChan chan -- channel to the browser application
     -- accept a new connexion
     conn <- acceptRequest pending_conn
     -- increment the sequence of clients
@@ -83,13 +87,14 @@ wsApp f chan st pending_conn = do
         forkIO $
             fix
                 ( \loop -> do
-                    (n, ev) <- readChan chan'
+                    (n, ev) <- readChan elmChan
                     when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
                         putStrLn $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
                         sendTextData conn $ JSON.encode [ev]
                     loop
                 )
-    -- loop on the handling of messages incoming through websocket
+
+    -- loop on the handling of events incoming through websocket
     withPingThread conn 30 (return ()) $
         forever $
             do
@@ -100,8 +105,26 @@ wsApp f chan st pending_conn = do
                         Text bs _ -> fromLazyByteString bs
                         Binary bs -> fromLazyByteString bs
                     ) of
-                    Just evs -> mapM (handleEvent f conn nc chan') evs
+                    Just evs -> mapM (handleEvent f conn nc elmChan) evs
                     Nothing -> sequence [putStrLn "Error decoding incoming message"]
+
+clientApp :: Chan (NumClient, Event) -> WS.ClientApp ()
+clientApp storeChan conn = do
+    putStrLn "Connected!"
+    -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
+
+    -- fork a thread to send back data from the channel to the central store
+    _ <- forkIO $
+        forever $ do
+            (n, ev) <- readChan storeChan
+            putStrLn $ "Sending back this event coming from microservice " ++ show n ++ " to the store: " ++ show ev
+            WS.sendTextData conn $ JSON.encode ev
+
+    -- Fork a thread that writes WS data to stdout.
+    -- TODO remove
+    forever $ do
+        msg <- WS.receiveData conn
+        liftIO $ T.putStrLn msg
 
 handleEvent :: FilePath -> Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
 handleEvent f conn nc chan ev =
@@ -137,8 +160,6 @@ handleEvent f conn nc chan ev =
         writeChan chan (nc, ev)
         writeChan chan (nc, ev')
 
--- TODO send the event back to the central event store so that it be handled by other microservices.
-
 httpApp :: Options -> Application
 httpApp (Options d _ _) request respond = do
     rawPathInfo request
@@ -156,9 +177,12 @@ httpApp (Options d _ _) request respond = do
 
 serve :: Options -> IO ()
 serve (Options d p f) = do
-    print $ "http://localhost:" ++ show p ++ "/"
+    putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
     st <- newMVar 0
     chan <- newChan
+    storeChan <- dupChan chan -- channel to the central event store
+    putStrLn "Connecting to ws://localhost:8081/"
+    _ <- forkIO $ runClient "localhost" 8081 "/" (clientApp storeChan)
     run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)
 
 main :: IO ()

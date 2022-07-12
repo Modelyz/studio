@@ -20,6 +20,7 @@ RUN apt-get update \
         libghc-wai-dev \
         libghc-wai-websockets-dev \
         libghc-warp-dev \
+        libghc-warp-tls-dev \
         libghc-websockets-dev \
         npm \
         rsync \

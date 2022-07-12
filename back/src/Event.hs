@@ -80,7 +80,8 @@ setProcessed :: Event -> Event
 setProcessed e =
     case e of
         JSON.Object o -> case HashMap.lookup "meta" o of
-            Just (JSON.Object m) -> JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" m) "meta" o
+            Just (JSON.Object m) ->
+                JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.toJSON $ HashMap.update (\_ -> Just $ JSON.String "Processed") "flow" m) "meta" o
             _ -> e
         _ -> e
 
