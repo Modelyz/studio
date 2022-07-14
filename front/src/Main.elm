@@ -3,6 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Events as Events
 import Element exposing (..)
+import Group.AddPage
 import Group.ListPage
 import Ident.AddPage
 import Ident.ListPage
@@ -124,6 +125,7 @@ main =
         -- behaviours
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
+        |> Spa.addPublicPage mappers Group.AddPage.match Group.AddPage.page
         |> Spa.addPublicPage mappers Group.ListPage.match Group.ListPage.page
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page

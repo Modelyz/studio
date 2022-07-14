@@ -4,14 +4,15 @@ import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Element.Region as Region
 import Event
 import Group.Group as Group exposing (Group)
-import REA.Entity as EN exposing (Entity(..), toString)
-import Route exposing (Route)
+import Html.Attributes as Attr
+import Prng.Uuid as Uuid
+import REA.Entity as Entity exposing (Entity, toPluralString, toUuid)
+import Result exposing (andThen)
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Style exposing (..)
@@ -21,41 +22,16 @@ import View.Radio as Radio
 
 
 type alias Model =
-    { route : Route
-    , form : Form
-    }
+    { route : Route }
 
 
 type Msg
     = Removed Group
-    | Added Group
-    | GotInput Form
-    | Warning String
+    | Add
 
 
 type alias Flags =
     { route : Route }
-
-
-type alias Form =
-    { name : String
-    , entities : DictSet String Entity
-    , warning : String
-    }
-
-
-empty : Form
-empty =
-    { name = "", entities = Set.empty EN.compare, warning = "" }
-
-
-validate : Form -> Maybe Group
-validate f =
-    if f.name == "" then
-        Nothing
-
-    else
-        Just { name = f.name }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -80,37 +56,19 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, form = empty }, closeMenu f s.menu )
+    ( { route = f.route }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        GotInput form ->
-            ( { model | form = form }, Effect.none )
-
-        Added group ->
-            ( { model
-                | form = empty
-              }
-            , Shared.dispatch s <| Event.GroupAdded { name = group.name }
+        Removed g ->
+            ( model
+            , Shared.dispatch s <| Event.GroupRemoved g.name
             )
 
-        Removed group ->
-            let
-                form =
-                    model.form
-            in
-            ( { model | form = { form | warning = "" } }
-            , Shared.dispatch s <| Event.GroupRemoved group.name
-            )
-
-        Warning w ->
-            let
-                form =
-                    model.form
-            in
-            ( { model | form = { form | warning = "" } }, Effect.none )
+        Add ->
+            ( model, redirect s.navkey Route.AddGroup |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -118,62 +76,28 @@ view s model =
     { title = "Groups"
     , attributes = []
     , element = viewContent model
-    , route = model.route
+    , route = Route.Groups
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    let
-        form =
-            model.form
-    in
-    column [ width fill, alignTop, padding 20 ]
-        [ column [ Border.shadow shadowStyle, padding 20, centerX, alignTop ]
-            [ column
-                [ spacing 20 ]
-                [ h1 "Groups"
-                , if Set.size s.state.groups > 0 then
-                    p "Existing groups:"
-
-                  else
-                    p "There are no groups yet. Create your first one!"
-                , wrappedRow
-                    [ spacing 10 ]
-                    (s.state.groups
-                        |> Set.toList
-                        |> List.map (\g -> viewSmallCard (Removed g) Nothing (text g.name) ("(Group of " ++ ")"))
+    flatContent s
+        "Groups"
+        [ button.primary Add "Add..."
+        ]
+        [ wrappedRow
+            [ spacing 10 ]
+            (s.state.groups
+                |> Set.toList
+                |> List.sortBy .name
+                |> List.map
+                    (\g ->
+                        viewSmallCard (Removed g)
+                            Nothing
+                            (text g.name)
+                            ""
                     )
-                , column
-                    [ spacing 20 ]
-                    [ text "Add a new Group:"
-                    , row []
-                        [ Input.text
-                            [ Input.focusedOnLoad
-                            , Maybe.map Added (validate model.form)
-                                |> Maybe.withDefault (Warning "Incomplete form")
-                                |> View.onEnter
-                            ]
-                            { onChange = \n -> GotInput { form | name = n }
-                            , text = model.form.name
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Name of the new group"
-                            , label = Input.labelLeft [] <| text "Name"
-                            }
-                        ]
-                    ]
-                , row [ spacing 20 ]
-                    [ button.primary
-                        (Maybe.map Added (validate model.form)
-                            |> Maybe.withDefault (Warning "Incomplete form")
-                        )
-                        "Add"
-                    , if model.form.warning /= "" then
-                        paragraph [ Font.color color.text.warning ] [ text model.form.warning ]
-
-                      else
-                        none
-                    ]
-                ]
-            ]
+                |> withDefaultContent (p "There are no Groups yet. Create your first one!")
+            )
         ]
