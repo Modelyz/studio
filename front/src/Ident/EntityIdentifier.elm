@@ -3,7 +3,7 @@ module Ident.EntityIdentifier exposing (..)
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
 import Element exposing (..)
-import Ident.Identifiable as Identifiable exposing (Identifiable, isRelated)
+import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -20,9 +20,10 @@ type alias EntityIdentifier =
     }
 
 
-select : Entity -> String -> DictSet String EntityIdentifier -> Maybe EntityIdentifier
-select entity name =
-    Set.filter (\i -> i.identifier.name == name && isRelated entity i.identifiable) >> Set.toList >> List.head
+select : Entity -> DictSet String EntityIdentifier -> List Identifier
+select entity =
+    -- select all the identifiers EntityIdentifier from the existing ones
+    Set.filter (\i -> Identifiable.Entity entity == i.identifiable) >> Set.toList >> List.map (\i -> i.identifier)
 
 
 compare : EntityIdentifier -> String

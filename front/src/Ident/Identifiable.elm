@@ -17,16 +17,6 @@ type
     | EntityType ENT.EntityType
 
 
-isRelated : Entity -> Identifiable -> Bool
-isRelated entity identifiable =
-    case identifiable of
-        EntityType _ ->
-            False
-
-        Entity e ->
-            toUuid e == toUuid entity
-
-
 compare : Identifiable -> String
 compare i =
     case i of
@@ -59,3 +49,13 @@ decoder =
                 else
                     Decode.map Entity EN.decoder
             )
+
+
+toString : Identifiable -> String
+toString identifiable =
+    case identifiable of
+        Entity e ->
+            EN.toString e
+
+        EntityType et ->
+            ENT.toString et

@@ -23,36 +23,40 @@ type alias Config msg =
     }
 
 
-displayIdentifier : Model a -> EntityIdentifier -> Element msg
-displayIdentifier model ei =
-    let
-        id =
-            ei.identifier
-
-        ie =
-            ei.identifiable
-    in
-    row [ spacing 5 ] <|
-        List.map (\f -> displayFragment model ie f id) id.fragments
-
-
-defaultIdentifier : Model a -> Entity -> ViewType -> Maybe EntityIdentifier
-defaultIdentifier model ent vt =
-    case ent of
-        Agent a ->
-            case vt of
-                Smallcard ->
-                    EntityIdentifier.select (Agent a) "Display name" model.identifiers
-
-                New ->
-                    Nothing
-
-        _ ->
-            Nothing
+displayIdentifier : Identifiable -> List Identifier -> Element msg
+displayIdentifier identifiable identifiers =
+    -- display the first identifier, which may depend on others in the list
+    identifiers
+        |> List.head
+        |> Maybe.map
+            (\identifier ->
+                row [ spacing 5 ] <|
+                    List.map (\f -> displayFragment f identifiable identifiers) identifier.fragments
+            )
+        |> Maybe.withDefault (text <| Identifiable.toString identifiable)
 
 
-displayFragment : Model a -> Identifiable -> Fragment -> Identifier -> Element msg
-displayFragment model ie fragment ident =
+selectIdentifier : Identifiable -> ViewType -> List Identifier -> List Identifier
+selectIdentifier identifiable vt identifiers =
+    -- TODO make "Display name" configurable against the view type and the identifiable
+    case vt of
+        Smallcard ->
+            identifiers
+                |> List.sortBy
+                    (\i ->
+                        if i.name == "Display name" then
+                            0
+
+                        else
+                            1
+                    )
+
+        New ->
+            []
+
+
+displayFragment : Fragment -> Identifiable -> List Identifier -> Element msg
+displayFragment fragment identifiable identifiers =
     case fragment of
         Free value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
@@ -61,16 +65,9 @@ displayFragment model ie fragment ident =
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
 
         OtherIdentifier name ->
-            case ie of
-                Entity e ->
-                    EntityIdentifier.select e name model.identifiers
-                        |> Maybe.map .identifier
-                        |> Maybe.map (\i -> String.join " " <| List.map Fragment.toValue i.fragments)
-                        |> Maybe.withDefault ("(Error in this identifier: " ++ name ++ " does not exist)")
-                        |> text
-
-                _ ->
-                    text "Not Implemented"
+            identifiers
+                |> List.filter (\i -> i.name == name)
+                |> displayIdentifier identifiable
 
         Sequence padding step start value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]

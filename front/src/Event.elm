@@ -227,8 +227,8 @@ encode (Event b p) =
             Removed e ->
                 ( "load", EN.encode e )
 
-            IdentifierAdded eid ->
-                ( "load", EntityIdentifier.encode eid )
+            IdentifierAdded ei ->
+                ( "load", EntityIdentifier.encode ei )
         ]
 
 

@@ -8,7 +8,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
-import Ident.View exposing (defaultIdentifier, displayIdentifier)
+import Ident.EntityIdentifier as EntityIdentifier
+import Ident.Identifiable as Identifiable
+import Ident.View exposing (displayIdentifier, selectIdentifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
 import REA.Entity as EN exposing (Entity, toPluralString)
@@ -97,9 +99,9 @@ viewContent model vt s =
                             (\e ->
                                 viewSmallCard (Removed e)
                                     Nothing
-                                    (defaultIdentifier s.state e Smallcard
-                                        |> Maybe.map (displayIdentifier s.state)
-                                        |> Maybe.withDefault (text <| EN.toString e)
+                                    (EntityIdentifier.select e s.state.identifiers
+                                        |> selectIdentifier (Identifiable.Entity e) Smallcard
+                                        |> displayIdentifier (Identifiable.Entity e)
                                     )
                                     ("Type: " ++ EN.toType e)
                             )
