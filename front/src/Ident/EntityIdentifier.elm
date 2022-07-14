@@ -22,7 +22,6 @@ type alias EntityIdentifier =
 
 select : Entity -> DictSet String EntityIdentifier -> List Identifier
 select entity =
-    -- select all the identifiers EntityIdentifier from the existing ones
     Set.filter (\i -> Identifiable.Entity entity == i.identifiable) >> Set.toList >> List.map (\i -> i.identifier)
 
 

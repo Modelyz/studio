@@ -3,6 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Events as Events
 import Element exposing (..)
+import Group.ListPage
 import Ident.AddPage
 import Ident.ListPage
 import Json.Encode as Encode
@@ -19,7 +20,6 @@ import Page.Agents
 import Page.CommitmentTypes
 import Page.ContractTypes
 import Page.EventTypes
-import Page.Groups
 import Page.Home
 import Page.Process
 import Page.ProcessType
@@ -124,7 +124,7 @@ main =
         -- behaviours
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
-        |> Spa.addPublicPage mappers Page.Groups.match Page.Groups.page
+        |> Spa.addPublicPage mappers Group.ListPage.match Group.ListPage.page
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
         -- add entity type

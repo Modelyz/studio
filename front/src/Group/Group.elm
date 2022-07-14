@@ -1,4 +1,4 @@
-module REA.Group exposing (Group, compare, decoder, encode)
+module Group.Group exposing (Group, compare, decoder, encode)
 
 import Json.Decode exposing (Decoder, Value)
 import Json.Encode

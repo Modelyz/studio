@@ -2,6 +2,7 @@ port module Event exposing (Event(..), EventBase, EventPayload(..), base, compar
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
+import Group.Group as Group exposing (Group)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
@@ -11,7 +12,6 @@ import REA.Commitment as CM exposing (Commitment)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
-import REA.Group as G exposing (Group)
 import REA.Process as P exposing (Process)
 import REA.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
@@ -207,7 +207,7 @@ encode (Event b p) =
                 )
 
             GroupAdded g ->
-                ( "load", G.encode g )
+                ( "load", Group.encode g )
 
             GroupRemoved g ->
                 ( "load", Encode.string g )
@@ -297,7 +297,7 @@ decoder =
 
                         "GroupAdded" ->
                             Decode.map GroupAdded
-                                (Decode.field "load" G.decoder)
+                                (Decode.field "load" Group.decoder)
 
                         "GroupRemoved" ->
                             Decode.map GroupRemoved

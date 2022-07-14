@@ -1,4 +1,4 @@
-module Page.Groups exposing (match, page, view)
+module Group.ListPage exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -9,8 +9,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Event
+import Group.Group as Group exposing (Group)
 import REA.Entity as EN exposing (Entity(..), toString)
-import REA.Group exposing (Group)
 import Route exposing (Route)
 import Shared
 import Spa.Page

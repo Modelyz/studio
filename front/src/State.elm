@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import DictSet as Set exposing (DictSet)
 import Event exposing (Event(..), EventPayload(..), base)
 import EventFlow exposing (EventFlow(..))
+import Group.Group as Group exposing (Group, compare)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -13,7 +14,6 @@ import REA.Contract as CN exposing (Contract)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
-import REA.Group as G exposing (Group, compare)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -75,7 +75,7 @@ empty =
     , process_events = Set.empty PE.compare
     , restrictions = Set.empty Restriction.compare
     , process_commitments = Set.empty PC.compare
-    , groups = Set.empty G.compare
+    , groups = Set.empty Group.compare
 
     -- behaviours
     , identifierTypes = Set.empty IdentifierType.compare
