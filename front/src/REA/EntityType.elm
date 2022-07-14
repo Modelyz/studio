@@ -185,6 +185,11 @@ onlyType t ets =
     Set.filter (\et -> toString et == t) ets
 
 
+select : String -> DictSet String EntityType -> Maybe EntityType
+select name =
+    onlyType name >> Set.toList >> List.head
+
+
 toUrl : EntityType -> String
 toUrl et =
     absolute

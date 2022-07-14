@@ -10,7 +10,9 @@ import Event
 import Html.Attributes as Attr
 import Ident.EntityIdentifier as EntityIdentifier
 import Ident.Identifiable as Identifiable
-import Ident.View exposing (displayIdentifier, selectIdentifier)
+import Ident.Identifier as Identifier
+import Ident.Scope exposing (Scope(..))
+import Ident.View exposing (displayIdentifiers, selectIdentifiers)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
 import REA.Entity as EN exposing (Entity, toPluralString)
@@ -100,8 +102,8 @@ viewContent model vt s =
                                 viewSmallCard (Removed e)
                                     Nothing
                                     (EntityIdentifier.select e s.state.identifiers
-                                        |> selectIdentifier (Identifiable.Entity e) Smallcard
-                                        |> displayIdentifier (Identifiable.Entity e)
+                                        |> selectIdentifiers Smallcard
+                                        |> displayIdentifiers
                                     )
                                     ("Type: " ++ EN.toType e)
                             )

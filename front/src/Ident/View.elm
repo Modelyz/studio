@@ -23,51 +23,40 @@ type alias Config msg =
     }
 
 
-displayIdentifier : Identifiable -> List Identifier -> Element msg
-displayIdentifier identifiable identifiers =
+displayIdentifiers : List Identifier -> Element msg
+displayIdentifiers identifiers =
     -- display the first identifier, which may depend on others in the list
-    identifiers
-        |> List.head
-        |> Maybe.map
-            (\identifier ->
-                row [ spacing 5 ] <|
-                    List.map (\f -> displayFragment f identifiable identifiers) identifier.fragments
-            )
-        |> Maybe.withDefault (text <| Identifiable.toString identifiable)
+    row [ spacing 5 ]
+        (identifiers
+            |> List.map
+                (\identifier ->
+                    row [ spacing 5 ] <|
+                        List.map (\f -> displayFragment f identifiers) identifier.fragments
+                )
+        )
 
 
-selectIdentifier : Identifiable -> ViewType -> List Identifier -> List Identifier
-selectIdentifier identifiable vt identifiers =
-    -- TODO make "Display name" configurable against the view type and the identifiable
-    case vt of
+selectIdentifiers : ViewType -> List Identifier -> List Identifier
+selectIdentifiers viewtype identifiers =
+    -- TODO make this configurable against the view type and the identifiable
+    case viewtype of
         Smallcard ->
-            identifiers
-                |> List.sortBy
-                    (\i ->
-                        if i.name == "Display name" then
-                            0
-
-                        else
-                            1
-                    )
+            (identifiers |> List.filter (\i -> i.name == "NCODE"))
+                ++ (identifiers |> List.filter (\i -> i.name == "Prénom"))
+                ++ (identifiers |> List.filter (\i -> i.name == "Nom"))
 
         New ->
             []
 
 
-displayFragment : Fragment -> Identifiable -> List Identifier -> Element msg
-displayFragment fragment identifiable identifiers =
+displayFragment : Fragment -> List Identifier -> Element msg
+displayFragment fragment identifiers =
     case fragment of
         Free value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
 
         Fixed value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
-
-        OtherIdentifier name ->
-            identifiers
-                |> List.filter (\i -> i.name == name)
-                |> displayIdentifier identifiable
 
         Sequence padding step start value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]

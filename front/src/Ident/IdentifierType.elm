@@ -12,13 +12,9 @@ import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
-type alias Name =
-    String
-
-
 type alias IdentifierType =
     -- This is the configuration of an identifier
-    { name : Name
+    { name : String
     , fragments : List Fragment
     , applyTo : DictSet String Scope
     , unique : Bool

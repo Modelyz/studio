@@ -3,7 +3,9 @@ module Ident.Identifier exposing (..)
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
 import Ident.Fragment as Fragment exposing (Fragment)
+import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.IdentifierType exposing (IdentifierType)
+import Ident.Scope exposing (Scope)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid

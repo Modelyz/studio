@@ -62,12 +62,6 @@ inputFragment c model index fragment ident =
         Fixed value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
 
-        OtherIdentifier name ->
-            Identifier.select name model.identifiers
-                |> Maybe.map (\i -> String.join " " <| List.map Fragment.toValue i.fragments)
-                |> Maybe.withDefault ("(Error in this identifier: " ++ name ++ " does not exist)")
-                |> text
-
         Sequence padding step start value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
 

@@ -29,7 +29,6 @@ type Fragment
     | Minute Int
     | Second Int
     | DateFrom Name Posix
-    | OtherIdentifier Name
 
 
 type alias Padding =
@@ -60,7 +59,6 @@ all =
     , Minute 0
     , Second 0
     , DateFrom "" (millisToPosix 0)
-    , OtherIdentifier ""
     ]
 
 
@@ -109,9 +107,6 @@ toString f =
         DateFrom from value ->
             "Date from another field"
 
-        OtherIdentifier name ->
-            "Value from another identifier"
-
 
 toName : Fragment -> Maybe String
 toName f =
@@ -157,9 +152,6 @@ toName f =
 
         DateFrom from value ->
             Nothing
-
-        OtherIdentifier name ->
-            Just name
 
 
 toValue : Fragment -> String
@@ -207,10 +199,6 @@ toValue f =
         DateFrom from value ->
             String.fromInt <| posixToMillis value
 
-        -- WARNING don't use toValue to retrieve an OtherIdentifier value
-        OtherIdentifier name ->
-            name
-
 
 toDesc : Fragment -> String
 toDesc f =
@@ -256,9 +244,6 @@ toDesc f =
 
         DateFrom from _ ->
             "Date coming from another field: " ++ from
-
-        OtherIdentifier name ->
-            "Value from the identifier: " ++ name
 
 
 encode : Fragment -> Encode.Value
@@ -353,12 +338,6 @@ encode f =
                 , ( "value", Encode.int (posixToMillis value) )
                 ]
 
-        OtherIdentifier name ->
-            Encode.object
-                [ ( "type", Encode.string "OtherIdentifier" )
-                , ( "name", Encode.string name )
-                ]
-
 
 decoder : Decoder Fragment
 decoder =
@@ -411,9 +390,6 @@ decoder =
 
                     "DateFrom" ->
                         Decode.map2 DateFrom (Decode.field "name" Decode.string) (Decode.field "value" Decode.int |> Decode.andThen (millisToPosix >> Decode.succeed))
-
-                    "OtherIdentifier" ->
-                        Decode.map OtherIdentifier (Decode.field "name" Decode.string)
 
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
