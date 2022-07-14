@@ -142,7 +142,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Set.toList
-                        |> List.map (\g -> viewSmallCard (Removed g) Nothing g.name ("(Group of " ++ ")"))
+                        |> List.map (\g -> viewSmallCard (Removed g) Nothing (text g.name) ("(Group of " ++ ")"))
                     )
                 , column
                     [ spacing 20 ]

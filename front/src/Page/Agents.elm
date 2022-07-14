@@ -11,12 +11,14 @@ import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
 import REA.Entity as EN exposing (Entity, toPluralString)
+import REA.Ident exposing (identifierValue)
 import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Style exposing (..)
 import View exposing (..)
+import View.DisplayIdentifiers exposing (defaultIdentifier, displayIdentifier)
 import View.Navbar as Navbar
 import View.Radio as Radio
 
@@ -75,22 +77,36 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Agents"
     , attributes = []
-    , element = viewContent model
+    , element = viewContent model Smallcard
     , route = Route.Agents
     }
 
 
-viewContent : Model -> Shared.Model -> Element Msg
-viewContent model s =
-    flatContent s
-        "Agents"
-        [ button.primary Add "Add..."
-        ]
-        [ wrappedRow
-            [ spacing 10 ]
-            (s.state.entities
-                |> Set.toList
-                |> List.map (\e -> viewSmallCard (Removed e) Nothing (EN.toString e) ("Type: " ++ EN.toType e))
-                |> withDefaultContent (p "There are no Agents yet. Create your first one!")
-            )
-        ]
+viewContent : Model -> ViewType -> Shared.Model -> Element Msg
+viewContent model vt s =
+    case vt of
+        Smallcard ->
+            flatContent s
+                "Agents"
+                [ button.primary Add "Add..."
+                ]
+                [ wrappedRow
+                    [ spacing 10 ]
+                    (s.state.entities
+                        |> Set.toList
+                        |> List.map
+                            (\e ->
+                                viewSmallCard (Removed e)
+                                    Nothing
+                                    (defaultIdentifier s.state e Smallcard
+                                        |> Maybe.map (displayIdentifier s.state)
+                                        |> Maybe.withDefault (text <| EN.toString e)
+                                    )
+                                    ("Type: " ++ EN.toType e)
+                            )
+                        |> withDefaultContent (p "There are no Agents yet. Create your first one!")
+                    )
+                ]
+
+        New ->
+            text "New"

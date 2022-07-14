@@ -5,7 +5,7 @@ import DictSet as Set exposing (DictSet)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid
-import REA.Entity as EN exposing (Entity, toUuid)
+import REA.Entity as EN exposing (Entity(..), toUuid)
 import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
@@ -42,7 +42,7 @@ type alias IdentifierType =
 
 
 type alias Identifier =
-    -- This is the value of an idenfiier (maybe before the entity even exists)
+    -- This is the value of an idenfier (maybe before the entity even exists)
     { name : Name
     , fragments : List Fragment
     }
@@ -95,6 +95,21 @@ type alias Step =
 getIdentifier : String -> DictSet String Identifier -> Maybe Identifier
 getIdentifier name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
+
+
+isRelated : Entity -> Identifiable -> Bool
+isRelated entity identifiable =
+    case identifiable of
+        EntityType _ ->
+            False
+
+        Entity e ->
+            toUuid e == toUuid entity
+
+
+getEntityIdentifier : Entity -> String -> DictSet String EntityIdentifier -> Maybe EntityIdentifier
+getEntityIdentifier entity name =
+    Set.filter (\i -> i.identifier.name == name && isRelated entity i.identifiable) >> Set.toList >> List.head
 
 
 toDesc : Scope -> String
@@ -317,8 +332,13 @@ fragmentToValue f =
         DateFrom from value ->
             String.fromInt <| posixToMillis value
 
+        -- WARNING don't use fragmentToValue to retrieve an OtherIdentifier value
         OtherIdentifier name ->
-            "??"
+            name
+
+
+
+-- Don't use fragmentToValue to retrieve an Other Identifier
 
 
 fragmentToDesc : Fragment -> String

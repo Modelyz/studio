@@ -99,7 +99,7 @@ viewContent model s =
                         in
                         viewSmallCard (Removed i)
                             Nothing
-                            i.name
+                            (text i.name)
                             (if List.isEmpty ids then
                                 "for everything"
 

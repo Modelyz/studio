@@ -11,6 +11,8 @@ import Element.Region as Region
 import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
+import REA.Entity exposing (Entity(..))
+import REA.Ident exposing (Identifiable(..), Identifier, getEntityIdentifier, identifierValue)
 import Route exposing (Route)
 import Shared
 import Style exposing (..)
@@ -207,14 +209,14 @@ onEnter msg =
         )
 
 
-viewSmallCard : msg -> Maybe String -> String -> String -> Element msg
+viewSmallCard : msg -> Maybe String -> Element msg -> String -> Element msg
 viewSmallCard deleteMsg url title description =
     let
         titleelm =
-            row [ Font.size size.text.main, padding 10 ] [ text title ]
+            row [ Font.size size.text.main, padding 10 ] [ title ]
     in
     row
-        [ htmlAttribute <| Attr.id title ]
+        []
         [ column [ Background.color color.item.background ]
             [ row [ spacing 10, width fill ]
                 [ Maybe.withDefault titleelm <| Maybe.map (\u -> link [] { url = u, label = titleelm }) url

@@ -26,14 +26,17 @@ inputIdentifiers c model =
         (model.identifiers
             |> Set.toList
             |> List.map
-                (\identifier ->
-                    column []
-                        [ el [ paddingXY 0 10 ] <| text identifier.name
-                        , row [ spacing 5 ] <|
-                            List.indexedMap (\i f -> inputFragment c model i f identifier) identifier.fragments
-                        ]
-                )
+                (\i -> inputIdentifier c model i)
         )
+
+
+inputIdentifier : Config msg -> Model a -> Identifier -> Element msg
+inputIdentifier c model id =
+    column []
+        [ el [ paddingXY 0 10 ] <| text id.name
+        , row [ spacing 5 ] <|
+            List.indexedMap (\i f -> inputFragment c model i f id) id.fragments
+        ]
 
 
 inputFragment : Config msg -> Model a -> Int -> Fragment -> Identifier -> Element msg
@@ -65,4 +68,4 @@ inputFragment c model index fragment ident =
             row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
 
         _ ->
-            text "other"
+            text "Not Implemented"

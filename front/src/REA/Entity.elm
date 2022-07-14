@@ -23,23 +23,23 @@ type Entity
 toType : Entity -> String
 toType entity =
     case entity of
-        Resource x ->
-            x.type_
+        Resource r ->
+            r.type_
 
-        Event x ->
-            x.type_
+        Event e ->
+            e.type_
 
-        Agent x ->
-            x.type_
+        Agent a ->
+            a.type_
 
-        Commitment x ->
-            x.type_
+        Commitment c ->
+            c.type_
 
-        Contract x ->
-            x.type_
+        Contract c ->
+            c.type_
 
-        Process x ->
-            x.type_
+        Process p ->
+            p.type_
 
 
 encode : Entity -> Value
@@ -137,6 +137,7 @@ toUuid e =
 
 toString : Entity -> String
 toString e =
+    -- TODO rename to toUuidString
     case e of
         Process p ->
             "Process " ++ Uuid.toString p.uuid
