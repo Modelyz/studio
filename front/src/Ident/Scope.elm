@@ -1,4 +1,4 @@
-module REA.Ident exposing (..)
+module Ident.Scope exposing (..)
 
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
@@ -10,13 +10,10 @@ import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
-type alias Name =
-    String
-
-
 type
     Scope
     -- This is the scope of an identifier
+    -- TODO: also identify all entities or of a group ?
     -- We can identify a particular entity:
     = OneEntity EN.Entity
       -- or a certain entity type:
@@ -25,10 +22,6 @@ type
     | AllEntityTypes ENT.EntityType
       -- or all the entity types of a certain type:
     | AllEntities ENT.EntityType
-
-
-
--- TODO: also identify all entities or of a group ?
 
 
 toDesc : Scope -> String
@@ -63,8 +56,8 @@ toString id =
             "AllEntityTypes"
 
 
-encodeScope : Scope -> Encode.Value
-encodeScope e =
+encode : Scope -> Encode.Value
+encode e =
     case e of
         OneEntity entity ->
             Encode.object
@@ -91,8 +84,8 @@ encodeScope e =
                 ]
 
 
-scopeDecoder : Decoder Scope
-scopeDecoder =
+decoder : Decoder Scope
+decoder =
     Decode.field "for" Decode.string
         |> Decode.andThen
             (\for ->

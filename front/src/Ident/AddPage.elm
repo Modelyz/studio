@@ -1,4 +1,4 @@
-module Page.AddIdentifierType exposing (..)
+module Ident.AddPage exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -9,10 +9,12 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Event
+import Ident.Fragment as Fragment exposing (Fragment(..))
+import Ident.IdentifierType exposing (IdentifierType)
+import Ident.Scope as Scope exposing (Scope(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Entity as EN exposing (toType, toUuid)
 import REA.EntityType as ENT exposing (EntityType(..))
-import REA.Ident as Ident exposing (Fragment(..), IdentifierType, Scope(..), allFragments, fragmentToDesc, fragmentToName, fragmentToString)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -93,7 +95,7 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
       , name = ""
-      , applyTo = Set.empty Ident.compare
+      , applyTo = Set.empty Scope.compare
       , unique = False
       , mandatory = False
       , fragments = []
@@ -262,7 +264,7 @@ viewContent model s =
 viewItem : Model -> Scope -> Element Msg
 viewItem model i =
     row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| Ident.toDesc i)
+        [ el [ paddingXY 10 2 ] (text <| Scope.toDesc i)
         , button.primary (InputScope <| Set.remove i model.applyTo) "×"
         ]
 
@@ -335,7 +337,7 @@ inputFragmentConfs model =
                         |> List.indexedMap
                             (\i fragment ->
                                 row [ Background.color color.item.background ]
-                                    [ el [ paddingXY 10 2 ] (text <| fragmentToString fragment)
+                                    [ el [ paddingXY 10 2 ] (text <| Fragment.toString fragment)
                                     , inputFragmentConf model.fragments i fragment
                                     , button.primary
                                         (InputFormat
@@ -363,11 +365,11 @@ inputFragmentConfs model =
                         , spacing 10
                         , height (px 150)
                         ]
-                        [ el [] (text <| fragmentToString f)
-                        , paragraph [ Font.size size.text.main ] [ text <| fragmentToDesc f ]
+                        [ el [] (text <| Fragment.toString f)
+                        , paragraph [ Font.size size.text.main ] [ text <| Fragment.toDesc f ]
                         ]
                 )
-                allFragments
+                Fragment.all
         ]
 
 
@@ -391,7 +393,7 @@ inputFragmentConf fragments index fragment =
                             )
                 , text = value
                 , placeholder =
-                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                    Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Fixed"
                 }
 
@@ -412,7 +414,7 @@ inputFragmentConf fragments index fragment =
                             )
                 , text = value
                 , placeholder =
-                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                    Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Existing"
                 }
 
@@ -433,7 +435,7 @@ inputFragmentConf fragments index fragment =
                             )
                 , text = name
                 , placeholder =
-                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                    Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Other identifier"
                 }
 
@@ -454,7 +456,7 @@ inputFragmentConf fragments index fragment =
                             )
                 , text = name
                 , placeholder =
-                    Just <| Input.placeholder [] <| text <| fragmentToString fragment
+                    Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Existing"
                 }
 

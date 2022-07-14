@@ -8,17 +8,16 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import Ident.View exposing (defaultIdentifier, displayIdentifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (..)
 import REA.Entity as EN exposing (Entity, toPluralString)
-import REA.Ident exposing (identifierValue)
 import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Style exposing (..)
 import View exposing (..)
-import View.DisplayIdentifiers exposing (defaultIdentifier, displayIdentifier)
 import View.Navbar as Navbar
 import View.Radio as Radio
 

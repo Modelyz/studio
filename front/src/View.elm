@@ -12,7 +12,6 @@ import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
 import REA.Entity exposing (Entity(..))
-import REA.Ident exposing (Identifiable(..), Identifier, getEntityIdentifier, identifierValue)
 import Route exposing (Route)
 import Shared
 import Style exposing (..)

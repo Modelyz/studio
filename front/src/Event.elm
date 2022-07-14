@@ -2,6 +2,8 @@ port module Event exposing (Event(..), EventBase, EventPayload(..), base, compar
 
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
+import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
+import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -10,7 +12,6 @@ import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.Group as G exposing (Group)
-import REA.Ident as I exposing (Fragment, Identifier, IdentifierType, encodeFragment, fragmentDecoder)
 import REA.Process as P exposing (Process)
 import REA.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
@@ -68,7 +69,7 @@ type EventPayload
     | Removed Entity
     | TypeAdded EntityType
     | TypeRemoved EntityType
-    | IdentifierAdded I.EntityIdentifier
+    | IdentifierAdded EntityIdentifier
 
 
 toString : EventPayload -> String
@@ -212,10 +213,10 @@ encode (Event b p) =
                 ( "load", Encode.string g )
 
             IdentifierTypeAdded it ->
-                ( "load", I.encodeIdentifierType it )
+                ( "load", IdentifierType.encode it )
 
             IdentifierTypeRemoved it ->
-                ( "load", I.encodeIdentifierType it )
+                ( "load", IdentifierType.encode it )
 
             TypeAdded e ->
                 ( "load", ENT.encode e )
@@ -227,7 +228,7 @@ encode (Event b p) =
                 ( "load", EN.encode e )
 
             IdentifierAdded eid ->
-                ( "load", I.encodeEntityIdentifier eid )
+                ( "load", EntityIdentifier.encode eid )
         ]
 
 
@@ -304,11 +305,11 @@ decoder =
 
                         "IdentifierTypeAdded" ->
                             Decode.map IdentifierTypeAdded
-                                (Decode.field "load" I.identifierTypeDecoder)
+                                (Decode.field "load" IdentifierType.decoder)
 
                         "IdentifierTypeRemoved" ->
                             Decode.map IdentifierTypeRemoved
-                                (Decode.field "load" I.identifierTypeDecoder)
+                                (Decode.field "load" IdentifierType.decoder)
 
                         "TypeAdded" ->
                             Decode.map TypeAdded
@@ -324,7 +325,7 @@ decoder =
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
-                                (Decode.field "load" I.entityIdentifierDecoder)
+                                (Decode.field "load" EntityIdentifier.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Event type: " ++ t

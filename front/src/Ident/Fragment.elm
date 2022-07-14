@@ -1,4 +1,4 @@
-module REA.Ident exposing (..)
+module Ident.Fragment exposing (..)
 
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
@@ -12,54 +12,6 @@ import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMilli
 
 type alias Name =
     String
-
-
-type
-    Scope
-    -- This is the scope of an identifier
-    -- We can identify a particular entity:
-    = OneEntity EN.Entity
-      -- or a certain entity type:
-    | OneEntityType ENT.EntityType
-      -- or all the entities of a certain type:
-    | AllEntityTypes ENT.EntityType
-      -- or all the entity types of a certain type:
-    | AllEntities ENT.EntityType
-
-
-
--- TODO: also identify all entities or of a group ?
-
-
-type alias IdentifierType =
-    -- This is the configuration of an identifier
-    { name : Name
-    , fragments : List Fragment
-    , applyTo : DictSet String Scope
-    , unique : Bool
-    , mandatory : Bool
-    }
-
-
-type alias Identifier =
-    -- This is the value of an idenfier (maybe before the entity even exists)
-    { name : Name
-    , fragments : List Fragment
-    }
-
-
-type
-    Identifiable
-    -- What is identified
-    = Entity EN.Entity
-    | EntityType ENT.EntityType
-
-
-type alias EntityIdentifier =
-    -- the link between an identifiable and its identifier
-    { identifiable : Identifiable
-    , identifier : Identifier
-    }
 
 
 type Fragment
@@ -92,85 +44,8 @@ type alias Step =
     Int
 
 
-getIdentifier : String -> DictSet String Identifier -> Maybe Identifier
-getIdentifier name =
-    Set.filter (\i -> i.name == name) >> Set.toList >> List.head
-
-
-isRelated : Entity -> Identifiable -> Bool
-isRelated entity identifiable =
-    case identifiable of
-        EntityType _ ->
-            False
-
-        Entity e ->
-            toUuid e == toUuid entity
-
-
-getEntityIdentifier : Entity -> String -> DictSet String EntityIdentifier -> Maybe EntityIdentifier
-getEntityIdentifier entity name =
-    Set.filter (\i -> i.identifier.name == name && isRelated entity i.identifiable) >> Set.toList >> List.head
-
-
-toDesc : Scope -> String
-toDesc id =
-    case id of
-        OneEntity e ->
-            "entity " ++ Uuid.toString (toUuid e)
-
-        OneEntityType et ->
-            toName et
-
-        AllEntities et ->
-            "entities of type " ++ toName et
-
-        AllEntityTypes et ->
-            "types whose parent type is " ++ toName et
-
-
-toString : Scope -> String
-toString id =
-    case id of
-        OneEntity e ->
-            "OneEntity"
-
-        OneEntityType et ->
-            "OneEntityType"
-
-        AllEntities et ->
-            "AllEntities"
-
-        AllEntityTypes et ->
-            "AllEntityTypes"
-
-
-compareEntityIdentifier : EntityIdentifier -> String
-compareEntityIdentifier ei =
-    compareIdentifiable ei.identifiable ++ ei.identifier.name
-
-
-compareIdentifiable : Identifiable -> String
-compareIdentifiable i =
-    case i of
-        Entity e ->
-            "Entity " ++ EN.compare e
-
-        EntityType et ->
-            "EntityType " ++ ENT.compare et
-
-
-compareIdentifier : Identifier -> String
-compareIdentifier =
-    .name
-
-
-compareIdentifierType : IdentifierType -> String
-compareIdentifierType =
-    .name
-
-
-allFragments : List Fragment
-allFragments =
+all : List Fragment
+all =
     [ Free ""
     , Fixed ""
     , Sequence 4 1 0 Nothing
@@ -189,8 +64,8 @@ allFragments =
     ]
 
 
-fragmentToString : Fragment -> String
-fragmentToString f =
+toString : Fragment -> String
+toString f =
     case f of
         Free value ->
             "Free"
@@ -238,8 +113,8 @@ fragmentToString f =
             "Value from another identifier"
 
 
-fragmentToName : Fragment -> Maybe String
-fragmentToName f =
+toName : Fragment -> Maybe String
+toName f =
     case f of
         Free value ->
             Nothing
@@ -287,8 +162,8 @@ fragmentToName f =
             Just name
 
 
-fragmentToValue : Fragment -> String
-fragmentToValue f =
+toValue : Fragment -> String
+toValue f =
     case f of
         Free value ->
             value
@@ -332,17 +207,13 @@ fragmentToValue f =
         DateFrom from value ->
             String.fromInt <| posixToMillis value
 
-        -- WARNING don't use fragmentToValue to retrieve an OtherIdentifier value
+        -- WARNING don't use toValue to retrieve an OtherIdentifier value
         OtherIdentifier name ->
             name
 
 
-
--- Don't use fragmentToValue to retrieve an Other Identifier
-
-
-fragmentToDesc : Fragment -> String
-fragmentToDesc f =
+toDesc : Fragment -> String
+toDesc f =
     case f of
         Free _ ->
             "A free text that you will be able to enter to identify a new entity."
@@ -390,8 +261,8 @@ fragmentToDesc f =
             "Value from the identifier: " ++ name
 
 
-encodeFragment : Fragment -> Encode.Value
-encodeFragment f =
+encode : Fragment -> Encode.Value
+encode f =
     case f of
         Free value ->
             Encode.object
@@ -489,134 +360,8 @@ encodeFragment f =
                 ]
 
 
-encodeIdentifierType : IdentifierType -> Encode.Value
-encodeIdentifierType e =
-    Encode.object
-        [ ( "name", Encode.string e.name )
-        , ( "fragments", Encode.list encodeFragment e.fragments )
-        , ( "applyTo", Encode.list encodeScope <| Set.toList e.applyTo )
-        , ( "unique", Encode.bool e.unique )
-        , ( "mandatory", Encode.bool e.mandatory )
-        ]
-
-
-encodeIdentifiable : Identifiable -> Encode.Value
-encodeIdentifiable i =
-    case i of
-        Entity e ->
-            EN.encode e
-
-        EntityType et ->
-            ENT.encode et
-
-
-encodeScope : Scope -> Encode.Value
-encodeScope e =
-    case e of
-        OneEntity entity ->
-            Encode.object
-                [ ( "for", Encode.string "OneEntity" )
-                , ( "entity", EN.encode entity )
-                ]
-
-        OneEntityType entityType ->
-            Encode.object
-                [ ( "for", Encode.string "OneEntityType" )
-                , ( "type", ENT.encode entityType )
-                ]
-
-        AllEntities entityType ->
-            Encode.object
-                [ ( "for", Encode.string "AllEntities" )
-                , ( "type", ENT.encode entityType )
-                ]
-
-        AllEntityTypes entityType ->
-            Encode.object
-                [ ( "for", Encode.string "AllEntityTypes" )
-                , ( "type", ENT.encode entityType )
-                ]
-
-
-encodeEntityIdentifier : EntityIdentifier -> Encode.Value
-encodeEntityIdentifier ei =
-    Encode.object
-        [ ( "identifiable", encodeIdentifiable ei.identifiable )
-        , ( "identifier", encodeIdentifier ei.identifier )
-        ]
-
-
-entityIdentifierDecoder : Decoder EntityIdentifier
-entityIdentifierDecoder =
-    Decode.map2 EntityIdentifier
-        (Decode.field "identifiable" identifiableDecoder)
-        (Decode.field "identifier" identifierDecoder)
-
-
-scopeDecoder : Decoder Scope
-scopeDecoder =
-    Decode.field "for" Decode.string
-        |> Decode.andThen
-            (\for ->
-                case for of
-                    "OneEntity" ->
-                        Decode.field "type" (Decode.map OneEntity EN.decoder)
-
-                    "OneEntityType" ->
-                        Decode.field "type" (Decode.map OneEntityType ENT.decoder)
-
-                    "AllEntities" ->
-                        Decode.field "type" (Decode.map AllEntities ENT.decoder)
-
-                    "AllEntityTypes" ->
-                        Decode.field "type" (Decode.map AllEntityTypes ENT.decoder)
-
-                    _ ->
-                        Decode.fail "Cannot decode the scope of this identifier type"
-            )
-
-
-encodeIdentifier : Identifier -> Encode.Value
-encodeIdentifier e =
-    Encode.object
-        [ ( "name", Encode.string e.name )
-        , ( "fragments", Encode.list encodeFragment e.fragments )
-        ]
-
-
-identifierTypeDecoder : Decoder IdentifierType
-identifierTypeDecoder =
-    Decode.map5 IdentifierType
-        (Decode.field "name" Decode.string)
-        (Decode.field "fragments" (Decode.list fragmentDecoder))
-        (Decode.field "applyTo" (Decode.list scopeDecoder |> Decode.andThen (Set.fromList compare >> Decode.succeed)))
-        (Decode.field "unique" Decode.bool)
-        (Decode.field "mandatory" Decode.bool)
-
-
-identifiableDecoder : Decoder Identifiable
-identifiableDecoder =
-    -- some kind of intrusion into EN and ENT decoders
-    Decode.field "what" Decode.string
-        |> Decode.andThen
-            (\w ->
-                if (String.slice 0 4 <| String.reverse w) == "Type" then
-                    Decode.map EntityType ENT.decoder
-
-                else
-                    Decode.map Entity EN.decoder
-            )
-
-
-identifierDecoder : Decoder Identifier
-identifierDecoder =
-    Decode.map2 Identifier
-        (Decode.field "name" Decode.string)
-        (Decode.field "fragments" (Decode.list fragmentDecoder))
-
-
-fragmentDecoder : Decoder Fragment
-fragmentDecoder =
+decoder : Decoder Fragment
+decoder =
     Decode.field "type" Decode.string
         |> Decode.andThen
             (\t ->
@@ -673,68 +418,3 @@ fragmentDecoder =
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
             )
-
-
-identifierValue : Identifier -> String
-identifierValue i =
-    i.fragments |> List.map fragmentToValue |> String.concat
-
-
-updateIdentifierType : Int -> Fragment -> IdentifierType -> IdentifierType
-updateIdentifierType index fragment identifierType =
-    let
-        fragments =
-            identifierType.fragments
-                |> List.indexedMap Tuple.pair
-                |> List.map
-                    (\( i, f ) ->
-                        if i == index then
-                            fragment
-
-                        else
-                            f
-                    )
-    in
-    { identifierType | fragments = fragments }
-
-
-updateIdentifier : Int -> Fragment -> Identifier -> Identifier
-updateIdentifier index fragment identifier =
-    let
-        fragments =
-            identifier.fragments
-                |> List.indexedMap Tuple.pair
-                |> List.map
-                    (\( i, f ) ->
-                        if i == index then
-                            fragment
-
-                        else
-                            f
-                    )
-    in
-    { identifier | fragments = fragments }
-
-
-fromIdentifierType : IdentifierType -> Identifier
-fromIdentifierType it =
-    { name = it.name, fragments = it.fragments }
-
-
-compare : Scope -> String
-compare i =
-    toString i
-        ++ " "
-        ++ (case i of
-                OneEntity e ->
-                    EN.compare e
-
-                OneEntityType et ->
-                    ENT.compare et
-
-                AllEntities et ->
-                    ENT.compare et
-
-                AllEntityTypes et ->
-                    ENT.compare et
-           )

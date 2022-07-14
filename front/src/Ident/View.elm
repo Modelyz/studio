@@ -1,17 +1,26 @@
-module View.DisplayIdentifiers exposing (..)
+module Ident.View exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
+import Ident.Fragment as Fragment exposing (Fragment(..))
+import Ident.Identifiable as Identifiable exposing (Identifiable(..))
+import Ident.Identifier as Identifier exposing (Identifier)
 import REA.Entity exposing (Entity(..))
-import REA.Ident exposing (EntityIdentifier, Fragment(..), Identifiable(..), Identifier, Name, fragmentToName, fragmentToString, fragmentToValue, getEntityIdentifier, getIdentifier, identifierValue, updateIdentifier)
 import Style exposing (size)
 import View exposing (ViewType(..))
 
 
 type alias Model a =
     { a | identifiers : DictSet String EntityIdentifier }
+
+
+type alias Config msg =
+    { onEnter : msg
+    , onInput : Identifier -> msg
+    }
 
 
 displayIdentifier : Model a -> EntityIdentifier -> Element msg
@@ -33,7 +42,7 @@ defaultIdentifier model ent vt =
         Agent a ->
             case vt of
                 Smallcard ->
-                    getEntityIdentifier (Agent a) "Display name" model.identifiers
+                    EntityIdentifier.select (Agent a) "Display name" model.identifiers
 
                 New ->
                     Nothing
@@ -54,9 +63,9 @@ displayFragment model ie fragment ident =
         OtherIdentifier name ->
             case ie of
                 Entity e ->
-                    getEntityIdentifier e name model.identifiers
+                    EntityIdentifier.select e name model.identifiers
                         |> Maybe.map .identifier
-                        |> Maybe.map (\i -> String.join " " <| List.map fragmentToValue i.fragments)
+                        |> Maybe.map (\i -> String.join " " <| List.map Fragment.toValue i.fragments)
                         |> Maybe.withDefault ("(Error in this identifier: " ++ name ++ " does not exist)")
                         |> text
 

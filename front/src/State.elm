@@ -4,6 +4,8 @@ import Dict exposing (Dict)
 import DictSet as Set exposing (DictSet)
 import Event exposing (Event(..), EventPayload(..), base)
 import EventFlow exposing (EventFlow(..))
+import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
+import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.Commitment as CM exposing (Commitment)
@@ -12,7 +14,6 @@ import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E
 import REA.Group as G exposing (Group, compare)
-import REA.Ident as I exposing (Identifier, IdentifierType)
 import REA.Process as P exposing (Process)
 import REA.ProcessCommitments as PC exposing (ProcessCommitments)
 import REA.ProcessEvents as PE exposing (ProcessEvents)
@@ -47,7 +48,7 @@ type alias State =
     -- behaviours
     , groups : DictSet String Group
     , identifierTypes : DictSet String IdentifierType
-    , identifiers : DictSet String I.EntityIdentifier
+    , identifiers : DictSet String EntityIdentifier
     }
 
 
@@ -77,8 +78,8 @@ empty =
     , groups = Set.empty G.compare
 
     -- behaviours
-    , identifierTypes = Set.empty I.compareIdentifierType
-    , identifiers = Set.empty I.compareEntityIdentifier
+    , identifierTypes = Set.empty IdentifierType.compare
+    , identifiers = Set.empty EntityIdentifier.compare
     }
 
 

@@ -1,4 +1,4 @@
-module Page.IdentifierTypes exposing (match, page, view)
+module Ident.ListPage exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -8,9 +8,10 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
+import Ident.Scope as Scope
 import Prng.Uuid as Uuid
 import REA.Entity as Entity exposing (Entity, toPluralString, toUuid)
-import REA.Ident as Ident exposing (Fragment(..), Identifiable(..), IdentifierType, toDesc)
 import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared
@@ -104,7 +105,7 @@ viewContent model s =
                                 "for everything"
 
                              else
-                                "for " ++ (ids |> List.map toDesc |> String.join ", ")
+                                "for " ++ (ids |> List.map Scope.toDesc |> String.join ", ")
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

@@ -9,6 +9,10 @@ import Element.Font as Font
 import Element.Input as Input
 import Event
 import Html.Attributes as Attr
+import Ident.Identifiable as Identifiable
+import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.Input exposing (inputIdentifiers)
+import Ident.Scope exposing (Scope(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Agent as A exposing (Agent)
 import REA.Commitment as CM exposing (Commitment)
@@ -16,7 +20,6 @@ import REA.Contract as CN exposing (Contract)
 import REA.Entity as EN exposing (Entity)
 import REA.EntityType as ENT exposing (EntityType)
 import REA.Event as E exposing (Event)
-import REA.Ident as I exposing (Identifier, Scope(..))
 import REA.Process as P exposing (Process)
 import REA.Resource as R exposing (Resource)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -28,7 +31,6 @@ import Style exposing (..)
 import Time exposing (millisToPosix)
 import View exposing (..)
 import View.FlatSelect exposing (flatselect)
-import View.InputIdentifiers exposing (..)
 import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, previousStep)
@@ -118,7 +120,7 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , uuid = newUuid
-      , identifiers = Set.empty I.compareIdentifier
+      , identifiers = Set.empty Identifier.compare
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -135,7 +137,7 @@ update s msg model =
                 Nothing ->
                     ( { model
                         | flatselect = Nothing
-                        , identifiers = Set.empty I.compareIdentifier
+                        , identifiers = Set.empty Identifier.compare
                       }
                     , Effect.none
                     )
@@ -166,7 +168,7 @@ update s msg model =
                                             )
                                             et
                                     )
-                                |> Set.map I.compareIdentifier I.fromIdentifierType
+                                |> Set.map Identifier.compare Identifier.fromIdentifierType
                       }
                     , Effect.none
                     )
@@ -184,7 +186,7 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Event.Added e
-                                :: List.map (\i -> Event.IdentifierAdded { identifiable = I.Entity e, identifier = i }) (Set.toList model.identifiers)
+                                :: List.map (\i -> Event.IdentifierAdded { identifiable = Identifiable.Entity e, identifier = i }) (Set.toList model.identifiers)
                             )
                         , redirect s.navkey Route.Agents |> Effect.fromCmd
                         ]
