@@ -6,7 +6,8 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Entity.Entity as Entity exposing (Entity, only, toPluralString, toUuid)
+import Entity.Entity as Entity exposing (Entity, only, toPluralString, toType, toUuid)
+import EntityType.EntityType exposing (toName)
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
 import Ident.EntityIdentifier as EntityIdentifier
@@ -95,14 +96,14 @@ viewContent model s =
                 |> Set.toList
                 |> List.sortBy Entity.compare
                 |> List.map
-                    (\e ->
-                        viewSmallCard (Removed e)
+                    (\g ->
+                        viewSmallCard (Removed g)
                             Nothing
-                            (EntityIdentifier.restrict e s.state.identifiers
+                            (EntityIdentifier.restrict g s.state.identifiers
                                 |> selectIdentifiers Smallcard
                                 |> displayIdentifiers
                             )
-                            ""
+                            ("Group of " ++ (g |> toType))
                     )
                 |> withDefaultContent (p "There are no Groups yet. Create your first one!")
             )

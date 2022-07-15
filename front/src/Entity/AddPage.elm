@@ -26,7 +26,7 @@ import Process.Process as Process exposing (Process)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Resource.Resource as Resource exposing (Resource)
 import Result exposing (andThen)
-import Route exposing (Route, redirect)
+import Route exposing (Route, redirectParent)
 import Shared
 import Spa.Page
 import Style exposing (..)
@@ -103,16 +103,6 @@ validate m =
 
         Nothing ->
             Err "You must select an Entity Type"
-
-
-match : Route -> Maybe Flags
-match route =
-    case route of
-        Route.AddAgent ->
-            Just { route = route }
-
-        _ ->
-            Nothing
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
@@ -192,7 +182,7 @@ update c s msg model =
                             (Message.Added e
                                 :: List.map (\i -> Message.IdentifierAdded { identifiable = Identifiable.Entity e, identifier = i }) (Set.toList model.identifiers)
                             )
-                        , redirect s.navkey Route.Agents |> Effect.fromCmd
+                        , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
                     )
 
@@ -205,7 +195,7 @@ update c s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -213,10 +203,10 @@ update c s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirect s.navkey Route.Agents |> Effect.fromCmd )
+            ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
 
 view : Config -> Shared.Model -> Model -> View Msg
@@ -281,7 +271,7 @@ viewContent c model s =
                         model
     in
     cardContent s
-        "Adding an Agent"
+        c.pageTitle
         buttons
         [ step
         ]

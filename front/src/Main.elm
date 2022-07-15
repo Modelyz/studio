@@ -142,7 +142,7 @@ main =
         -- list entities
         |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
         -- add entity
-        |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
+        |> Spa.addPublicPage mappers Agent.AddPage.match Agent.AddPage.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
             , init = Shared.init

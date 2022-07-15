@@ -19,6 +19,7 @@ type Route
     | AddResourceType
     | AddEventType
     | AddAgentType
+    | AddAgent
     | AddCommitmentType
     | AddContractType
     | ProcessType String
@@ -27,7 +28,6 @@ type Route
     | CommitmentTypes
     | EventTypes
     | Agents
-    | AddAgent
     | GroupTypes
     | AddGroupType
     | Groups
@@ -41,45 +41,45 @@ routeParser =
     oneOf
         [ map Home top
 
-        -- list types
+        -- Resource
         , map ResourceTypes (s "resource-types")
-        , map EventTypes (s "event-types")
-        , map AgentTypes (s "agent-types")
-        , map CommitmentTypes (s "commitment-types")
-        , map ContractTypes (s "contract-types")
-        , map ProcessTypes (s "process-types")
+        , map AddResourceType (s "resource-types" </> s "add")
 
-        -- list behaviours
-        , map IdentifierTypes (s "identifierTypes")
+        -- Contract
+        , map ContractTypes (s "contract-types")
+        , map AddContractType (s "contract-types" </> s "add")
+
+        -- Process
+        , map ProcessTypes (s "process-types")
+        , map AddProcessType (s "process-types" </> s "add")
+        , map Processes (s "processes" <?> Query.string "type")
+        , map ProcessType (s "process-type" </> encodedString)
+        , map Process (s "process" </> encodedString)
+
+        -- Group
         , map GroupTypes (s "group-types")
         , map AddGroupType (s "group-types" </> s "add")
         , map Groups (s "groups")
         , map AddGroup (s "groups" </> s "add")
 
-        -- add behaviours
-        , map AddIdentifierType (s "identifierTypes" </> s "add")
+        -- Ident
+        , map AddIdentifierType (s "identifier-types" </> s "add")
+        , map IdentifierTypes (s "identifier-types")
 
-        -- add types
-        , map AddResourceType (s "resource-types" </> s "add")
+        -- Event
         , map AddEventType (s "event-types" </> s "add")
-        , map AddAgentType (s "agent-types" </> s "add")
+        , map EventTypes (s "event-types")
         , map AddCommitmentType (s "commitment-types" </> s "add")
-        , map AddContractType (s "contract-types" </> s "add")
-        , map AddProcessType (s "process-types" </> s "add")
+        , map CommitmentTypes (s "commitment-types")
 
-        -- add entities
+        -- Agent
+        , map AddAgentType (s "agent-types" </> s "add")
+        , map AgentTypes (s "agent-types")
+        , map AgentType (s "agent-type" </> encodedString)
+        , map Agents (s "agents")
         , map AddAgent (s "agents" </> s "add")
 
-        -- list entities
-        , map Agents (s "agents")
-        , map Processes (s "processes" <?> Query.string "type")
-
-        -- edit types
-        , map ProcessType (s "process-type" </> encodedString)
-
         -- edit entities
-        , map Process (s "process" </> encodedString)
-        , map AgentType (s "agent-type" </> encodedString)
         ]
 
 
@@ -120,6 +120,15 @@ toString r =
         EventTypes ->
             absolute [ "event-types" ] []
 
+        Agents ->
+            absolute [ "agents" ] []
+
+        AddAgent ->
+            absolute [ "agents", "add" ] []
+
+        AgentType at ->
+            absolute [ "agent-type", percentEncode at ] []
+
         AgentTypes ->
             absolute [ "agent-types" ] []
 
@@ -147,9 +156,6 @@ toString r =
         AddContractType ->
             absolute [ "contract-type", "add" ] []
 
-        AgentType at ->
-            absolute [ "agent-type", percentEncode at ] []
-
         Process p ->
             absolute [ "process", percentEncode p ] []
 
@@ -166,16 +172,10 @@ toString r =
             absolute [ "groups" ] []
 
         IdentifierTypes ->
-            absolute [ "identifierTypes" ] []
+            absolute [ "identifier-types" ] []
 
         AddIdentifierType ->
-            absolute [ "identifierTypes", "add" ] []
-
-        Agents ->
-            absolute [ "agents" ] []
-
-        AddAgent ->
-            absolute [ "agents", "add" ] []
+            absolute [ "identifier-types", "add" ] []
 
 
 firstSegment : Route -> String
