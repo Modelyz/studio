@@ -22,8 +22,8 @@ import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import qualified Data.Text.IO as T
-import Event (Event, getMetaString, getUuids, isType, setProcessed)
-import qualified EventStore as ES
+import Message (Message, getMetaString, getUuids, isType, setProcessed)
+import qualified MessageStore as ES
 import Network.HTTP.Types (status200)
 import Network.Wai (
     Application,
@@ -65,7 +65,7 @@ options =
     Options
         <$> strOption (short 'd' <> long "dir" <> value "." <> help "Directory containing the index file and static directory")
         <*> portOption
-        <*> strOption (short 'f' <> long "file" <> value "eventstore.txt" <> help "Filename of the file containing events")
+        <*> strOption (short 'f' <> long "file" <> value "messagestore.txt" <> help "Filename of the file containing messages")
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -73,7 +73,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-wsApp :: FilePath -> Chan (NumClient, Event) -> WSState -> ServerApp
+wsApp :: FilePath -> Chan (NumClient, Message) -> WSState -> ServerApp
 wsApp f chan st pending_conn = do
     elmChan <- dupChan chan -- channel to the browser application
     -- accept a new connexion
@@ -89,12 +89,12 @@ wsApp f chan st pending_conn = do
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
                     when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
-                        putStrLn $ "Read event on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
+                        putStrLn $ "Read message on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
                         sendTextData conn $ JSON.encode [ev]
                     loop
                 )
 
-    -- loop on the handling of events incoming through websocket
+    -- loop on the handling of messages incoming through websocket
     withPingThread conn 30 (return ()) $
         forever $
             do
@@ -105,10 +105,10 @@ wsApp f chan st pending_conn = do
                         Text bs _ -> fromLazyByteString bs
                         Binary bs -> fromLazyByteString bs
                     ) of
-                    Just evs -> mapM (handleEvent f conn nc elmChan) evs
+                    Just evs -> mapM (handleMessage f conn nc elmChan) evs
                     Nothing -> sequence [putStrLn "Error decoding incoming message"]
 
-clientApp :: Chan (NumClient, Event) -> WS.ClientApp ()
+clientApp :: Chan (NumClient, Message) -> WS.ClientApp ()
 clientApp storeChan conn = do
     putStrLn "Connected!"
     -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
@@ -117,7 +117,7 @@ clientApp storeChan conn = do
     _ <- forkIO $
         forever $ do
             (n, ev) <- readChan storeChan
-            putStrLn $ "Sending back this event coming from microservice " ++ show n ++ " to the store: " ++ show ev
+            putStrLn $ "Sending back this message coming from microservice " ++ show n ++ " to the store: " ++ show ev
             WS.sendTextData conn $ JSON.encode ev
 
     -- Fork a thread that writes WS data to stdout.
@@ -126,20 +126,20 @@ clientApp storeChan conn = do
         msg <- WS.receiveData conn
         liftIO $ T.putStrLn msg
 
-handleEvent :: FilePath -> Connection -> NumClient -> Chan (NumClient, Event) -> Event -> IO ()
-handleEvent f conn nc chan ev =
+handleMessage :: FilePath -> Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
+handleMessage f conn nc chan ev =
     do
-        -- store the event in the event store
+        -- store the message in the message store
         unless
             (isType "ConnectionInitiated" ev)
-            (ES.appendEvent f ev)
-        -- if the event is a ConnectionInitiated, get the uuid list from it,
-        -- and send back all the missing events (with an added ack)
+            (ES.appendMessage f ev)
+        -- if the message is a ConnectionInitiated, get the uuid list from it,
+        -- and send back all the missing messages (with an added ack)
         when
             (isType "ConnectionInitiated" ev)
             ( do
                 let uuids = getUuids ev
-                esevs <- ES.readEvents f
+                esevs <- ES.readMessages f
                 let evs =
                         filter
                             ( \e -> case getMetaString "uuid" e of
@@ -151,9 +151,9 @@ handleEvent f conn nc chan ev =
                 putStrLn $ "Sent all missing " ++ show (length evs) ++ " messsages to client " ++ show nc
             )
         -- Send back and store an ACK to let the client know the message has been stored
-        -- Except for events that should be handled by another service
+        -- Except for messages that should be handled by another service
         let ev' = setProcessed ev
-        unless (isType "ConnectionInitiated" ev || isType "IdentifierAdded" ev) $ ES.appendEvent f ev'
+        unless (isType "ConnectionInitiated" ev || isType "IdentifierAdded" ev) $ ES.appendMessage f ev'
         sendTextData conn $ JSON.encode [ev']
         -- send the msg to other connected clients
         putStrLn $ "Writing to the chan as client " ++ show nc
@@ -180,7 +180,7 @@ serve (Options d p f) = do
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
     st <- newMVar 0
     chan <- newChan
-    storeChan <- dupChan chan -- channel to the central event store
+    storeChan <- dupChan chan -- channel to the central message store
     putStrLn "Connecting to ws://localhost:8081/"
     _ <- forkIO $ runClient "localhost" 8081 "/" (clientApp storeChan)
     run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)

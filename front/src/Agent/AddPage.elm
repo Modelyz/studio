@@ -13,13 +13,13 @@ import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity)
 import EntityType.EntityType as EntityType exposing (EntityType)
 import Event.Event as Event exposing (Event)
-import Events
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
 import Ident.Identifiable as Identifiable
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
 import Ident.Scope exposing (Scope(..))
+import Message
 import Navbar
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
@@ -189,8 +189,8 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Events.Added e
-                                :: List.map (\i -> Events.IdentifierAdded { identifiable = Identifiable.Entity e, identifier = i }) (Set.toList model.identifiers)
+                            (Message.Added e
+                                :: List.map (\i -> Message.IdentifierAdded { identifiable = Identifiable.Entity e, identifier = i }) (Set.toList model.identifiers)
                             )
                         , redirect s.navkey Route.Agents |> Effect.fromCmd
                         ]

@@ -1,15 +1,15 @@
-module EventFlow exposing (EventFlow(..), decoder, encode)
+module MessageFlow exposing (MessageFlow(..), decoder, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
 
 
-type EventFlow
+type MessageFlow
     = Requested
     | Processed
 
 
-toString : EventFlow -> String
+toString : MessageFlow -> String
 toString f =
     case f of
         Requested ->
@@ -19,13 +19,13 @@ toString f =
             "Processed"
 
 
-encode : EventFlow -> Encode.Value
+encode : MessageFlow -> Encode.Value
 encode f =
     Encode.string
         (toString f)
 
 
-decoder : Decode.Decoder EventFlow
+decoder : Decode.Decoder MessageFlow
 decoder =
     Decode.string
         |> Decode.andThen
@@ -38,5 +38,5 @@ decoder =
                         Decode.succeed Processed
 
                     _ ->
-                        Decode.fail "Unkown EventFlow"
+                        Decode.fail "Unkown MessageFlow"
             )

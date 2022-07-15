@@ -10,10 +10,10 @@ import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity
 import EntityType.EntityType as EntityType exposing (EntityType(..))
-import Events
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
+import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
@@ -133,7 +133,7 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Events.IdentifierTypeAdded i
+                        [ Shared.dispatch s <| Message.IdentifierTypeAdded i
                         , redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd
                         ]
                     )

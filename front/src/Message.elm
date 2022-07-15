@@ -1,16 +1,16 @@
-port module Events exposing (EventBase, EventPayload(..), Message(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readEvents, storeEvents, storeEventsToSend)
+port module Message exposing (Message(..), Metadata, Payload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
 
 import Commitment.Commitment as CM exposing (Commitment)
 import DictSet as Set
 import Entity.Entity as EN exposing (Entity)
 import EntityType.EntityType as ENT exposing (EntityType)
-import EventFlow exposing (EventFlow, decoder)
 import Group.Group as Group exposing (Group)
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
+import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as P exposing (Process)
 import Restriction.Restriction as Restriction exposing (Restriction)
@@ -18,42 +18,42 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 
--- read events from IDB
+-- read messages from IDB
 
 
-port readEvents : Encode.Value -> Cmd msg
+port readMessages : Encode.Value -> Cmd msg
 
 
 
--- store events to IDB then send to WS
+-- store messages to IDB then send to WS
 
 
-port storeEvents : Encode.Value -> Cmd msg
+port storeMessages : Encode.Value -> Cmd msg
 
 
 
 -- only store to IDB
 
 
-port storeEventsToSend : Encode.Value -> Cmd msg
+port storeMessagesToSend : Encode.Value -> Cmd msg
 
 
 
--- application/user events --
+-- application/user messages --
 
 
-type alias EventBase =
+type alias Metadata =
     { uuid : Uuid
     , when : Time.Posix
-    , flow : EventFlow
+    , flow : MessageFlow
     }
 
 
 type Message
-    = Message EventBase EventPayload
+    = Message Metadata Payload
 
 
-type EventPayload
+type Payload
     = ConnectionInitiated Connection
     | ProcessTypeChanged EntityType
     | ProcessTypeRemoved String
@@ -67,7 +67,7 @@ type EventPayload
     | IdentifierAdded EntityIdentifier
 
 
-toString : EventPayload -> String
+toString : Payload -> String
 toString p =
     case p of
         ConnectionInitiated _ ->
@@ -106,10 +106,10 @@ toString p =
 
 type alias Connection =
     -- TODO move in its module?
-    { lastEventTime : Time.Posix, uuids : Set.DictSet String Uuid }
+    { lastMessageTime : Time.Posix, uuids : Set.DictSet String Uuid }
 
 
-base : Message -> EventBase
+base : Message -> Metadata
 base (Message b p) =
     b
 
@@ -142,12 +142,12 @@ exceptCI es =
 -- JSON encoding / decoding
 
 
-encodeBase : EventBase -> Encode.Value
+encodeBase : Metadata -> Encode.Value
 encodeBase b =
     Encode.object
         [ ( "uuid", Uuid.encode b.uuid )
         , ( "when", Encode.int <| posixToMillis b.when )
-        , ( "flow", EventFlow.encode b.flow )
+        , ( "flow", MessageFlow.encode b.flow )
         ]
 
 
@@ -172,7 +172,7 @@ encode (Message b p) =
             ConnectionInitiated e ->
                 ( "load"
                 , Encode.object
-                    [ ( "lastEventTime", Encode.int <| posixToMillis e.lastEventTime )
+                    [ ( "lastMessageTime", Encode.int <| posixToMillis e.lastMessageTime )
                     , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
                     ]
                 )
@@ -207,12 +207,12 @@ toPosix t =
     Decode.succeed (millisToPosix t)
 
 
-baseDecoder : Decoder EventBase
+baseDecoder : Decoder Metadata
 baseDecoder =
-    Decode.map3 EventBase
+    Decode.map3 Metadata
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "when" Decode.int |> andThen toPosix)
-        (Decode.field "flow" EventFlow.decoder)
+        (Decode.field "flow" MessageFlow.decoder)
 
 
 decoder : Decoder Message
@@ -243,7 +243,7 @@ decoder =
                             Decode.map ConnectionInitiated
                                 (Decode.field "load"
                                     (Decode.map2 Connection
-                                        (Decode.field "lastEventTime" Decode.int |> andThen toPosix)
+                                        (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
                                         (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
                                     )
                                 )

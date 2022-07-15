@@ -39,13 +39,13 @@ import View exposing (View)
 -- TODO gather ports into a single typed one
 
 
-port eventsReader : (Encode.Value -> msg) -> Sub msg
+port messagesReader : (Encode.Value -> msg) -> Sub msg
 
 
-port eventsStored : (Encode.Value -> msg) -> Sub msg
+port messagesStored : (Encode.Value -> msg) -> Sub msg
 
 
-port eventsStoredToSend : (Encode.Value -> msg) -> Sub msg
+port messagesStoredToSend : (Encode.Value -> msg) -> Sub msg
 
 
 port wsSendStatus : (Encode.Value -> msg) -> Sub msg
@@ -60,22 +60,22 @@ port wsError : (Encode.Value -> msg) -> Sub msg
 port wsOpened : (Encode.Value -> msg) -> Sub msg
 
 
-port eventsReceiver : (String -> msg) -> Sub msg
+port messagesReceiver : (String -> msg) -> Sub msg
 
 
 
--- TODO get or create a session uuid, retrieve the last event time, send to haskell )
+-- TODO get or create a session uuid, retrieve the last message time, send to haskell )
 
 
 subscriptions : Shared.Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ wsSendStatus EventsSent
+        [ wsSendStatus MessagesSent
         , Events.onResize (\width height -> WindowResized (WindowSize width height))
-        , eventsReader EventsRead
-        , eventsStoredToSend EventsStoredTosend
-        , eventsStored EventsStored
-        , eventsReceiver EventsReceived
+        , messagesReader MessagesRead
+        , messagesStoredToSend MessagesStoredTosend
+        , messagesStored MessagesStored
+        , messagesReceiver MessagesReceived
         , wsOpened WSConnected
         , wsClose WSDisconnected
         , wsError WSError

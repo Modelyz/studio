@@ -9,7 +9,6 @@ import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, toPluralString)
 import EntityType.EntityType as ENT exposing (EntityType)
 import EntityType.ListPage exposing (Config, Flags, Model, Msg)
-import Events
 import Html.Attributes as Attr
 import Navbar
 import Result exposing (andThen)

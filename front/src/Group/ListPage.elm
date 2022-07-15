@@ -7,11 +7,11 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, only, toPluralString, toUuid)
-import Events
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
 import Ident.EntityIdentifier as EntityIdentifier
 import Ident.View exposing (displayIdentifiers, selectIdentifiers)
+import Message
 import Navbar
 import Prng.Uuid as Uuid
 import Result exposing (andThen)
@@ -66,7 +66,7 @@ update s msg model =
     case msg of
         Removed e ->
             ( model
-            , Shared.dispatch s <| Events.Removed e
+            , Shared.dispatch s <| Message.Removed e
             )
 
         Add ->

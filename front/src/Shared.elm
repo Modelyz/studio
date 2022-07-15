@@ -4,11 +4,11 @@ import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import EntityType.EntityType as ENT exposing (EntityType)
-import EventFlow as Flow
-import Events exposing (EventBase, EventPayload(..), Message(..), exceptCI, getTime)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
+import Message exposing (Message(..), Metadata, Payload(..), exceptCI, getTime)
+import MessageFlow as Flow
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -54,13 +54,13 @@ type Msg
     | WSError Decode.Value
     | WSConnect ()
     | WSConnected Decode.Value
-    | StoreEventsToSend (List Message)
-    | SendEvents (List Message)
-    | EventsStored Decode.Value
-    | EventsStoredTosend Decode.Value
-    | EventsRead Decode.Value
-    | EventsSent Decode.Value
-    | EventsReceived String
+    | StoreMessagesToSend (List Message)
+    | SendMessages (List Message)
+    | MessagesStored Decode.Value
+    | MessagesStoredTosend Decode.Value
+    | MessagesRead Decode.Value
+    | MessagesSent Decode.Value
+    | MessagesReceived String
 
 
 type alias Flags =
@@ -102,7 +102,7 @@ init value navkey =
               , identity = Nothing
               , state = State.empty
               }
-            , Events.readEvents Encode.null
+            , Message.readMessages Encode.null
             )
 
         Err err ->
@@ -117,7 +117,7 @@ init value navkey =
               , identity = Nothing
               , state = State.empty
               }
-            , Events.readEvents Encode.null
+            , Message.readMessages Encode.null
             )
 
 
@@ -157,7 +157,7 @@ update msg model =
             )
 
         SetRoute route ->
-            -- store the route to reload page init to the same route after reading events
+            -- store the route to reload page init to the same route after reading messages
             ( { model | route = route }, Cmd.none )
 
         PushRoute route ->
@@ -176,7 +176,7 @@ update msg model =
 
                 timeoutReconnect =
                     if wsstatus == WSOpen then
-                        max 1 <| remainderBy 4 (posixToMillis model.state.lastEventTime)
+                        max 1 <| remainderBy 4 (posixToMillis model.state.lastMessageTime)
 
                     else
                         model.timeoutReconnect
@@ -210,15 +210,15 @@ update msg model =
                 (Process.sleep (toFloat (1000 * model.timeoutReconnect)))
             )
 
-        EventsRead results ->
-            case decodeValue (Decode.list Events.decoder) results of
-                Ok events ->
+        MessagesRead results ->
+            case decodeValue (Decode.list Message.decoder) results of
+                Ok messages ->
                     let
                         newstate =
-                            List.foldr State.aggregate model.state (List.reverse events)
+                            List.foldr State.aggregate model.state (List.reverse messages)
 
-                        lastEventTime =
-                            events
+                        lastMessageTime =
+                            messages
                                 |> List.map (getTime >> posixToMillis)
                                 |> List.maximum
                                 |> Maybe.withDefault 0
@@ -233,7 +233,7 @@ update msg model =
 
                                 _ ->
                                     model.wsstatus
-                        , state = { newstate | lastEventTime = lastEventTime }
+                        , state = { newstate | lastMessageTime = lastMessageTime }
                       }
                     , Cmd.batch
                         [ case model.wsstatus of
@@ -252,56 +252,56 @@ update msg model =
                 Err str ->
                     ( { model | iostatus = IOError <| errorToString str }, Cmd.none )
 
-        SendEvents events ->
-            -- send the new events and the pending ones
+        SendMessages messages ->
+            -- send the new messages and the pending ones
             ( { model | iostatus = WSSending }
             , WS.wsSend <|
                 Encode.encode 0 <|
-                    Encode.list Events.encode <|
+                    Encode.list Message.encode <|
                         Set.toList <|
-                            Set.union model.state.pendingEvents <|
-                                Set.fromList Events.compare events
+                            Set.union model.state.pendingMessages <|
+                                Set.fromList Message.compare messages
             )
 
-        StoreEventsToSend events ->
+        StoreMessagesToSend messages ->
             let
                 ( _, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            ( { model | currentSeed = newSeed, iostatus = ESStoring }, Events.storeEventsToSend (Encode.list Events.encode events) )
+            ( { model | currentSeed = newSeed, iostatus = ESStoring }, Message.storeMessagesToSend (Encode.list Message.encode messages) )
 
-        EventsStoredTosend events ->
-            case decodeValue (Decode.list Events.decoder) events of
+        MessagesStoredTosend messages ->
+            case decodeValue (Decode.list Message.decoder) messages of
                 Ok evs ->
                     if model.wsstatus == WSOpen then
                         ( { model | iostatus = ESReading }
                         , Cmd.batch
-                            [ Events.readEvents Encode.null
+                            [ Message.readMessages Encode.null
 
-                            -- send the new events and the pending ones
+                            -- send the new messages and the pending ones
                             , wsSend <|
                                 Encode.encode 0 <|
-                                    Encode.list Events.encode <|
+                                    Encode.list Message.encode <|
                                         Set.toList <|
-                                            Set.union model.state.pendingEvents <|
-                                                Set.fromList Events.compare evs
+                                            Set.union model.state.pendingMessages <|
+                                                Set.fromList Message.compare evs
                             ]
                         )
 
                     else
-                        ( { model | iostatus = IOIdle }, Events.readEvents Encode.null )
+                        ( { model | iostatus = IOIdle }, Message.readMessages Encode.null )
 
                 Err err ->
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
-        EventsStored _ ->
+        MessagesStored _ ->
             ( { model
                 | iostatus = IOIdle
               }
-            , Events.readEvents Encode.null
+            , Message.readMessages Encode.null
             )
 
-        EventsSent status ->
+        MessagesSent status ->
             case decodeValue Decode.string status of
                 Ok str ->
                     if str == "OK" then
@@ -313,8 +313,8 @@ update msg model =
                 Err err ->
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
-        EventsReceived ms ->
-            case decodeString (Decode.list Events.decoder) ms of
+        MessagesReceived ms ->
+            case decodeString (Decode.list Message.decoder) ms of
                 Ok messages ->
                     let
                         msgs =
@@ -330,8 +330,8 @@ update msg model =
                                 IOIdle
                       }
                     , if List.length msgs > 0 then
-                        Events.storeEvents <|
-                            Encode.list Events.encode <|
+                        Message.storeMessages <|
+                            Encode.list Message.encode <|
                                 exceptCI messages
 
                       else
@@ -344,14 +344,14 @@ update msg model =
 
 initiateConnection : Uuid -> Model -> Cmd Msg
 initiateConnection uuid model =
-    Task.perform SendEvents <|
+    Task.perform SendMessages <|
         Task.map
             (\t ->
                 List.singleton <|
                     Message
                         { uuid = uuid, when = t, flow = Flow.Requested }
                         (ConnectionInitiated
-                            { lastEventTime = model.state.lastEventTime
+                            { lastMessageTime = model.state.lastMessageTime
                             , uuids = Set.insert uuid model.state.uuids
                             }
                         )
@@ -359,41 +359,41 @@ initiateConnection uuid model =
             Time.now
 
 
-dispatch : Model -> EventPayload -> Effect Msg msg
+dispatch : Model -> Payload -> Effect Msg msg
 dispatch model payload =
-    -- take an Event payload and add the EventBase informations
+    -- take a Message payload and add the Metadata informations
     let
         ( newUuid, _ ) =
             Random.step Uuid.generator model.currentSeed
     in
     Effect.fromSharedCmd <|
         Task.perform
-            StoreEventsToSend
+            StoreMessagesToSend
         <|
             Task.map
                 (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } payload)
                 Time.now
 
 
-dispatchT : Model -> (Uuid -> Time.Posix -> EventPayload) -> Effect Msg msg
+dispatchT : Model -> (Uuid -> Time.Posix -> Payload) -> Effect Msg msg
 dispatchT model newPayload =
-    -- take an Event payload, feed with a uuid and posixtime, and add the EventBase informations
+    -- take a Message payload, feed with a uuid and posixtime, and add the Metadata informations
     let
         ( newUuid, _ ) =
             Random.step Uuid.generator model.currentSeed
     in
     Effect.fromSharedCmd <|
         Task.perform
-            StoreEventsToSend
+            StoreMessagesToSend
         <|
             Task.map
                 (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
                 Time.now
 
 
-dispatchMany : Model -> List EventPayload -> Effect Msg msg
+dispatchMany : Model -> List Payload -> Effect Msg msg
 dispatchMany model payloads =
-    -- dispatch several events
+    -- dispatch several messages
     Effect.batch <| List.map (dispatch model) payloads
 
 

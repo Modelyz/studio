@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Event (getUuids, Uuid, Event, getInt, setProcessed, getMetaString, excludeType, isType, isAfter) where
+module Message (getUuids, Uuid, Message, getInt, setProcessed, getMetaString, excludeType, isType, isAfter) where
 
 import qualified Data.Aeson as JSON (Value (..), toJSON)
 import qualified Data.HashMap.Lazy as HashMap
@@ -9,19 +9,19 @@ import Data.Scientific
 import qualified Data.Text as T (Text, unpack)
 import qualified Data.Vector as Vector
 
-type Event = JSON.Value
+type Message = JSON.Value
 
 type Time = Int
 
 type Uuid = String -- uuid as a string generated in Elm
 
-isType :: T.Text -> Event -> Bool
+isType :: T.Text -> Message -> Bool
 isType t ev = getString "what" ev == Just t
 
-excludeType :: T.Text -> [Event] -> [Event]
+excludeType :: T.Text -> [Message] -> [Message]
 excludeType t = filter (not . isType t)
 
-isAfter :: Time -> Event -> Bool
+isAfter :: Time -> Message -> Bool
 isAfter t ev =
     case ev of
         (JSON.Object o) -> case HashMap.lookup "meta" o of
@@ -31,7 +31,7 @@ isAfter t ev =
             _ -> False
         _ -> False
 
-getInt :: T.Text -> Event -> Maybe Int
+getInt :: T.Text -> Message -> Maybe Int
 getInt k e =
     case e of
         (JSON.Object o) -> case HashMap.lookup k o of
@@ -39,7 +39,7 @@ getInt k e =
             _ -> Nothing
         _ -> Nothing
 
-getMetaString :: T.Text -> Event -> Maybe T.Text
+getMetaString :: T.Text -> Message -> Maybe T.Text
 getMetaString k e =
     case e of
         (JSON.Object o) -> case HashMap.lookup "meta" o of
@@ -49,7 +49,7 @@ getMetaString k e =
             _ -> Nothing
         _ -> Nothing
 
-getString :: T.Text -> Event -> Maybe T.Text
+getString :: T.Text -> Message -> Maybe T.Text
 getString k e =
     case e of
         (JSON.Object o) -> case HashMap.lookup k o of
@@ -57,7 +57,7 @@ getString k e =
             _ -> Nothing
         _ -> Nothing
 
-getUuids :: Event -> [Uuid]
+getUuids :: Message -> [Uuid]
 getUuids e =
     case e of
         (JSON.Object o) -> case HashMap.lookup "load" o of
@@ -76,7 +76,7 @@ getUuids e =
             _ -> []
         _ -> []
 
-setProcessed :: Event -> Event
+setProcessed :: Message -> Message
 setProcessed e =
     case e of
         JSON.Object o -> case HashMap.lookup "meta" o of

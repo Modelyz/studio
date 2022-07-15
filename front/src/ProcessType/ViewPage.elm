@@ -4,8 +4,8 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Input as Input
 import EntityType.EntityType as ENT exposing (EntityType)
-import Events
 import Html.Attributes as Attr
+import Message
 import Navbar
 import Route exposing (Route)
 import Shared
@@ -73,7 +73,7 @@ update s msg model =
             ( { model
                 | inputProcessType = pt
               }
-            , Shared.dispatch s <| Events.ProcessTypeChanged pt
+            , Shared.dispatch s <| Message.ProcessTypeChanged pt
             )
 
 

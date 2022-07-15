@@ -7,7 +7,7 @@ import Element.Font as Font
 import Element.Input as Input
 import EntityType.EntityType as ENT exposing (EntityType(..), only)
 import EntityType.Type exposing (Type)
-import Events
+import Message
 import Route exposing (Route, redirect, redirectParent)
 import Shared
 import Style exposing (..)
@@ -114,7 +114,7 @@ update c s msg model =
                 Ok t ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatchMany s <| Events.TypeAdded t :: List.map (\pt -> Events.Restricted { what = t, scope = pt }) (Set.toList model.processTypes)
+                        [ Shared.dispatchMany s <| Message.TypeAdded t :: List.map (\pt -> Message.Restricted { what = t, scope = pt }) (Set.toList model.processTypes)
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
                     )

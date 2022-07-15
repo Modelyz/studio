@@ -10,8 +10,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity exposing (toType, toUuid)
 import EntityType.EntityType exposing (EntityType(..))
-import Events
 import GroupType.GroupType
+import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
@@ -102,7 +102,7 @@ update s msg model =
                 Ok grouptype ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Events.TypeAdded grouptype
+                        [ Shared.dispatch s <| Message.TypeAdded grouptype
                         , redirect s.navkey Route.GroupTypes |> Effect.fromCmd
                         ]
                     )

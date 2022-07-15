@@ -4,7 +4,7 @@ import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import EntityType.EntityType as ENT exposing (EntityType)
-import Events
+import Message
 import Route exposing (Route, redirectAdd)
 import Shared
 import View exposing (..)
@@ -40,7 +40,7 @@ update s msg model =
     case msg of
         Removed et ->
             ( model
-            , Shared.dispatch s <| Events.TypeRemoved et
+            , Shared.dispatch s <| Message.TypeRemoved et
             )
 
         Added ->

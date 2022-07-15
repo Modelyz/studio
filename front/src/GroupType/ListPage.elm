@@ -8,9 +8,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, toPluralString, toUuid)
 import EntityType.EntityType exposing (EntityType, only, toName)
-import Events
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Html.Attributes as Attr
+import Message
 import Navbar
 import Prng.Uuid as Uuid
 import Result exposing (andThen)
@@ -65,7 +65,7 @@ update s msg model =
     case msg of
         Removed g ->
             ( model
-            , Shared.dispatch s <| Events.TypeRemoved g
+            , Shared.dispatch s <| Message.TypeRemoved g
             )
 
         Add ->
