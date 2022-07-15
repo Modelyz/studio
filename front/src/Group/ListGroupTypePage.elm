@@ -1,4 +1,4 @@
-module Group.ListPage exposing (match, page, view)
+module Group.ListGroupTypePage exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -7,7 +7,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Event
-import Group.Group as Group exposing (Group)
+import Group.GroupType as GroupType exposing (GroupType)
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid
 import REA.Entity as Entity exposing (Entity, toPluralString, toUuid)
@@ -26,7 +26,7 @@ type alias Model =
 
 
 type Msg
-    = Removed Group
+    = Removed GroupType
     | Add
 
 
@@ -47,7 +47,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Groups ->
+        Route.GroupTypes ->
             Just { route = route }
 
         _ ->
@@ -64,31 +64,31 @@ update s msg model =
     case msg of
         Removed g ->
             ( model
-            , Shared.dispatch s <| Event.GroupRemoved g.name
+            , Shared.dispatch s <| Event.GroupTypeRemoved g.name
             )
 
         Add ->
-            ( model, redirect s.navkey Route.AddGroup |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.AddGroupType |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Groups"
+    { title = "Group Types"
     , attributes = []
     , element = viewContent model
-    , route = Route.Groups
+    , route = Route.GroupTypes
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "Groups"
+        "Group Types"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.groups
+            (s.state.grouptypes
                 |> Set.toList
                 |> List.sortBy .name
                 |> List.map
@@ -98,6 +98,6 @@ viewContent model s =
                             (text g.name)
                             ""
                     )
-                |> withDefaultContent (p "There are no Groups yet. Create your first one!")
+                |> withDefaultContent (p "There are no Group Types yet. Create your first one!")
             )
         ]

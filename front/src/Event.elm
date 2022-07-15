@@ -3,6 +3,7 @@ port module Event exposing (Event(..), EventBase, EventPayload(..), base, compar
 import DictSet as Set
 import EventFlow exposing (EventFlow, decoder)
 import Group.Group as Group exposing (Group)
+import Group.GroupType as GroupType exposing (GroupType)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
@@ -61,6 +62,8 @@ type EventPayload
     | CommitmentAdded Commitment
     | EventAdded E.Event
     | Restricted Restriction
+    | GroupTypeAdded Group
+    | GroupTypeRemoved String
     | GroupAdded Group
     | GroupRemoved String
     | IdentifierTypeAdded IdentifierType
@@ -98,6 +101,12 @@ toString p =
 
         Restricted _ ->
             "Restricted"
+
+        GroupTypeAdded _ ->
+            "GroupTypeAdded"
+
+        GroupTypeRemoved _ ->
+            "GroupTypeRemoved"
 
         GroupAdded _ ->
             "GroupAdded"
@@ -206,6 +215,12 @@ encode (Event b p) =
                     ]
                 )
 
+            GroupTypeAdded g ->
+                ( "load", GroupType.encode g )
+
+            GroupTypeRemoved g ->
+                ( "load", Encode.string g )
+
             GroupAdded g ->
                 ( "load", Group.encode g )
 
@@ -294,6 +309,14 @@ decoder =
                                         (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
                                     )
                                 )
+
+                        "GroupTypeAdded" ->
+                            Decode.map GroupTypeAdded
+                                (Decode.field "load" GroupType.decoder)
+
+                        "GroupTypeRemoved" ->
+                            Decode.map GroupTypeRemoved
+                                (Decode.field "load" Decode.string)
 
                         "GroupAdded" ->
                             Decode.map GroupAdded

@@ -1,4 +1,4 @@
-module Group.AddPage exposing (..)
+module Group.AddGroupTypePage exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -9,7 +9,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Event
-import Group.Group as Group exposing (Group)
+import Group.GroupType as GroupType exposing (GroupType)
 import Prng.Uuid as Uuid exposing (Uuid)
 import REA.Entity as EN exposing (toType, toUuid)
 import REA.EntityType as ENT exposing (EntityType(..))
@@ -23,7 +23,7 @@ import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousSt
 
 type
     Msg
-    -- TODO replace with Input Group
+    -- TODO replace with Input GroupType
     = InputName String
     | Warning String
     | PreviousPage
@@ -49,10 +49,10 @@ type Step
     = StepName
 
 
-validate : Model -> Result String Group
+validate : Model -> Result String GroupType
 validate m =
     Result.map
-        Group
+        GroupType
         (checkEmptyString m.name "The name is Empty")
 
 
@@ -69,7 +69,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddGroup ->
+        Route.AddGroupType ->
             Just { route = route }
 
         _ ->
@@ -102,8 +102,8 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.GroupAdded i
-                        , redirect s.navkey Route.Groups |> Effect.fromCmd
+                        [ Shared.dispatch s <| Event.GroupTypeAdded i
+                        , redirect s.navkey Route.GroupTypes |> Effect.fromCmd
                         ]
                     )
 
@@ -116,7 +116,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Groups |> Effect.fromCmd )
+                    ( model, redirect s.navkey Route.GroupTypes |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -124,15 +124,15 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.Groups |> Effect.fromCmd )
+                    ( model, redirect s.navkey Route.GroupTypes |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirect s.navkey Route.Groups |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.GroupTypes |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Group"
+    { title = "Adding a Group Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -182,11 +182,11 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Group"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Group Type"
                             }
     in
     cardContent s
-        "Adding a Group"
+        "Adding a Group Type"
         buttons
         [ step
         ]

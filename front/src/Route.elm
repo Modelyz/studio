@@ -28,6 +28,8 @@ type Route
     | EventTypes
     | Agents
     | AddAgent
+    | GroupTypes
+    | AddGroupType
     | Groups
     | AddGroup
     | IdentifierTypes
@@ -49,6 +51,8 @@ routeParser =
 
         -- list behaviours
         , map IdentifierTypes (s "identifierTypes")
+        , map GroupTypes (s "grouptypes")
+        , map AddGroupType (s "grouptypes" </> s "add")
         , map Groups (s "groups")
         , map AddGroup (s "groups" </> s "add")
 
@@ -149,8 +153,14 @@ toString r =
         Process p ->
             absolute [ "process", percentEncode p ] []
 
+        AddGroupType ->
+            absolute [ "grouptypes", "add" ] []
+
         AddGroup ->
             absolute [ "groups", "add" ] []
+
+        GroupTypes ->
+            absolute [ "grouptypes" ] []
 
         Groups ->
             absolute [ "groups" ] []

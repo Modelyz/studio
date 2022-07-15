@@ -5,6 +5,7 @@ import DictSet as Set exposing (DictSet)
 import Event exposing (Event(..), EventPayload(..), base)
 import EventFlow exposing (EventFlow(..))
 import Group.Group as Group exposing (Group, compare)
+import Group.GroupType as GroupType exposing (GroupType, compare)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -47,6 +48,7 @@ type alias State =
 
     -- behaviours
     , groups : DictSet String Group
+    , grouptypes : DictSet String GroupType
     , identifierTypes : DictSet String IdentifierType
     , identifiers : DictSet String EntityIdentifier
     }
@@ -76,6 +78,7 @@ empty =
     , restrictions = Set.empty Restriction.compare
     , process_commitments = Set.empty PC.compare
     , groups = Set.empty Group.compare
+    , grouptypes = Set.empty GroupType.compare
 
     -- behaviours
     , identifierTypes = Set.empty IdentifierType.compare
@@ -138,6 +141,22 @@ aggregate (Event b p) state =
         ConnectionInitiated e ->
             { state
                 | lastEventTime = b.when
+                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , uuids = Set.insert b.uuid state.uuids
+            }
+
+        GroupTypeAdded e ->
+            { state
+                | grouptypes = Set.insert (GroupType e.name) state.grouptypes
+                , lastEventTime = b.when
+                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , uuids = Set.insert b.uuid state.uuids
+            }
+
+        GroupTypeRemoved e ->
+            { state
+                | grouptypes = Set.filter (\g -> g.name /= e) state.grouptypes
+                , lastEventTime = b.when
                 , pendingEvents = updatePending (Event b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }

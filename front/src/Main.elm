@@ -3,8 +3,10 @@ port module Main exposing (main)
 import Browser
 import Browser.Events as Events
 import Element exposing (..)
-import Group.AddPage
-import Group.ListPage
+import Group.AddGroupPage
+import Group.AddGroupTypePage
+import Group.ListGroupPage
+import Group.ListGroupTypePage
 import Ident.AddPage
 import Ident.ListPage
 import Json.Encode as Encode
@@ -125,8 +127,10 @@ main =
         -- behaviours
         |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
         |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
-        |> Spa.addPublicPage mappers Group.AddPage.match Group.AddPage.page
-        |> Spa.addPublicPage mappers Group.ListPage.match Group.ListPage.page
+        |> Spa.addPublicPage mappers Group.AddGroupTypePage.match Group.AddGroupTypePage.page
+        |> Spa.addPublicPage mappers Group.ListGroupTypePage.match Group.ListGroupTypePage.page
+        |> Spa.addPublicPage mappers Group.AddGroupPage.match Group.AddGroupPage.page
+        |> Spa.addPublicPage mappers Group.ListGroupPage.match Group.ListGroupPage.page
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
         -- add entity type
