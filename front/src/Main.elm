@@ -1,40 +1,38 @@
 port module Main exposing (main)
 
+import Agent.AddPage
+import Agent.ListPage
+import AgentType.AddPage
+import AgentType.ListPage
+import AgentType.ViewPage
 import Browser
 import Browser.Events as Events
+import CommitmentType.AddPage
+import CommitmentType.ListPage
+import ContractType.AddPage
+import ContractType.ListPage
 import Element exposing (..)
-import Group.AddGroupPage
-import Group.AddGroupTypePage
-import Group.ListGroupPage
-import Group.ListGroupTypePage
+import EventType.AddPage
+import EventType.ListPage
+import Group.AddPage
+import Group.ListPage
+import GroupType.AddPage
+import GroupType.ListPage
+import HomePage
 import Ident.AddPage
 import Ident.ListPage
 import Json.Encode as Encode
-import Page.AddAgent
-import Page.AddAgentType
-import Page.AddCommitmentType
-import Page.AddContractType
-import Page.AddEventType
-import Page.AddProcessType
-import Page.AddResourceType
-import Page.AgentType
-import Page.AgentTypes
-import Page.Agents
-import Page.CommitmentTypes
-import Page.ContractTypes
-import Page.EventTypes
-import Page.Home
-import Page.Process
-import Page.ProcessType
-import Page.ProcessTypes
-import Page.Processes
-import Page.ResourceTypes
+import Navbar
+import ProcessType.AddPage
+import ProcessType.ListPage
+import ProcessType.ViewPage
+import ResourceType.AddPage
+import ResourceType.ListPage
 import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)
 import Style exposing (WindowSize)
 import View exposing (View)
-import View.Navbar as Navbar
 
 
 
@@ -116,37 +114,35 @@ main =
         { defaultView = View.notFound
         , extractIdentity = Shared.identity
         }
-        |> Spa.addPublicPage mappers Page.Home.match Page.Home.page
+        |> Spa.addPublicPage mappers HomePage.match HomePage.page
         -- list entity types
-        |> Spa.addPublicPage mappers Page.ProcessTypes.match Page.ProcessTypes.page
-        |> Spa.addPublicPage mappers Page.ResourceTypes.match Page.ResourceTypes.page
-        |> Spa.addPublicPage mappers Page.EventTypes.match Page.EventTypes.page
-        |> Spa.addPublicPage mappers Page.AgentTypes.match Page.AgentTypes.page
-        |> Spa.addPublicPage mappers Page.CommitmentTypes.match Page.CommitmentTypes.page
-        |> Spa.addPublicPage mappers Page.ContractTypes.match Page.ContractTypes.page
+        |> Spa.addPublicPage mappers ProcessType.ListPage.match ProcessType.ListPage.page
+        |> Spa.addPublicPage mappers ResourceType.ListPage.match ResourceType.ListPage.page
+        |> Spa.addPublicPage mappers EventType.ListPage.match EventType.ListPage.page
+        |> Spa.addPublicPage mappers AgentType.ListPage.match AgentType.ListPage.page
+        |> Spa.addPublicPage mappers CommitmentType.ListPage.match CommitmentType.ListPage.page
+        |> Spa.addPublicPage mappers ContractType.ListPage.match ContractType.ListPage.page
         -- behaviours
-        |> Spa.addPublicPage mappers Page.Processes.match Page.Processes.page
-        |> Spa.addPublicPage mappers Page.Process.match Page.Process.page
-        |> Spa.addPublicPage mappers Group.AddGroupTypePage.match Group.AddGroupTypePage.page
-        |> Spa.addPublicPage mappers Group.ListGroupTypePage.match Group.ListGroupTypePage.page
-        |> Spa.addPublicPage mappers Group.AddGroupPage.match Group.AddGroupPage.page
-        |> Spa.addPublicPage mappers Group.ListGroupPage.match Group.ListGroupPage.page
+        |> Spa.addPublicPage mappers GroupType.ListPage.match GroupType.ListPage.page
+        |> Spa.addPublicPage mappers GroupType.AddPage.match GroupType.AddPage.page
+        |> Spa.addPublicPage mappers Group.AddPage.match Group.AddPage.page
+        |> Spa.addPublicPage mappers Group.ListPage.match Group.ListPage.page
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
         -- add entity type
-        |> Spa.addPublicPage mappers Page.AddProcessType.match Page.AddProcessType.page
-        |> Spa.addPublicPage mappers Page.AddResourceType.match Page.AddResourceType.page
-        |> Spa.addPublicPage mappers Page.AddEventType.match Page.AddEventType.page
-        |> Spa.addPublicPage mappers Page.AddAgentType.match Page.AddAgentType.page
-        |> Spa.addPublicPage mappers Page.AddCommitmentType.match Page.AddCommitmentType.page
-        |> Spa.addPublicPage mappers Page.AddContractType.match Page.AddContractType.page
+        |> Spa.addPublicPage mappers ProcessType.AddPage.match ProcessType.AddPage.page
+        |> Spa.addPublicPage mappers ResourceType.AddPage.match ResourceType.AddPage.page
+        |> Spa.addPublicPage mappers EventType.AddPage.match EventType.AddPage.page
+        |> Spa.addPublicPage mappers AgentType.AddPage.match AgentType.AddPage.page
+        |> Spa.addPublicPage mappers CommitmentType.AddPage.match CommitmentType.AddPage.page
+        |> Spa.addPublicPage mappers ContractType.AddPage.match ContractType.AddPage.page
         -- view entity type
-        |> Spa.addPublicPage mappers Page.ProcessType.match Page.ProcessType.page
-        |> Spa.addPublicPage mappers Page.AgentType.match Page.AgentType.page
+        |> Spa.addPublicPage mappers ProcessType.ViewPage.match ProcessType.ViewPage.page
+        |> Spa.addPublicPage mappers AgentType.ViewPage.match AgentType.ViewPage.page
         -- list entities
-        |> Spa.addPublicPage mappers Page.Agents.match Page.Agents.page
+        |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
         -- add entity
-        |> Spa.addPublicPage mappers Page.AddAgent.match Page.AddAgent.page
+        |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
             , init = Shared.init

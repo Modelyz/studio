@@ -2,11 +2,11 @@ module Ident.Scope exposing (..)
 
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
+import Entity.Entity as Entity exposing (Entity(..), toUuid)
+import EntityType.EntityType as EntityType exposing (toName)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid
-import REA.Entity as EN exposing (Entity(..), toUuid)
-import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
@@ -15,13 +15,13 @@ type
     -- This is the scope of an identifier
     -- TODO: also identify all entities or of a group ?
     -- We can identify a particular entity:
-    = OneEntity EN.Entity
+    = OneEntity Entity.Entity
       -- or a certain entity type:
-    | OneEntityType ENT.EntityType
+    | OneEntityType EntityType.EntityType
       -- or all the entities of a certain type:
-    | AllEntityTypes ENT.EntityType
+    | AllEntityTypes EntityType.EntityType
       -- or all the entity types of a certain type:
-    | AllEntities ENT.EntityType
+    | AllEntities EntityType.EntityType
 
 
 toDesc : Scope -> String
@@ -62,25 +62,25 @@ encode e =
         OneEntity entity ->
             Encode.object
                 [ ( "for", Encode.string "OneEntity" )
-                , ( "entity", EN.encode entity )
+                , ( "entity", Entity.encode entity )
                 ]
 
         OneEntityType entityType ->
             Encode.object
                 [ ( "for", Encode.string "OneEntityType" )
-                , ( "type", ENT.encode entityType )
+                , ( "type", EntityType.encode entityType )
                 ]
 
         AllEntities entityType ->
             Encode.object
                 [ ( "for", Encode.string "AllEntities" )
-                , ( "type", ENT.encode entityType )
+                , ( "type", EntityType.encode entityType )
                 ]
 
         AllEntityTypes entityType ->
             Encode.object
                 [ ( "for", Encode.string "AllEntityTypes" )
-                , ( "type", ENT.encode entityType )
+                , ( "type", EntityType.encode entityType )
                 ]
 
 
@@ -91,16 +91,16 @@ decoder =
             (\for ->
                 case for of
                     "OneEntity" ->
-                        Decode.field "type" (Decode.map OneEntity EN.decoder)
+                        Decode.field "type" (Decode.map OneEntity Entity.decoder)
 
                     "OneEntityType" ->
-                        Decode.field "type" (Decode.map OneEntityType ENT.decoder)
+                        Decode.field "type" (Decode.map OneEntityType EntityType.decoder)
 
                     "AllEntities" ->
-                        Decode.field "type" (Decode.map AllEntities ENT.decoder)
+                        Decode.field "type" (Decode.map AllEntities EntityType.decoder)
 
                     "AllEntityTypes" ->
-                        Decode.field "type" (Decode.map AllEntityTypes ENT.decoder)
+                        Decode.field "type" (Decode.map AllEntityTypes EntityType.decoder)
 
                     _ ->
                         Decode.fail "Cannot decode the scope of this identifier type"
@@ -108,19 +108,19 @@ decoder =
 
 
 compare : Scope -> String
-compare i =
-    toString i
+compare s =
+    toString s
         ++ " "
-        ++ (case i of
+        ++ (case s of
                 OneEntity e ->
-                    EN.compare e
+                    Entity.compare e
 
                 OneEntityType et ->
-                    ENT.compare et
+                    EntityType.compare et
 
                 AllEntities et ->
-                    ENT.compare et
+                    EntityType.compare et
 
                 AllEntityTypes et ->
-                    ENT.compare et
+                    EntityType.compare et
            )

@@ -8,13 +8,13 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
-import Event
+import Entity.Entity as Entity
+import EntityType.EntityType as EntityType exposing (EntityType(..))
+import Events
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.Entity as EN exposing (toType, toUuid)
-import REA.EntityType as ENT exposing (EntityType(..))
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -133,7 +133,7 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Event.IdentifierTypeAdded i
+                        [ Shared.dispatch s <| Events.IdentifierTypeAdded i
                         , redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd
                         ]
                     )
@@ -291,7 +291,7 @@ inputEntityTypes s model =
             (Set.toList s.state.entities
                 |> List.map
                     (\e ->
-                        clickableCard (InputScope <| Set.insert (OneEntity e) model.applyTo) (Uuid.toString <| toUuid e) (Just <| "Type: " ++ toType e)
+                        clickableCard (InputScope <| Set.insert (OneEntity e) model.applyTo) (Uuid.toString <| Entity.toUuid e) (Just <| "Type: " ++ Entity.toType e)
                     )
             )
         , h2 <| "Select the entity types that should have a \"" ++ iName ++ "\" identifier"
@@ -299,7 +299,7 @@ inputEntityTypes s model =
             (Set.toList s.state.entityTypes
                 |> List.map
                     (\et ->
-                        clickableCard (InputScope <| Set.insert (OneEntityType et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
+                        clickableCard (InputScope <| Set.insert (OneEntityType et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
                     )
             )
         , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
@@ -307,7 +307,7 @@ inputEntityTypes s model =
             (Set.toList s.state.entityTypes
                 |> List.map
                     (\et ->
-                        clickableCard (InputScope <| Set.insert (AllEntities et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
+                        clickableCard (InputScope <| Set.insert (AllEntities et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
                     )
             )
         , h2 <| "Select the types of the entity types that should have a \"" ++ iName ++ "\" identifier"
@@ -315,7 +315,7 @@ inputEntityTypes s model =
             (Set.toList s.state.entityTypes
                 |> List.map
                     (\et ->
-                        clickableCard (InputScope <| Set.insert (AllEntityTypes et) model.applyTo) (ENT.toName et) (Just <| "Type: " ++ (ENT.toType >> .name) et)
+                        clickableCard (InputScope <| Set.insert (AllEntityTypes et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
                     )
             )
         ]

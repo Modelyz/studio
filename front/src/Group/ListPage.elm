@@ -1,4 +1,4 @@
-module Ident.ListPage exposing (match, page, view)
+module Group.ListPage exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -6,11 +6,12 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Entity.Entity as Entity exposing (Entity, toPluralString, toUuid)
+import Entity.Entity as Entity exposing (Entity, only, toPluralString, toUuid)
 import Events
+import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.Scope as Scope
+import Ident.EntityIdentifier as EntityIdentifier
+import Ident.View exposing (displayIdentifiers, selectIdentifiers)
 import Navbar
 import Prng.Uuid as Uuid
 import Result exposing (andThen)
@@ -27,7 +28,7 @@ type alias Model =
 
 
 type Msg
-    = Removed IdentifierType
+    = Removed Entity
     | Add
 
 
@@ -48,7 +49,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.IdentifierTypes ->
+        Route.Groups ->
             Just { route = route }
 
         _ ->
@@ -63,51 +64,46 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed i ->
+        Removed e ->
             ( model
-            , Shared.dispatch s <| Events.IdentifierTypeRemoved i
+            , Shared.dispatch s <| Events.Removed e
             )
 
         Add ->
-            ( model, redirect s.navkey Route.AddIdentifierType |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.AddGroup |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "IdentifierTypes"
+    { title = "Groups"
     , attributes = []
     , element = viewContent model
-    , route = Route.IdentifierTypes
+    , route = Route.Groups
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "IdentifierTypes"
+        "Groups"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.identifierTypes
+            (s.state.entities
+                |> only "Group"
                 |> Set.toList
-                |> List.sortBy .name
+                |> List.sortBy Entity.compare
                 |> List.map
-                    (\i ->
-                        let
-                            ids =
-                                Set.toList i.applyTo
-                        in
-                        viewSmallCard (Removed i)
+                    (\e ->
+                        viewSmallCard (Removed e)
                             Nothing
-                            (text i.name)
-                            (if List.isEmpty ids then
-                                "for everything"
-
-                             else
-                                "for " ++ (ids |> List.map Scope.toDesc |> String.join ", ")
+                            (EntityIdentifier.restrict e s.state.identifiers
+                                |> selectIdentifiers Smallcard
+                                |> displayIdentifiers
                             )
+                            ""
                     )
-                |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")
+                |> withDefaultContent (p "There are no Groups yet. Create your first one!")
             )
         ]

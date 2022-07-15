@@ -3,14 +3,14 @@ module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, findE
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
-import Event exposing (Event(..), EventBase, EventPayload(..), exceptCI, getTime)
+import EntityType.EntityType as ENT exposing (EntityType)
 import EventFlow as Flow
+import Events exposing (EventBase, EventPayload(..), Message(..), exceptCI, getTime)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
-import REA.EntityType as ENT exposing (EntityType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route(..), toString)
 import State exposing (State)
@@ -54,8 +54,8 @@ type Msg
     | WSError Decode.Value
     | WSConnect ()
     | WSConnected Decode.Value
-    | StoreEventsToSend (List Event.Event)
-    | SendEvents (List Event.Event)
+    | StoreEventsToSend (List Message)
+    | SendEvents (List Message)
     | EventsStored Decode.Value
     | EventsStoredTosend Decode.Value
     | EventsRead Decode.Value
@@ -102,7 +102,7 @@ init value navkey =
               , identity = Nothing
               , state = State.empty
               }
-            , Event.readEvents Encode.null
+            , Events.readEvents Encode.null
             )
 
         Err err ->
@@ -117,7 +117,7 @@ init value navkey =
               , identity = Nothing
               , state = State.empty
               }
-            , Event.readEvents Encode.null
+            , Events.readEvents Encode.null
             )
 
 
@@ -211,7 +211,7 @@ update msg model =
             )
 
         EventsRead results ->
-            case decodeValue (Decode.list Event.decoder) results of
+            case decodeValue (Decode.list Events.decoder) results of
                 Ok events ->
                     let
                         newstate =
@@ -257,10 +257,10 @@ update msg model =
             ( { model | iostatus = WSSending }
             , WS.wsSend <|
                 Encode.encode 0 <|
-                    Encode.list Event.encode <|
+                    Encode.list Events.encode <|
                         Set.toList <|
                             Set.union model.state.pendingEvents <|
-                                Set.fromList Event.compare events
+                                Set.fromList Events.compare events
             )
 
         StoreEventsToSend events ->
@@ -268,28 +268,28 @@ update msg model =
                 ( _, newSeed ) =
                     Random.step Uuid.generator model.currentSeed
             in
-            ( { model | currentSeed = newSeed, iostatus = ESStoring }, Event.storeEventsToSend (Encode.list Event.encode events) )
+            ( { model | currentSeed = newSeed, iostatus = ESStoring }, Events.storeEventsToSend (Encode.list Events.encode events) )
 
         EventsStoredTosend events ->
-            case decodeValue (Decode.list Event.decoder) events of
+            case decodeValue (Decode.list Events.decoder) events of
                 Ok evs ->
                     if model.wsstatus == WSOpen then
                         ( { model | iostatus = ESReading }
                         , Cmd.batch
-                            [ Event.readEvents Encode.null
+                            [ Events.readEvents Encode.null
 
                             -- send the new events and the pending ones
                             , wsSend <|
                                 Encode.encode 0 <|
-                                    Encode.list Event.encode <|
+                                    Encode.list Events.encode <|
                                         Set.toList <|
                                             Set.union model.state.pendingEvents <|
-                                                Set.fromList Event.compare evs
+                                                Set.fromList Events.compare evs
                             ]
                         )
 
                     else
-                        ( { model | iostatus = IOIdle }, Event.readEvents Encode.null )
+                        ( { model | iostatus = IOIdle }, Events.readEvents Encode.null )
 
                 Err err ->
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
@@ -298,7 +298,7 @@ update msg model =
             ( { model
                 | iostatus = IOIdle
               }
-            , Event.readEvents Encode.null
+            , Events.readEvents Encode.null
             )
 
         EventsSent status ->
@@ -314,7 +314,7 @@ update msg model =
                     ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
 
         EventsReceived ms ->
-            case decodeString (Decode.list Event.decoder) ms of
+            case decodeString (Decode.list Events.decoder) ms of
                 Ok messages ->
                     let
                         msgs =
@@ -330,8 +330,8 @@ update msg model =
                                 IOIdle
                       }
                     , if List.length msgs > 0 then
-                        Event.storeEvents <|
-                            Encode.list Event.encode <|
+                        Events.storeEvents <|
+                            Encode.list Events.encode <|
                                 exceptCI messages
 
                       else
@@ -348,7 +348,7 @@ initiateConnection uuid model =
         Task.map
             (\t ->
                 List.singleton <|
-                    Event
+                    Message
                         { uuid = uuid, when = t, flow = Flow.Requested }
                         (ConnectionInitiated
                             { lastEventTime = model.state.lastEventTime
@@ -371,7 +371,7 @@ dispatch model payload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| Event { uuid = newUuid, when = t, flow = Flow.Requested } payload)
+                (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } payload)
                 Time.now
 
 
@@ -387,7 +387,7 @@ dispatchT model newPayload =
             StoreEventsToSend
         <|
             Task.map
-                (\t -> List.singleton <| Event { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
+                (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
                 Time.now
 
 

@@ -8,10 +8,10 @@ import Element.Events as Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Entity.Entity exposing (Entity(..))
 import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
-import REA.Entity exposing (Entity(..))
 import Route exposing (Route)
 import Shared
 import Style exposing (..)

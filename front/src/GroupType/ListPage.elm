@@ -1,4 +1,4 @@
-module Ident.ListPage exposing (match, page, view)
+module GroupType.ListPage exposing (match, page, view)
 
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
@@ -7,10 +7,10 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, toPluralString, toUuid)
+import EntityType.EntityType exposing (EntityType, only, toName)
 import Events
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Html.Attributes as Attr
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.Scope as Scope
 import Navbar
 import Prng.Uuid as Uuid
 import Result exposing (andThen)
@@ -27,7 +27,7 @@ type alias Model =
 
 
 type Msg
-    = Removed IdentifierType
+    = Removed EntityType
     | Add
 
 
@@ -48,7 +48,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.IdentifierTypes ->
+        Route.GroupTypes ->
             Just { route = route }
 
         _ ->
@@ -63,51 +63,43 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed i ->
+        Removed g ->
             ( model
-            , Shared.dispatch s <| Events.IdentifierTypeRemoved i
+            , Shared.dispatch s <| Events.TypeRemoved g
             )
 
         Add ->
-            ( model, redirect s.navkey Route.AddIdentifierType |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.AddGroupType |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "IdentifierTypes"
+    { title = "Group Types"
     , attributes = []
     , element = viewContent model
-    , route = Route.IdentifierTypes
+    , route = Route.GroupTypes
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContent s
-        "IdentifierTypes"
+        "Group Types"
         [ button.primary Add "Add..."
         ]
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.identifierTypes
+            (s.state.entityTypes
+                |> only "GroupType"
                 |> Set.toList
-                |> List.sortBy .name
+                |> List.sortBy toName
                 |> List.map
-                    (\i ->
-                        let
-                            ids =
-                                Set.toList i.applyTo
-                        in
-                        viewSmallCard (Removed i)
+                    (\g ->
+                        viewSmallCard (Removed g)
                             Nothing
-                            (text i.name)
-                            (if List.isEmpty ids then
-                                "for everything"
-
-                             else
-                                "for " ++ (ids |> List.map Scope.toDesc |> String.join ", ")
-                            )
+                            (text (toName g))
+                            ""
                     )
-                |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")
+                |> withDefaultContent (p "There are no Group Types yet. Create your first one!")
             )
         ]

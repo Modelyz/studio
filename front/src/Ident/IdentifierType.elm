@@ -2,13 +2,13 @@ module Ident.IdentifierType exposing (..)
 
 import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
+import Entity.Entity as Entity exposing (Entity(..), toUuid)
+import EntityType.EntityType as EntityType exposing (toName)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Scope as Scope exposing (Scope)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid
-import REA.Entity as EN exposing (Entity(..), toUuid)
-import REA.EntityType as ENT exposing (toName)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 

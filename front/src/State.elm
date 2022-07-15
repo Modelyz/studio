@@ -1,30 +1,22 @@
-module State exposing (State, aggregate, empty, getCommitments, getEvents, getProcess)
+module State exposing (State, aggregate, empty)
 
 import Dict exposing (Dict)
 import DictSet as Set exposing (DictSet)
-import Event exposing (Event(..), EventPayload(..), base)
+import Entity.Entity as EN exposing (Entity(..))
+import EntityType.EntityType as ENT exposing (EntityType)
 import EventFlow exposing (EventFlow(..))
-import Group.Group as Group exposing (Group, compare)
-import Group.GroupType as GroupType exposing (GroupType, compare)
+import Events exposing (EventPayload(..), Message(..), base)
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Prng.Uuid as Uuid exposing (Uuid)
-import REA.Agent as A exposing (Agent)
-import REA.Commitment as CM exposing (Commitment)
-import REA.Contract as CN exposing (Contract)
-import REA.Entity as EN exposing (Entity)
-import REA.EntityType as ENT exposing (EntityType)
-import REA.Event as E
-import REA.Process as P exposing (Process)
-import REA.ProcessCommitments as PC exposing (ProcessCommitments)
-import REA.ProcessEvents as PE exposing (ProcessEvents)
-import REA.Resource as R exposing (Resource)
-import REA.Restriction as Restriction exposing (Restriction)
+import Relation.ProcessCommitments as PC exposing (ProcessCommitments)
+import Relation.ProcessEvents as PE exposing (ProcessEvents)
+import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix)
 
 
 type alias State =
-    { pendingEvents : DictSet Int Event
+    { pendingEvents : DictSet Int Message
     , lastEventTime : Time.Posix
     , uuids : DictSet String Uuid
 
@@ -33,13 +25,7 @@ type alias State =
     , processTypes : DictSet String EntityType
 
     -- entities
-    , entities : DictSet String Entity
-    , resources : DictSet String Resource
-    , events : DictSet Int E.Event
-    , agents : DictSet String Agent
-    , commitments : DictSet Int Commitment
-    , contracts : DictSet String Contract
-    , processes : DictSet Int Process
+    , entities : DictSet String Entity -- TODO gather all in entities
 
     -- links
     , process_commitments : DictSet String ProcessCommitments
@@ -47,8 +33,6 @@ type alias State =
     , restrictions : DictSet String Restriction
 
     -- behaviours
-    , groups : DictSet String Group
-    , grouptypes : DictSet String GroupType
     , identifierTypes : DictSet String IdentifierType
     , identifiers : DictSet String EntityIdentifier
     }
@@ -56,7 +40,7 @@ type alias State =
 
 empty : State
 empty =
-    { pendingEvents = Set.empty Event.compare
+    { pendingEvents = Set.empty Events.compare
     , lastEventTime = millisToPosix 0
     , uuids = Set.empty Uuid.toString
 
@@ -66,19 +50,11 @@ empty =
 
     -- entities
     , entities = Set.empty EN.compare
-    , resources = Set.empty R.compare
-    , events = Set.empty E.compare
-    , agents = Set.empty A.compare
-    , commitments = Set.empty CM.compare
-    , contracts = Set.empty CN.compare
-    , processes = Set.empty P.compare
 
     -- links
     , process_events = Set.empty PE.compare
     , restrictions = Set.empty Restriction.compare
     , process_commitments = Set.empty PC.compare
-    , groups = Set.empty Group.compare
-    , grouptypes = Set.empty GroupType.compare
 
     -- behaviours
     , identifierTypes = Set.empty IdentifierType.compare
@@ -86,14 +62,14 @@ empty =
     }
 
 
-aggregate : Event -> State -> State
-aggregate (Event b p) state =
+aggregate : Message -> State -> State
+aggregate (Message b p) state =
     case p of
         ProcessTypeChanged e ->
             { state
                 | processTypes = Set.insert e state.processTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -101,23 +77,7 @@ aggregate (Event b p) state =
             { state
                 | processTypes = Set.filter (\pt -> ENT.toName pt /= e) state.processTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        ProcessAdded e ->
-            { state
-                | processes = Set.insert e state.processes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        CommitmentAdded e ->
-            { state
-                | commitments = Set.insert e state.commitments
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -125,55 +85,15 @@ aggregate (Event b p) state =
             { state
                 | restrictions = Set.insert r state.restrictions
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
-        EventAdded e ->
-            -- TODO : link the Event to a Process (cf process_events)
-            { state
-                | events = Set.insert e state.events
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
+        -- TODO : link the Event to a Process (cf process_events)
         ConnectionInitiated e ->
             { state
                 | lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        GroupTypeAdded e ->
-            { state
-                | grouptypes = Set.insert (GroupType e.name) state.grouptypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        GroupTypeRemoved e ->
-            { state
-                | grouptypes = Set.filter (\g -> g.name /= e) state.grouptypes
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        GroupAdded e ->
-            { state
-                | groups = Set.insert (Group e.name) state.groups
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
-                , uuids = Set.insert b.uuid state.uuids
-            }
-
-        GroupRemoved e ->
-            { state
-                | groups = Set.filter (\g -> g.name /= e) state.groups
-                , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -181,7 +101,7 @@ aggregate (Event b p) state =
             { state
                 | identifierTypes = Set.insert e state.identifierTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -189,7 +109,7 @@ aggregate (Event b p) state =
             { state
                 | identifierTypes = Set.filter (\i -> i /= e) state.identifierTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -197,7 +117,7 @@ aggregate (Event b p) state =
             { state
                 | entityTypes = Set.insert e state.entityTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -205,7 +125,7 @@ aggregate (Event b p) state =
             { state
                 | entities = Set.insert e state.entities
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -213,7 +133,7 @@ aggregate (Event b p) state =
             { state
                 | entities = Set.remove e state.entities
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -221,7 +141,7 @@ aggregate (Event b p) state =
             { state
                 | entityTypes = Set.remove et state.entityTypes
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
@@ -229,12 +149,12 @@ aggregate (Event b p) state =
             { state
                 | identifiers = Set.insert ei state.identifiers
                 , lastEventTime = b.when
-                , pendingEvents = updatePending (Event b p) state.pendingEvents
+                , pendingEvents = updatePending (Message b p) state.pendingEvents
                 , uuids = Set.insert b.uuid state.uuids
             }
 
 
-updatePending : Event -> DictSet Int Event -> DictSet Int Event
+updatePending : Message -> DictSet Int Message -> DictSet Int Message
 updatePending e es =
     case .flow <| base <| e of
         Requested ->
@@ -242,36 +162,3 @@ updatePending e es =
 
         Processed ->
             Set.remove e es
-
-
-getProcess : State -> String -> Maybe Process
-getProcess state str =
-    Uuid.fromString str
-        |> Maybe.andThen
-            (\uuid ->
-                Set.filter
-                    (\p -> p.uuid == uuid)
-                    state.processes
-                    |> Set.values
-                    |> List.head
-            )
-
-
-getCommitments : State -> Process -> DictSet Int Commitment
-getCommitments state process =
-    let
-        cs =
-            Set.filter (\pc -> pc.process == process.uuid) state.process_commitments
-                |> Set.map Uuid.toString (\pc -> pc.commitment)
-    in
-    Set.filter (\c -> Set.member c.uuid cs) state.commitments
-
-
-getEvents : State -> Process -> DictSet Int E.Event
-getEvents state process =
-    let
-        es =
-            Set.filter (\pe -> pe.process == process.uuid) state.process_events
-                |> Set.map Uuid.toString (\pe -> pe.event)
-    in
-    Set.filter (\e -> Set.member e.uuid es) state.events

@@ -4,11 +4,11 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Entity.Entity exposing (Entity(..))
 import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifiable as Identifiable exposing (Identifiable(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import REA.Entity exposing (Entity(..))
 import Style exposing (size)
 import View exposing (ViewType(..))
 
