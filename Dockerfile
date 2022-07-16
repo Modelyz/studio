@@ -1,5 +1,6 @@
 FROM debian:11 AS build
 
+ENV LASTBUILD 2022071601
 ARG WSS
 ENV WSS $WSS
 WORKDIR /srv
@@ -38,7 +39,7 @@ RUN ./build.sh -o
 FROM debian:11
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV LASTBUILD 2022051201
+ENV LASTBUILD 2022071601
 ENV LANG C.UTF-8
 
 COPY --from=build /srv/build/ /srv/build/
