@@ -10,7 +10,7 @@ import View exposing (View)
 
 config : EntityType.AddPage.Config
 config =
-    { filter = only "ContractType"
+    { filter = only EntityType.ContractType
     , typeExplain = "Choose the type of the new Contract Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Contract Type"
     , pageTitle = "Adding a Contract Type"

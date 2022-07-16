@@ -49,7 +49,7 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
       , entityType =
-            Just f.name |> Maybe.andThen (\etname -> s.state.entityTypes |> EntityType.only "AgentType" |> findEntityType etname)
+            Just f.name |> Maybe.andThen (\etname -> s.state.entityTypes |> EntityType.only EntityType.AgentType |> findEntityType etname)
       }
     , closeMenu f s.menu
     )

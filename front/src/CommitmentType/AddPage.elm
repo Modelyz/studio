@@ -1,7 +1,7 @@
 module CommitmentType.AddPage exposing (..)
 
 import EntityType.AddPage exposing (Flags, Model, Msg)
-import EntityType.EntityType as ENT exposing (only)
+import EntityType.EntityType as EntityType exposing (only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -10,12 +10,12 @@ import View exposing (View)
 
 config : EntityType.AddPage.Config
 config =
-    { filter = only "CommitmentType"
+    { filter = only EntityType.CommitmentType
     , typeExplain = "Choose the type of the new Commitment Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Commitment Type"
     , pageTitle = "Adding a Commitment Type"
     , processRestriction = "This Commitment Type will be usable from the following Process Types:"
-    , typeConstructor = ENT.CommitmentType
+    , typeConstructor = EntityType.CommitmentType
     }
 
 

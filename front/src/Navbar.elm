@@ -4,10 +4,10 @@ import DictSet as Set
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import EntityType.EntityType as ENT
+import EntityType.EntityType as EntityType
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
-import Route exposing (Route(..), firstSegment, toString)
+import Route exposing (Route, firstSegment, toString)
 import Shared
 import Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
 import Time exposing (posixToMillis)
@@ -30,21 +30,21 @@ view title s =
 
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
-    [ menuitem s r Home "Home"
-    , menuitem s r ProcessTypes "Process Types"
-    , menuitem s r ResourceTypes "Resource Types"
-    , menuitem s r EventTypes "Event Types"
-    , menuitem s r AgentTypes "Agent Types"
-    , menuitem s r CommitmentTypes "Commitment Types"
-    , menuitem s r ContractTypes "Contract Types"
-    , menuitem s r Groups "Groups"
-    , menuitem s r GroupTypes "Group Types"
-    , menuitem s r IdentifierTypes "Identifiers"
-    , menuitem s r Agents "Agents"
+    [ menuitem s r Route.Home "Home"
+    , menuitem s r Route.ProcessTypes "Process Types"
+    , menuitem s r Route.ResourceTypes "Resource Types"
+    , menuitem s r Route.EventTypes "Event Types"
+    , menuitem s r Route.AgentTypes "Agent Types"
+    , menuitem s r Route.CommitmentTypes "Commitment Types"
+    , menuitem s r Route.ContractTypes "Contract Types"
+    , menuitem s r Route.Groups "Groups"
+    , menuitem s r Route.GroupTypes "Group Types"
+    , menuitem s r Route.IdentifierTypes "Identifiers"
+    , menuitem s r Route.Agents "Agents"
     ]
         ++ (let
                 processTypes =
-                    s.state.entityTypes |> ENT.only "ProcessType"
+                    s.state.entityTypes |> EntityType.only EntityType.ProcessType
             in
             if Set.size processTypes > 0 then
                 processTypes
@@ -53,9 +53,9 @@ links s r =
                         (\pt ->
                             let
                                 name =
-                                    ENT.toName pt
+                                    EntityType.toName pt
                             in
-                            menuitem s r (ProcessType name) name
+                            menuitem s r (Route.ProcessType name) name
                         )
 
             else

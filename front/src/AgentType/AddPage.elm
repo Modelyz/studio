@@ -1,7 +1,7 @@
 module AgentType.AddPage exposing (..)
 
 import EntityType.AddPage exposing (Flags, Model, Msg)
-import EntityType.EntityType as EntityType exposing (EntityType(..), only)
+import EntityType.EntityType as EntityType exposing (EntityType, only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -10,12 +10,12 @@ import View exposing (View)
 
 config : EntityType.AddPage.Config
 config =
-    { filter = only "AgentType"
+    { filter = only EntityType.AgentType
     , typeExplain = "Choose the type of the new Agent Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Agent Type"
     , pageTitle = "Adding an Agent Type"
     , processRestriction = "This Agent Type will be available from the following Process Types:"
-    , typeConstructor = AgentType
+    , typeConstructor = EntityType.AgentType
     }
 
 

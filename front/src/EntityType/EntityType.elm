@@ -1,4 +1,4 @@
-module EntityType.EntityType exposing (EntityType(..), compare, decoder, encode, only, toName, toParent, toPluralString, toString, toType, toUrl)
+module EntityType.EntityType exposing (EntityType(..), compare, decoder, encode, is, only, toName, toParent, toPluralString, toString, toType, toUrl)
 
 import DictSet as Set exposing (DictSet)
 import Entity.Entity exposing (Entity(..))
@@ -199,12 +199,37 @@ compare et =
     toString et ++ " " ++ toName et
 
 
-only : String -> DictSet String EntityType -> DictSet String EntityType
+is : (Type -> EntityType) -> EntityType -> Bool
+is constructor entityType =
+    case entityType of
+        ProcessType t ->
+            constructor t == entityType
+
+        EventType t ->
+            constructor t == entityType
+
+        AgentType t ->
+            constructor t == entityType
+
+        CommitmentType t ->
+            constructor t == entityType
+
+        ContractType t ->
+            constructor t == entityType
+
+        GroupType t ->
+            constructor t == entityType
+
+        ResourceType t ->
+            constructor t == entityType
+
+
+only : (Type -> EntityType) -> DictSet String EntityType -> DictSet String EntityType
 only t ets =
-    Set.filter (\et -> toString et == t) ets
+    Set.filter (\et -> is t et) ets
 
 
-select : String -> DictSet String EntityType -> Maybe EntityType
+select : (Type -> EntityType) -> DictSet String EntityType -> Maybe EntityType
 select typename =
     only typename >> Set.toList >> List.head
 

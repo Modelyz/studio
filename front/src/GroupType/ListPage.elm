@@ -7,7 +7,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, toPluralString, toUuid)
-import EntityType.EntityType exposing (EntityType, only, toName, toParent, toType)
+import EntityType.EntityType as EntityType exposing (EntityType, only, toName, toParent, toType)
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Html.Attributes as Attr
 import Message
@@ -90,7 +90,7 @@ viewContent model s =
         [ wrappedRow
             [ spacing 10 ]
             (s.state.entityTypes
-                |> only "GroupType"
+                |> only EntityType.GroupType
                 |> Set.toList
                 |> List.sortBy toName
                 |> List.map

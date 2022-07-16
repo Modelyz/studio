@@ -11,7 +11,7 @@ import View exposing (View)
 
 config : Entity.AddPage.Config
 config =
-    { filter = only "GroupType"
+    { filter = only EntityType.GroupType
     , typeExplain = "Choose the type of the new Group (it can be hierarchical)"
     , pageTitle = "Adding a Group"
     , constructor = Group

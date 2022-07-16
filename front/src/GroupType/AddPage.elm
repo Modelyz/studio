@@ -10,7 +10,7 @@ import View exposing (View)
 
 config : EntityType.AddPage.Config
 config =
-    { filter = only "GroupType"
+    { filter = only EntityType.GroupType
     , typeExplain = "Choose to restrict what you can group together"
     , nameExplain = "Give a name to this new Group Type"
     , pageTitle = "Adding an Group Type"

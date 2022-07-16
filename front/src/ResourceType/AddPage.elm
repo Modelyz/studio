@@ -1,7 +1,7 @@
 module ResourceType.AddPage exposing (..)
 
 import EntityType.AddPage exposing (Flags, Model, Msg)
-import EntityType.EntityType as ENT exposing (only)
+import EntityType.EntityType as EntityType exposing (only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -10,12 +10,12 @@ import View exposing (View)
 
 config : EntityType.AddPage.Config
 config =
-    { filter = only "ResourceType"
+    { filter = only EntityType.ResourceType
     , typeExplain = "Choose the type of the new Resource Type (it can be hierarchical)"
     , nameExplain = "Give a name to this new Resource Type"
     , pageTitle = "Adding a Resource Type"
     , processRestriction = "This Resource Type will be usable from the following Process Types:"
-    , typeConstructor = ENT.ResourceType
+    , typeConstructor = EntityType.ResourceType
     }
 
 
