@@ -23,8 +23,8 @@ type alias IdentifierType =
 
 
 compare : IdentifierType -> String
-compare =
-    .name
+compare it =
+    it.name ++ " " ++ (it.applyTo |> Set.toList |> List.map Scope.compare |> String.join " ")
 
 
 encode : IdentifierType -> Encode.Value
