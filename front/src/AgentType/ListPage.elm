@@ -41,7 +41,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentTypes ->
+        Route.AgentTypeList ->
             Just { route = route }
 
         _ ->

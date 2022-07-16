@@ -48,7 +48,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.IdentifierTypes ->
+        Route.IdentifierTypeList ->
             Just { route = route }
 
         _ ->
@@ -69,7 +69,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, redirect s.navkey Route.AddIdentifierType |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.IdentifierTypeAdd |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -77,7 +77,7 @@ view s model =
     { title = "IdentifierTypes"
     , attributes = []
     , element = viewContent model
-    , route = Route.IdentifierTypes
+    , route = Route.IdentifierTypeList
     }
 
 

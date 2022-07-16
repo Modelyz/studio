@@ -1,7 +1,6 @@
-module EntityType.EntityType exposing (EntityType(..), compare, decoder, encode, is, only, toName, toParent, toPluralString, toString, toType, toUrl)
+module EntityType.EntityType exposing (EntityType(..), compare, decoder, encode, is, only, toEntityString, toName, toParent, toPluralString, toString, toType, toUrl)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity exposing (Entity(..))
 import EntityType.Type as Type exposing (Type)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)

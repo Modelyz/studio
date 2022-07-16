@@ -10,30 +10,47 @@ import Url.Parser.Query as Query
 
 type Route
     = Home
-    | ProcessTypes
-    | Processes (Maybe String)
-    | Process String
-    | ResourceTypes
-    | AgentTypes
-    | AddProcessType
-    | AddResourceType
-    | AddEventType
-    | AddAgentType
-    | AddAgent
-    | AddCommitmentType
-    | AddContractType
-    | ProcessType String
-    | AgentType String
-    | ContractTypes
-    | CommitmentTypes
-    | EventTypes
-    | Agents
-    | GroupTypes
-    | AddGroupType
-    | Groups
-    | AddGroup
-    | IdentifierTypes
-    | AddIdentifierType
+      -- Process
+    | ProcessTypeList
+    | ProcessList (Maybe String)
+    | ProcessView String
+    | ProcessTypeView String
+    | ProcessTypeAdd
+    | ProcessAdd
+      -- Resource
+    | ResourceTypeList
+    | ResourceList
+    | ResourceTypeAdd
+    | ResourceAdd
+      -- Agent
+    | AgentTypeList
+    | AgentTypeAdd
+    | AgentList
+    | AgentAdd
+    | AgentTypeView String
+      -- Commitment
+    | CommitmentTypeAdd
+    | CommitmentAdd
+    | CommitmentTypeList
+    | CommitmentList
+      -- Contract
+    | ContractTypeAdd
+    | ContractAdd
+    | ContractTypeList
+    | ContractList
+      -- Event
+    | EventTypeList
+    | EventList
+    | EventTypeAdd
+    | EventAdd
+      -- Group
+    | GroupTypeList
+    | GroupTypeAdd
+    | GroupList
+    | GroupAdd
+      -- Ident
+    | IdentifierTypeList
+    | IdentifierTypeAdd
 
 
 routeParser : Parser (Route -> a) a
@@ -42,42 +59,53 @@ routeParser =
         [ map Home top
 
         -- Resource
-        , map ResourceTypes (s "resource-types")
-        , map AddResourceType (s "resource-types" </> s "add")
+        , map ResourceTypeList (s "resource-type")
+        , map ResourceList (s "resource")
+        , map ResourceTypeAdd (s "resource-type" </> s "add")
+        , map ResourceAdd (s "resource" </> s "add")
 
         -- Contract
-        , map ContractTypes (s "contract-types")
-        , map AddContractType (s "contract-types" </> s "add")
+        , map ContractTypeList (s "contract-type")
+        , map ContractList (s "contract")
+        , map ContractTypeAdd (s "contract-type" </> s "add")
+        , map ContractAdd (s "contract" </> s "add")
 
         -- Process
-        , map ProcessTypes (s "process-types")
-        , map AddProcessType (s "process-types" </> s "add")
-        , map Processes (s "processes" <?> Query.string "type")
-        , map ProcessType (s "process-type" </> encodedString)
-        , map Process (s "process" </> encodedString)
+        , map ProcessTypeList (s "process-type")
+        , map ProcessTypeAdd (s "process-type" </> s "add")
+        , map ProcessAdd (s "process" </> s "add")
+        , map ProcessList (s "process" <?> Query.string "type")
+        , map ProcessTypeView (s "process-type" </> encodedString)
+        , map ProcessView (s "process" </> encodedString)
 
         -- Group
-        , map GroupTypes (s "group-types")
-        , map AddGroupType (s "group-types" </> s "add")
-        , map Groups (s "groups")
-        , map AddGroup (s "groups" </> s "add")
+        , map GroupTypeList (s "group-type")
+        , map GroupTypeAdd (s "group-type" </> s "add")
+        , map GroupList (s "group")
+        , map GroupAdd (s "group" </> s "add")
 
         -- Ident
-        , map AddIdentifierType (s "identifier-types" </> s "add")
-        , map IdentifierTypes (s "identifier-types")
+        , map IdentifierTypeAdd (s "identifier-type" </> s "add")
+        , map IdentifierTypeList (s "identifier-type")
 
         -- Event
-        , map AddEventType (s "event-types" </> s "add")
-        , map EventTypes (s "event-types")
-        , map AddCommitmentType (s "commitment-types" </> s "add")
-        , map CommitmentTypes (s "commitment-types")
+        , map EventTypeAdd (s "event-type" </> s "add")
+        , map EventAdd (s "event" </> s "add")
+        , map EventTypeList (s "event-type")
+        , map EventList (s "event")
+
+        -- Commitment
+        , map CommitmentTypeAdd (s "commitment-type" </> s "add")
+        , map CommitmentAdd (s "commitment" </> s "add")
+        , map CommitmentTypeList (s "commitment-type")
+        , map CommitmentList (s "commitment")
 
         -- Agent
-        , map AddAgentType (s "agent-types" </> s "add")
-        , map AgentTypes (s "agent-types")
-        , map AgentType (s "agent-type" </> encodedString)
-        , map Agents (s "agents")
-        , map AddAgent (s "agents" </> s "add")
+        , map AgentTypeAdd (s "agent-type" </> s "add")
+        , map AgentTypeList (s "agent-type")
+        , map AgentTypeView (s "agent-type" </> encodedString)
+        , map AgentList (s "agent")
+        , map AgentAdd (s "agent" </> s "add")
 
         -- edit entities
         ]
@@ -100,82 +128,109 @@ toString r =
         Home ->
             absolute [] []
 
-        ProcessTypes ->
-            absolute [ "process-types" ] []
+        ProcessTypeList ->
+            absolute [ "process-type" ] []
 
-        ProcessType ptype ->
+        ProcessTypeView ptype ->
             absolute [ "process-type", percentEncode ptype ] []
 
-        Processes ps ->
-            case ps of
-                Just t ->
-                    absolute [ "processes" ] [ Builder.string "type" t ]
+        ProcessAdd ->
+            absolute [ "process", "add" ] []
 
-                Nothing ->
-                    absolute [ "processes" ] []
+        ProcessTypeAdd ->
+            absolute [ "process-type", "add" ] []
 
-        ResourceTypes ->
-            absolute [ "resource-types" ] []
-
-        EventTypes ->
-            absolute [ "event-types" ] []
-
-        Agents ->
-            absolute [ "agents" ] []
-
-        AddAgent ->
-            absolute [ "agents", "add" ] []
-
-        AgentType at ->
-            absolute [ "agent-type", percentEncode at ] []
-
-        AgentTypes ->
-            absolute [ "agent-types" ] []
-
-        CommitmentTypes ->
-            absolute [ "commitment-types" ] []
-
-        ContractTypes ->
-            absolute [ "contract-types" ] []
-
-        AddProcessType ->
-            absolute [ "process-types", "add" ] []
-
-        AddResourceType ->
-            absolute [ "resource-types", "add" ] []
-
-        AddEventType ->
-            absolute [ "event-types", "add" ] []
-
-        AddAgentType ->
-            absolute [ "agent-types", "add" ] []
-
-        AddCommitmentType ->
-            absolute [ "commitment-types", "add" ] []
-
-        AddContractType ->
-            absolute [ "contract-type", "add" ] []
-
-        Process p ->
+        ProcessView p ->
             absolute [ "process", percentEncode p ] []
 
-        AddGroupType ->
-            absolute [ "group-types", "add" ] []
+        ProcessList ps ->
+            case ps of
+                Just t ->
+                    absolute [ "process" ] [ Builder.string "type" t ]
 
-        AddGroup ->
-            absolute [ "groups", "add" ] []
+                Nothing ->
+                    absolute [ "process" ] []
 
-        GroupTypes ->
-            absolute [ "group-types" ] []
+        ResourceList ->
+            absolute [ "resource" ] []
 
-        Groups ->
-            absolute [ "groups" ] []
+        ResourceAdd ->
+            absolute [ "resource", "add" ] []
 
-        IdentifierTypes ->
-            absolute [ "identifier-types" ] []
+        ResourceTypeList ->
+            absolute [ "resource-type" ] []
 
-        AddIdentifierType ->
-            absolute [ "identifier-types", "add" ] []
+        ResourceTypeAdd ->
+            absolute [ "resource-type", "add" ] []
+
+        EventTypeAdd ->
+            absolute [ "event-type", "add" ] []
+
+        EventTypeList ->
+            absolute [ "event-type" ] []
+
+        EventAdd ->
+            absolute [ "event", "add" ] []
+
+        EventList ->
+            absolute [ "event" ] []
+
+        AgentList ->
+            absolute [ "agent" ] []
+
+        AgentAdd ->
+            absolute [ "agent", "add" ] []
+
+        AgentTypeView at ->
+            absolute [ "agent-type", percentEncode at ] []
+
+        AgentTypeAdd ->
+            absolute [ "agent-type", "add" ] []
+
+        AgentTypeList ->
+            absolute [ "agent-type" ] []
+
+        CommitmentTypeList ->
+            absolute [ "commitment-type" ] []
+
+        CommitmentTypeAdd ->
+            absolute [ "commitment-type", "add" ] []
+
+        CommitmentList ->
+            absolute [ "commitment" ] []
+
+        CommitmentAdd ->
+            absolute [ "commitment", "add" ] []
+
+        ContractTypeList ->
+            absolute [ "contract-type" ] []
+
+        ContractTypeAdd ->
+            absolute [ "contract-type", "add" ] []
+
+        ContractList ->
+            absolute [ "contract" ] []
+
+        ContractAdd ->
+            absolute [ "contract", "add" ] []
+
+        GroupTypeAdd ->
+            absolute [ "group-type", "add" ] []
+
+        GroupAdd ->
+            absolute [ "group", "add" ] []
+
+        GroupTypeList ->
+            absolute [ "group-type" ] []
+
+        GroupList ->
+            absolute [ "group" ] []
+
+        IdentifierTypeList ->
+            absolute [ "identifier-type" ] []
+
+        IdentifierTypeAdd ->
+            absolute [ "identifier-type", "add" ] []
 
 
 firstSegment : Route -> String

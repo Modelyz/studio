@@ -84,7 +84,7 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
-        Route.AddIdentifierType ->
+        Route.IdentifierTypeAdd ->
             Just { route = route }
 
         _ ->
@@ -134,7 +134,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Message.IdentifierTypeAdded i
-                        , redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd
+                        , redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd
                         ]
                     )
 
@@ -147,7 +147,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
+                    ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -155,10 +155,10 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
+                    ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirect s.navkey Route.IdentifierTypes |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

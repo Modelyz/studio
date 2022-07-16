@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddResourceType ->
+        Route.ResourceTypeAdd ->
             Just { route = route }
 
         _ ->

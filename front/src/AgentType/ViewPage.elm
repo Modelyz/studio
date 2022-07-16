@@ -38,7 +38,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentType name ->
+        Route.AgentTypeView name ->
             Just { route = route, name = name }
 
         _ ->

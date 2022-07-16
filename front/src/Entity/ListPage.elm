@@ -6,7 +6,9 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Entity.Entity as Entity exposing (Entity, toPluralString)
+import Entity.Entity as Entity exposing (Entity, only, toPluralString, toString)
+import EntityType.EntityType exposing (EntityType)
+import EntityType.Type exposing (Type)
 import Html.Attributes as Attr
 import Ident.EntityIdentifier as EntityIdentifier
 import Ident.Identifiable as Identifiable
@@ -73,6 +75,10 @@ view c s model =
 
 viewContent : Config -> Model -> ViewType -> Shared.Model -> Element Msg
 viewContent c model vt s =
+    let
+        entities =
+            only c.entityType s.state.entities
+    in
     case vt of
         Smallcard ->
             flatContent s
@@ -81,7 +87,7 @@ viewContent c model vt s =
                 ]
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.entities
+                    (entities
                         |> Set.toList
                         |> List.map
                             (\e ->

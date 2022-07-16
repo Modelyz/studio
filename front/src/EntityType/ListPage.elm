@@ -3,7 +3,7 @@ module EntityType.ListPage exposing (Config, Flags, Model, Msg, init, update, vi
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
-import EntityType.EntityType as ENT exposing (EntityType)
+import EntityType.EntityType as EntityType exposing (EntityType, toName, toParent, toString, toUrl)
 import Message
 import Route exposing (Route, redirectAdd)
 import Shared
@@ -60,7 +60,7 @@ viewContent : Config -> Model -> Shared.Model -> Element Msg
 viewContent c model s =
     let
         entityTypes =
-            Set.filter (\et -> ENT.toString et == c.entityType) s.state.entityTypes
+            Set.filter (\et -> toString et == c.entityType) s.state.entityTypes
     in
     flatContent s
         c.pageTitle
@@ -70,7 +70,7 @@ viewContent c model s =
             [ spacing 10 ]
             (entityTypes
                 |> Set.toList
-                |> List.map (\et -> viewSmallCard (Removed et) (Just <| ENT.toUrl et) (text <| ENT.toName et) <| Maybe.withDefault "(Root type)" <| Maybe.map (\t -> "Type: " ++ t) (ENT.toParent et))
+                |> List.map (\et -> viewSmallCard (Removed et) (Just <| toUrl et) (text <| toName et) <| Maybe.withDefault "(Root type)" <| Maybe.map (\t -> "Type: " ++ t) (toParent et))
                 |> withDefaultContent (p c.emptyText)
             )
         ]

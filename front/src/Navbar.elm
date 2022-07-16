@@ -31,16 +31,21 @@ view title s =
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
     [ menuitem s r Route.Home "Home"
-    , menuitem s r Route.ProcessTypes "Process Types"
-    , menuitem s r Route.ResourceTypes "Resource Types"
-    , menuitem s r Route.EventTypes "Event Types"
-    , menuitem s r Route.AgentTypes "Agent Types"
-    , menuitem s r Route.CommitmentTypes "Commitment Types"
-    , menuitem s r Route.ContractTypes "Contract Types"
-    , menuitem s r Route.Groups "Groups"
-    , menuitem s r Route.GroupTypes "Group Types"
-    , menuitem s r Route.IdentifierTypes "Identifiers"
-    , menuitem s r Route.Agents "Agents"
+    , menuitem s r Route.ProcessTypeList "Process Types"
+    , menuitem s r Route.ResourceTypeList "Resource Types"
+    , menuitem s r Route.EventTypeList "Event Types"
+    , menuitem s r Route.AgentTypeList "Agent Types"
+    , menuitem s r Route.CommitmentTypeList "Commitment Types"
+    , menuitem s r Route.ContractTypeList "Contract Types"
+    , menuitem s r Route.GroupTypeList "Group Types"
+    , menuitem s r Route.IdentifierTypeList "Identifiers"
+    , menuitem s r Route.ResourceList "Resources"
+    , menuitem s r Route.EventList "Events"
+    , menuitem s r Route.AgentList "Agents"
+    , menuitem s r Route.CommitmentList "Commitments"
+    , menuitem s r Route.ContractList "Contracts"
+    , menuitem s r Route.GroupList "Groups"
+    , menuitem s r (Route.ProcessList Nothing) "Processes"
     ]
         ++ (let
                 processTypes =
@@ -55,7 +60,7 @@ links s r =
                                 name =
                                     EntityType.toName pt
                             in
-                            menuitem s r (Route.ProcessType name) name
+                            menuitem s r (Route.ProcessTypeView name) name
                         )
 
             else

@@ -1,4 +1,4 @@
-module Agent.ListPage exposing (match, page)
+module Resource.ListPage exposing (match, page)
 
 import Entity.ListPage exposing (Config, Flags, Model, Msg)
 import EntityType.EntityType as EntityType
@@ -10,9 +10,9 @@ import View exposing (..)
 
 config : Config
 config =
-    { pageTitle = "Agents"
-    , entityType = "Agent"
-    , emptyText = "There are no Agents yet. Add your first one!"
+    { pageTitle = "Resources"
+    , entityType = "Resource"
+    , emptyText = "There are no Resources yet. Add your first one!"
     }
 
 
@@ -29,7 +29,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentList ->
+        Route.ResourceList ->
             Just { route = route }
 
         _ ->

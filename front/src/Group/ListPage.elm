@@ -1,6 +1,7 @@
 module Group.ListPage exposing (match, page)
 
 import Entity.ListPage exposing (Config, Flags, Model, Msg)
+import EntityType.EntityType as EntityType
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -28,7 +29,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Groups ->
+        Route.GroupList ->
             Just { route = route }
 
         _ ->

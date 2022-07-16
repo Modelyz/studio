@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddCommitmentType ->
+        Route.CommitmentTypeAdd ->
             Just { route = route }
 
         _ ->

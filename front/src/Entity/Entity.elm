@@ -1,32 +1,34 @@
 module Entity.Entity exposing (Entity(..), compare, decoder, encode, only, toPluralString, toString, toType, toUuid)
 
-import Agent.Agent as Agent exposing (Agent)
-import Commitment.Commitment as Commitment exposing (Commitment)
+import Agent.Agent as Agent
+import Commitment.Commitment as Commitment
 import Contract.Contract as Contract exposing (Contract)
 import DictSet as Set exposing (DictSet)
-import Event.Event as Event exposing (Event)
-import Group.Group as Group exposing (Group)
+import EntityType.EntityType exposing (EntityType, toEntityString)
+import EntityType.Type exposing (Type)
+import Event.Event as Event
+import Group.Group as Group
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process as Process exposing (Process)
-import Resource.Resource as Resource exposing (Resource)
+import Process.Process as Process
+import Resource.Resource as Resource
 import Time exposing (posixToMillis)
 
 
 type Entity
-    = Resource Resource
-    | Event Event
-    | Agent Agent
-    | Commitment Commitment
-    | Contract Contract
-    | Process Process
-    | Group Group
+    = Resource Resource.Resource
+    | Event Event.Event
+    | Agent Agent.Agent
+    | Commitment Commitment.Commitment
+    | Contract Contract.Contract
+    | Process Process.Process
+    | Group Group.Group
 
 
 only : String -> DictSet String Entity -> DictSet String Entity
 only t es =
-    Set.filter (\et -> toString et == t) es
+    Set.filter (\e -> toString e == t) es
 
 
 toType : Entity -> String

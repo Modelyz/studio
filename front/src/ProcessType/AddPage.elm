@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AddProcessType ->
+        Route.ProcessTypeAdd ->
             Just { route = route }
 
         _ ->
