@@ -1,50 +1,26 @@
-module Agent.ListPage exposing (match, page, view)
+module Agent.ListPage exposing (match, page)
 
-import Agent.Agent as Agent exposing (..)
-import DictSet as Set exposing (DictSet)
-import Effect exposing (Effect)
-import Element exposing (..)
-import Element.Background as Background
-import Element.Font as Font
-import Element.Input as Input
-import Entity.Entity as Entity exposing (Entity, toPluralString)
-import Html.Attributes as Attr
-import Ident.EntityIdentifier as EntityIdentifier
-import Ident.Identifiable as Identifiable
-import Ident.Identifier as Identifier
-import Ident.Scope exposing (Scope(..))
-import Ident.View exposing (displayIdentifiers, selectIdentifiers)
-import Message
-import Navbar
-import Prng.Uuid as Uuid exposing (Uuid)
-import Result exposing (andThen)
+import Entity.ListPage exposing (Config, Flags, Model, Msg)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Style exposing (..)
 import View exposing (..)
-import View.Radio as Radio
 
 
-type alias Model =
-    { route : Route }
-
-
-type Msg
-    = Removed Entity
-    | Add
-
-
-type alias Flags =
-    { route : Route }
+config : Config
+config =
+    { pageTitle = "Agents"
+    , entityType = "Agent"
+    , emptyText = "There are no Agents yet. Add your first one!"
+    }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = init s
-        , update = update s
-        , view = view s
+        { init = Entity.ListPage.init s
+        , update = Entity.ListPage.update s
+        , view = Entity.ListPage.view config s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -57,59 +33,3 @@ match route =
 
         _ ->
             Nothing
-
-
-init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
-init s f =
-    ( { route = f.route }, closeMenu f s.menu )
-
-
-update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update s msg model =
-    case msg of
-        Removed a ->
-            ( model
-            , Shared.dispatch s <| Message.Removed a
-            )
-
-        Add ->
-            ( model, redirect s.navkey Route.AddAgent |> Effect.fromCmd )
-
-
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "Agents"
-    , attributes = []
-    , element = viewContent model Smallcard
-    , route = Route.Agents
-    }
-
-
-viewContent : Model -> ViewType -> Shared.Model -> Element Msg
-viewContent model vt s =
-    case vt of
-        Smallcard ->
-            flatContent s
-                "Agents"
-                [ button.primary Add "Add..."
-                ]
-                [ wrappedRow
-                    [ spacing 10 ]
-                    (s.state.entities
-                        |> Set.toList
-                        |> List.map
-                            (\e ->
-                                viewSmallCard (Removed e)
-                                    Nothing
-                                    (EntityIdentifier.restrict e s.state.identifiers
-                                        |> selectIdentifiers Smallcard
-                                        |> displayIdentifiers
-                                    )
-                                    ("Type: " ++ Entity.toType e)
-                            )
-                        |> withDefaultContent (p "There are no Agents yet. Create your first one!")
-                    )
-                ]
-
-        New ->
-            text "New"

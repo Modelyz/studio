@@ -7,7 +7,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, toPluralString)
-import EntityType.EntityType as ENT exposing (EntityType)
+import EntityType.EntityType exposing (EntityType)
 import EntityType.ListPage exposing (Config, Flags, Model, Msg)
 import Html.Attributes as Attr
 import Navbar
