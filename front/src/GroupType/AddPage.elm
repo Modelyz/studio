@@ -1,30 +1,30 @@
 module GroupType.AddPage exposing (..)
 
-import EntityType.AddPage exposing (Flags, Model, Msg)
-import EntityType.EntityType as EntityType exposing (EntityType(..), only)
+import Entity.AddPage exposing (Flags, Model, Msg)
+import Entity.Entity as Entity exposing (only)
+import GroupType.GroupType exposing (GroupType)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : EntityType.AddPage.Config
+config : Entity.AddPage.Config GroupType
 config =
-    { filter = only EntityType.GroupType
+    { filter = only "GroupType"
     , typeExplain = "Choose to restrict what you can group together"
-    , nameExplain = "Give a name to this new Group Type"
     , pageTitle = "Adding an Group Type"
-    , processRestriction = "This Group Type will be available from the following Process Types:"
-    , typeConstructor = GroupType
+    , constructor = Entity.GT
+    , typeName = "GroupType"
     }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = EntityType.AddPage.init s
-        , update = EntityType.AddPage.update config s
-        , view = EntityType.AddPage.view config s
+        { init = Entity.AddPage.init s
+        , update = Entity.AddPage.update config s
+        , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
         }
 

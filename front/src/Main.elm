@@ -4,7 +4,6 @@ import Agent.AddPage
 import Agent.ListPage
 import AgentType.AddPage
 import AgentType.ListPage
-import AgentType.ViewPage
 import Browser
 import Browser.Events as Events
 import Commitment.ListPage
@@ -29,7 +28,6 @@ import Navbar
 import Process.ListPage
 import ProcessType.AddPage
 import ProcessType.ListPage
-import ProcessType.ViewPage
 import Resource.ListPage
 import ResourceType.AddPage
 import ResourceType.ListPage
@@ -123,7 +121,6 @@ main =
         -- Process
         |> Spa.addPublicPage mappers ProcessType.ListPage.match ProcessType.ListPage.page
         |> Spa.addPublicPage mappers ProcessType.AddPage.match ProcessType.AddPage.page
-        |> Spa.addPublicPage mappers ProcessType.ViewPage.match ProcessType.ViewPage.page
         |> Spa.addPublicPage mappers Process.ListPage.match Process.ListPage.page
         -- Resource
         |> Spa.addPublicPage mappers ResourceType.ListPage.match ResourceType.ListPage.page
@@ -136,7 +133,6 @@ main =
         -- Agent
         |> Spa.addPublicPage mappers AgentType.ListPage.match AgentType.ListPage.page
         |> Spa.addPublicPage mappers AgentType.AddPage.match AgentType.AddPage.page
-        |> Spa.addPublicPage mappers AgentType.ViewPage.match AgentType.ViewPage.page
         |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
         |> Spa.addPublicPage mappers Agent.AddPage.match Agent.AddPage.page
         -- Commitment

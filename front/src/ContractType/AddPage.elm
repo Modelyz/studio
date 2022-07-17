@@ -1,30 +1,30 @@
 module ContractType.AddPage exposing (..)
 
-import EntityType.AddPage exposing (Flags, Model, Msg)
-import EntityType.EntityType as EntityType exposing (only)
+import ContractType.ContractType exposing (ContractType)
+import Entity.AddPage exposing (Flags, Model, Msg)
+import Entity.Entity as Entity exposing (Entity, only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : EntityType.AddPage.Config
+config : Entity.AddPage.Config ContractType
 config =
-    { filter = only EntityType.ContractType
+    { filter = only "ContractType"
     , typeExplain = "Choose the type of the new Contract Type (it can be hierarchical)"
-    , nameExplain = "Give a name to this new Contract Type"
     , pageTitle = "Adding a Contract Type"
-    , processRestriction = "This Contract Type will be usable from the following Process Types:"
-    , typeConstructor = EntityType.ContractType
+    , constructor = Entity.CnT
+    , typeName = "ContractType"
     }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = EntityType.AddPage.init s
-        , update = EntityType.AddPage.update config s
-        , view = EntityType.AddPage.view config s
+        { init = Entity.AddPage.init s
+        , update = Entity.AddPage.update config s
+        , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
         }
 

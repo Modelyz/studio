@@ -7,7 +7,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Contract =
     { uuid : Uuid
-    , type_ : String
+    , type_ : Uuid
 
     --    , parties: List Agent
     --    , clauses:
@@ -19,7 +19,7 @@ encode : Contract -> Encode.Value
 encode c =
     Encode.object
         [ ( "uuid", Uuid.encode c.uuid )
-        , ( "type", Encode.string c.type_ )
+        , ( "type", Uuid.encode c.type_ )
 
         --        , ("parties", Encode.list Agent.encode c.parties)
         ]
@@ -29,7 +29,7 @@ decoder : Decode.Decoder Contract
 decoder =
     Decode.map2 Contract
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Decode.string)
+        (Decode.field "type" Uuid.decoder)
 
 
 compare : Contract -> String

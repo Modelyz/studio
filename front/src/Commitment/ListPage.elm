@@ -1,11 +1,10 @@
 module Commitment.ListPage exposing (match, page)
 
 import Entity.ListPage exposing (Config, Flags, Model, Msg)
-import EntityType.EntityType as EntityType
-import Route exposing (Route, redirect)
+import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (..)
+import View exposing (View)
 
 
 config : Config

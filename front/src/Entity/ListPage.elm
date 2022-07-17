@@ -7,11 +7,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity, only, toPluralString, toString)
-import EntityType.EntityType exposing (EntityType)
-import EntityType.Type exposing (Type)
 import Html.Attributes as Attr
-import Ident.EntityIdentifier as EntityIdentifier
-import Ident.Identifiable as Identifiable
 import Ident.Identifier as Identifier
 import Ident.Scope exposing (Scope(..))
 import Ident.View exposing (displayIdentifiers, selectIdentifiers)
@@ -20,6 +16,7 @@ import Navbar
 import Prng.Uuid as Uuid exposing (Uuid)
 import Result exposing (andThen)
 import Route exposing (Route, redirectAdd)
+import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import Style exposing (..)
@@ -28,12 +25,15 @@ import View.Radio as Radio
 
 
 type alias Model =
-    { route : Route }
+    { route : Route
+    , search : Criteria
+    }
 
 
 type Msg
     = Removed Entity
     | Add
+    | Search Entity String
 
 
 type alias Flags =
@@ -49,19 +49,20 @@ type alias Config =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route }, closeMenu f s.menu )
+    ( { route = f.route, search = SearchNothing }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Removed a ->
-            ( model
-            , Shared.dispatch s <| Message.Removed a
-            )
+            ( model, Shared.dispatch s <| Message.Removed a )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
+
+        Search e str ->
+            ( { model | search = SearchFull e str }, Effect.none )
 
 
 view : Config -> Shared.Model -> Model -> View Msg
@@ -78,13 +79,16 @@ viewContent c model vt s =
     let
         entities =
             only c.entityType s.state.entities
+
+        --TODO |> Criteria.entitySearch model.search
     in
     case vt of
         Smallcard ->
-            flatContent s
+            flatContainer s
                 c.pageTitle
                 [ button.primary Add "Add..."
                 ]
+                none
                 [ wrappedRow
                     [ spacing 10 ]
                     (entities
@@ -93,11 +97,11 @@ viewContent c model vt s =
                             (\e ->
                                 viewSmallCard (Removed e)
                                     Nothing
-                                    (EntityIdentifier.restrict e s.state.identifiers
+                                    (Identifier.restrict e s.state.identifiers
                                         |> selectIdentifiers Smallcard
                                         |> displayIdentifiers
                                     )
-                                    ("Type: " ++ Entity.toType e)
+                                    ("Type: " ++ Entity.toUuidString e)
                             )
                         |> withDefaultContent (p c.emptyText)
                     )

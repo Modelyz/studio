@@ -1,21 +1,21 @@
-module ProcessType.AddPage exposing (..)
+module Contract.AddPage exposing (..)
 
+import Contract.Contract exposing (Contract)
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
-import ProcessType.ProcessType exposing (ProcessType)
+import Entity.Entity as Entity exposing (Entity, only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ProcessType
+config : Entity.AddPage.Config Contract
 config =
-    { filter = only "ProcessType"
-    , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
-    , pageTitle = "Adding a Process Type"
-    , constructor = Entity.PT
-    , typeName = "ProcessType"
+    { filter = only "ContractType"
+    , typeExplain = "Choose the type of the new Contract (it can be hierarchical)"
+    , pageTitle = "Adding a Contract"
+    , constructor = Entity.A
+    , typeName = "ContractType"
     }
 
 
@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessTypeAdd ->
+        Route.ContractAdd ->
             Just { route = route }
 
         _ ->

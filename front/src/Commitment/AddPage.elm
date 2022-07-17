@@ -1,21 +1,21 @@
-module ProcessType.AddPage exposing (..)
+module Commitment.AddPage exposing (..)
 
+import Commitment.Commitment exposing (Commitment)
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
-import ProcessType.ProcessType exposing (ProcessType)
+import Entity.Entity as Entity exposing (Entity, only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ProcessType
+config : Entity.AddPage.Config Commitment
 config =
-    { filter = only "ProcessType"
-    , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
-    , pageTitle = "Adding a Process Type"
-    , constructor = Entity.PT
-    , typeName = "ProcessType"
+    { filter = only "CommitmentType"
+    , typeExplain = "Choose the type of the new Commitment (it can be hierarchical)"
+    , pageTitle = "Adding a Commitment"
+    , constructor = Entity.A
+    , typeName = "CommitmentType"
     }
 
 
@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessTypeAdd ->
+        Route.CommitmentAdd ->
             Just { route = route }
 
         _ ->

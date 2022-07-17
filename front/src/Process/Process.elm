@@ -13,8 +13,8 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Process =
-    { uuid : Uuid -- TODO rename uuid to producer
-    , type_ : String
+    { uuid : Uuid
+    , type_ : Uuid
     , when : Time.Posix
     }
 
@@ -27,7 +27,7 @@ compare =
 encode : Process -> Encode.Value
 encode p =
     Encode.object
-        [ ( "type", Encode.string p.type_ )
+        [ ( "type", Uuid.encode p.type_ )
         , ( "uuid", Uuid.encode p.uuid )
         , ( "when", Encode.int <| posixToMillis p.when )
         ]
@@ -44,5 +44,5 @@ decoder : Decode.Decoder Process
 decoder =
     Decode.map3 Process
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Decode.string)
+        (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))

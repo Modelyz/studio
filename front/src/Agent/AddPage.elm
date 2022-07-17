@@ -1,20 +1,21 @@
 module Agent.AddPage exposing (..)
 
+import Agent.Agent exposing (Agent)
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity exposing (Entity(..))
-import EntityType.EntityType as EntityType exposing (only)
+import Entity.Entity as Entity exposing (Entity, only)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config
+config : Entity.AddPage.Config Agent
 config =
-    { filter = only EntityType.AgentType
+    { filter = only "AgentType"
     , typeExplain = "Choose the type of the new Agent (it can be hierarchical)"
     , pageTitle = "Adding a Agent"
-    , constructor = Agent
+    , constructor = Entity.A
+    , typeName = "AgentType"
     }
 
 

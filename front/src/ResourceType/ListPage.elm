@@ -1,6 +1,7 @@
 module ResourceType.ListPage exposing (match, page)
 
-import EntityType.ListPage exposing (Config, Flags, Model, Msg)
+import Entity.Entity as Entity exposing (Entity)
+import Entity.ListPage exposing (Config, Flags, Model, Msg)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -18,9 +19,9 @@ config =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = EntityType.ListPage.init s
-        , update = EntityType.ListPage.update s
-        , view = EntityType.ListPage.view config s
+        { init = Entity.ListPage.init s
+        , update = Entity.ListPage.update s
+        , view = Entity.ListPage.view config s
         , subscriptions = \_ -> Sub.none
         }
 

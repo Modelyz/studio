@@ -4,7 +4,7 @@ import DictSet as Set
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import EntityType.EntityType as EntityType
+import Entity.Entity as Entity
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
 import Route exposing (Route, firstSegment, toString)
@@ -49,7 +49,7 @@ links s r =
     ]
         ++ (let
                 processTypes =
-                    s.state.entityTypes |> EntityType.only EntityType.ProcessType
+                    s.state.entities |> Entity.only "ProcessType"
             in
             if Set.size processTypes > 0 then
                 processTypes
@@ -58,7 +58,7 @@ links s r =
                         (\pt ->
                             let
                                 name =
-                                    EntityType.toName pt
+                                    Entity.toUuidString pt
                             in
                             menuitem s r (Route.ProcessTypeView name) name
                         )
@@ -97,7 +97,6 @@ desktop s r =
                     , el [ Font.size 15, htmlAttribute <| Attr.id "LastMessageTime" ] (text <| "LastMessageTime=" ++ (String.fromInt <| posixToMillis s.state.lastMessageTime))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingMessages))
-                    , el [ Font.size 15, htmlAttribute <| Attr.id "eventTypes" ] (text <| "types=" ++ (String.fromInt <| Set.size s.state.entityTypes))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "entities" ] (text <| "entities=" ++ (String.fromInt <| Set.size s.state.entities))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString r)

@@ -1,104 +1,192 @@
-module Entity.Entity exposing (Entity(..), compare, decoder, encode, only, toPluralString, toString, toType, toUuid)
+module Entity.Entity exposing (Entity(..), compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toUuid, toUuidString)
 
-import Agent.Agent as Agent
-import Commitment.Commitment as Commitment
+import Agent.Agent as Agent exposing (Agent)
+import AgentType.AgentType as AgentType exposing (AgentType)
+import Commitment.Commitment as Commitment exposing (Commitment)
+import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Contract.Contract as Contract exposing (Contract)
+import ContractType.ContractType as ContractType exposing (ContractType)
 import DictSet as Set exposing (DictSet)
-import EntityType.EntityType exposing (EntityType, toEntityString)
-import EntityType.Type exposing (Type)
-import Event.Event as Event
-import Group.Group as Group
+import Event.Event as Event exposing (Event)
+import EventType.EventType as EventType exposing (EventType)
+import Group.Group as Group exposing (Group)
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process as Process
-import Resource.Resource as Resource
+import Process.Process as Process exposing (Process)
+import ProcessType.ProcessType as ProcessType exposing (ProcessType)
+import Resource.Resource as Resource exposing (Resource)
+import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Time exposing (posixToMillis)
 
 
 type Entity
-    = Resource Resource.Resource
-    | Event Event.Event
-    | Agent Agent.Agent
-    | Commitment Commitment.Commitment
-    | Contract Contract.Contract
-    | Process Process.Process
-    | Group Group.Group
+    = R Resource
+    | E Event
+    | A Agent
+    | Cm Commitment
+    | Cn Contract
+    | P Process
+    | G Group
+    | RT ResourceType
+    | ET EventType
+    | AT AgentType
+    | CmT CommitmentType
+    | CnT ContractType
+    | PT ProcessType
+    | GT GroupType
+
+
+fromUuid : DictSet String Entity -> Uuid -> Maybe Entity
+fromUuid entities type_ =
+    Set.filter (\e -> toUuid e == type_) entities |> Set.toList |> List.head
 
 
 only : String -> DictSet String Entity -> DictSet String Entity
 only t es =
+    -- only of a certain constructor
     Set.filter (\e -> toString e == t) es
 
 
-toType : Entity -> String
+findEntity : Uuid -> DictSet String Entity -> Maybe Entity
+findEntity uuid es =
+    Set.filter (\e -> toUuid e == uuid) es
+        |> Set.toList
+        |> List.head
+
+
+toType : Entity -> Maybe Uuid
 toType entity =
     case entity of
-        Resource r ->
-            r.type_
+        R r ->
+            Just r.type_
 
-        Event e ->
-            e.type_
+        E e ->
+            Just e.type_
 
-        Agent a ->
-            a.type_
+        A a ->
+            Just a.type_
 
-        Commitment c ->
-            c.type_
+        Cm c ->
+            Just c.type_
 
-        Contract c ->
-            c.type_
+        Cn c ->
+            Just c.type_
 
-        Process p ->
-            p.type_
+        P p ->
+            Just p.type_
 
-        Group g ->
-            g.type_
+        G g ->
+            Just g.type_
+
+        RT rt ->
+            rt.type_
+
+        ET et ->
+            et.type_
+
+        AT at ->
+            at.type_
+
+        CmT ct ->
+            ct.type_
+
+        CnT ct ->
+            ct.type_
+
+        PT pt ->
+            pt.type_
+
+        GT gt ->
+            gt.type_
 
 
 encode : Entity -> Value
 encode entity =
     case entity of
-        Resource r ->
+        R r ->
             Encode.object
                 [ ( "what", Encode.string "Resource" )
                 , ( "value", Resource.encode r )
                 ]
 
-        Event e ->
+        E e ->
             Encode.object
                 [ ( "what", Encode.string "Event" )
                 , ( "value", Event.encode e )
                 ]
 
-        Agent a ->
+        A a ->
             Encode.object
                 [ ( "what", Encode.string "Agent" )
                 , ( "value", Agent.encode a )
                 ]
 
-        Commitment cm ->
+        Cm cm ->
             Encode.object
                 [ ( "what", Encode.string "Commitment" )
                 , ( "value", Commitment.encode cm )
                 ]
 
-        Contract cn ->
+        Cn cn ->
             Encode.object
                 [ ( "what", Encode.string "Contract" )
                 , ( "value", Contract.encode cn )
                 ]
 
-        Process p ->
+        P p ->
             Encode.object
                 [ ( "what", Encode.string "Process" )
                 , ( "value", Process.encode p )
                 ]
 
-        Group g ->
+        G g ->
             Encode.object
                 [ ( "what", Encode.string "Group" )
                 , ( "value", Group.encode g )
+                ]
+
+        RT rt ->
+            Encode.object
+                [ ( "what", Encode.string "ResourceType" )
+                , ( "value", ResourceType.encode rt )
+                ]
+
+        ET et ->
+            Encode.object
+                [ ( "what", Encode.string "EventType" )
+                , ( "value", EventType.encode et )
+                ]
+
+        AT at ->
+            Encode.object
+                [ ( "what", Encode.string "AgentType" )
+                , ( "value", AgentType.encode at )
+                ]
+
+        CmT cmt ->
+            Encode.object
+                [ ( "what", Encode.string "CommitmentType" )
+                , ( "value", CommitmentType.encode cmt )
+                ]
+
+        CnT cnt ->
+            Encode.object
+                [ ( "what", Encode.string "ContractType" )
+                , ( "value", ContractType.encode cnt )
+                ]
+
+        PT pt ->
+            Encode.object
+                [ ( "what", Encode.string "ProcessType" )
+                , ( "value", ProcessType.encode pt )
+                ]
+
+        GT gt ->
+            Encode.object
+                [ ( "what", Encode.string "GroupType" )
+                , ( "value", GroupType.encode gt )
                 ]
 
 
@@ -110,25 +198,46 @@ decoder =
                 Decode.field "value"
                     (case t of
                         "Resource" ->
-                            Decode.map Resource Resource.decoder
+                            Decode.map R Resource.decoder
 
                         "Event" ->
-                            Decode.map Event Event.decoder
+                            Decode.map E Event.decoder
 
                         "Agent" ->
-                            Decode.map Agent Agent.decoder
+                            Decode.map A Agent.decoder
 
                         "Commitment" ->
-                            Decode.map Commitment Commitment.decoder
+                            Decode.map Cm Commitment.decoder
 
                         "Contract" ->
-                            Decode.map Contract Contract.decoder
+                            Decode.map Cn Contract.decoder
 
                         "Process" ->
-                            Decode.map Process Process.decoder
+                            Decode.map P Process.decoder
 
                         "Group" ->
-                            Decode.map Group Group.decoder
+                            Decode.map G Group.decoder
+
+                        "ResourceType" ->
+                            Decode.map RT ResourceType.decoder
+
+                        "EventType" ->
+                            Decode.map ET EventType.decoder
+
+                        "AgentType" ->
+                            Decode.map AT AgentType.decoder
+
+                        "CommitmentType" ->
+                            Decode.map CmT CommitmentType.decoder
+
+                        "ContractType" ->
+                            Decode.map CnT ContractType.decoder
+
+                        "ProcessType" ->
+                            Decode.map PT ProcessType.decoder
+
+                        "GroupType" ->
+                            Decode.map GT GroupType.decoder
 
                         _ ->
                             Decode.fail "Unknown entity"
@@ -139,78 +248,177 @@ decoder =
 toUuid : Entity -> Uuid
 toUuid e =
     case e of
-        Process p ->
-            p.uuid
-
-        Resource r ->
+        R r ->
             r.uuid
 
-        Event ev ->
+        E ev ->
             ev.uuid
 
-        Agent a ->
+        A a ->
             a.uuid
 
-        Commitment cm ->
+        Cm cm ->
             cm.uuid
 
-        Contract cn ->
+        Cn cn ->
             cn.uuid
 
-        Group g ->
+        G g ->
             g.uuid
+
+        P p ->
+            p.uuid
+
+        RT rt ->
+            rt.uuid
+
+        ET et ->
+            et.uuid
+
+        AT at ->
+            at.uuid
+
+        CmT cmt ->
+            cmt.uuid
+
+        CnT cnt ->
+            cnt.uuid
+
+        GT gt ->
+            gt.uuid
+
+        PT pt ->
+            pt.uuid
 
 
 toString : Entity -> String
 toString e =
     case e of
-        Process p ->
-            "Process"
-
-        Resource r ->
+        R _ ->
             "Resource"
 
-        Event ev ->
+        E _ ->
             "Event"
 
-        Agent a ->
+        A _ ->
             "Agent"
 
-        Commitment cm ->
+        Cm _ ->
             "Commitment"
 
-        Contract cn ->
+        Cn _ ->
             "Contract"
 
-        Group g ->
+        G _ ->
             "Group"
+
+        P _ ->
+            "Process"
+
+        PT _ ->
+            "Process"
+
+        RT _ ->
+            "ResourceType"
+
+        ET _ ->
+            "EventType"
+
+        AT _ ->
+            "AgentType"
+
+        CmT _ ->
+            "CommitmentType"
+
+        CnT _ ->
+            "ContractType"
+
+        GT _ ->
+            "GroupType"
 
 
 toPluralString : Entity -> String
 toPluralString e =
     case e of
-        Process _ ->
+        -- TODO remove at i18n time
+        P _ ->
             "Processes"
 
-        Resource _ ->
+        R _ ->
             "Resources"
 
-        Event _ ->
+        E _ ->
             "Events"
 
-        Agent _ ->
+        A _ ->
             "Agents"
 
-        Commitment _ ->
+        Cm _ ->
             "Commitments"
 
-        Contract _ ->
+        Cn _ ->
             "Contracts"
 
-        Group _ ->
+        G _ ->
             "Groups"
+
+        RT _ ->
+            "Resource Types"
+
+        ET _ ->
+            "Event Types"
+
+        AT _ ->
+            "Agent Types"
+
+        CmT _ ->
+            "Commitment Types"
+
+        CnT _ ->
+            "Contract Types"
+
+        GT _ ->
+            "Group Types"
+
+        PT _ ->
+            "Proces Types"
+
+
+toUuidString : Entity -> String
+toUuidString =
+    toUuid >> Uuid.toString
 
 
 compare : Entity -> String
 compare =
-    toUuid >> Uuid.toString
+    toUuidString
+
+
+isChildOfAny : DictSet String Entity -> DictSet String Entity -> Entity -> Bool
+isChildOfAny entities es e =
+    -- the entity type must be a child of one of the entity types of the identifier type
+    if Set.isEmpty es then
+        -- identifier valid for all entity types
+        True
+
+    else
+        es |> Set.toList |> List.any (isParentOf e entities)
+
+
+isParentOf : Entity -> DictSet String Entity -> Entity -> Bool
+isParentOf child entities item =
+    -- true if item is parent of the child
+    if child == item then
+        True
+
+    else
+        toType child
+            |> Maybe.andThen (\e -> findEntity e entities)
+            |> Maybe.map (\x -> isParentOf x entities item)
+            |> Maybe.withDefault False
+
+
+isChildOf : Entity -> DictSet String Entity -> Entity -> Bool
+isChildOf parent entities item =
+    -- true if item is a child of parent
+    isParentOf item entities parent

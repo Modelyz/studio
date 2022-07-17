@@ -7,7 +7,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Agent =
     { uuid : Uuid
-    , type_ : String
+    , type_ : Uuid
     }
 
 
@@ -15,7 +15,7 @@ encode : Agent -> Encode.Value
 encode a =
     Encode.object
         [ ( "uuid", Uuid.encode a.uuid )
-        , ( "type", Encode.string a.type_ )
+        , ( "type", Uuid.encode a.type_ )
         ]
 
 
@@ -23,7 +23,7 @@ decoder : Decoder Agent
 decoder =
     Decode.map2 Agent
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Decode.string)
+        (Decode.field "type" Uuid.decoder)
 
 
 compare : Agent -> String

@@ -1,22 +1,18 @@
 module Ident.Identifier exposing (..)
 
-import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), toUuid)
-import EntityType.EntityType as EntityType exposing (toName)
+import Entity.Entity as Entity exposing (Entity, toUuid)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.IdentifierType exposing (IdentifierType)
-import Ident.Scope exposing (Scope)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid
-import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
+import Prng.Uuid as Uuid exposing (Uuid)
 
 
 type alias Identifier =
-    -- This is the value of an idenfier (maybe before the entity even exists)
-    { name : String
+    -- This is the value of an identifier
+    { entity : Uuid
+    , name : String
     , fragments : List Fragment
     }
 
@@ -26,9 +22,20 @@ select name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
+fromEntity : Entity -> DictSet String Identifier -> List Identifier
+fromEntity entity =
+    -- return the identifiers corresponding to a certain entity
+    Set.filter (\i -> toUuid entity == i.entity) >> Set.toList
+
+
+restrict =
+    -- TODO remove
+    fromEntity
+
+
 compare : Identifier -> String
-compare =
-    .name
+compare i =
+    Uuid.toString i.entity ++ " " ++ i.name
 
 
 encode : Identifier -> Encode.Value
@@ -41,7 +48,8 @@ encode e =
 
 decoder : Decoder Identifier
 decoder =
-    Decode.map2 Identifier
+    Decode.map3 Identifier
+        (Decode.field "uuid" Uuid.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
 
@@ -69,6 +77,12 @@ update index fragment identifier =
     { identifier | fragments = fragments }
 
 
-fromIdentifierType : IdentifierType -> Identifier
-fromIdentifierType it =
-    { name = it.name, fragments = it.fragments }
+fromIdentifierType : Uuid -> IdentifierType -> Identifier
+fromIdentifierType uuid it =
+    Identifier uuid it.name it.fragments
+
+
+match : String -> Identifier -> Bool
+match string identifier =
+    -- True if the string is contained in any fragment of the identifier
+    Fragment.matchAny string identifier.fragments

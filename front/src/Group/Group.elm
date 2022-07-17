@@ -7,7 +7,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Group =
     { uuid : Uuid
-    , type_ : String
+    , type_ : Uuid
 
     -- TODO how to define what is in the group?
     }
@@ -17,7 +17,7 @@ encode : Group -> Value
 encode g =
     Encode.object
         [ ( "uuid", Uuid.encode g.uuid )
-        , ( "type", Encode.string g.type_ )
+        , ( "type", Uuid.encode g.type_ )
         ]
 
 
@@ -25,7 +25,7 @@ decoder : Decoder Group
 decoder =
     Decode.map2 Group
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Decode.string)
+        (Decode.field "type" Uuid.decoder)
 
 
 compare : Group -> String

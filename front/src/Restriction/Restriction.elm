@@ -1,6 +1,7 @@
 module Restriction.Restriction exposing (Restriction, compare, decoder, encode)
 
-import EntityType.EntityType as ENT exposing (EntityType)
+import DictSet as Set exposing (DictSet)
+import Entity.Entity as Entity exposing (Entity, isChildOf, isChildOfAny)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
@@ -11,26 +12,39 @@ import Json.Encode as Encode
 
 
 type alias Restriction =
-    { what : EntityType
-    , scope : EntityType
+    { what : Entity
+    , scope : Entity
     }
 
 
 compare : Restriction -> String
 compare r =
-    ENT.compare r.what ++ "_" ++ ENT.compare r.scope
+    Entity.compare r.what ++ "_" ++ Entity.compare r.scope
 
 
 encode : Restriction -> Encode.Value
 encode r =
     Encode.object
-        [ ( "what", ENT.encode r.what )
-        , ( "scope", ENT.encode r.scope )
+        [ ( "what", Entity.encode r.what )
+        , ( "scope", Entity.encode r.scope )
         ]
 
 
 decoder : Decoder Restriction
 decoder =
     Decode.map2 Restriction
-        (Decode.field "what" ENT.decoder)
-        (Decode.field "scope" ENT.decoder)
+        (Decode.field "what" Entity.decoder)
+        (Decode.field "scope" Entity.decoder)
+
+
+restrictBy : DictSet String Entity -> DictSet String Restriction -> Entity -> DictSet String Entity -> DictSet String Entity
+restrictBy entityTypes restrictions scope ets =
+    -- keep only the entityTypes which are children of the entityTypes of the scopes which are children of the given scope
+    -- TODO cleanup? was used to restrict some entities (such as events) to certain process types
+    let
+        parentTypes =
+            restrictions
+                |> Set.map Entity.compare .scope
+                |> Set.filter (isChildOf scope entityTypes)
+    in
+    ets |> Set.filter (isChildOfAny entityTypes parentTypes)

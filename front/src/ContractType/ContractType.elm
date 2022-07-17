@@ -1,4 +1,4 @@
-module GroupType.GroupType exposing (GroupType, compare, decoder, encode)
+module ContractType.ContractType exposing (ContractType, compare, decoder, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -6,13 +6,13 @@ import Maybe exposing (Maybe(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 
 
-type alias GroupType =
+type alias ContractType =
     { uuid : Uuid
     , type_ : Maybe Uuid
     }
 
 
-encode : GroupType -> Encode.Value
+encode : ContractType -> Encode.Value
 encode at =
     Encode.object
         [ ( "uuid", Uuid.encode at.uuid )
@@ -20,18 +20,18 @@ encode at =
         ]
 
 
-decoder : Decode.Decoder GroupType
+decoder : Decode.Decoder ContractType
 decoder =
-    Decode.map2 GroupType
+    Decode.map2 ContractType
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" <| Decode.maybe Uuid.decoder)
 
 
-compare : GroupType -> String
+compare : ContractType -> String
 compare =
     toString
 
 
-toString : GroupType -> String
+toString : ContractType -> String
 toString =
     .uuid >> Uuid.toString

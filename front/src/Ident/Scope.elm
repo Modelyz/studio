@@ -1,13 +1,10 @@
 module Ident.Scope exposing (..)
 
-import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), toUuid)
-import EntityType.EntityType as EntityType exposing (toName)
+import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, toType, toUuid, toUuidString)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid
-import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
+import Prng.Uuid as Uuid exposing (Uuid)
 
 
 type
@@ -15,29 +12,38 @@ type
     -- This is the scope of an identifier
     -- TODO: also identify all entities or of a group ?
     -- We can identify a particular entity:
-    = OneEntity Entity.Entity
-      -- or a certain entity type:
-    | OneEntityType EntityType.EntityType
+    = OneEntity Uuid
       -- or all the entities of a certain type:
-    | AllEntityTypes EntityType.EntityType
-      -- or all the entity types of a certain type:
-    | AllEntities EntityType.EntityType
+    | AllEntitiesOfType Uuid
+
+
+within : Scope -> DictSet String Entity -> Entity -> Bool
+within scope entities entity =
+    -- True if the entity is within the scope
+    case scope of
+        OneEntity uuid ->
+            scope == OneEntity uuid
+
+        AllEntitiesOfType uuid ->
+            let
+                parent =
+                    fromUuid entities uuid
+            in
+            entity
+                |> toType
+                |> Maybe.andThen (fromUuid entities)
+                |> Maybe.andThen (\e -> Maybe.map (\p -> isChildOf p entities e) parent)
+                |> Maybe.withDefault False
 
 
 toDesc : Scope -> String
 toDesc id =
     case id of
-        OneEntity e ->
-            "entity " ++ Uuid.toString (toUuid e)
+        OneEntity uuid ->
+            "entity " ++ Uuid.toString uuid
 
-        OneEntityType et ->
-            toName et
-
-        AllEntities et ->
-            "entities of type " ++ toName et
-
-        AllEntityTypes et ->
-            "types whose parent type is " ++ toName et
+        AllEntitiesOfType uuid ->
+            "entities of type " ++ Uuid.toString uuid
 
 
 toString : Scope -> String
@@ -46,41 +52,23 @@ toString id =
         OneEntity e ->
             "OneEntity"
 
-        OneEntityType et ->
-            "OneEntityType"
-
-        AllEntities et ->
-            "AllEntities"
-
-        AllEntityTypes et ->
-            "AllEntityTypes"
+        AllEntitiesOfType et ->
+            "AllEntitiesOfType"
 
 
 encode : Scope -> Encode.Value
 encode e =
     case e of
-        OneEntity entity ->
+        OneEntity uuid ->
             Encode.object
                 [ ( "for", Encode.string "OneEntity" )
-                , ( "entity", Entity.encode entity )
+                , ( "uuid", Uuid.encode uuid )
                 ]
 
-        OneEntityType entityType ->
+        AllEntitiesOfType uuid ->
             Encode.object
-                [ ( "for", Encode.string "OneEntityType" )
-                , ( "type", EntityType.encode entityType )
-                ]
-
-        AllEntities entityType ->
-            Encode.object
-                [ ( "for", Encode.string "AllEntities" )
-                , ( "type", EntityType.encode entityType )
-                ]
-
-        AllEntityTypes entityType ->
-            Encode.object
-                [ ( "for", Encode.string "AllEntityTypes" )
-                , ( "type", EntityType.encode entityType )
+                [ ( "for", Encode.string "AllEntitiesOfType" )
+                , ( "uuid", Uuid.encode uuid )
                 ]
 
 
@@ -91,16 +79,10 @@ decoder =
             (\for ->
                 case for of
                     "OneEntity" ->
-                        Decode.field "type" (Decode.map OneEntity Entity.decoder)
+                        Decode.field "uuid" (Decode.map OneEntity Uuid.decoder)
 
-                    "OneEntityType" ->
-                        Decode.field "type" (Decode.map OneEntityType EntityType.decoder)
-
-                    "AllEntities" ->
-                        Decode.field "type" (Decode.map AllEntities EntityType.decoder)
-
-                    "AllEntityTypes" ->
-                        Decode.field "type" (Decode.map AllEntityTypes EntityType.decoder)
+                    "AllEntitiesOfType" ->
+                        Decode.field "uuid" (Decode.map AllEntitiesOfType Uuid.decoder)
 
                     _ ->
                         Decode.fail "Cannot decode the scope of this identifier type"
@@ -112,15 +94,9 @@ compare s =
     toString s
         ++ " "
         ++ (case s of
-                OneEntity e ->
-                    Entity.compare e
+                OneEntity uuid ->
+                    Uuid.toString uuid
 
-                OneEntityType et ->
-                    EntityType.compare et
-
-                AllEntities et ->
-                    EntityType.compare et
-
-                AllEntityTypes et ->
-                    EntityType.compare et
+                AllEntitiesOfType uuid ->
+                    Uuid.toString uuid
            )

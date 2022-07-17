@@ -9,7 +9,6 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity
-import EntityType.EntityType as EntityType exposing (EntityType(..))
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
@@ -254,7 +253,7 @@ viewContent model s =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifierType"
                             }
     in
-    cardContent s
+    floatingContainer s
         "Adding an identifierType"
         buttons
         [ step
@@ -288,34 +287,26 @@ inputEntityTypes s model =
                     (model.applyTo |> Set.toList |> List.map (viewItem model))
         , h2 <| "Select the entities that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Set.toList s.state.entities
+            (s.state.entities
+                |> Set.toList
                 |> List.map
                     (\e ->
-                        clickableCard (InputScope <| Set.insert (OneEntity e) model.applyTo) (Uuid.toString <| Entity.toUuid e) (Just <| "Type: " ++ Entity.toType e)
-                    )
-            )
-        , h2 <| "Select the entity types that should have a \"" ++ iName ++ "\" identifier"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Set.toList s.state.entityTypes
-                |> List.map
-                    (\et ->
-                        clickableCard (InputScope <| Set.insert (OneEntityType et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
+                        clickableCard
+                            (InputScope <| Set.insert (OneEntity (Entity.toUuid e)) model.applyTo)
+                            (Entity.toUuidString e)
+                            (e |> Entity.toType |> Maybe.map Uuid.toString |> Maybe.map (\t -> "Type: " ++ t))
                     )
             )
         , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Set.toList s.state.entityTypes
+            (s.state.entities
+                |> Set.toList
                 |> List.map
-                    (\et ->
-                        clickableCard (InputScope <| Set.insert (AllEntities et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
-                    )
-            )
-        , h2 <| "Select the types of the entity types that should have a \"" ++ iName ++ "\" identifier"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Set.toList s.state.entityTypes
-                |> List.map
-                    (\et ->
-                        clickableCard (InputScope <| Set.insert (AllEntityTypes et) model.applyTo) (EntityType.toName et) (Just <| "Type: " ++ (EntityType.toType >> .name) et)
+                    (\e ->
+                        clickableCard
+                            (InputScope <| Set.insert (AllEntitiesOfType (Entity.toUuid e)) model.applyTo)
+                            (Entity.toUuidString e)
+                            (Just <| "Type: " ++ Entity.toUuidString e)
                     )
             )
         ]

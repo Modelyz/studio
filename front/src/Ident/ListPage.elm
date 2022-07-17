@@ -3,23 +3,13 @@ module Ident.ListPage exposing (match, page, view)
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Font as Font
-import Element.Input as Input
-import Entity.Entity as Entity exposing (Entity, toPluralString, toUuid)
-import Html.Attributes as Attr
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope
 import Message
-import Navbar
-import Prng.Uuid as Uuid
-import Result exposing (andThen)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Style exposing (..)
 import View exposing (..)
-import View.Radio as Radio
 
 
 type alias Model =
@@ -83,10 +73,11 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    flatContent s
+    flatContainer s
         "IdentifierTypes"
         [ button.primary Add "Add..."
         ]
+        none
         [ wrappedRow
             [ spacing 10 ]
             (s.state.identifierTypes

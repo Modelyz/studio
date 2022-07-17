@@ -1,12 +1,8 @@
 module Ident.Fragment exposing (..)
 
 import DateTime exposing (..)
-import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), toUuid)
-import EntityType.EntityType as EntityType exposing (toName)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
@@ -394,3 +390,15 @@ decoder =
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
             )
+
+
+match : String -> Fragment -> Bool
+match str fragment =
+    -- the string is contained in the fragment
+    String.contains str <| String.toLower <| toValue fragment
+
+
+matchAny : String -> List Fragment -> Bool
+matchAny str fragments =
+    -- the string is contained in any fragment
+    fragments |> List.any (match str)

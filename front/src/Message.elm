@@ -1,18 +1,13 @@
 port module Message exposing (Message(..), Metadata, Payload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
 
-import Commitment.Commitment as CM exposing (Commitment)
 import DictSet as Set
 import Entity.Entity as EN exposing (Entity)
-import EntityType.EntityType as ENT exposing (EntityType)
-import Group.Group as Group exposing (Group)
-import GroupType.GroupType as GroupType exposing (GroupType)
-import Ident.EntityIdentifier as EntityIdentifier exposing (EntityIdentifier)
+import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
 import Json.Encode as Encode
 import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process as P exposing (Process)
 import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
 
@@ -55,16 +50,12 @@ type Message
 
 type Payload
     = ConnectionInitiated Connection
-    | ProcessTypeChanged EntityType
-    | ProcessTypeRemoved String
     | Restricted Restriction
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved IdentifierType
     | Added Entity
     | Removed Entity
-    | TypeAdded EntityType
-    | TypeRemoved EntityType
-    | IdentifierAdded EntityIdentifier
+    | IdentifierAdded Identifier
 
 
 toString : Payload -> String
@@ -72,15 +63,6 @@ toString p =
     case p of
         ConnectionInitiated _ ->
             "ConnectionInitiated"
-
-        ProcessTypeChanged _ ->
-            "ProcessTypeChanged"
-
-        ProcessTypeRemoved _ ->
-            "ProcessTypeRemoved"
-
-        TypeRemoved _ ->
-            "TypeRemoved"
 
         Restricted _ ->
             "Restricted"
@@ -90,9 +72,6 @@ toString p =
 
         IdentifierTypeRemoved _ ->
             "IdentifierTypeRemoved"
-
-        TypeAdded _ ->
-            "TypeAdded"
 
         Added _ ->
             "Added"
@@ -157,17 +136,8 @@ encode (Message b p) =
         [ ( "what", Encode.string <| toString p )
         , ( "meta", encodeBase b )
         , case p of
-            ProcessTypeChanged pt ->
-                ( "load", ENT.encode pt )
-
-            ProcessTypeRemoved pt ->
-                ( "load", Encode.string pt )
-
             Restricted r ->
                 ( "load", Restriction.encode r )
-
-            TypeRemoved et ->
-                ( "load", ENT.encode et )
 
             ConnectionInitiated e ->
                 ( "load"
@@ -183,17 +153,14 @@ encode (Message b p) =
             IdentifierTypeRemoved it ->
                 ( "load", IdentifierType.encode it )
 
-            TypeAdded e ->
-                ( "load", ENT.encode e )
-
             Added e ->
                 ( "load", EN.encode e )
 
             Removed e ->
                 ( "load", EN.encode e )
 
-            IdentifierAdded ei ->
-                ( "load", EntityIdentifier.encode ei )
+            IdentifierAdded i ->
+                ( "load", Identifier.encode i )
         ]
 
 
@@ -223,21 +190,9 @@ decoder =
             |> andThen
                 (\t ->
                     case t of
-                        "ProcessTypeChanged" ->
-                            Decode.map ProcessTypeChanged
-                                (Decode.field "load" ENT.decoder)
-
-                        "ProcessTypeRemoved" ->
-                            Decode.map ProcessTypeRemoved
-                                (Decode.field "load" Decode.string)
-
                         "Restricted" ->
                             Decode.map Restricted
                                 (Decode.field "load" Restriction.decoder)
-
-                        "TypeRemoved" ->
-                            Decode.map TypeRemoved
-                                (Decode.field "load" ENT.decoder)
 
                         "ConnectionInitiated" ->
                             Decode.map ConnectionInitiated
@@ -256,10 +211,6 @@ decoder =
                             Decode.map IdentifierTypeRemoved
                                 (Decode.field "load" IdentifierType.decoder)
 
-                        "TypeAdded" ->
-                            Decode.map TypeAdded
-                                (Decode.field "load" ENT.decoder)
-
                         "Added" ->
                             Decode.map Added
                                 (Decode.field "load" EN.decoder)
@@ -270,7 +221,7 @@ decoder =
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
-                                (Decode.field "load" EntityIdentifier.decoder)
+                                (Decode.field "load" Identifier.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

@@ -1,15 +1,11 @@
 module Ident.IdentifierType exposing (..)
 
-import DateTime exposing (..)
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), toUuid)
-import EntityType.EntityType as EntityType exposing (toName)
+import Entity.Entity as Entity exposing (Entity)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Scope as Scope exposing (Scope)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid
-import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
 type alias IdentifierType =
@@ -20,6 +16,20 @@ type alias IdentifierType =
     , unique : Bool
     , mandatory : Bool
     }
+
+
+within : IdentifierType -> DictSet String Entity -> Entity -> Bool
+within identifierType entities entity =
+    -- True if the entity is within the scope of the IdentifierType
+    identifierType.applyTo
+        |> Set.toList
+        |> (\scopes ->
+                if List.isEmpty scopes then
+                    True
+
+                else
+                    List.any (\s -> Scope.within s entities entity) scopes
+           )
 
 
 compare : IdentifierType -> String

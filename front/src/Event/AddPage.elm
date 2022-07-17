@@ -1,21 +1,21 @@
-module ProcessType.AddPage exposing (..)
+module Event.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
-import ProcessType.ProcessType exposing (ProcessType)
+import Entity.Entity as Entity exposing (Entity, only)
+import Event.Event exposing (Event)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ProcessType
+config : Entity.AddPage.Config Event
 config =
-    { filter = only "ProcessType"
-    , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
-    , pageTitle = "Adding a Process Type"
-    , constructor = Entity.PT
-    , typeName = "ProcessType"
+    { filter = only "EventType"
+    , typeExplain = "Choose the type of the new Event (it can be hierarchical)"
+    , pageTitle = "Adding a Event"
+    , constructor = Entity.A
+    , typeName = "EventType"
     }
 
 
@@ -32,7 +32,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessTypeAdd ->
+        Route.EventAdd ->
             Just { route = route }
 
         _ ->

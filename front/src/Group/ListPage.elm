@@ -1,7 +1,6 @@
 module Group.ListPage exposing (match, page)
 
 import Entity.ListPage exposing (Config, Flags, Model, Msg)
-import EntityType.EntityType as EntityType
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page

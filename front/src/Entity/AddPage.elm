@@ -11,12 +11,11 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity)
-import EntityType.EntityType as EntityType exposing (EntityType)
 import Event.Event as Event exposing (Event)
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
-import Ident.Identifiable as Identifiable
 import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.IdentifierType as IdentifierType
 import Ident.Input exposing (inputIdentifiers)
 import Ident.Scope exposing (Scope(..))
 import Message
@@ -31,14 +30,14 @@ import Shared
 import Spa.Page
 import Style exposing (..)
 import Time exposing (millisToPosix)
-import View exposing (..)
+import View exposing (View, button, checkNothing, closeMenu, floatingContainer, h2)
 import View.FlatSelect exposing (flatselect)
 import View.Radio as Radio
 import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, previousStep)
 
 
 type Msg
-    = InputType (Maybe EntityType)
+    = InputType (Maybe Entity)
     | InputIdentifier Identifier
     | Warning String
     | PreviousPage
@@ -54,7 +53,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , uuid : Uuid
-    , flatselect : Maybe EntityType
+    , flatselect : Maybe Entity
     , identifiers : DictSet String Identifier
     , warning : String
     , step : Step.Step Step
@@ -67,39 +66,41 @@ type Step
     | StepIdentifiers
 
 
-type alias Config =
-    { filter : DictSet String EntityType -> DictSet String EntityType
+type alias Config a =
+    { filter : DictSet String Entity -> DictSet String Entity
     , typeExplain : String
     , pageTitle : String
-    , constructor :
-        { uuid : Uuid, type_ : String }
-        -> Entity -- TODO use Item as the base payload of Entities?
+    , constructor : a -> Entity
+    , typeName : String
     }
 
 
 validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
-        Just (EntityType.ResourceType t) ->
-            Ok (Entity.Resource (Resource m.uuid t.name))
+        Just (Entity.RT t) ->
+            Ok (Entity.R (Resource m.uuid t.uuid))
 
-        Just (EntityType.EventType t) ->
-            Ok (Entity.Event (Event m.uuid t.name (millisToPosix 0)))
+        Just (Entity.ET t) ->
+            Ok (Entity.E (Event m.uuid t.uuid (millisToPosix 0)))
 
-        Just (EntityType.AgentType t) ->
-            Ok (Entity.Agent (Agent m.uuid t.name))
+        Just (Entity.AT t) ->
+            Ok (Entity.A (Agent m.uuid t.uuid))
 
-        Just (EntityType.CommitmentType t) ->
-            Ok (Entity.Commitment (Commitment m.uuid t.name (millisToPosix 0)))
+        Just (Entity.CmT t) ->
+            Ok (Entity.Cm (Commitment m.uuid t.uuid (millisToPosix 0)))
 
-        Just (EntityType.ContractType t) ->
-            Ok (Entity.Contract (Contract m.uuid t.name))
+        Just (Entity.CnT t) ->
+            Ok (Entity.Cn (Contract m.uuid t.uuid))
 
-        Just (EntityType.ProcessType t) ->
-            Ok (Entity.Process (Process m.uuid t.name (millisToPosix 0)))
+        Just (Entity.PT t) ->
+            Ok (Entity.P (Process m.uuid t.uuid (millisToPosix 0)))
 
-        Just (EntityType.GroupType t) ->
-            Ok (Entity.Group (Group m.uuid t.name))
+        Just (Entity.GT t) ->
+            Ok (Entity.G (Group m.uuid t.uuid))
+
+        Just _ ->
+            Err "Not permitted"
 
         Nothing ->
             Err "You must select an Entity Type"
@@ -123,7 +124,7 @@ init s f =
     )
 
 
-update : Config -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update : Config a -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update c s msg model =
     case msg of
         InputType met ->
@@ -136,33 +137,15 @@ update c s msg model =
                     , Effect.none
                     )
 
-                Just et ->
+                Just e ->
                     ( { model
-                        | flatselect = Just et
+                        | flatselect = Just e
                         , identifiers =
+                            -- select the identifiers corresponding to the chosen type
                             s.state.identifierTypes
                                 |> Set.filter
-                                    (\it ->
-                                        Shared.isChildOfAny s
-                                            (it.applyTo
-                                                |> Set.toList
-                                                |> List.concatMap
-                                                    (\i ->
-                                                        case i of
-                                                            AllEntities e ->
-                                                                [ e ]
-
-                                                            AllEntityTypes e ->
-                                                                [ e ]
-
-                                                            _ ->
-                                                                []
-                                                    )
-                                                |> Set.fromList EntityType.compare
-                                            )
-                                            et
-                                    )
-                                |> Set.map Identifier.compare Identifier.fromIdentifierType
+                                    (\it -> IdentifierType.within it s.state.entities e)
+                                |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
                       }
                     , Effect.none
                     )
@@ -179,9 +162,7 @@ update c s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.Added e
-                                :: List.map (\i -> Message.IdentifierAdded { identifiable = Identifiable.Entity e, identifier = i }) (Set.toList model.identifiers)
-                            )
+                            (Message.Added e :: List.map Message.IdentifierAdded (Set.toList model.identifiers))
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
                     )
@@ -209,7 +190,7 @@ update c s msg model =
             ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
 
-view : Config -> Shared.Model -> Model -> View Msg
+view : Config a -> Shared.Model -> Model -> View Msg
 view c s model =
     { title = c.pageTitle
     , attributes = []
@@ -218,17 +199,25 @@ view c s model =
     }
 
 
-buttonNext : Model -> Element Msg
-buttonNext model =
+buttonNext : Config a -> Model -> Element Msg
+buttonNext c model =
     case model.step of
         Step.Step StepType ->
-            nextOrValidate model NextPage Added (checkNothing model.flatselect "Please choose a type")
+            nextOrValidate model
+                NextPage
+                Added
+                (if (String.slice 0 4 <| String.reverse <| c.typeName) == "epyT" then
+                    Ok model.flatselect
+
+                 else
+                    Result.map Just <| checkNothing model.flatselect "Please choose a type"
+                )
 
         Step.Step StepIdentifiers ->
             nextOrValidate model NextPage Added (Ok model.identifiers)
 
 
-viewContent : Config -> Model -> Shared.Model -> Element Msg
+viewContent : Config a -> Model -> Shared.Model -> Element Msg
 viewContent c model s =
     let
         buttons : List (Element Msg)
@@ -242,7 +231,7 @@ viewContent c model s =
                   )
                     "← Previous"
                 , button.secondary Cancel "Cancel"
-                , buttonNext model
+                , buttonNext c model
                 , if model.warning /= "" then
                     paragraph [ Font.color color.text.warning ] [ text model.warning ]
 
@@ -255,9 +244,9 @@ viewContent c model s =
             case model.step of
                 Step.Step StepType ->
                     flatselect model
-                        { all = s.state.entityTypes |> c.filter |> Set.toList
-                        , toString = EntityType.toName
-                        , toDesc = EntityType.toParent
+                        { all = s.state.entities |> c.filter |> Set.toList
+                        , toString = Entity.toUuidString
+                        , toDesc = Entity.toUuidString >> Just
                         , onInput = InputType
                         , label = "Type"
                         , explain = h2 c.typeExplain
@@ -270,7 +259,7 @@ viewContent c model s =
                         }
                         model
     in
-    cardContent s
+    floatingContainer s
         c.pageTitle
         buttons
         [ step

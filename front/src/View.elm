@@ -8,7 +8,6 @@ import Element.Events as Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
-import Entity.Entity exposing (Entity(..))
 import Html.Attributes as Attr
 import Html.Events
 import Json.Decode exposing (..)
@@ -117,8 +116,8 @@ topbar s title =
         none
 
 
-cardContent : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
-cardContent s title buttons children =
+floatingContainer : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
+floatingContainer s title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
             [ topbar s title
@@ -131,16 +130,15 @@ cardContent s title buttons children =
         ]
 
 
-flatContent : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
-flatContent s title buttons children =
+flatContainer : Shared.Model -> String -> List (Element msg) -> Element msg -> List (Element msg) -> Element msg
+flatContainer s title buttons search children =
+    -- container for main content
     column [ width fill, alignTop, padding 0 ]
-        [ column [ width fill, padding 0, centerX, alignTop ]
-            [ topbar s title
-            , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
-                [ column
-                    [ width fill, alignTop, spacing 20, padding 20 ]
-                    (buttons ++ children)
-                ]
+        [ topbar s title
+        , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
+            [ column
+                [ width fill, alignTop, spacing 20, padding 20 ]
+                (buttons ++ [ search ] ++ children)
             ]
         ]
 

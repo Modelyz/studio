@@ -1,20 +1,21 @@
 module Group.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity exposing (Entity(..))
-import EntityType.EntityType as EntityType exposing (only)
+import Entity.Entity as Entity exposing (Entity(..), only)
+import Group.Group exposing (Group)
 import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config
+config : Entity.AddPage.Config Group
 config =
-    { filter = only EntityType.GroupType
+    { filter = only "GroupType"
     , typeExplain = "Choose the type of the new Group (it can be hierarchical)"
     , pageTitle = "Adding a Group"
-    , constructor = Group
+    , constructor = Entity.G
+    , typeName = "Group"
     }
 
 
