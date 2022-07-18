@@ -258,8 +258,8 @@ checkNothing field err =
 
 clickableCard : msg -> String -> Maybe String -> Element msg
 clickableCard onInput title desc =
-    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, width (px 150), height (px 75) ]
-        [ row [ alignLeft ]
+    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
+        [ row [ alignLeft, width <| minimum 150 shrink ]
             [ button.primary onInput "+"
             , el [ paddingXY 10 0 ] (text title)
             ]

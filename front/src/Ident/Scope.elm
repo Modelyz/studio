@@ -13,7 +13,9 @@ type
     -- TODO: also identify all entities or of a group ?
     -- We can identify a particular entity:
     = OneEntity Uuid
-      -- or all the entities of a certain type:
+      -- or all the entities of a certain REA type:
+    | AllEntities String
+      -- or all the entities of a certain user type:
     | AllEntitiesOfType Uuid
 
 
@@ -23,6 +25,9 @@ within scope entities entity =
     case scope of
         OneEntity uuid ->
             scope == OneEntity uuid
+
+        AllEntities type_ ->
+            type_ == Entity.toString entity
 
         AllEntitiesOfType uuid ->
             let
@@ -42,6 +47,9 @@ toDesc id =
         OneEntity uuid ->
             "entity " ++ Uuid.toString uuid
 
+        AllEntities constructor ->
+            "entities of type "
+
         AllEntitiesOfType uuid ->
             "entities of type " ++ Uuid.toString uuid
 
@@ -52,8 +60,11 @@ toString id =
         OneEntity e ->
             "OneEntity"
 
-        AllEntitiesOfType et ->
-            "AllEntitiesOfType"
+        AllEntities t ->
+            "All " ++ t
+
+        AllEntitiesOfType uuid ->
+            "AllEntitiesOfType " ++ Uuid.toString uuid
 
 
 encode : Scope -> Encode.Value
@@ -63,6 +74,12 @@ encode e =
             Encode.object
                 [ ( "for", Encode.string "OneEntity" )
                 , ( "uuid", Uuid.encode uuid )
+                ]
+
+        AllEntities type_ ->
+            Encode.object
+                [ ( "for", Encode.string "AllEntities" )
+                , ( "type", Encode.string type_ )
                 ]
 
         AllEntitiesOfType uuid ->
@@ -96,6 +113,9 @@ compare s =
         ++ (case s of
                 OneEntity uuid ->
                     Uuid.toString uuid
+
+                AllEntities type_ ->
+                    type_
 
                 AllEntitiesOfType uuid ->
                     Uuid.toString uuid
