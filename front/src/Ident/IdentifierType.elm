@@ -18,7 +18,7 @@ type alias IdentifierType =
     }
 
 
-within : IdentifierType -> DictSet String Entity -> Entity -> Bool
+within : IdentifierType -> DictSet String Entity -> Maybe Entity -> Bool
 within identifierType entities entity =
     -- True if the entity is within the scope of the IdentifierType
     identifierType.applyTo

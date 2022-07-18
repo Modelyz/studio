@@ -3,6 +3,7 @@ module AgentType.AddPage exposing (..)
 import AgentType.AgentType exposing (AgentType)
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Agent Type (it can be hierarchical)"
     , pageTitle = "Adding an Agent Type"
     , constructor = Entity.AT
-    , typeName = "AgentType"
+    , currentType = Type.AgentType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.AT t) ->
+            Ok (Entity.AT (AgentType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.AT (AgentType m.uuid Nothing))

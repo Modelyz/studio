@@ -2,6 +2,7 @@ module Group.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity(..), only)
+import Entity.Type as Type exposing (Type)
 import Group.Group exposing (Group)
 import Route exposing (Route)
 import Shared
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Group (it can be hierarchical)"
     , pageTitle = "Adding a Group"
     , constructor = Entity.G
-    , typeName = "Group"
+    , currentType = Type.Group
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.G t) ->
+            Ok (Entity.G (Group m.uuid t.uuid))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Err "You must select a type"

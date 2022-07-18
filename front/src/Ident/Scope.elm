@@ -19,26 +19,31 @@ type
     | AllEntitiesOfType Uuid
 
 
-within : Scope -> DictSet String Entity -> Entity -> Bool
+within : Scope -> DictSet String Entity -> Maybe Entity -> Bool
 within scope entities entity =
     -- True if the entity is within the scope
-    case scope of
-        OneEntity uuid ->
-            scope == OneEntity uuid
+    Maybe.withDefault True <|
+        Maybe.map
+            (\e ->
+                case scope of
+                    OneEntity uuid ->
+                        scope == OneEntity uuid
 
-        AllEntities type_ ->
-            type_ == Entity.toString entity
+                    AllEntities type_ ->
+                        type_ == Entity.toString e
 
-        AllEntitiesOfType uuid ->
-            let
-                parent =
-                    fromUuid entities uuid
-            in
+                    AllEntitiesOfType uuid ->
+                        let
+                            parent =
+                                fromUuid entities uuid
+                        in
+                        e
+                            |> toType
+                            |> Maybe.andThen (fromUuid entities)
+                            |> Maybe.andThen (\x -> Maybe.map (\p -> isChildOf p entities x) parent)
+                            |> Maybe.withDefault False
+            )
             entity
-                |> toType
-                |> Maybe.andThen (fromUuid entities)
-                |> Maybe.andThen (\e -> Maybe.map (\p -> isChildOf p entities e) parent)
-                |> Maybe.withDefault False
 
 
 toDesc : Scope -> String
@@ -97,6 +102,9 @@ decoder =
                 case for of
                     "OneEntity" ->
                         Decode.field "uuid" (Decode.map OneEntity Uuid.decoder)
+
+                    "AllEntities" ->
+                        Decode.field "type" (Decode.map AllEntities Decode.string)
 
                     "AllEntitiesOfType" ->
                         Decode.field "uuid" (Decode.map AllEntitiesOfType Uuid.decoder)

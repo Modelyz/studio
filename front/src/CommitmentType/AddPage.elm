@@ -3,6 +3,7 @@ module CommitmentType.AddPage exposing (..)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Commitment Type (it can be hierarchical)"
     , pageTitle = "Adding a Commitment Type"
     , constructor = Entity.CmT
-    , typeName = "CommitmentType"
+    , currentType = Type.CommitmentType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.CmT t) ->
+            Ok (Entity.CmT (CommitmentType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.CmT (CommitmentType m.uuid Nothing))

@@ -3,6 +3,7 @@ module Contract.AddPage exposing (..)
 import Contract.Contract exposing (Contract)
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import Route exposing (Route)
 import Shared
 import Spa.Page
@@ -14,8 +15,8 @@ config =
     { filter = only "ContractType"
     , typeExplain = "Choose the type of the new Contract (it can be hierarchical)"
     , pageTitle = "Adding a Contract"
-    , constructor = Entity.A
-    , typeName = "ContractType"
+    , constructor = Entity.Cn
+    , currentType = Type.Contract
     }
 
 

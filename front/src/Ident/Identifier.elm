@@ -41,7 +41,8 @@ compare i =
 encode : Identifier -> Encode.Value
 encode e =
     Encode.object
-        [ ( "name", Encode.string e.name )
+        [ ( "entity", Uuid.encode e.entity )
+        , ( "name", Encode.string e.name )
         , ( "fragments", Encode.list Fragment.encode e.fragments )
         ]
 
@@ -49,7 +50,7 @@ encode e =
 decoder : Decoder Identifier
 decoder =
     Decode.map3 Identifier
-        (Decode.field "uuid" Uuid.decoder)
+        (Decode.field "entity" Uuid.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
 

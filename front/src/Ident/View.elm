@@ -4,7 +4,7 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import View exposing (ViewType(..))
+import View exposing (ViewType(..), withDefaultContent)
 
 
 type alias Model a =
@@ -17,8 +17,8 @@ type alias Config msg =
     }
 
 
-displayIdentifiers : List Identifier -> Element msg
-displayIdentifiers identifiers =
+displayIdentifiers : String -> List Identifier -> Element msg
+displayIdentifiers default identifiers =
     -- display the first identifier, which may depend on others in the list
     row [ spacing 5 ]
         (identifiers
@@ -27,6 +27,7 @@ displayIdentifiers identifiers =
                     row [ spacing 5 ] <|
                         List.map (\f -> displayFragment f identifiers) identifier.fragments
                 )
+            |> withDefaultContent (text default)
         )
 
 

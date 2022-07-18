@@ -1,7 +1,8 @@
 module GroupType.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
+import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import GroupType.GroupType exposing (GroupType)
 import Route exposing (Route)
 import Shared
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose to restrict what you can group together"
     , pageTitle = "Adding an Group Type"
     , constructor = Entity.GT
-    , typeName = "GroupType"
+    , currentType = Type.GroupType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.GT t) ->
+            Ok (Entity.GT (GroupType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.GT (GroupType m.uuid Nothing))

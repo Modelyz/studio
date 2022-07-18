@@ -9,6 +9,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity
+import Entity.Type as Type exposing (Type(..))
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
@@ -287,7 +288,7 @@ inputEntityTypes s model =
                     (model.applyTo |> Set.toList |> List.map (viewItem model))
         , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Entity.allEntities
+            (Type.allStrings
                 |> List.map
                     (\e ->
                         clickableCard (InputScope <| Set.insert (AllEntities e) model.applyTo) e Nothing

@@ -2,10 +2,12 @@ module Event.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import Event.Event exposing (Event)
 import Route exposing (Route)
 import Shared
 import Spa.Page
+import Time exposing (millisToPosix)
 import View exposing (View)
 
 
@@ -14,8 +16,9 @@ config =
     { filter = only "EventType"
     , typeExplain = "Choose the type of the new Event (it can be hierarchical)"
     , pageTitle = "Adding a Event"
-    , constructor = Entity.A
-    , typeName = "EventType"
+    , constructor = Entity.E
+    , currentType = Type.Event
+    , validate = validate
     }
 
 
@@ -37,3 +40,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.E t) ->
+            Ok (Entity.E (Event m.uuid t.uuid (millisToPosix 0)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Err "You must select a type"

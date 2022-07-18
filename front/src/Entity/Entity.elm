@@ -1,4 +1,4 @@
-module Entity.Entity exposing (Entity(..), allEntities, compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toUuid, toUuidString)
+module Entity.Entity exposing (Entity(..), compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toUuid, toUuidString)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -36,15 +36,6 @@ type Entity
     | CnT ContractType
     | PT ProcessType
     | GT GroupType
-
-
-allEntities : List String
-allEntities =
-    let
-        entities =
-            [ "Resource", "Event", "Agent", "Commitment", "Contract", "Process", "Group" ]
-    in
-    entities ++ List.map (\e -> e ++ "Type") entities
 
 
 fromUuid : DictSet String Entity -> Uuid -> Maybe Entity

@@ -11,6 +11,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity)
+import Entity.Type as Type exposing (Type)
 import Event.Event as Event exposing (Event)
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
@@ -71,39 +72,9 @@ type alias Config a =
     , typeExplain : String
     , pageTitle : String
     , constructor : a -> Entity
-    , typeName : String
+    , currentType : Type
+    , validate : Model -> Result String Entity
     }
-
-
-validate : Model -> Result String Entity
-validate m =
-    case m.flatselect of
-        Just (Entity.RT t) ->
-            Ok (Entity.R (Resource m.uuid t.uuid))
-
-        Just (Entity.ET t) ->
-            Ok (Entity.E (Event m.uuid t.uuid (millisToPosix 0)))
-
-        Just (Entity.AT t) ->
-            Ok (Entity.A (Agent m.uuid t.uuid))
-
-        Just (Entity.CmT t) ->
-            Ok (Entity.Cm (Commitment m.uuid t.uuid (millisToPosix 0)))
-
-        Just (Entity.CnT t) ->
-            Ok (Entity.Cn (Contract m.uuid t.uuid))
-
-        Just (Entity.PT t) ->
-            Ok (Entity.P (Process m.uuid t.uuid (millisToPosix 0)))
-
-        Just (Entity.GT t) ->
-            Ok (Entity.G (Group m.uuid t.uuid))
-
-        Just _ ->
-            Err "Not permitted"
-
-        Nothing ->
-            Err "You must select an Entity Type"
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
@@ -115,7 +86,13 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , uuid = newUuid
-      , identifiers = Set.empty Identifier.compare
+      , identifiers =
+            Debug.log "identifiers="
+                (s.state.identifierTypes
+                    |> Set.filter
+                        (\it -> IdentifierType.within it s.state.entities Nothing)
+                    |> Set.map Identifier.compare (Identifier.fromIdentifierType newUuid)
+                )
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -128,27 +105,17 @@ update : Config a -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg 
 update c s msg model =
     case msg of
         InputType met ->
-            case met of
-                Nothing ->
-                    ( { model
-                        | flatselect = Nothing
-                        , identifiers = Set.empty Identifier.compare
-                      }
-                    , Effect.none
-                    )
-
-                Just e ->
-                    ( { model
-                        | flatselect = Just e
-                        , identifiers =
-                            -- select the identifiers corresponding to the chosen type
-                            s.state.identifierTypes
-                                |> Set.filter
-                                    (\it -> IdentifierType.within it s.state.entities e)
-                                |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
-                      }
-                    , Effect.none
-                    )
+            ( { model
+                | flatselect = met
+                , identifiers =
+                    -- select the identifiers corresponding to the chosen type
+                    s.state.identifierTypes
+                        |> Set.filter
+                            (\it -> IdentifierType.within it s.state.entities met)
+                        |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
+              }
+            , Effect.none
+            )
 
         InputIdentifier i ->
             ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
@@ -157,7 +124,7 @@ update c s msg model =
             ( { model | warning = err }, Effect.none )
 
         Added ->
-            case validate model of
+            case c.validate model of
                 Ok e ->
                     ( model
                     , Effect.batch
@@ -206,7 +173,7 @@ buttonNext c model =
             nextOrValidate model
                 NextPage
                 Added
-                (if (String.slice 0 4 <| String.reverse <| c.typeName) == "epyT" then
+                (if (String.slice 0 4 <| String.reverse <| Type.toString c.currentType) == "epyT" then
                     Ok model.flatselect
 
                  else

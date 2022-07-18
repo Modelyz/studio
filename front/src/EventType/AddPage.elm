@@ -2,6 +2,7 @@ module EventType.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import EventType.EventType exposing (EventType)
 import Route exposing (Route)
 import Shared
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Event Type (it can be hierarchical)"
     , pageTitle = "Adding an Event Type"
     , constructor = Entity.ET
-    , typeName = "EventType"
+    , currentType = Type.EventType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.ET t) ->
+            Ok (Entity.ET (EventType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.ET (EventType m.uuid Nothing))

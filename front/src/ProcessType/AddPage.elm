@@ -1,7 +1,8 @@
 module ProcessType.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
+import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type exposing (Type)
 import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route)
 import Shared
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
     , pageTitle = "Adding a Process Type"
     , constructor = Entity.PT
-    , typeName = "ProcessType"
+    , currentType = Type.ProcessType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.PT t) ->
+            Ok (Entity.PT (ProcessType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.PT (ProcessType m.uuid Nothing))

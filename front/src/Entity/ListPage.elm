@@ -99,7 +99,7 @@ viewContent c model vt s =
                                     Nothing
                                     (Identifier.restrict e s.state.identifiers
                                         |> selectIdentifiers Smallcard
-                                        |> displayIdentifiers
+                                        |> displayIdentifiers (Entity.toUuidString e)
                                     )
                                     ("Type: " ++ Entity.toUuidString e)
                             )

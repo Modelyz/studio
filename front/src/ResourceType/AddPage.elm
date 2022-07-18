@@ -1,7 +1,8 @@
 module ResourceType.AddPage exposing (..)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
-import Entity.Entity as Entity exposing (only)
+import Entity.Entity as Entity exposing (Entity, only)
+import Entity.Type as Type
 import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route)
 import Shared
@@ -15,7 +16,8 @@ config =
     , typeExplain = "Choose the type of the new Resource Type (it can be hierarchical)"
     , pageTitle = "Adding a Resource Type"
     , constructor = Entity.RT
-    , typeName = "ResourceType"
+    , currentType = Type.ResourceType
+    , validate = validate
     }
 
 
@@ -37,3 +39,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.RT t) ->
+            Ok (Entity.RT (ResourceType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Ok (Entity.RT (ResourceType m.uuid Nothing))
