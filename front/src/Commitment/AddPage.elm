@@ -11,12 +11,11 @@ import Time exposing (millisToPosix)
 import View exposing (View)
 
 
-config : Entity.AddPage.Config Commitment
+config : Entity.AddPage.Config
 config =
     { filter = only "CommitmentType"
     , typeExplain = "Choose the type of the new Commitment (it can be hierarchical)"
     , pageTitle = "Adding a Commitment"
-    , constructor = Entity.Cm
     , currentType = Type.Commitment
     , validate = validate
     }

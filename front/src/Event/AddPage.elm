@@ -11,12 +11,11 @@ import Time exposing (millisToPosix)
 import View exposing (View)
 
 
-config : Entity.AddPage.Config Event
+config : Entity.AddPage.Config
 config =
     { filter = only "EventType"
     , typeExplain = "Choose the type of the new Event (it can be hierarchical)"
     , pageTitle = "Adding a Event"
-    , constructor = Entity.E
     , currentType = Type.Event
     , validate = validate
     }

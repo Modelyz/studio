@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config GroupType
+config : Entity.AddPage.Config
 config =
     { filter = only "GroupType"
     , typeExplain = "Choose to restrict what you can group together"
     , pageTitle = "Adding an Group Type"
-    , constructor = Entity.GT
     , currentType = Type.GroupType
     , validate = validate
     }

@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ContractType
+config : Entity.AddPage.Config
 config =
     { filter = only "ContractType"
     , typeExplain = "Choose the type of the new Contract Type (it can be hierarchical)"
     , pageTitle = "Adding a Contract Type"
-    , constructor = Entity.CnT
     , currentType = Type.ContractType
     , validate = validate
     }

@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ResourceType
+config : Entity.AddPage.Config
 config =
     { filter = only "ResourceType"
     , typeExplain = "Choose the type of the new Resource Type (it can be hierarchical)"
     , pageTitle = "Adding a Resource Type"
-    , constructor = Entity.RT
     , currentType = Type.ResourceType
     , validate = validate
     }

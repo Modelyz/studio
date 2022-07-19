@@ -79,8 +79,8 @@ update index fragment identifier =
 
 
 fromIdentifierType : Uuid -> IdentifierType -> Identifier
-fromIdentifierType entity it =
-    Identifier entity it.name it.fragments
+fromIdentifierType entityUuid it =
+    Identifier entityUuid it.name it.fragments
 
 
 match : String -> Identifier -> Bool

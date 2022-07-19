@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config Agent
+config : Entity.AddPage.Config
 config =
     { filter = only "AgentType"
     , typeExplain = "Choose the type of the new Agent (it can be hierarchical)"
     , pageTitle = "Adding a Agent"
-    , constructor = Entity.A
     , currentType = Type.Agent
     , validate = validate
     }

@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config ProcessType
+config : Entity.AddPage.Config
 config =
     { filter = only "ProcessType"
     , typeExplain = "Choose the type of the new Process Type (it can be hierarchical)"
     , pageTitle = "Adding a Process Type"
-    , constructor = Entity.PT
     , currentType = Type.ProcessType
     , validate = validate
     }

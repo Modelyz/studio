@@ -68,11 +68,10 @@ type Step
     | StepIdentifiers
 
 
-type alias Config a =
+type alias Config =
     { filter : DictSet String Entity -> DictSet String Entity
     , typeExplain : String
     , pageTitle : String
-    , constructor : a -> Entity
     , currentType : Type
     , validate : Model -> Result String Entity
     }
@@ -81,18 +80,18 @@ type alias Config a =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
-        ( newUuid, newSeed ) =
+        ( entityUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
     in
     ( { route = f.route
       , flatselect = Nothing
-      , uuid = newUuid
+      , uuid = entityUuid
       , seed = newSeed
       , identifiers =
             s.state.identifierTypes
                 |> Set.filter
                     (\it -> IdentifierType.within it s.state.entities Nothing)
-                |> Set.map Identifier.compare (Identifier.fromIdentifierType newUuid)
+                |> Set.map Identifier.compare (Identifier.fromIdentifierType entityUuid)
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -101,7 +100,7 @@ init s f =
     )
 
 
-update : Config a -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update : Config -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update c s msg model =
     let
         ( newUuid, newSeed ) =
@@ -163,7 +162,7 @@ update c s msg model =
             ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
 
 
-view : Config a -> Shared.Model -> Model -> View Msg
+view : Config -> Shared.Model -> Model -> View Msg
 view c s model =
     { title = c.pageTitle
     , attributes = []
@@ -172,7 +171,7 @@ view c s model =
     }
 
 
-buttonNext : Config a -> Model -> Element Msg
+buttonNext : Config -> Model -> Element Msg
 buttonNext c model =
     case model.step of
         Step.Step StepType ->
@@ -190,7 +189,7 @@ buttonNext c model =
             nextOrValidate model NextPage Added (Ok model.identifiers)
 
 
-viewContent : Config a -> Model -> Shared.Model -> Element Msg
+viewContent : Config -> Model -> Shared.Model -> Element Msg
 viewContent c model s =
     let
         buttons : List (Element Msg)

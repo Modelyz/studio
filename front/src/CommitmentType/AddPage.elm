@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config CommitmentType
+config : Entity.AddPage.Config
 config =
     { filter = only "CommitmentType"
     , typeExplain = "Choose the type of the new Commitment Type (it can be hierarchical)"
     , pageTitle = "Adding a Commitment Type"
-    , constructor = Entity.CmT
     , currentType = Type.CommitmentType
     , validate = validate
     }

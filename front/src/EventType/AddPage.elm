@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config EventType
+config : Entity.AddPage.Config
 config =
     { filter = only "EventType"
     , typeExplain = "Choose the type of the new Event Type (it can be hierarchical)"
     , pageTitle = "Adding an Event Type"
-    , constructor = Entity.ET
     , currentType = Type.EventType
     , validate = validate
     }

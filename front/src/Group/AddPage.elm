@@ -10,12 +10,11 @@ import Spa.Page
 import View exposing (View)
 
 
-config : Entity.AddPage.Config Group
+config : Entity.AddPage.Config
 config =
     { filter = only "GroupType"
     , typeExplain = "Choose the type of the new Group (it can be hierarchical)"
     , pageTitle = "Adding a Group"
-    , constructor = Entity.G
     , currentType = Type.Group
     , validate = validate
     }
