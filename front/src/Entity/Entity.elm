@@ -1,4 +1,4 @@
-module Entity.Entity exposing (Entity(..), compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toUuid, toUuidString)
+module Entity.Entity exposing (Entity(..), compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toTypeUuid, toUuid, toUuidString)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -7,6 +7,7 @@ import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Contract.Contract as Contract exposing (Contract)
 import ContractType.ContractType as ContractType exposing (ContractType)
 import DictSet as Set exposing (DictSet)
+import Entity.Type as Type exposing (Type)
 import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
@@ -56,8 +57,8 @@ findEntity uuid es =
         |> List.head
 
 
-toType : Entity -> Maybe Uuid
-toType entity =
+toTypeUuid : Entity -> Maybe Uuid
+toTypeUuid entity =
     case entity of
         R r ->
             Just r.type_
@@ -100,6 +101,52 @@ toType entity =
 
         GT gt ->
             gt.type_
+
+
+toType : Entity -> Type
+toType e =
+    case e of
+        R _ ->
+            Type.Resource
+
+        E _ ->
+            Type.Event
+
+        A _ ->
+            Type.Agent
+
+        Cm _ ->
+            Type.Commitment
+
+        Cn _ ->
+            Type.Contract
+
+        G _ ->
+            Type.Group
+
+        P _ ->
+            Type.Process
+
+        PT _ ->
+            Type.Process
+
+        RT _ ->
+            Type.ResourceType
+
+        ET _ ->
+            Type.EventType
+
+        AT _ ->
+            Type.AgentType
+
+        CmT _ ->
+            Type.CommitmentType
+
+        CnT _ ->
+            Type.ContractType
+
+        GT _ ->
+            Type.GroupType
 
 
 encode : Entity -> Value
@@ -292,49 +339,8 @@ toUuid e =
 
 
 toString : Entity -> String
-toString e =
-    case e of
-        R _ ->
-            "Resource"
-
-        E _ ->
-            "Event"
-
-        A _ ->
-            "Agent"
-
-        Cm _ ->
-            "Commitment"
-
-        Cn _ ->
-            "Contract"
-
-        G _ ->
-            "Group"
-
-        P _ ->
-            "Process"
-
-        PT _ ->
-            "Process"
-
-        RT _ ->
-            "ResourceType"
-
-        ET _ ->
-            "EventType"
-
-        AT _ ->
-            "AgentType"
-
-        CmT _ ->
-            "CommitmentType"
-
-        CnT _ ->
-            "ContractType"
-
-        GT _ ->
-            "GroupType"
+toString =
+    toType >> Type.toString
 
 
 toPluralString : Entity -> String
@@ -412,7 +418,7 @@ isParentOf child entities item =
         True
 
     else
-        toType child
+        toTypeUuid child
             |> Maybe.andThen (\e -> findEntity e entities)
             |> Maybe.map (\x -> isParentOf x entities item)
             |> Maybe.withDefault False

@@ -54,6 +54,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , uuid : Uuid
+    , seed : Seed
     , flatselect : Maybe Entity
     , identifiers : DictSet String Identifier
     , warning : String
@@ -86,8 +87,9 @@ init s f =
     ( { route = f.route
       , flatselect = Nothing
       , uuid = newUuid
+      , seed = newSeed
       , identifiers =
-            Debug.log "identifiers="
+            Debug.log "init identifiers="
                 (s.state.identifierTypes
                     |> Set.filter
                         (\it -> IdentifierType.within it s.state.entities Nothing)
@@ -103,6 +105,10 @@ init s f =
 
 update : Config a -> Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update c s msg model =
+    let
+        ( newUuid, newSeed ) =
+            Random.step Uuid.generator model.seed
+    in
     case msg of
         InputType met ->
             ( { model
@@ -113,6 +119,8 @@ update c s msg model =
                         |> Set.filter
                             (\it -> IdentifierType.within it s.state.entities met)
                         |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
+                , uuid = newUuid
+                , seed = newSeed
               }
             , Effect.none
             )

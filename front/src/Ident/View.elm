@@ -36,8 +36,9 @@ selectIdentifiers viewtype identifiers =
     -- TODO make this configurable against the view type and the identifiable
     case viewtype of
         Smallcard ->
-            (identifiers |> List.filter (\i -> i.name == "NCODE"))
-                ++ (identifiers |> List.filter (\i -> i.name == "Prénom"))
+            (Debug.log "selectIdentifiers = " identifiers |> List.filter (\i -> i.name == "NCODE"))
+                ++ (identifiers |> List.filter (\i -> i.name == "XXXPrénom"))
+                ++ (identifiers |> List.filter (\i -> i.name == "XXXName"))
                 ++ (identifiers |> List.filter (\i -> i.name == "Nom"))
 
         New ->

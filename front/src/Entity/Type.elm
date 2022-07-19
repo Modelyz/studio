@@ -1,4 +1,7 @@
-module Entity.Type exposing (Type(..), all, allStrings, toString)
+module Entity.Type exposing (Type(..), all, allStrings, decoder, encode, toString)
+
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 
 
 type Type
@@ -72,3 +75,62 @@ toString t =
 
         GroupType ->
             "GroupType"
+
+
+fromString : String -> Maybe Type
+fromString s =
+    case s of
+        "Resource" ->
+            Just Resource
+
+        "Event" ->
+            Just Event
+
+        "Agent" ->
+            Just Agent
+
+        "Commitment" ->
+            Just Commitment
+
+        "Contract" ->
+            Just Contract
+
+        "Process" ->
+            Just Process
+
+        "Group" ->
+            Just Group
+
+        "ResourceType" ->
+            Just ResourceType
+
+        "EventType" ->
+            Just EventType
+
+        "AgentType" ->
+            Just AgentType
+
+        "CommitmentType" ->
+            Just CommitmentType
+
+        "ContractType" ->
+            Just ContractType
+
+        "ProcessType" ->
+            Just ProcessType
+
+        "GroupType" ->
+            Just GroupType
+
+        _ ->
+            Nothing
+
+
+encode : Type -> Encode.Value
+encode =
+    toString >> Encode.string
+
+
+decoder : Decoder Type
+decoder =
+    Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unkown Type"))

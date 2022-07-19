@@ -1,4 +1,4 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update, uuidAggregator)
 
 import Browser.Navigation as Nav
 import DictSet as Set exposing (DictSet)
@@ -122,6 +122,10 @@ init value navkey =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        ( newUuid, newSeed ) =
+            Random.step Uuid.generator model.currentSeed
+    in
     case msg of
         None _ ->
             ( model, Cmd.none )
@@ -180,9 +184,6 @@ update msg model =
                     else
                         model.timeoutReconnect
 
-                ( newUuid, newSeed ) =
-                    Random.step Uuid.generator model.currentSeed
-
                 cmd =
                     if wsstatus == WSOpen then
                         initiateConnection newUuid model
@@ -203,6 +204,7 @@ update msg model =
         WSDisconnected _ ->
             ( { model
                 | timeoutReconnect = min 30 (model.timeoutReconnect + 1)
+                , currentSeed = newSeed
                 , wsstatus = WSClosed
               }
             , Task.perform WSConnect
@@ -249,11 +251,11 @@ update msg model =
                     )
 
                 Err str ->
-                    ( { model | iostatus = IOError <| errorToString str }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| errorToString str }, Cmd.none )
 
         SendMessages messages ->
             -- send the new messages and the pending ones
-            ( { model | iostatus = WSSending }
+            ( { model | iostatus = WSSending, currentSeed = newSeed }
             , WS.wsSend <|
                 Encode.encode 0 <|
                     Encode.list Message.encode <|
@@ -263,10 +265,6 @@ update msg model =
             )
 
         StoreMessagesToSend messages ->
-            let
-                ( _, newSeed ) =
-                    Random.step Uuid.generator model.currentSeed
-            in
             ( { model | currentSeed = newSeed, iostatus = ESStoring }, Message.storeMessagesToSend (Encode.list Message.encode messages) )
 
         MessagesStoredTosend messages ->
@@ -291,14 +289,10 @@ update msg model =
                         ( { model | iostatus = IOIdle }, Message.readMessages Encode.null )
 
                 Err err ->
-                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| errorToString err }, Cmd.none )
 
         MessagesStored _ ->
-            ( { model
-                | iostatus = IOIdle
-              }
-            , Message.readMessages Encode.null
-            )
+            ( { model | iostatus = IOIdle, currentSeed = newSeed }, Message.readMessages Encode.null )
 
         MessagesSent status ->
             case decodeValue Decode.string status of
@@ -310,7 +304,7 @@ update msg model =
                         ( { model | iostatus = IOError str }, Cmd.none )
 
                 Err err ->
-                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| errorToString err }, Cmd.none )
 
         MessagesReceived ms ->
             case decodeString (Decode.list Message.decoder) ms of
@@ -338,7 +332,7 @@ update msg model =
                     )
 
                 Err err ->
-                    ( { model | iostatus = IOError <| errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| errorToString err }, Cmd.none )
 
 
 initiateConnection : Uuid -> Model -> Cmd Msg
@@ -370,7 +364,7 @@ dispatch model payload =
             StoreMessagesToSend
         <|
             Task.map
-                (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } payload)
+                (\time -> List.singleton <| Message { uuid = newUuid, when = time, flow = Flow.Requested } payload)
                 Time.now
 
 
@@ -382,9 +376,7 @@ dispatchT model newPayload =
             Random.step Uuid.generator model.currentSeed
     in
     Effect.fromSharedCmd <|
-        Task.perform
-            StoreMessagesToSend
-        <|
+        Task.perform StoreMessagesToSend <|
             Task.map
                 (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
                 Time.now
@@ -393,9 +385,70 @@ dispatchT model newPayload =
 dispatchMany : Model -> List Payload -> Effect Msg msg
 dispatchMany model payloads =
     -- dispatch several messages
-    Effect.batch <| List.map (dispatch model) payloads
+    let
+        ( newUuid, newSeed ) =
+            Random.step Uuid.generator model.currentSeed
+    in
+    Effect.fromSharedCmd <|
+        Task.perform StoreMessagesToSend <|
+            Task.map
+                (\time ->
+                    uuidMerger <|
+                        List.foldl (uuidAggregator newSeed) [] <|
+                            List.map (Message { uuid = newUuid, when = time, flow = Flow.Requested }) payloads
+                )
+                Time.now
 
 
 identity : Model -> Maybe String
 identity =
     .identity
+
+
+uuidAggregator : Seed -> a -> List ( ( Uuid, Seed ), a ) -> List ( ( Uuid, Seed ), a )
+uuidAggregator firstSeed i tuples =
+    -- aggregator to generate several uuids from a list
+    let
+        newTuple =
+            tuples
+                |> List.head
+                |> (\mt ->
+                        case mt of
+                            Just t ->
+                                let
+                                    ( lastUuid, lastSeed ) =
+                                        Tuple.first t
+
+                                    ( newUuid, newSeed ) =
+                                        Random.step Uuid.generator lastSeed
+                                in
+                                ( ( newUuid, newSeed ), i )
+
+                            Nothing ->
+                                let
+                                    ( newUuid, newSeed ) =
+                                        Random.step Uuid.generator firstSeed
+                                in
+                                ( ( newUuid, newSeed ), i )
+                   )
+    in
+    newTuple :: tuples
+
+
+uuidMerger : List ( ( Uuid, Seed ), Message ) -> List Message
+uuidMerger tuples =
+    -- merge the new uuids into the messages
+    List.map
+        (\t ->
+            let
+                ( uuid, _ ) =
+                    Tuple.first t
+
+                message =
+                    Tuple.second t
+            in
+            case message of
+                Message metadata payload ->
+                    Message { metadata | uuid = uuid } payload
+        )
+        tuples

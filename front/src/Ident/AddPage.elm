@@ -271,10 +271,6 @@ viewItem model i =
 
 inputEntityTypes : Shared.Model -> Model -> Element Msg
 inputEntityTypes s model =
-    let
-        iName =
-            model.name
-    in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
@@ -286,15 +282,15 @@ inputEntityTypes s model =
                         []
                     )
                     (model.applyTo |> Set.toList |> List.map (viewItem model))
-        , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
+        , h2 <| "Select the types of the entities that should have a \"" ++ model.name ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Type.allStrings
+            (Type.all
                 |> List.map
-                    (\e ->
-                        clickableCard (InputScope <| Set.insert (AllEntities e) model.applyTo) e Nothing
+                    (\t ->
+                        clickableCard (InputScope <| Set.insert (AllEntities t) model.applyTo) (Type.toString t) Nothing
                     )
             )
-        , h2 <| "Select the types of the entities that should have a \"" ++ iName ++ "\" identifier"
+        , h2 <| "Select the types of the entities that should have a \"" ++ model.name ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.entities
                 |> Set.toList
@@ -306,7 +302,7 @@ inputEntityTypes s model =
                             (Just <| "Type: " ++ Entity.toUuidString e)
                     )
             )
-        , h2 <| "Select the entities that should have a \"" ++ iName ++ "\" identifier"
+        , h2 <| "Select the entities that should have a \"" ++ model.name ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.entities
                 |> Set.toList
@@ -315,7 +311,7 @@ inputEntityTypes s model =
                         clickableCard
                             (InputScope <| Set.insert (OneEntity (Entity.toUuid e)) model.applyTo)
                             (Entity.toUuidString e)
-                            (e |> Entity.toType |> Maybe.map Uuid.toString |> Maybe.map (\t -> "Type: " ++ t))
+                            (e |> Entity.toTypeUuid |> Maybe.map Uuid.toString |> Maybe.map (\t -> "Type: " ++ t))
                     )
             )
         ]

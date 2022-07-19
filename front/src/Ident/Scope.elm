@@ -1,7 +1,8 @@
 module Ident.Scope exposing (..)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, toType, toUuid, toUuidString)
+import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, toTypeUuid, toUuid, toUuidString)
+import Entity.Type as Type exposing (Type)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -14,13 +15,13 @@ type
     -- We can identify a particular entity:
     = OneEntity Uuid
       -- or all the entities of a certain REA type:
-    | AllEntities String
+    | AllEntities Type
       -- or all the entities of a certain user type:
     | AllEntitiesOfType Uuid
 
 
 within : Scope -> DictSet String Entity -> Maybe Entity -> Bool
-within scope entities entity =
+within scope entities met =
     -- True if the entity is within the scope
     Maybe.withDefault True <|
         Maybe.map
@@ -30,7 +31,7 @@ within scope entities entity =
                         scope == OneEntity uuid
 
                     AllEntities type_ ->
-                        type_ == Entity.toString e
+                        Maybe.withDefault False <| Maybe.map (\et -> type_ == Entity.toType et) met
 
                     AllEntitiesOfType uuid ->
                         let
@@ -38,12 +39,12 @@ within scope entities entity =
                                 fromUuid entities uuid
                         in
                         e
-                            |> toType
+                            |> toTypeUuid
                             |> Maybe.andThen (fromUuid entities)
                             |> Maybe.andThen (\x -> Maybe.map (\p -> isChildOf p entities x) parent)
                             |> Maybe.withDefault False
             )
-            entity
+            met
 
 
 toDesc : Scope -> String
@@ -52,8 +53,8 @@ toDesc id =
         OneEntity uuid ->
             "entity " ++ Uuid.toString uuid
 
-        AllEntities constructor ->
-            "entities of type "
+        AllEntities type_ ->
+            Type.toString type_
 
         AllEntitiesOfType uuid ->
             "entities of type " ++ Uuid.toString uuid
@@ -62,14 +63,14 @@ toDesc id =
 toString : Scope -> String
 toString id =
     case id of
-        OneEntity e ->
+        OneEntity _ ->
             "OneEntity"
 
-        AllEntities t ->
-            "All " ++ t
+        AllEntities _ ->
+            "AllEntities"
 
-        AllEntitiesOfType uuid ->
-            "AllEntitiesOfType " ++ Uuid.toString uuid
+        AllEntitiesOfType _ ->
+            "AllEntitiesOfType"
 
 
 encode : Scope -> Encode.Value
@@ -84,7 +85,7 @@ encode e =
         AllEntities type_ ->
             Encode.object
                 [ ( "for", Encode.string "AllEntities" )
-                , ( "type", Encode.string type_ )
+                , ( "type", Type.encode type_ )
                 ]
 
         AllEntitiesOfType uuid ->
@@ -104,7 +105,7 @@ decoder =
                         Decode.field "uuid" (Decode.map OneEntity Uuid.decoder)
 
                     "AllEntities" ->
-                        Decode.field "type" (Decode.map AllEntities Decode.string)
+                        Decode.field "type" (Decode.map AllEntities Type.decoder)
 
                     "AllEntitiesOfType" ->
                         Decode.field "uuid" (Decode.map AllEntitiesOfType Uuid.decoder)
@@ -123,7 +124,7 @@ compare s =
                     Uuid.toString uuid
 
                 AllEntities type_ ->
-                    type_
+                    Type.toString type_
 
                 AllEntitiesOfType uuid ->
                     Uuid.toString uuid
