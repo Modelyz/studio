@@ -89,12 +89,10 @@ init s f =
       , uuid = newUuid
       , seed = newSeed
       , identifiers =
-            Debug.log "init identifiers="
-                (s.state.identifierTypes
-                    |> Set.filter
-                        (\it -> IdentifierType.within it s.state.entities Nothing)
-                    |> Set.map Identifier.compare (Identifier.fromIdentifierType newUuid)
-                )
+            s.state.identifierTypes
+                |> Set.filter
+                    (\it -> IdentifierType.within it s.state.entities Nothing)
+                |> Set.map Identifier.compare (Identifier.fromIdentifierType newUuid)
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]

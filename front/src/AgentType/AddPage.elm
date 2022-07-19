@@ -45,7 +45,7 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.AT t) ->
-            Ok (Entity.AT <| Debug.log "new entity=" (AgentType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+            Ok (Entity.AT <| AgentType m.uuid (m.flatselect |> Maybe.map Entity.toUuid))
 
         Just _ ->
             Err "You cannot have this type for this Entity"

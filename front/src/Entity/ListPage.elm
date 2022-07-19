@@ -97,7 +97,7 @@ viewContent c model vt s =
                             (\e ->
                                 viewSmallCard (Removed e)
                                     Nothing
-                                    (Identifier.restrict e (Debug.log "all identifiers from list view = " s.state.identifiers)
+                                    (Identifier.restrict e s.state.identifiers
                                         |> selectIdentifiers Smallcard
                                         |> displayIdentifiers (Entity.toUuidString e)
                                     )
