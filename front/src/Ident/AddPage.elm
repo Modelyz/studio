@@ -183,7 +183,7 @@ buttonNext model =
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
         Step.Step StepScope ->
-            nextOrValidate model NextPage Added (Ok model.applyTo)
+            nextOrValidate model NextPage Added (checkEmptyList (Set.toList model.applyTo) "Please choose an option")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -276,7 +276,7 @@ inputEntityTypes s model =
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
                 :: List.append
                     (if Set.isEmpty model.applyTo then
-                        [ el [ padding 10, Font.color color.text.main ] (text <| "Everything") ]
+                        [ el [ padding 10, Font.color color.text.main ] (text <| "Nothing") ]
 
                      else
                         []
@@ -299,19 +299,9 @@ inputEntityTypes s model =
                         clickableCard
                             (InputScope <| Set.insert (AllEntitiesOfType (Entity.toUuid e)) model.applyTo)
                             (Entity.toUuidString e)
-                            (Just <| "Type: " ++ Entity.toUuidString e)
-                    )
-            )
-        , h2 <| "Select the entities that should have a \"" ++ model.name ++ "\" identifier"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (s.state.entities
-                |> Set.toList
-                |> List.map
-                    (\e ->
-                        clickableCard
-                            (InputScope <| Set.insert (OneEntity (Entity.toUuid e)) model.applyTo)
-                            (Entity.toUuidString e)
-                            (e |> Entity.toTypeUuid |> Maybe.map Uuid.toString |> Maybe.map (\t -> "Type: " ++ t))
+                            (Entity.toTypeUuid e
+                                |> Maybe.map (\u -> "Type: " ++ Uuid.toString u)
+                            )
                     )
             )
         ]

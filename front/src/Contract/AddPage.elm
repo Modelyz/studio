@@ -16,13 +16,14 @@ config =
     , typeExplain = "Choose the type of the new Contract (it can be hierarchical)"
     , pageTitle = "Adding a Contract"
     , currentType = Type.Contract
+    , validate = validate
     }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = Entity.AddPage.init s
+        { init = Entity.AddPage.init config s
         , update = Entity.AddPage.update config s
         , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
@@ -37,3 +38,16 @@ match route =
 
         _ ->
             Nothing
+
+
+validate : Model -> Result String Entity
+validate m =
+    case m.flatselect of
+        Just (Entity.CnT t) ->
+            Ok (Entity.Cn (Contract m.uuid t.uuid))
+
+        Just _ ->
+            Err "You cannot have this type for this Entity"
+
+        Nothing ->
+            Err "You must select a type"

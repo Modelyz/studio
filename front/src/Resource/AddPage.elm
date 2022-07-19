@@ -23,7 +23,7 @@ config =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = Entity.AddPage.init s
+        { init = Entity.AddPage.init config s
         , update = Entity.AddPage.update config s
         , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
@@ -43,7 +43,7 @@ match route =
 validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
-        Just (Entity.R t) ->
+        Just (Entity.RT t) ->
             Ok (Entity.R (Resource m.uuid t.uuid))
 
         Just _ ->

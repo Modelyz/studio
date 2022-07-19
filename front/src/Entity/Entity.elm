@@ -1,4 +1,4 @@
-module Entity.Entity exposing (Entity(..), compare, decoder, encode, fromUuid, isChildOf, isChildOfAny, only, toPluralString, toString, toType, toTypeUuid, toUuid, toUuidString)
+module Entity.Entity exposing (Entity(..), compare, decoder, encode, findEntity, fromUuid, isChildOf, isChildOfAny, isParentOf, only, toPluralString, toString, toType, toTypeUuid, toUuid, toUuidString)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -402,18 +402,13 @@ compare =
 
 isChildOfAny : DictSet String Entity -> DictSet String Entity -> Entity -> Bool
 isChildOfAny entities es e =
-    -- the entity type must be a child of one of the entity types of the identifier type
-    if Set.isEmpty es then
-        -- identifier valid for all entity types
-        True
-
-    else
-        es |> Set.toList |> List.any (isParentOf e entities)
+    -- True if e is a child of one of the es (given the catalog of entities)
+    es |> Set.toList |> List.any (isParentOf e entities)
 
 
 isParentOf : Entity -> DictSet String Entity -> Entity -> Bool
 isParentOf child entities item =
-    -- true if item is parent of the child
+    -- equality is considered parent
     if child == item then
         True
 

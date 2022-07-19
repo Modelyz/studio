@@ -77,8 +77,8 @@ type alias Config =
     }
 
 
-init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
-init s f =
+init : Config -> Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init c s f =
     let
         ( entityUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
@@ -89,8 +89,7 @@ init s f =
       , seed = newSeed
       , identifiers =
             s.state.identifierTypes
-                |> Set.filter
-                    (\it -> IdentifierType.within it s.state.entities Nothing)
+                |> IdentifierType.select ( c.currentType, Nothing ) s.state.entities
                 |> Set.map Identifier.compare (Identifier.fromIdentifierType entityUuid)
       , warning = ""
       , step = Step.Step StepType
@@ -113,8 +112,7 @@ update c s msg model =
                 , identifiers =
                     -- select the identifiers corresponding to the chosen type
                     s.state.identifierTypes
-                        |> Set.filter
-                            (\it -> IdentifierType.within it s.state.entities met)
+                        |> IdentifierType.select ( c.currentType, Maybe.map Entity.toUuid met ) s.state.entities
                         |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
                 , uuid = newUuid
                 , seed = newSeed
@@ -218,7 +216,7 @@ viewContent c model s =
                     flatselect model
                         { all = s.state.entities |> c.filter |> Set.toList
                         , toString = Entity.toUuidString
-                        , toDesc = Entity.toUuidString >> Just
+                        , toDesc = Entity.toTypeUuid >> Maybe.andThen (Uuid.toString >> Just)
                         , onInput = InputType
                         , label = "Type"
                         , explain = h2 c.typeExplain

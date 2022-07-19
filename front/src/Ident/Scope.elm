@@ -1,7 +1,7 @@
 module Ident.Scope exposing (..)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, toTypeUuid, toUuid, toUuidString)
+import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, isParentOf, toTypeUuid, toUuid, toUuidString)
 import Entity.Type as Type exposing (Type)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -11,48 +11,42 @@ import Prng.Uuid as Uuid exposing (Uuid)
 type
     Scope
     -- This is the scope of an identifier
-    -- TODO: also identify all entities or of a group ?
-    -- We can identify a particular entity:
-    = OneEntity Uuid
-      -- or all the entities of a certain REA type:
-    | AllEntities Type
+    -- TODO: also identify all entities of a group ?
+    -- or all the entities of a certain REA type:
+    = AllEntities Type
       -- or all the entities of a certain user type:
     | AllEntitiesOfType Uuid
 
 
-within : Scope -> DictSet String Entity -> Maybe Entity -> Bool
-within scope entities met =
-    -- True if the entity is within the scope
-    Maybe.withDefault True <|
-        Maybe.map
-            (\e ->
-                case scope of
-                    OneEntity uuid ->
-                        scope == OneEntity uuid
+within : Scope -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
+within scope entities ( t, mtu ) =
+    -- True if the entity (or its type) is within the scope
+    -- TODO remove
+    case scope of
+        AllEntities type_ ->
+            t == type_
 
-                    AllEntities type_ ->
-                        Maybe.withDefault False <| Maybe.map (\et -> type_ == Entity.toType et) met
-
-                    AllEntitiesOfType uuid ->
+        AllEntitiesOfType scopeTypeUuid ->
+            Maybe.withDefault False <|
+                Maybe.map
+                    (\u ->
                         let
-                            parent =
-                                fromUuid entities uuid
+                            maybeScopeType =
+                                fromUuid entities scopeTypeUuid
+
+                            maybeEntity =
+                                fromUuid entities u
                         in
-                        e
-                            |> toTypeUuid
-                            |> Maybe.andThen (fromUuid entities)
-                            |> Maybe.andThen (\x -> Maybe.map (\p -> isChildOf p entities x) parent)
+                        maybeEntity
+                            |> Maybe.andThen (\entityTypeUuid -> Maybe.map (\scopeType -> isChildOf scopeType entities entityTypeUuid) maybeScopeType)
                             |> Maybe.withDefault False
-            )
-            met
+                    )
+                    mtu
 
 
 toDesc : Scope -> String
 toDesc id =
     case id of
-        OneEntity uuid ->
-            "entity " ++ Uuid.toString uuid
-
         AllEntities type_ ->
             Type.toString type_
 
@@ -63,9 +57,6 @@ toDesc id =
 toString : Scope -> String
 toString id =
     case id of
-        OneEntity _ ->
-            "OneEntity"
-
         AllEntities _ ->
             "AllEntities"
 
@@ -76,12 +67,6 @@ toString id =
 encode : Scope -> Encode.Value
 encode e =
     case e of
-        OneEntity uuid ->
-            Encode.object
-                [ ( "for", Encode.string "OneEntity" )
-                , ( "uuid", Uuid.encode uuid )
-                ]
-
         AllEntities type_ ->
             Encode.object
                 [ ( "for", Encode.string "AllEntities" )
@@ -101,9 +86,6 @@ decoder =
         |> Decode.andThen
             (\for ->
                 case for of
-                    "OneEntity" ->
-                        Decode.field "uuid" (Decode.map OneEntity Uuid.decoder)
-
                     "AllEntities" ->
                         Decode.field "type" (Decode.map AllEntities Type.decoder)
 
@@ -120,9 +102,6 @@ compare s =
     toString s
         ++ " "
         ++ (case s of
-                OneEntity uuid ->
-                    Uuid.toString uuid
-
                 AllEntities type_ ->
                     Type.toString type_
 

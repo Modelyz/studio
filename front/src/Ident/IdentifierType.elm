@@ -2,10 +2,12 @@ module Ident.IdentifierType exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Entity.Entity as Entity exposing (Entity)
+import Entity.Type as Type exposing (Type)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Ident.Scope as Scope exposing (Scope)
+import Ident.Scope as Scope exposing (Scope(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
 
 
 type alias IdentifierType =
@@ -18,18 +20,38 @@ type alias IdentifierType =
     }
 
 
-within : IdentifierType -> DictSet String Entity -> Maybe Entity -> Bool
-within identifierType entities entity =
-    -- True if the entity is within the scope of the IdentifierType
+within : IdentifierType -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
+within identifierType entities tuple =
     identifierType.applyTo
         |> Set.toList
         |> (\scopes ->
                 if List.isEmpty scopes then
-                    True
+                    False
 
                 else
-                    List.any (\s -> Scope.within s entities entity) scopes
+                    List.any (\s -> Scope.within s entities tuple) scopes
            )
+
+
+select : ( Type, Maybe Uuid ) -> DictSet String Entity -> DictSet String IdentifierType -> DictSet String IdentifierType
+select ( type_, muuid ) entities its =
+    its
+        |> Set.filter
+            (\it ->
+                List.any
+                    (\scope ->
+                        case scope of
+                            AllEntities t ->
+                                t == type_
+
+                            AllEntitiesOfType u ->
+                                muuid
+                                    |> Maybe.andThen (\x -> Entity.findEntity x entities)
+                                    |> Maybe.andThen (\e -> Maybe.map (\y -> Entity.isParentOf e entities y) (Entity.findEntity u entities))
+                                    |> Maybe.withDefault False
+                    )
+                    (Set.toList it.applyTo)
+            )
 
 
 compare : IdentifierType -> String

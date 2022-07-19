@@ -1,4 +1,4 @@
-module Event.AddPage exposing (..)
+module Event.AddPage exposing (config, match, page, validate)
 
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity, only)
@@ -24,7 +24,7 @@ config =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = Entity.AddPage.init s
+        { init = Entity.AddPage.init config s
         , update = Entity.AddPage.update config s
         , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
@@ -44,7 +44,7 @@ match route =
 validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
-        Just (Entity.E t) ->
+        Just (Entity.ET t) ->
             Ok (Entity.E (Event m.uuid t.uuid (millisToPosix 0)))
 
         Just _ ->

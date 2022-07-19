@@ -23,7 +23,7 @@ config =
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = Entity.AddPage.init s
+        { init = Entity.AddPage.init config s
         , update = Entity.AddPage.update config s
         , view = Entity.AddPage.view config s
         , subscriptions = \_ -> Sub.none
