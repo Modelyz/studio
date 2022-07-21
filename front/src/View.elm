@@ -206,7 +206,7 @@ onEnter msg =
         )
 
 
-viewSmallCard : msg -> Maybe String -> Element msg -> String -> Element msg
+viewSmallCard : msg -> Maybe String -> Element msg -> Maybe String -> Element msg
 viewSmallCard deleteMsg url title description =
     let
         titleelm =
@@ -219,11 +219,8 @@ viewSmallCard deleteMsg url title description =
                 [ Maybe.withDefault titleelm <| Maybe.map (\u -> link [] { url = u, label = titleelm }) url
                 , el [ alignRight ] (button.primary deleteMsg "×")
                 ]
-            , if description == "" then
-                none
-
-              else
-                row [ padding 10, Font.size size.text.small ] [ text description ]
+            , Maybe.map (\d -> row [ padding 10, Font.size size.text.small ] [ text d ]) description
+                |> Maybe.withDefault none
             ]
         ]
 

@@ -93,10 +93,10 @@ viewContent model s =
                             Nothing
                             (text i.name)
                             (if List.isEmpty ids then
-                                "for everything"
+                                Just "for everything"
 
                              else
-                                "for " ++ (ids |> List.map Scope.toDesc |> String.join ", ")
+                                Just <| "for " ++ (ids |> List.map Scope.toDesc |> String.join ", ")
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

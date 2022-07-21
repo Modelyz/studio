@@ -103,8 +103,6 @@ viewContent c model vt s =
                                     )
                                     (Entity.toTypeUuid e
                                         |> Maybe.map (\u -> "Type: " ++ Uuid.toString u)
-                                        |> Maybe.withDefault "(Root Type)"
-                                     -- TODO use Maybe in viewSmallCard and don't display 'Root Type'
                                     )
                             )
                         |> withDefaultContent (p c.emptyText)
