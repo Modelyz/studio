@@ -13,11 +13,11 @@ import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route(..), toString)
 import State exposing (State)
-import Style exposing (Menu(..), WindowSize, isMobile)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Url as Url exposing (Url)
 import Url.Parser as Parser
+import View.Style as Style exposing (Menu(..), WindowSize, isMobile)
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 

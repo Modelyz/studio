@@ -4,7 +4,8 @@ import DictSet as Set exposing (DictSet)
 import Element exposing (..)
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import View exposing (ViewType(..), withDefaultContent)
+import View exposing (withDefaultContent)
+import View.Type exposing (ViewType(..))
 
 
 type alias Model a =

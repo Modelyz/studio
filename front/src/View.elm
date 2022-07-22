@@ -13,7 +13,7 @@ import Html.Events
 import Json.Decode exposing (..)
 import Route exposing (Route)
 import Shared
-import Style exposing (..)
+import View.Style as Style exposing (..)
 
 
 type alias View msg =
@@ -22,11 +22,6 @@ type alias View msg =
     , element : Shared.Model -> Element msg
     , route : Route
     }
-
-
-type ViewType
-    = Smallcard
-    | New
 
 
 notFound : View msg
@@ -204,25 +199,6 @@ onEnter msg =
                     )
             )
         )
-
-
-viewSmallCard : msg -> Maybe String -> Element msg -> Maybe String -> Element msg
-viewSmallCard deleteMsg url title description =
-    let
-        titleelm =
-            row [ Font.size size.text.main, padding 10 ] [ title ]
-    in
-    row
-        []
-        [ column [ Background.color color.item.background ]
-            [ row [ spacing 10, width fill ]
-                [ Maybe.withDefault titleelm <| Maybe.map (\u -> link [] { url = u, label = titleelm }) url
-                , el [ alignRight ] (button.primary deleteMsg "×")
-                ]
-            , Maybe.map (\d -> row [ padding 10, Font.size size.text.small ] [ text d ]) description
-                |> Maybe.withDefault none
-            ]
-        ]
 
 
 checkEmptyString : String -> String -> Result String String

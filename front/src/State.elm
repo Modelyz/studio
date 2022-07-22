@@ -1,5 +1,6 @@
 module State exposing (State, aggregate, empty)
 
+import Configuration exposing (Configuration)
 import DictSet as Set exposing (DictSet)
 import Entity.Entity as Entity exposing (Entity)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -29,6 +30,9 @@ type alias State =
     -- ident
     , identifierTypes : DictSet String IdentifierType
     , identifiers : DictSet String Identifier
+
+    -- config
+    , configuration : DictSet String Configuration
     }
 
 
@@ -49,6 +53,9 @@ empty =
     -- behaviours
     , identifierTypes = Set.empty IdentifierType.compare
     , identifiers = Set.empty Identifier.compare
+
+    -- config
+    , configuration = Set.empty Configuration.compare
     }
 
 
@@ -106,6 +113,14 @@ aggregate (Message b p) state =
         IdentifierAdded ei ->
             { state
                 | identifiers = Set.insert ei state.identifiers
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Set.insert b.uuid state.uuids
+            }
+
+        Configured conf ->
+            { state
+                | configuration = Set.insert conf state.configuration
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Set.insert b.uuid state.uuids

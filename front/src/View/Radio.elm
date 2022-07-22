@@ -3,7 +3,7 @@ module View.Radio exposing (view)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import Style exposing (color, size)
+import View.Style exposing (color, size)
 
 
 type alias Config a msg =

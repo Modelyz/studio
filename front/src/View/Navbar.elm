@@ -1,4 +1,4 @@
-module Navbar exposing (view)
+module View.Navbar exposing (view)
 
 import DictSet as Set
 import Element exposing (..)
@@ -9,9 +9,9 @@ import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
 import Route exposing (Route, firstSegment, toString)
 import Shared
-import Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
 import Time exposing (posixToMillis)
 import View exposing (hamburger, separator)
+import View.Style as Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
 import Websocket as WS exposing (toText)
 
 

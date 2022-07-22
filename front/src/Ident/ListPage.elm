@@ -10,6 +10,7 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import View exposing (..)
+import View.Smallcard exposing (viewSmallCard)
 
 
 type alias Model =

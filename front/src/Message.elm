@@ -1,5 +1,6 @@
 port module Message exposing (Message(..), Metadata, Payload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
 
+import Configuration exposing (Configuration)
 import DictSet as Set
 import Entity.Entity as EN exposing (Entity)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -10,6 +11,7 @@ import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
+import View.Zone exposing (Zone(..))
 
 
 
@@ -56,6 +58,7 @@ type Payload
     | Added Entity
     | Removed Entity
     | IdentifierAdded Identifier
+    | Configured Configuration
 
 
 toString : Payload -> String
@@ -81,6 +84,9 @@ toString p =
 
         IdentifierAdded _ ->
             "IdentifierAdded"
+
+        Configured _ ->
+            "Configured"
 
 
 type alias Connection =
@@ -161,6 +167,9 @@ encode (Message b p) =
 
             IdentifierAdded i ->
                 ( "load", Identifier.encode i )
+
+            Configured c ->
+                ( "load", Configuration.encode c )
         ]
 
 
@@ -222,6 +231,10 @@ decoder =
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
                                 (Decode.field "load" Identifier.decoder)
+
+                        "Configured" ->
+                            Decode.map Configured
+                                (Decode.field "load" Configuration.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

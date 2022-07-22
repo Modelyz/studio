@@ -20,7 +20,6 @@ import Ident.IdentifierType as IdentifierType
 import Ident.Input exposing (inputIdentifiers)
 import Ident.Scope exposing (Scope(..))
 import Message
-import Navbar
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -29,12 +28,13 @@ import Result exposing (andThen)
 import Route exposing (Route, redirectParent)
 import Shared
 import Spa.Page
-import Style exposing (..)
 import Time exposing (millisToPosix)
 import View exposing (View, button, checkNothing, closeMenu, floatingContainer, h2)
 import View.FlatSelect exposing (flatselect)
+import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, previousStep)
+import View.Style exposing (..)
 
 
 type Msg

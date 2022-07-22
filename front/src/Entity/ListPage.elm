@@ -12,16 +12,18 @@ import Ident.Identifier as Identifier
 import Ident.Scope exposing (Scope(..))
 import Ident.View exposing (displayIdentifiers, selectIdentifiers)
 import Message
-import Navbar
 import Prng.Uuid as Uuid exposing (Uuid)
 import Result exposing (andThen)
 import Route exposing (Route, redirectAdd)
 import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
-import Style exposing (..)
 import View exposing (..)
+import View.Navbar as Navbar
 import View.Radio as Radio
+import View.Smallcard exposing (viewSmallCard)
+import View.Style exposing (..)
+import View.Type exposing (ViewType(..))
 
 
 type alias Model =

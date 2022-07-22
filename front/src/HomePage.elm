@@ -3,12 +3,12 @@ module HomePage exposing (match, page, view)
 import Effect exposing (Effect)
 import Element as E exposing (..)
 import Element.Background as Background
-import Navbar
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import Style exposing (..)
 import View exposing (View, closeMenu)
+import View.Navbar as Navbar
+import View.Style as Style exposing (..)
 
 
 type alias Model =

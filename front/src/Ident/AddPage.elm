@@ -18,9 +18,9 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Style exposing (..)
 import View exposing (..)
 import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
+import View.Style exposing (..)
 
 
 type

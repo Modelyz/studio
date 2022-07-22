@@ -27,7 +27,6 @@ import HomePage
 import Ident.AddPage
 import Ident.ListPage
 import Json.Encode as Encode
-import Navbar
 import Process.AddPage
 import Process.ListPage
 import ProcessType.AddPage
@@ -39,8 +38,9 @@ import ResourceType.ListPage
 import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)
-import Style exposing (WindowSize)
 import View exposing (View)
+import View.Navbar as Navbar
+import View.Style as Style exposing (WindowSize)
 
 
 

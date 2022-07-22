@@ -5,7 +5,8 @@ import Element exposing (..)
 import Element.Input as Input
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import View exposing (ViewType(..))
+import View exposing (..)
+import View.Type exposing (ViewType(..))
 
 
 type alias Model a =
