@@ -2,10 +2,11 @@ module Ident.View exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Element exposing (..)
+import Entity.Entity as Entity exposing (Entity)
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
 import View exposing (withDefaultContent)
-import View.Type exposing (ViewType(..))
+import View.Type as ViewType exposing (Type(..))
 
 
 type alias Model a =
@@ -32,9 +33,15 @@ displayIdentifiers default identifiers =
         )
 
 
-selectIdentifiers : ViewType -> List Identifier -> List Identifier
-selectIdentifiers viewtype identifiers =
+buildDisplayIdentifier : ViewType.Type -> Entity -> List Identifier -> List Identifier
+buildDisplayIdentifier viewtype e identifiers =
     -- TODO make this configurable against the view type and the identifiable
+    -- il faut retrouver la configuration de display identifier en partant du plus spécifique au moins spécifique
+    -- construire la liste des scopes parents de e jusqu'au scope racine (AllEntities)
+    -- pour chaque scope de la liste, chercher la configuration correspondante.
+    -- récupérer le nom des identifiants
+    -- récupérer les identifiants
+    -- afficher le display identifier
     case viewtype of
         Smallcard ->
             (identifiers |> List.filter (\i -> i.name == "NCODE"))

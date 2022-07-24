@@ -1,5 +1,6 @@
 module Ident.AddPage exposing (..)
 
+import Configuration exposing (Configuration(..))
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -19,18 +20,21 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import View exposing (..)
+import View.Lang exposing (Lang(..))
 import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
 import View.Style exposing (..)
+import View.Type exposing (Type(..))
+import Zone.Zone as Zone exposing (Zone(..))
 
 
 type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputScope (DictSet String Scope)
+    | InputScopes (DictSet String Scope)
     | InputUnique Bool
     | InputMandatory Bool
-    | InputFormat (List Fragment)
+    | InputFragments (List Fragment)
     | Warning String
     | PreviousPage
     | NextPage
@@ -93,18 +97,17 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route
-      , name = ""
-      , applyTo = Set.empty Scope.compare
-      , unique = False
-      , mandatory = False
-      , fragments = []
-      , warning = ""
-      , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
-      , step = Step.Step StepName
-      }
-    , closeMenu f s.menu
-    )
+    { route = f.route
+    , name = ""
+    , applyTo = Set.empty Scope.compare
+    , unique = False
+    , mandatory = False
+    , fragments = []
+    , warning = ""
+    , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
+    , step = Step.Step StepName
+    }
+        |> Effect.with (closeMenu f s.menu)
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -113,7 +116,7 @@ update s msg model =
         InputName x ->
             ( { model | name = x }, Effect.none )
 
-        InputScope i ->
+        InputScopes i ->
             ( { model | applyTo = i }, Effect.none )
 
         InputUnique x ->
@@ -122,7 +125,7 @@ update s msg model =
         InputMandatory x ->
             ( { model | mandatory = x }, Effect.none )
 
-        InputFormat x ->
+        InputFragments x ->
             ( { model | fragments = x }, Effect.none )
 
         Warning err ->
@@ -212,7 +215,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    inputEntityTypes s model
+                    inputScopes s model
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -238,7 +241,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepFormat ->
-                    inputFragmentConfs model
+                    inputFragments model
 
                 Step.Step StepName ->
                     el [ alignTop ] <|
@@ -265,12 +268,12 @@ viewItem : Model -> Scope -> Element Msg
 viewItem model i =
     row [ Background.color color.item.background ]
         [ el [ paddingXY 10 2 ] (text <| Scope.toDesc i)
-        , button.primary (InputScope <| Set.remove i model.applyTo) "×"
+        , button.primary (InputScopes <| Set.remove i model.applyTo) "×"
         ]
 
 
-inputEntityTypes : Shared.Model -> Model -> Element Msg
-inputEntityTypes s model =
+inputScopes : Shared.Model -> Model -> Element Msg
+inputScopes s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
@@ -287,17 +290,16 @@ inputEntityTypes s model =
             (Type.all
                 |> List.map
                     (\t ->
-                        clickableCard (InputScope <| Set.insert (AllEntities t) model.applyTo) (Type.toString t) Nothing
+                        clickableCard (InputScopes <| Set.insert (AllEntities t) model.applyTo) ("All " ++ Type.toPluralString t) Nothing
                     )
             )
-        , h2 <| "Select the types of the entities that should have a \"" ++ model.name ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.entities
                 |> Set.toList
                 |> List.map
                     (\e ->
                         clickableCard
-                            (InputScope <| Set.insert (AllEntitiesOfType (Entity.toUuid e)) model.applyTo)
+                            (InputScopes <| Set.insert (AllEntitiesOfType (Entity.toUuid e)) model.applyTo)
                             (Entity.toUuidString e)
                             (Entity.toTypeUuid e
                                 |> Maybe.map (\u -> "Type: " ++ Uuid.toString u)
@@ -307,8 +309,8 @@ inputEntityTypes s model =
         ]
 
 
-inputFragmentConfs : Model -> Element Msg
-inputFragmentConfs model =
+inputFragments : Model -> Element Msg
+inputFragments model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0 ] <| h2 "Format: ")
@@ -323,10 +325,8 @@ inputFragmentConfs model =
                         |> List.indexedMap
                             (\i fragment ->
                                 row [ Background.color color.item.background ]
-                                    [ el [ paddingXY 10 2 ] (text <| Fragment.toString fragment)
-                                    , inputFragmentConf model.fragments i fragment
-                                    , button.primary
-                                        (InputFormat
+                                    [ button.primary
+                                        (InputFragments
                                             (model.fragments
                                                 |> List.indexedMap Tuple.pair
                                                 |> List.filter (\( j, _ ) -> j /= i)
@@ -334,6 +334,8 @@ inputFragmentConfs model =
                                             )
                                         )
                                         "×"
+                                    , el [ paddingXY 10 2 ] (text <| Fragment.toString fragment)
+                                    , inputFragment model.fragments i fragment
                                     ]
                             )
                     )
@@ -345,7 +347,7 @@ inputFragmentConfs model =
                         [ Background.color color.item.background
                         , mouseOver itemHoverstyle
                         , width (px 250)
-                        , onClick (InputFormat <| model.fragments ++ [ f ])
+                        , onClick (InputFragments <| model.fragments ++ [ f ])
                         , pointer
                         , padding 10
                         , spacing 10
@@ -359,14 +361,14 @@ inputFragmentConfs model =
         ]
 
 
-inputFragmentConf : List Fragment -> Int -> Fragment -> Element Msg
-inputFragmentConf fragments index fragment =
+inputFragment : List Fragment -> Int -> Fragment -> Element Msg
+inputFragment fragments index fragment =
     case fragment of
         Fixed value ->
             Input.text [ width (px 75) ]
                 { onChange =
                     \v ->
-                        InputFormat
+                        InputFragments
                             (fragments
                                 |> List.indexedMap
                                     (\i f ->
@@ -387,7 +389,7 @@ inputFragmentConf fragments index fragment =
             Input.text [ width (px 75) ]
                 { onChange =
                     \n ->
-                        InputFormat
+                        InputFragments
                             (fragments
                                 |> List.indexedMap
                                     (\i f ->
@@ -408,7 +410,7 @@ inputFragmentConf fragments index fragment =
             Input.text [ width (px 75) ]
                 { onChange =
                     \n ->
-                        InputFormat
+                        InputFragments
                             (fragments
                                 |> List.indexedMap
                                     (\i f ->
@@ -430,7 +432,7 @@ inputFragmentConf fragments index fragment =
                 [ Input.text [ width (px 50) ]
                     { onChange =
                         \x ->
-                            InputFormat
+                            InputFragments
                                 (fragments
                                     |> List.indexedMap
                                         (\i f ->
@@ -451,7 +453,7 @@ inputFragmentConf fragments index fragment =
                 , Input.text [ width (px 50) ]
                     { onChange =
                         \x ->
-                            InputFormat
+                            InputFragments
                                 (fragments
                                     |> List.indexedMap
                                         (\i f ->
@@ -472,7 +474,7 @@ inputFragmentConf fragments index fragment =
                 , Input.text [ width (px 50) ]
                     { onChange =
                         \x ->
-                            InputFormat
+                            InputFragments
                                 (fragments
                                     |> List.indexedMap
                                         (\i f ->

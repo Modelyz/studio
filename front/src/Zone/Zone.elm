@@ -1,6 +1,6 @@
-module View.Zone exposing (Zone, compare, decoder, encode)
+module Zone.Zone exposing (Zone(..), all, compare, decoder, encode, toDesc, toString)
 
-import Entity.Type as Type exposing (Type)
+import Entity.Type as Type exposing (Type(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import View.Lang as Lang exposing (Lang)
@@ -9,7 +9,11 @@ import View.Lang as Lang exposing (Lang)
 type Zone
     = SmallcardItemTitle
     | SmallcardItemDescription
-    | SmallcardPageTitle
+
+
+all : List Zone
+all =
+    [ SmallcardItemTitle, SmallcardItemDescription ]
 
 
 toString : Zone -> String
@@ -21,8 +25,15 @@ toString zone =
         SmallcardItemDescription ->
             "SmallcardItemDescription"
 
-        SmallcardPageTitle ->
-            "SmallcardPageTitle"
+
+toDesc : Zone -> String
+toDesc zone =
+    case zone of
+        SmallcardItemTitle ->
+            "Title of the Smallcard Items"
+
+        SmallcardItemDescription ->
+            "Description of the Smallcard Items"
 
 
 compare : Zone -> String
@@ -51,9 +62,6 @@ decoder =
 
                     "SmallcardItemDescription" ->
                         Decode.succeed SmallcardItemDescription
-
-                    "SmallcardPageTitle" ->
-                        Decode.succeed SmallcardPageTitle
 
                     _ ->
                         Decode.fail <| "Unknown Zone: " ++ zone

@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -219,6 +220,15 @@ checkEmptyList field err =
         Ok field
 
 
+checkEmptyDict : DictSet comparable a -> String -> Result String (DictSet comparable a)
+checkEmptyDict field err =
+    if Set.isEmpty field then
+        Err err
+
+    else
+        Ok field
+
+
 checkNothing : Maybe a -> String -> Result String a
 checkNothing field err =
     case field of
@@ -231,6 +241,7 @@ checkNothing field err =
 
 clickableCard : msg -> String -> Maybe String -> Element msg
 clickableCard onInput title desc =
+    -- TODO choose a more explicit name
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
         [ row [ alignLeft, width <| minimum 150 shrink ]
             [ button.primary onInput "+"

@@ -11,7 +11,7 @@ import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
-import View.Zone exposing (Zone(..))
+import Zone.Zone exposing (Zone(..))
 
 
 

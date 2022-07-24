@@ -41,6 +41,7 @@ import Spa exposing (mapSharedMsg)
 import View exposing (View)
 import View.Navbar as Navbar
 import View.Style as Style exposing (WindowSize)
+import Zone.AddPage
 
 
 
@@ -161,6 +162,7 @@ main =
         -- Ident
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
+        |> Spa.addPublicPage mappers Zone.AddPage.match Zone.AddPage.page
         |> Spa.application View.map
             { toRoute = Route.toRoute
             , init = Shared.init

@@ -51,6 +51,9 @@ type Route
       -- Ident
     | IdentifierTypeList
     | IdentifierTypeAdd
+      -- Config
+    | ZoneConfigAdd
+    | ConfigurationList
 
 
 routeParser : Parser (Route -> a) a
@@ -107,7 +110,9 @@ routeParser =
         , map AgentList (s "agent")
         , map AgentAdd (s "agent" </> s "add")
 
-        -- edit entities
+        -- configure display
+        , map ConfigurationList (s "configure")
+        , map ZoneConfigAdd (s "configure" </> s "zoneconfig")
         ]
 
 
@@ -231,6 +236,12 @@ toString r =
 
         IdentifierTypeAdd ->
             absolute [ "identifier-type", "add" ] []
+
+        ConfigurationList ->
+            absolute [ "configure" ] []
+
+        ZoneConfigAdd ->
+            absolute [ "configure", "zoneconfig" ] []
 
 
 firstSegment : Route -> String

@@ -10,7 +10,7 @@ import Entity.Entity as Entity exposing (Entity, only, toPluralString, toString)
 import Html.Attributes as Attr
 import Ident.Identifier as Identifier
 import Ident.Scope exposing (Scope(..))
-import Ident.View exposing (displayIdentifiers, selectIdentifiers)
+import Ident.View exposing (buildDisplayIdentifier, displayIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Result exposing (andThen)
@@ -23,7 +23,7 @@ import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Smallcard exposing (viewSmallCard)
 import View.Style exposing (..)
-import View.Type exposing (ViewType(..))
+import View.Type as ViewType exposing (Type(..))
 
 
 type alias Model =
@@ -76,7 +76,7 @@ view c s model =
     }
 
 
-viewContent : Config -> Model -> ViewType -> Shared.Model -> Element Msg
+viewContent : Config -> Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent c model vt s =
     let
         entities =
@@ -100,7 +100,8 @@ viewContent c model vt s =
                                 viewSmallCard (Removed e)
                                     Nothing
                                     (Identifier.restrict e s.state.identifiers
-                                        |> selectIdentifiers Smallcard
+                                        |> buildDisplayIdentifier Smallcard e
+                                        -- TODO merge build and show?
                                         |> displayIdentifiers (Entity.toUuidString e)
                                     )
                                     (Entity.toTypeUuid e

@@ -1,7 +1,7 @@
 module Ident.Scope exposing (..)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, isParentOf, toTypeUuid, toUuid, toUuidString)
+import Entity.Entity as Entity exposing (Entity(..), fromUuid, isChildOf, isParentOf, toType, toTypeUuid, toUuid, toUuidString)
 import Entity.Type as Type exposing (Type)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -18,10 +18,36 @@ type
     | AllEntitiesOfType Uuid
 
 
+fromEntity : Entity -> Scope
+fromEntity e =
+    Maybe.map AllEntitiesOfType (toTypeUuid e)
+        |> Maybe.withDefault (AllEntities (toType e))
+
+
+isParentOf : Scope -> DictSet String Entity -> Scope -> Bool
+isParentOf childScope allEntities parentScope =
+    case parentScope of
+        AllEntities parentType ->
+            case childScope of
+                AllEntities childType ->
+                    parentType == childType
+
+                AllEntitiesOfType childTypeUuid ->
+                    Maybe.map (Entity.toType >> (==) parentType) (Entity.fromUuid allEntities childTypeUuid) |> Maybe.withDefault False
+
+        AllEntitiesOfType parentTypeUuid ->
+            case childScope of
+                AllEntities childType ->
+                    False
+
+                AllEntitiesOfType childTypeUuid ->
+                    Maybe.map3 Entity.isParentOf (Entity.fromUuid allEntities parentTypeUuid) (Just allEntities) (Entity.fromUuid allEntities childTypeUuid) |> Maybe.withDefault False
+
+
 within : Scope -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
 within scope entities ( t, mtu ) =
     -- True if the entity (or its type) is within the scope
-    -- TODO remove
+    -- TODO remove?
     case scope of
         AllEntities type_ ->
             t == type_

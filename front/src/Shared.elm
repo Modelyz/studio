@@ -75,7 +75,7 @@ flagsDecoder =
     Decode.map4 Flags
         (Decode.field "seed" Decode.int)
         (Decode.field "seedExtension" (Decode.list Decode.int))
-        (Decode.field "url" Decode.string |> Decode.andThen (\u -> Url.fromString u |> Decode.succeed))
+        (Decode.field "url" Decode.string |> Decode.andThen (Url.fromString >> Decode.succeed))
         (Decode.field "windowSize"
             (Decode.map2 WindowSize (Decode.field "w" Decode.int) (Decode.field "h" Decode.int))
         )

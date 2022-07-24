@@ -1,4 +1,4 @@
-module Entity.Type exposing (Type(..), all, allStrings, decoder, encode, toString)
+module Entity.Type exposing (Type(..), all, allStrings, decoder, encode, toPluralString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -75,6 +75,17 @@ toString t =
 
         GroupType ->
             "GroupType"
+
+
+toPluralString : Type -> String
+toPluralString t =
+    -- TODO not i18n friendly
+    case t of
+        Process ->
+            "Processes"
+
+        _ ->
+            toString t ++ "s"
 
 
 fromString : String -> Maybe Type
