@@ -115,6 +115,5 @@ displayScope s id =
                 [ text <| EntityType.toString type_ ++ " of type "
                 , Entity.fromUuid s.state.entities uuid
                     |> Maybe.map (display s SmallcardItemTitle FR_fr)
-                    -- TODO plop
-                    |> Maybe.withDefault (text "plop")
+                    |> Maybe.withDefault (text "(deleted type)")
                 ]
