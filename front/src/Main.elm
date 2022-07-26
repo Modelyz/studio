@@ -42,6 +42,7 @@ import View exposing (View)
 import View.Navbar as Navbar
 import View.Style as Style exposing (WindowSize)
 import Zone.AddPage
+import Zone.ListPage
 
 
 
@@ -162,6 +163,7 @@ main =
         -- Ident
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
+        |> Spa.addPublicPage mappers Zone.ListPage.match Zone.ListPage.page
         |> Spa.addPublicPage mappers Zone.AddPage.match Zone.AddPage.page
         |> Spa.application View.map
             { toRoute = Route.toRoute

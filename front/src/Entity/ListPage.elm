@@ -10,7 +10,7 @@ import Entity.Entity as Entity exposing (Entity, only, toPluralString, toString)
 import Html.Attributes as Attr
 import Ident.Identifier as Identifier
 import Ident.Scope exposing (Scope(..))
-import Ident.View exposing (buildDisplayIdentifier, displayIdentifiers)
+import Ident.View
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Result exposing (andThen)
@@ -19,11 +19,13 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
+import View.Lang exposing (Lang(..))
 import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Smallcard exposing (viewSmallCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.Zone as Zone exposing (Zone(..))
 
 
 type alias Model =
@@ -99,13 +101,12 @@ viewContent c model vt s =
                             (\e ->
                                 viewSmallCard (Removed e)
                                     Nothing
-                                    (Identifier.restrict e s.state.identifiers
-                                        |> buildDisplayIdentifier Smallcard e
-                                        -- TODO merge build and show?
-                                        |> displayIdentifiers (Entity.toUuidString e)
-                                    )
+                                    (Ident.View.display s SmallcardItemTitle FR_fr e)
                                     (Entity.toTypeUuid e
-                                        |> Maybe.map (\u -> "Type: " ++ Uuid.toString u)
+                                        |> Maybe.andThen (Entity.fromUuid s.state.entities)
+                                        |> Maybe.map
+                                            (\p -> row [] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
+                                        |> Maybe.withDefault none
                                     )
                             )
                         |> withDefaultContent (p c.emptyText)

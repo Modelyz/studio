@@ -22,15 +22,10 @@ select name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
-fromEntity : Entity -> DictSet String Identifier -> List Identifier
+fromEntity : Entity -> DictSet String Identifier -> DictSet String Identifier
 fromEntity entity =
     -- return the identifiers corresponding to a certain entity
-    Set.filter (\i -> toUuid entity == i.entity) >> Set.toList
-
-
-restrict =
-    -- TODO remove
-    fromEntity
+    Set.filter (\i -> toUuid entity == i.entity)
 
 
 compare : Identifier -> String

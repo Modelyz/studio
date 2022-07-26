@@ -14,6 +14,7 @@ import Entity.Type as Type exposing (Type(..))
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
+import Ident.View
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
@@ -31,7 +32,7 @@ type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputScopes (DictSet String Scope)
+    | InputScope (Maybe Scope)
     | InputUnique Bool
     | InputMandatory Bool
     | InputFragments (List Fragment)
@@ -52,7 +53,7 @@ type alias Model =
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , applyTo : DictSet String Scope
+    , applyTo : Maybe Scope
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -68,10 +69,12 @@ type Step
 
 validate : Model -> Result String IdentifierType
 validate m =
-    Result.map
-        -- avoid map6 which doesn't exist:
-        (\name -> { name = name, applyTo = m.applyTo, fragments = m.fragments, unique = m.unique, mandatory = m.mandatory })
+    Result.map5 IdentifierType
         (checkEmptyString m.name "The name is Empty")
+        (checkEmptyList m.fragments "Your identifier format is empty")
+        (checkNothing m.applyTo "You must select an entity type")
+        (Ok m.unique)
+        (Ok m.mandatory)
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -99,7 +102,7 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     { route = f.route
     , name = ""
-    , applyTo = Set.empty Scope.compare
+    , applyTo = Nothing
     , unique = False
     , mandatory = False
     , fragments = []
@@ -116,8 +119,8 @@ update s msg model =
         InputName x ->
             ( { model | name = x }, Effect.none )
 
-        InputScopes i ->
-            ( { model | applyTo = i }, Effect.none )
+        InputScope scope ->
+            ( { model | applyTo = scope }, Effect.none )
 
         InputUnique x ->
             ( { model | unique = x }, Effect.none )
@@ -186,7 +189,7 @@ buttonNext model =
             nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
 
         Step.Step StepScope ->
-            nextOrValidate model NextPage Added (checkEmptyList (Set.toList model.applyTo) "Please choose an option")
+            nextOrValidate model NextPage Added (checkNothing model.applyTo "Please choose an option")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -264,11 +267,11 @@ viewContent model s =
         ]
 
 
-viewItem : Model -> Scope -> Element Msg
-viewItem model i =
+viewItem : Shared.Model -> Model -> Scope -> Element Msg
+viewItem s model scope =
     row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| Scope.toDesc i)
-        , button.primary (InputScopes <| Set.remove i model.applyTo) "×"
+        [ el [ paddingXY 10 2 ] (Ident.View.displayScope s scope)
+        , button.primary (InputScope Nothing) "×"
         ]
 
 
@@ -277,34 +280,54 @@ inputScopes s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: List.append
-                    (if Set.isEmpty model.applyTo then
-                        [ el [ padding 10, Font.color color.text.main ] (text <| "Nothing") ]
-
-                     else
-                        []
-                    )
-                    (model.applyTo |> Set.toList |> List.map (viewItem model))
+                :: [ Maybe.map (viewItem s model) model.applyTo |> Maybe.withDefault none ]
         , h2 <| "Select the types of the entities that should have a \"" ++ model.name ++ "\" identifier"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (Type.all
                 |> List.map
                     (\t ->
-                        clickableCard (InputScopes <| Set.insert (AllEntities t) model.applyTo) ("All " ++ Type.toPluralString t) Nothing
+                        clickableCard (InputScope <| Just <| AllEntities t) (text <| "All " ++ Type.toPluralString t) none
                     )
             )
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.entities
+                |> Entity.onlyTypes
                 |> Set.toList
                 |> List.map
                     (\e ->
-                        clickableCard
-                            (InputScopes <| Set.insert (AllEntitiesOfType (Entity.toUuid e)) model.applyTo)
-                            (Entity.toUuidString e)
-                            (Entity.toTypeUuid e
-                                |> Maybe.map (\u -> "Type: " ++ Uuid.toString u)
-                            )
+                        -- TODO build a scope and display the scope instead
+                        [ (Type.fromType <| Entity.toType e)
+                            |> Maybe.map
+                                (\t ->
+                                    [ clickableCard
+                                        (InputScope <| Just <| AllEntitiesOfType t (Entity.toUuid e))
+                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
+                                        (Entity.toTypeUuid e
+                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
+                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
+                                            |> Maybe.withDefault none
+                                        )
+                                    ]
+                                )
+                            |> Maybe.withDefault []
+                        , (Type.toType <| Entity.toType e)
+                            |> Maybe.map
+                                (\t ->
+                                    [ clickableCard
+                                        (InputScope <| Just <| AllEntitiesOfType (Entity.toType e) (Entity.toUuid e))
+                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
+                                        (Entity.toTypeUuid e
+                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
+                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
+                                            |> Maybe.withDefault none
+                                        )
+                                    ]
+                                )
+                            |> Maybe.withDefault []
+                        ]
                     )
+                |> List.concat
+                |> List.concat
             )
         ]
 

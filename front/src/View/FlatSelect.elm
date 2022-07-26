@@ -14,8 +14,8 @@ type alias Model m a =
 
 type alias Config a msg =
     { all : List a
-    , toString : a -> String
-    , toDesc : a -> Maybe String
+    , toString : a -> Element msg
+    , toDesc : a -> Element msg
     , onInput : Maybe a -> msg
     , label : String
     , explain : Element msg
@@ -30,7 +30,7 @@ flatselect model c =
             , Maybe.map
                 (\x ->
                     row [ Background.color color.item.selected ]
-                        [ el [ padding 5 ] (text <| c.toString x)
+                        [ el [ padding 5 ] (c.toString x)
                         , button.secondary (c.onInput Nothing) "×"
                         ]
                 )

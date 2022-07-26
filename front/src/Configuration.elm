@@ -1,4 +1,4 @@
-module Configuration exposing (Configuration(..), compare, decoder, encode, only)
+module Configuration exposing (Configuration(..), compare, decoder, encode, findFirst, only)
 
 import DictSet as Set exposing (DictSet)
 import Ident.Scope as Scope exposing (Scope)
@@ -13,17 +13,7 @@ import Zone.Zone as Zone exposing (Zone)
 type
     Configuration
     -- the list of identifier types to display on each zone
-    = ZoneConfig Zone (List Fragment) (DictSet String Scope)
-
-
-
--- TODO remove
--- IdentifierType Nom / Agent(Nothing) Resource(Nothing)
--- IdentifierType Prénom / Agent(Personne)
--- IdentifierType NCODE / Agent(Adhérent)
--- Configuration SmallcardItemTitle / Agent(Nothing) Resource(Nothing) / Nom
--- Configuration SmallcardItemTitle / Agent(Personne) / Prénom Nom
--- Configuration SmallcardItemTitle / Agent(Adhérent) / NCODE Prénom Nom
+    = ZoneConfig Zone (List Fragment) Scope
 
 
 only : Zone -> DictSet String Configuration -> DictSet String Configuration
@@ -37,22 +27,44 @@ only zone cs =
         cs
 
 
+getConfig : DictSet String Configuration -> Scope -> Maybe Configuration
+getConfig configs scope =
+    List.head <| Set.toList <| Set.filter (\(ZoneConfig _ _ s) -> s == scope) configs
+
+
+findFirst : DictSet String Configuration -> List Scope -> Maybe Configuration
+findFirst configs scopes =
+    scopes
+        |> List.head
+        |> Maybe.map
+            (\firstScope ->
+                case getConfig configs firstScope of
+                    Nothing ->
+                        List.tail scopes
+                            |> Maybe.andThen (findFirst configs)
+
+                    Just config ->
+                        Just config
+            )
+        |> Maybe.withDefault Nothing
+
+
 compare : Configuration -> String
 compare config =
     case config of
-        ZoneConfig zone names scopes ->
+        ZoneConfig zone names scope ->
             "ZoneConfig" ++ " " ++ Zone.compare zone ++ " " ++ String.join " " (List.map Fragment.toString names)
 
 
 encode : Configuration -> Encode.Value
 encode c =
     case c of
-        ZoneConfig zone names scopes ->
+        ZoneConfig zone names scope ->
             Encode.object
                 [ ( "what", Encode.string "ZoneConfig" )
                 , ( "zone", Zone.encode zone )
                 , ( "fragments", Encode.list Fragment.encode names )
-                , ( "scopes", Encode.list Scope.encode (Set.toList scopes) )
+                , ( "scope", Scope.encode scope )
                 ]
 
 
@@ -66,7 +78,7 @@ decoder =
                         Decode.map3 ZoneConfig
                             (Decode.field "zone" Zone.decoder)
                             (Decode.field "fragments" (Decode.list Fragment.decoder))
-                            (Decode.field "scopes" (Decode.list Scope.decoder |> Decode.andThen (Set.fromList Scope.compare >> Decode.succeed)))
+                            (Decode.field "scope" Scope.decoder)
 
                     _ ->
                         Decode.fail <| "Unknown Configuration: " ++ what

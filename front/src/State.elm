@@ -32,7 +32,7 @@ type alias State =
     , identifiers : DictSet String Identifier
 
     -- config
-    , configuration : DictSet String Configuration
+    , configs : DictSet String Configuration
     }
 
 
@@ -55,7 +55,7 @@ empty =
     , identifiers = Set.empty Identifier.compare
 
     -- config
-    , configuration = Set.empty Configuration.compare
+    , configs = Set.empty Configuration.compare
     }
 
 
@@ -120,7 +120,15 @@ aggregate (Message b p) state =
 
         Configured conf ->
             { state
-                | configuration = Set.insert conf state.configuration
+                | configs = Set.insert conf state.configs
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Set.insert b.uuid state.uuids
+            }
+
+        Unconfigured conf ->
+            { state
+                | configs = Set.remove conf state.configs
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Set.insert b.uuid state.uuids

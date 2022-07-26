@@ -7,7 +7,7 @@ import View exposing (..)
 import View.Style exposing (..)
 
 
-viewSmallCard : msg -> Maybe String -> Element msg -> Maybe String -> Element msg
+viewSmallCard : msg -> Maybe String -> Element msg -> Element msg -> Element msg
 viewSmallCard deleteMsg url title description =
     let
         titleelm =
@@ -20,7 +20,6 @@ viewSmallCard deleteMsg url title description =
                 [ Maybe.withDefault titleelm <| Maybe.map (\u -> link [] { url = u, label = titleelm }) url
                 , el [ alignRight ] (button.primary deleteMsg "×")
                 ]
-            , Maybe.map (\d -> row [ padding 10, Font.size size.text.small ] [ text d ]) description
-                |> Maybe.withDefault none
+            , row [ padding 10, Font.size size.text.small ] [ description ]
             ]
         ]

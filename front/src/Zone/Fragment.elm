@@ -1,5 +1,8 @@
-module Zone.Fragment exposing (Fragment(..), decoder, encode, toDesc, toString)
+module Zone.Fragment exposing (Fragment(..), decoder, display, encode, toDesc, toString, toValue)
 
+import DictSet as Set exposing (DictSet)
+import Entity.Entity as Entity exposing (Entity)
+import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
@@ -17,6 +20,21 @@ toString f =
 
         Fixed string ->
             ""
+
+
+toValue : DictSet String Identifier -> Fragment -> String
+toValue identifiers f =
+    case f of
+        IdentifierName name ->
+            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault ""
+
+        Fixed string ->
+            string
+
+
+display : DictSet String Identifier -> List Fragment -> String
+display identifiers fragments =
+    fragments |> List.map (toValue identifiers) |> String.join ""
 
 
 toDesc : Fragment -> String

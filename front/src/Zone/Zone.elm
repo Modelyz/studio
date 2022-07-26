@@ -1,6 +1,8 @@
 module Zone.Zone exposing (Zone(..), all, compare, decoder, encode, toDesc, toString)
 
+import Entity.Entity as Entity exposing (Entity)
 import Entity.Type as Type exposing (Type(..))
+import Ident.Identifier as Identifier
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import View.Lang as Lang exposing (Lang)
@@ -39,11 +41,6 @@ toDesc zone =
 compare : Zone -> String
 compare =
     toString
-
-
-display : Zone -> Lang -> Type -> String
-display _ _ _ =
-    ""
 
 
 encode : Zone -> Encode.Value

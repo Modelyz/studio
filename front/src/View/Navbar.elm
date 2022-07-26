@@ -46,7 +46,7 @@ links s r =
     , menuitem s r Route.ContractList "Contracts"
     , menuitem s r Route.GroupList "Groups"
     , menuitem s r (Route.ProcessList Nothing) "Processes"
-    , menuitem s r Route.ZoneConfigAdd "Zone config"
+    , menuitem s r Route.ConfigurationList "Configuration"
     ]
         ++ (let
                 processTypes =

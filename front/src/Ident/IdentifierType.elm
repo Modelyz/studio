@@ -14,23 +14,17 @@ type alias IdentifierType =
     -- This is the configuration of an identifier
     { name : String
     , fragments : List Fragment
-    , applyTo : DictSet String Scope
+    , applyTo : Scope
     , unique : Bool
     , mandatory : Bool
     }
 
 
-within : IdentifierType -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
-within identifierType entities tuple =
-    identifierType.applyTo
-        |> Set.toList
-        |> (\scopes ->
-                if List.isEmpty scopes then
-                    False
 
-                else
-                    List.any (\s -> Scope.within s entities tuple) scopes
-           )
+--within : IdentifierType -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
+--within identifierType entities tuple =
+--    -- TODO remove?
+--    Scope.within identifierType.applyTo entities tuple
 
 
 select : ( Type, Maybe Uuid ) -> DictSet String Entity -> DictSet String IdentifierType -> DictSet String IdentifierType
@@ -38,25 +32,23 @@ select ( type_, muuid ) entities its =
     its
         |> Set.filter
             (\it ->
-                List.any
-                    (\scope ->
-                        case scope of
-                            AllEntities t ->
-                                t == type_
+                case it.applyTo of
+                    AllEntities t ->
+                        t == type_
 
-                            AllEntitiesOfType u ->
-                                muuid
+                    AllEntitiesOfType t u ->
+                        (t == type_)
+                            && (muuid
                                     |> Maybe.andThen (\x -> Entity.findEntity x entities)
                                     |> Maybe.andThen (\e -> Maybe.map (\y -> Entity.isParentOf e entities y) (Entity.findEntity u entities))
                                     |> Maybe.withDefault False
-                    )
-                    (Set.toList it.applyTo)
+                               )
             )
 
 
 compare : IdentifierType -> String
 compare it =
-    it.name ++ " " ++ (it.applyTo |> Set.toList |> List.map Scope.compare |> String.join " ")
+    it.name ++ " " ++ Scope.compare it.applyTo
 
 
 encode : IdentifierType -> Encode.Value
@@ -64,7 +56,7 @@ encode e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list Fragment.encode e.fragments )
-        , ( "applyTo", Encode.list Scope.encode <| Set.toList e.applyTo )
+        , ( "applyTo", Scope.encode e.applyTo )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
@@ -75,7 +67,7 @@ decoder =
     Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
-        (Decode.field "applyTo" (Decode.list Scope.decoder |> Decode.andThen (Set.fromList Scope.compare >> Decode.succeed)))
+        (Decode.field "applyTo" Scope.decoder)
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
 

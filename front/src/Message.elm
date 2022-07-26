@@ -11,7 +11,6 @@ import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
-import Zone.Zone exposing (Zone(..))
 
 
 
@@ -52,13 +51,14 @@ type Message
 
 type Payload
     = ConnectionInitiated Connection
+    | Added Entity
+    | Removed Entity
     | Restricted Restriction
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved IdentifierType
-    | Added Entity
-    | Removed Entity
     | IdentifierAdded Identifier
     | Configured Configuration
+    | Unconfigured Configuration
 
 
 toString : Payload -> String
@@ -87,6 +87,9 @@ toString p =
 
         Configured _ ->
             "Configured"
+
+        Unconfigured _ ->
+            "Unconfigured"
 
 
 type alias Connection =
@@ -170,6 +173,9 @@ encode (Message b p) =
 
             Configured c ->
                 ( "load", Configuration.encode c )
+
+            Unconfigured c ->
+                ( "load", Configuration.encode c )
         ]
 
 
@@ -234,6 +240,10 @@ decoder =
 
                         "Configured" ->
                             Decode.map Configured
+                                (Decode.field "load" Configuration.decoder)
+
+                        "Unconfigured" ->
+                            Decode.map Unconfigured
                                 (Decode.field "load" Configuration.decoder)
 
                         _ ->

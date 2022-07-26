@@ -11,7 +11,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity exposing (Entity)
-import Entity.Type as Type exposing (Type)
+import Entity.Type as EntityType exposing (Type)
 import Event.Event as Event exposing (Event)
 import Group.Group as Group exposing (Group)
 import Html.Attributes as Attr
@@ -19,6 +19,7 @@ import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType
 import Ident.Input exposing (inputIdentifiers)
 import Ident.Scope exposing (Scope(..))
+import Ident.View exposing (display)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
@@ -31,10 +32,13 @@ import Spa.Page
 import Time exposing (millisToPosix)
 import View exposing (View, button, checkNothing, closeMenu, floatingContainer, h2)
 import View.FlatSelect exposing (flatselect)
+import View.Lang exposing (Lang(..))
 import View.Navbar as Navbar
 import View.Radio as Radio
 import View.Step as Step exposing (Step, isFirst, nextOrValidate, nextStep, previousStep)
 import View.Style exposing (..)
+import View.Type as ViewType
+import Zone.Zone as Zone exposing (Zone(..))
 
 
 type Msg
@@ -113,7 +117,7 @@ update c s msg model =
                     -- select the identifiers corresponding to the chosen type
                     s.state.identifierTypes
                         |> IdentifierType.select ( c.currentType, Maybe.map Entity.toUuid met ) s.state.entities
-                        |> Set.map Identifier.compare (Identifier.fromIdentifierType model.uuid)
+                        |> Set.map Identifier.compare (Identifier.fromIdentifierType newUuid)
                 , uuid = newUuid
                 , seed = newSeed
               }
@@ -176,7 +180,7 @@ buttonNext c model =
             nextOrValidate model
                 NextPage
                 Added
-                (if (String.slice 0 4 <| String.reverse <| Type.toString c.currentType) == "epyT" then
+                (if (String.slice 0 4 <| String.reverse <| EntityType.toString c.currentType) == "epyT" then
                     Ok model.flatselect
 
                  else
@@ -215,8 +219,25 @@ viewContent c model s =
                 Step.Step StepType ->
                     flatselect model
                         { all = s.state.entities |> c.filter |> Set.toList
-                        , toString = Entity.toUuidString
-                        , toDesc = Entity.toTypeUuid >> Maybe.andThen (Uuid.toString >> Just)
+
+                        -- TODO rename to toTitle and move to a function
+                        , toString =
+                            \x ->
+                                Ident.View.display s SmallcardItemTitle FR_fr x
+                        , toDesc =
+                            \e ->
+                                el [ Font.size size.text.small ]
+                                    (Entity.toTypeUuid e
+                                        |> Maybe.andThen (Entity.fromUuid s.state.entities)
+                                        |> Maybe.map
+                                            (\p ->
+                                                row [ Font.size size.text.small ]
+                                                    [ text "Type: "
+                                                    , Ident.View.display s SmallcardItemTitle FR_fr p
+                                                    ]
+                                            )
+                                        |> Maybe.withDefault none
+                                    )
                         , onInput = InputType
                         , label = "Type"
                         , explain = h2 c.typeExplain

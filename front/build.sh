@@ -3,7 +3,7 @@
 set -e
 pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-export IDBVERSION=21 ### IndexedDB version. Upgrade when a json format change occurs ###
+export IDBVERSION=23 ### IndexedDB version. Upgrade when a json format change occurs ###
 
 if [[ -z "${WSS}" ]]; then
     export WSS="ws://localhost:8080"

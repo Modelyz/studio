@@ -1,11 +1,11 @@
-module Ident.ListPage exposing (match, page, view)
+module Zone.ListPage exposing (match, page, view)
 
+import Configuration exposing (Configuration(..))
+import Configuration.View
 import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope
-import Ident.View
 import Message
 import Route exposing (Route, redirect)
 import Shared
@@ -19,7 +19,7 @@ type alias Model =
 
 
 type Msg
-    = Removed IdentifierType
+    = Removed Configuration
     | Add
 
 
@@ -40,7 +40,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.IdentifierTypeList ->
+        Route.ConfigurationList ->
             Just { route = route }
 
         _ ->
@@ -55,43 +55,42 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed i ->
+        Removed c ->
             ( model
-            , Shared.dispatch s <| Message.IdentifierTypeRemoved i
+            , Shared.dispatch s <| Message.Unconfigured c
             )
 
         Add ->
-            ( model, redirect s.navkey Route.IdentifierTypeAdd |> Effect.fromCmd )
+            ( model, redirect s.navkey Route.ConfigurationAdd |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "IdentifierTypes"
+    { title = "Configurations"
     , attributes = []
     , element = viewContent model
-    , route = Route.IdentifierTypeList
+    , route = Route.ConfigurationList
     }
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     flatContainer s
-        "IdentifierTypes"
+        "Configurations"
         [ button.primary Add "Add..."
         ]
         none
         [ wrappedRow
             [ spacing 10 ]
-            (s.state.identifierTypes
+            (s.state.configs
                 |> Set.toList
-                |> List.sortBy .name
                 |> List.map
-                    (\it ->
-                        viewSmallCard (Removed it)
+                    (\c ->
+                        viewSmallCard (Removed c)
                             Nothing
-                            (text it.name)
-                            (row [] [ text <| "for ", Ident.View.displayScope s it.applyTo ])
+                            (Configuration.View.display s c)
+                            none
                     )
-                |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")
+                |> withDefaultContent (p "There are no Configurations yet. Create your first one!")
             )
         ]

@@ -1,4 +1,4 @@
-module Entity.Entity exposing (Entity(..), compare, decoder, encode, findEntity, fromUuid, isChildOf, isChildOfAny, isParentOf, only, toPluralString, toString, toType, toTypeUuid, toUuid, toUuidString)
+module Entity.Entity exposing (Entity(..), compare, decoder, encode, findEntity, fromUuid, isChildOf, isChildOfAny, isParentOf, only, onlyTypes, toPluralString, toString, toType, toTypeUuid, toUuid, toUuidString)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -48,6 +48,11 @@ only : String -> DictSet String Entity -> DictSet String Entity
 only t es =
     -- only of a certain constructor
     Set.filter (\e -> toString e == t) es
+
+
+onlyTypes : DictSet String Entity -> DictSet String Entity
+onlyTypes es =
+    Set.filter (toType >> Type.isType) es
 
 
 findEntity : Uuid -> DictSet String Entity -> Maybe Entity

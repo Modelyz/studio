@@ -239,13 +239,13 @@ checkNothing field err =
             Ok x
 
 
-clickableCard : msg -> String -> Maybe String -> Element msg
+clickableCard : msg -> Element msg -> Element msg -> Element msg
 clickableCard onInput title desc =
     -- TODO choose a more explicit name
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
         [ row [ alignLeft, width <| minimum 150 shrink ]
             [ button.primary onInput "+"
-            , el [ paddingXY 10 0 ] (text title)
+            , el [ paddingXY 10 0 ] title
             ]
-        , desc |> Maybe.map (\d -> paragraph [ padding 10, Font.size size.text.main ] [ text d ]) |> Maybe.withDefault none
+        , desc
         ]
