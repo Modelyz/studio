@@ -53,7 +53,7 @@ compare : Configuration -> String
 compare config =
     case config of
         ZoneConfig zone names scope ->
-            "ZoneConfig" ++ " " ++ Zone.compare zone ++ " " ++ String.join " " (List.map Fragment.toString names)
+            "ZoneConfig" ++ " " ++ Zone.compare zone ++ " " ++ Scope.compare scope
 
 
 encode : Configuration -> Encode.Value

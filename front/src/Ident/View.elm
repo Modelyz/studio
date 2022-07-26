@@ -37,11 +37,12 @@ display s zone lang entity =
 buildDisplayIdentifier : Shared.Model -> ViewType.Type -> Entity -> DictSet String Identifier -> List Identifier
 buildDisplayIdentifier s viewtype e identifiers =
     let
+        -- TODO ugly
         scope =
-            Scope.fromEntity e
+            Scope.fromEntity e |> Maybe.withDefault (AllEntities (Entity.toType e))
 
         parents =
-            Scope.getParentsToRoot scope s.state.entities []
+            Scope.getParentsToRoot e scope s.state.entities []
 
         firstRelevant =
             Configuration.findFirst s.state.configs parents
@@ -75,12 +76,11 @@ buildDisplayIdentifier s viewtype e identifiers =
 
 displayIdentifiers : String -> List Identifier -> Element msg
 displayIdentifiers default identifiers =
-    -- display the first identifier, which may depend on others in the list
-    row [ spacing 5 ]
+    row []
         (identifiers
             |> List.map
                 (\identifier ->
-                    row [ spacing 5 ] <|
+                    row [] <|
                         List.map (\f -> displayFragment f identifiers) identifier.fragments
                 )
             |> withDefaultContent (text default)
@@ -91,16 +91,16 @@ displayFragment : IdentFragment.Fragment -> List Identifier -> Element msg
 displayFragment fragment identifiers =
     case fragment of
         IdentFragment.Free value ->
-            row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
+            row [ height (px 30) ] [ text value ]
 
         IdentFragment.Fixed value ->
-            row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
+            row [ height (px 30) ] [ text value ]
 
         IdentFragment.Sequence padding step start value ->
-            row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
+            row [ height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
 
         _ ->
-            text "other"
+            text "(not implemented yet)"
 
 
 displayScope : Shared.Model -> Scope -> Element msg
@@ -115,5 +115,6 @@ displayScope s id =
                 [ text <| EntityType.toString type_ ++ " of type "
                 , Entity.fromUuid s.state.entities uuid
                     |> Maybe.map (display s SmallcardItemTitle FR_fr)
+                    -- TODO plop
                     |> Maybe.withDefault (text "plop")
                 ]

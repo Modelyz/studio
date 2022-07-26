@@ -19,42 +19,34 @@ type
     | AllEntitiesOfType Type Uuid
 
 
-fromEntity : Entity -> Scope
+fromEntity : Entity -> Maybe Scope
 fromEntity e =
     let
         t =
             toType e
     in
-    e |> toTypeUuid |> Maybe.map (AllEntitiesOfType t) |> Maybe.withDefault (AllEntities (toType e))
+    e |> toTypeUuid |> Maybe.map (AllEntitiesOfType t)
 
 
 getParent : DictSet String Entity -> Scope -> Maybe Scope
 getParent allEntities scope =
+    -- get the parent scope but without the root typed scope
     case scope of
         AllEntities _ ->
             Nothing
 
-        AllEntitiesOfType _ uuid ->
+        AllEntitiesOfType t uuid ->
             Entity.fromUuid allEntities uuid
                 |> Maybe.andThen Entity.toTypeUuid
                 |> Maybe.andThen (Entity.fromUuid allEntities)
-                |> Maybe.map fromEntity
-                -- TODO maybe include the Type in the AllEntitiesOfType to avoid looking it up
-                |> (\parent ->
-                        case parent of
-                            Just p ->
-                                Just p
-
-                            Nothing ->
-                                uuid |> Entity.fromUuid allEntities |> Maybe.map toType |> Maybe.map AllEntities
-                   )
+                |> Maybe.andThen fromEntity
 
 
-getParentsToRoot : Scope -> DictSet String Entity -> List Scope -> List Scope
-getParentsToRoot scope allEntities currentList =
+getParentsToRoot : Entity -> Scope -> DictSet String Entity -> List Scope -> List Scope
+getParentsToRoot initialEntity scope allEntities currentList =
     getParent allEntities scope
-        |> Maybe.map (\parent -> getParentsToRoot parent allEntities (scope :: currentList))
-        |> Maybe.withDefault (scope :: currentList)
+        |> Maybe.map (\parentScope -> getParentsToRoot initialEntity parentScope allEntities currentList)
+        |> Maybe.withDefault (AllEntities (toType initialEntity) :: scope :: currentList)
 
 
 isParentOf : Scope -> DictSet String Entity -> Scope -> Bool
@@ -75,36 +67,9 @@ isParentOf childScope allEntities parentScope =
 
                 AllEntitiesOfType childType childTypeUuid ->
                     (parentType == childType)
-                        && (Maybe.map3 Entity.isParentOf (Entity.fromUuid allEntities parentTypeUuid) (Just allEntities) (Entity.fromUuid allEntities childTypeUuid)
+                        && (Maybe.map3 Entity.isParentOf (Entity.fromUuid allEntities childTypeUuid) (Just allEntities) (Entity.fromUuid allEntities parentTypeUuid)
                                 |> Maybe.withDefault False
                            )
-
-
-
---within : Scope -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
---within scope entities ( t, mtu ) =
---    -- True if the entity (or its type) is within the scope
---    -- TODO remove?
---    case scope of
---        AllEntities type_ ->
---            t == type_
---
---        AllEntitiesOfType scopeTypeUuid ->
---            Maybe.withDefault False <|
---                Maybe.map
---                    (\u ->
---                        let
---                            maybeScopeType =
---                                fromUuid entities scopeTypeUuid
---
---                            maybeEntity =
---                                fromUuid entities u
---                        in
---                        maybeEntity
---                            |> Maybe.andThen (\entityTypeUuid -> Maybe.map (\scopeType -> isChildOf scopeType entities entityTypeUuid) maybeScopeType)
---                            |> Maybe.withDefault False
---                    )
---                    mtu
 
 
 toString : Scope -> String

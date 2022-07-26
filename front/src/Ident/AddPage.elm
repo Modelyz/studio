@@ -295,7 +295,6 @@ inputScopes s model =
                 |> Set.toList
                 |> List.map
                     (\e ->
-                        -- TODO build a scope and display the scope instead
                         [ (Type.fromType <| Entity.toType e)
                             |> Maybe.map
                                 (\t ->
