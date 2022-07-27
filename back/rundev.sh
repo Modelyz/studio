@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cabal run studio -- -d ../build -f ../data/eventsource.txt
+cabal run modelyz-studio -- -d ../build -f ../data/eventstore.txt

@@ -173,6 +173,7 @@ httpApp (Options d _ _) request respond = do
                 let ct = BS.append "text/" (encodeUtf8 (contentType filename))
                  in responseFile status200 [("Content-Type", ct)] (d ++ "/static/" ++ T.unpack filename) Nothing
             _ -> responseLBS status200 [("Content-Type", "text/html")] ""
+        "changelog" : _ -> responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
         _ -> responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
 
 serve :: Options -> IO ()

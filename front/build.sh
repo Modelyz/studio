@@ -10,7 +10,7 @@ if [[ -z "${WSS}" ]]; then
 fi
 
 pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-grep "## version ${APPVERSION} --" CHANGELOG.md \
+grep "## version ${APPVERSION} --" ../CHANGELOG.md \
     || { echo "Please first feed the changelog for version ${APPVERSION}"; exit 1; }
 
 rsync -r --delete src/static/ ../build/static/
@@ -29,6 +29,6 @@ fi
 
 envsubst < src/index.html > ../build/index.html
 
-markdown CHANGELOG.md > ../build/static/changelog.html
+markdown ../CHANGELOG.md > ../build/static/changelog.html
 
 popd

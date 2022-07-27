@@ -1,6 +1,6 @@
 # Revision history
 
-[Back to app](../..)
+[Back to app](../)
 
 ## version 0 -- 2022-07-27
 
