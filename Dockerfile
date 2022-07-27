@@ -32,6 +32,8 @@ RUN apt-get update \
     && chmod +x elm \
     && mv elm /usr/local/bin/
 
+ENV LASTBUILD 2022072701
+
 COPY back /srv/back/
 COPY front /srv/front/
 COPY build.sh /srv/
@@ -41,7 +43,6 @@ FROM debian:11
 ##############
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV LASTBUILD 2022071601
 ENV LANG C.UTF-8
 
 COPY --from=build /srv/build/ /srv/build/
