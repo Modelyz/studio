@@ -37,6 +37,7 @@ ENV LASTBUILD 2022072701
 COPY back /srv/back/
 COPY front /srv/front/
 COPY build.sh /srv/
+COPY CHANGELOG.md /srv/
 RUN ./build.sh -o
 
 FROM debian:11
