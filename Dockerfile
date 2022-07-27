@@ -1,4 +1,5 @@
 FROM debian:11 AS build
+#######################
 
 ENV LASTBUILD 2022071601
 ARG WSS
@@ -23,6 +24,7 @@ RUN apt-get update \
         libghc-warp-dev \
         libghc-warp-tls-dev \
         libghc-websockets-dev \
+        markdown \
         npm \
         rsync \
         uglifyjs \
@@ -35,8 +37,8 @@ COPY front /srv/front/
 COPY build.sh /srv/
 RUN ./build.sh -o
 
-
 FROM debian:11
+##############
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LASTBUILD 2022071601
