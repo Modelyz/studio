@@ -9,10 +9,10 @@ if [[ -z "${WSS}" ]]; then
     export WSS="ws://localhost:8080"
 fi
 
+pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 grep "## version ${APPVERSION} --" CHANGELOG.md \
     || { echo "Please first feed the changelog for version ${APPVERSION}"; exit 1; }
 
-pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 rsync -r --delete src/static/ ../build/static/
 
 if [ "$1" == "-o" ]; then
