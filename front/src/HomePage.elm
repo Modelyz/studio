@@ -74,13 +74,21 @@ viewContent : Element Msg
 viewContent =
     column [ width fill, alignTop ]
         [ wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
-            [ cell "Process Types" "process-types"
-            , cell "Resource Types" "resource-types"
-            , cell "Event Types" "event-types"
-            , cell "Agent Types" "agent-types"
-            , cell "Commitment Types" "commitment-types"
-            , cell "Contract Types" "contract-types"
-            , cell "Groups" "groups"
-            , cell "IdentifierTypes" "identifierTypes"
+            [ cell "Process Types" "process-type"
+            , cell "Resource Types" "resource-type"
+            , cell "Event Types" "event-type"
+            , cell "Agent Types" "agent-type"
+            , cell "Commitment Types" "commitment-type"
+            , cell "Contract Types" "contract-type"
+            , cell "Group Types" "group-type"
+            , cell "Processes" "process"
+            , cell "Resources" "resource"
+            , cell "Events" "event"
+            , cell "Agents" "agent"
+            , cell "Commitments" "commitment"
+            , cell "Contracts" "contract"
+            , cell "Groups" "group"
+            , cell "IdentifierTypes" "identifier-type"
+            , cell "Configuration" "config"
             ]
         ]

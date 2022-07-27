@@ -23,7 +23,8 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 type alias Model =
     -- ui model related
-    { currentSeed : Seed
+    { version : Int
+    , currentSeed : Seed
     , route : Route
     , navkey : Nav.Key
     , windowSize : WindowSize
@@ -63,7 +64,8 @@ type Msg
 
 
 type alias Flags =
-    { seed : Int
+    { version : Int
+    , seed : Int
     , seedExtension : List Int
     , url : Maybe Url
     , windowSize : WindowSize
@@ -72,7 +74,8 @@ type alias Flags =
 
 flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Decode.map4 Flags
+    Decode.map5 Flags
+        (Decode.field "version" Decode.int)
         (Decode.field "seed" Decode.int)
         (Decode.field "seedExtension" (Decode.list Decode.int))
         (Decode.field "url" Decode.string |> Decode.andThen (Url.fromString >> Decode.succeed))
@@ -85,7 +88,8 @@ init : Decode.Value -> Nav.Key -> ( Model, Cmd Msg )
 init value navkey =
     case Decode.decodeValue flagsDecoder value of
         Ok f ->
-            ( { currentSeed = initialSeed f.seed f.seedExtension
+            ( { version = f.version
+              , currentSeed = initialSeed f.seed f.seedExtension
               , route = Maybe.map Route.toRoute f.url |> Maybe.withDefault Home
               , navkey = navkey
               , windowSize = f.windowSize
@@ -105,7 +109,8 @@ init value navkey =
             )
 
         Err err ->
-            ( { currentSeed = initialSeed 0 [ 0, 0 ]
+            ( { version = 0
+              , currentSeed = initialSeed 0 [ 0, 0 ]
               , route = Route.Home
               , navkey = navkey
               , windowSize = WindowSize 1024 768

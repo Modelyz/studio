@@ -13,7 +13,7 @@
     <link rel="icon" href="/static/favicon.ico">
     <title>Elm App</title>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/${APP}.js"></script>
 
 </head>
 <body>
@@ -23,7 +23,7 @@
 <div id="root"></div>
 <script>
 /**** indexedDB ****/
-let request = window.indexedDB.open('messagestore', $IDBVERSION);
+let request = window.indexedDB.open('messagestore', ${IDBVERSION});
 request.onupgradeneeded = function(e) {
     console.log('Upgrading database...')
     const db = e.target.result;
@@ -46,7 +46,8 @@ const getRandomInts = (n) => {
 
 /**** run Elm ****/
 const randInts = getRandomInts(5);
-const flags = { seed: randInts[0],
+const flags = { version: ${APPVERSION},
+                seed: randInts[0],
                 seedExtension : randInts.slice(1),
                 url: window.location.href,
                 windowSize: {w: window.innerWidth, h: window.innerHeight}};
@@ -60,7 +61,7 @@ const store = function(send) {
     return function(messages) {
             console.log("ELM port storeMessages")
             console.log("JS IDB store(messages): " + messages)
-        let request = window.indexedDB.open('messagestore', $IDBVERSION);
+            let request = window.indexedDB.open('messagestore', ${IDBVERSION});
         request.onsuccess = function(e) {
             const db = e.target.result;
             const transaction = db.transaction(['messages'],'readwrite');
@@ -102,7 +103,7 @@ app.ports.storeMessagesToSend.subscribe(store(true));
 // read messages from IDB
 app.ports.readMessages.subscribe(function() {
         console.log("<-ELM port readMessages")
-    let request = window.indexedDB.open('messagestore', $IDBVERSION);
+        let request = window.indexedDB.open('messagestore', ${IDBVERSION});
     request.onsuccess = e => {
         console.log("JS IDB request.onsuccess objectStore('messages').getAll()")
         const openCursor = e.target.result.transaction('messages','readonly').objectStore('messages').getAll();

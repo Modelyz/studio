@@ -1,5 +1,7 @@
-# Revision history for ms
+# Revision history
 
-## 0.1.0.0 -- YYYY-mm-dd
+[Back to app](../..)
 
-* First version. Released on an unsuspecting world.
+## version 0 -- 2022-07-27
+
+* First version with base entities and identification pattern
