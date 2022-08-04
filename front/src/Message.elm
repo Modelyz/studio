@@ -2,7 +2,8 @@ port module Message exposing (Message(..), Metadata, Payload(..), base, compare,
 
 import Configuration exposing (Configuration)
 import DictSet as Set
-import Entity.Entity as EN exposing (Entity)
+import Entity.Entity as Entity exposing (Entity)
+import Group.Group as Group exposing (Group)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
@@ -59,6 +60,10 @@ type Payload
     | IdentifierAdded Identifier
     | Configured Configuration
     | Unconfigured Configuration
+    | DefinedGroup Group -- TODO remove Group as Entity?
+    | RemovedGroup Group
+    | Grouped Entity Group
+    | Ungrouped Entity Group
 
 
 toString : Payload -> String
@@ -90,6 +95,18 @@ toString p =
 
         Unconfigured _ ->
             "Unconfigured"
+
+        DefinedGroup _ ->
+            "DefinedGroup"
+
+        RemovedGroup _ ->
+            "RemovedGroup"
+
+        Grouped _ _ ->
+            "Grouped"
+
+        Ungrouped _ _ ->
+            "Ungrouped"
 
 
 type alias Connection =
@@ -163,10 +180,10 @@ encode (Message b p) =
                 ( "load", IdentifierType.encode it )
 
             Added e ->
-                ( "load", EN.encode e )
+                ( "load", Entity.encode e )
 
             Removed e ->
-                ( "load", EN.encode e )
+                ( "load", Entity.encode e )
 
             IdentifierAdded i ->
                 ( "load", Identifier.encode i )
@@ -176,6 +193,18 @@ encode (Message b p) =
 
             Unconfigured c ->
                 ( "load", Configuration.encode c )
+
+            DefinedGroup g ->
+                ( "load", Group.encode g )
+
+            RemovedGroup g ->
+                ( "load", Group.encode g )
+
+            Grouped e g ->
+                ( "load", Encode.object [ ( "entity", Entity.encode e ), ( "group", Group.encode g ) ] )
+
+            Ungrouped e g ->
+                ( "load", Encode.object [ ( "entity", Entity.encode e ), ( "group", Group.encode g ) ] )
         ]
 
 
@@ -228,11 +257,11 @@ decoder =
 
                         "Added" ->
                             Decode.map Added
-                                (Decode.field "load" EN.decoder)
+                                (Decode.field "load" Entity.decoder)
 
                         "Removed" ->
                             Decode.map Removed
-                                (Decode.field "load" EN.decoder)
+                                (Decode.field "load" Entity.decoder)
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
@@ -245,6 +274,18 @@ decoder =
                         "Unconfigured" ->
                             Decode.map Unconfigured
                                 (Decode.field "load" Configuration.decoder)
+
+                        "DefinedGroup" ->
+                            Decode.map DefinedGroup (Decode.field "group" Group.decoder)
+
+                        "RemovedGroup" ->
+                            Decode.map RemovedGroup (Decode.field "group" Group.decoder)
+
+                        "Grouped" ->
+                            Decode.map2 Grouped (Decode.field "entity" Entity.decoder) (Decode.field "group" Group.decoder)
+
+                        "Ungrouped" ->
+                            Decode.map2 Ungrouped (Decode.field "entity" Entity.decoder) (Decode.field "group" Group.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

@@ -3,6 +3,7 @@ module Group.AddPage exposing (..)
 import Entity.AddPage exposing (Flags, Model, Msg)
 import Entity.Entity as Entity exposing (Entity(..), only)
 import Entity.Type as Type exposing (Type)
+import Group.Definition exposing (Definition(..))
 import Group.Group exposing (Group)
 import Route exposing (Route)
 import Shared
@@ -44,7 +45,7 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.GT t) ->
-            Ok (Entity.G (Group m.uuid t.uuid))
+            Ok (Entity.G (Group m.uuid t.uuid Empty))
 
         Just _ ->
             Err "You cannot have this type for this Entity"

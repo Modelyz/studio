@@ -14,6 +14,7 @@ type
     -- This is the scope of an identifier
     -- TODO: also identify all entities of a group ?
     -- or all the entities of a certain REA type:
+    -- Scope could also be used in a group definition? TODO Move in its own module?
     = AllEntities Type
       -- or all the Type entities of a certain user type:
     | AllEntitiesOfType Type Uuid

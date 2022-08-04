@@ -19,6 +19,8 @@ type alias Config a msg =
     , onInput : Maybe a -> msg
     , label : String
     , explain : Element msg
+
+    --, field : Model m a -> Maybe a
     }
 
 
@@ -35,6 +37,7 @@ flatselect model c =
                         ]
                 )
                 model.flatselect
+                -- TODO replace with a (c.field model)
                 |> Maybe.withDefault
                     (el
                         [ padding 5, Font.color color.text.disabled ]

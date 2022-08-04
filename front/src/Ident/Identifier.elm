@@ -2,6 +2,7 @@ module Ident.Identifier exposing (..)
 
 import DictSet as Set exposing (DictSet)
 import Entity.Entity as Entity exposing (Entity, toUuid)
+import Group.Group as Group exposing (Group)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder)
@@ -11,6 +12,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Identifier =
     -- This is the value of an identifier
+    -- TODO: consider reintroducing Identifiable to avoir linking Ident to REA ? (this is orthogonal)
     { entity : Uuid
     , name : String
     , fragments : List Fragment
@@ -25,6 +27,7 @@ select name =
 fromEntity : Entity -> DictSet String Identifier -> DictSet String Identifier
 fromEntity entity =
     -- return the identifiers corresponding to a certain entity
+    -- TODO replace with fromIdentifiable?
     Set.filter (\i -> toUuid entity == i.entity)
 
 

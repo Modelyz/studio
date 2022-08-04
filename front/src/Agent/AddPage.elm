@@ -44,7 +44,7 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.AT t) ->
-            Ok (Entity.A (Agent m.uuid t.uuid))
+            Ok <| Entity.A <| Agent m.uuid t.uuid Nothing
 
         Just _ ->
             Err "You cannot have this type for this Entity"

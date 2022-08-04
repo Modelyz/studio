@@ -14,6 +14,7 @@ import Entity.Entity as Entity exposing (Entity)
 import Entity.Type as EntityType exposing (Type)
 import Event.Event as Event exposing (Event)
 import Group.Group as Group exposing (Group)
+import Group.Input exposing (inputGroups)
 import Html.Attributes as Attr
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType
@@ -44,6 +45,7 @@ import Zone.Zone as Zone exposing (Zone(..))
 type Msg
     = InputType (Maybe Entity)
     | InputIdentifier Identifier
+    | InputGroups (DictSet String Group)
     | Warning String
     | PreviousPage
     | NextPage
@@ -61,6 +63,7 @@ type alias Model =
     , seed : Seed
     , flatselect : Maybe Entity
     , identifiers : DictSet String Identifier
+    , groups : DictSet String Group
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -70,6 +73,7 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepGroups
 
 
 type alias Config =
@@ -95,9 +99,10 @@ init c s f =
             s.state.identifierTypes
                 |> IdentifierType.select ( c.currentType, Nothing ) s.state.entities
                 |> Set.map Identifier.compare (Identifier.fromIdentifierType entityUuid)
+      , groups = Set.empty Group.compare
       , warning = ""
       , step = Step.Step StepType
-      , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
+      , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
       }
     , closeMenu f s.menu
     )
@@ -127,6 +132,9 @@ update c s msg model =
         InputIdentifier i ->
             ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
 
+        InputGroups gs ->
+            ( { model | groups = gs }, Effect.none )
+
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
@@ -136,7 +144,10 @@ update c s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.Added e :: List.map Message.IdentifierAdded (Set.toList model.identifiers))
+                            (Message.Added e
+                                :: List.map Message.IdentifierAdded (Set.toList model.identifiers)
+                                ++ List.map (\g -> Message.Grouped e g) (Set.toList model.groups)
+                            )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
                     )
@@ -189,6 +200,9 @@ buttonNext c model =
 
         Step.Step StepIdentifiers ->
             nextOrValidate model NextPage Added (Ok model.identifiers)
+
+        Step.Step StepGroups ->
+            nextOrValidate model NextPage Added (Ok model.groups)
 
 
 viewContent : Config -> Model -> Shared.Model -> Element Msg
@@ -243,12 +257,11 @@ viewContent c model s =
                         , explain = h2 c.typeExplain
                         }
 
+                Step.Step StepGroups ->
+                    inputGroups { onInput = InputGroups } s model
+
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers
-                        { onEnter = Added
-                        , onInput = InputIdentifier
-                        }
-                        model
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
     in
     floatingContainer s
         c.pageTitle

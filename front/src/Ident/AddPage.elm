@@ -218,7 +218,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    inputScopes s model
+                    inputScope s model
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -275,8 +275,9 @@ viewItem s model scope =
         ]
 
 
-inputScopes : Shared.Model -> Model -> Element Msg
-inputScopes s model =
+inputScope : Shared.Model -> Model -> Element Msg
+inputScope s model =
+    -- TODO refactor with Zone which contains duplicate
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")

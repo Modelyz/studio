@@ -8,6 +8,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 type alias Resource =
     { uuid : Uuid
     , type_ : Uuid
+    , group : Maybe Uuid
     }
 
 
@@ -18,14 +19,16 @@ compare =
 
 encode : Resource -> Encode.Value
 encode r =
-    Encode.object
+    Encode.object <|
         [ ( "uuid", Uuid.encode r.uuid )
         , ( "type", Uuid.encode r.type_ )
         ]
+            ++ (Maybe.map (\g -> [ ( "group", Uuid.encode g ) ]) r.group |> Maybe.withDefault [])
 
 
 decoder : Decoder Resource
 decoder =
-    Decode.map2 Resource
+    Decode.map3 Resource
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
+        (Decode.maybe (Decode.field "group" Uuid.decoder))

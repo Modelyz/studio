@@ -44,10 +44,11 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.RT t) ->
-            Ok (Entity.RT (ResourceType m.uuid (m.flatselect |> Maybe.map Entity.toUuid)))
+            --TODO add an input group in the Entity.AddPage and replace Nothing with the Maybe.map below
+            Ok <| Entity.RT <| ResourceType m.uuid (Maybe.map Entity.toUuid m.flatselect) Nothing
 
         Just _ ->
             Err "You cannot have this type for this Entity"
 
         Nothing ->
-            Ok (Entity.RT (ResourceType m.uuid Nothing))
+            Ok <| Entity.RT <| ResourceType m.uuid Nothing Nothing

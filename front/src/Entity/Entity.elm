@@ -22,26 +22,28 @@ import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Time exposing (posixToMillis)
 
 
-type Entity
+type
+    Entity
+    -- TODO Why an entity ? for AddPage and ListPage? Identifier ?
     = R Resource
     | E Event
     | A Agent
     | Cm Commitment
     | Cn Contract
     | P Process
-    | G Group
+    | G Group -- TODO remove from here?
     | RT ResourceType
     | ET EventType
     | AT AgentType
     | CmT CommitmentType
     | CnT ContractType
     | PT ProcessType
-    | GT GroupType
+    | GT GroupType -- TODO remove from here?
 
 
 fromUuid : DictSet String Entity -> Uuid -> Maybe Entity
-fromUuid entities type_ =
-    Set.filter (\e -> toUuid e == type_) entities |> Set.toList |> List.head
+fromUuid entities uuid =
+    Set.filter (\e -> toUuid e == uuid) entities |> Set.toList |> List.head
 
 
 only : String -> DictSet String Entity -> DictSet String Entity

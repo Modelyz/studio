@@ -45,7 +45,7 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.CmT t) ->
-            Ok (Entity.Cm (Commitment m.uuid t.uuid (millisToPosix 0)))
+            Ok <| Entity.Cm <| Commitment m.uuid t.uuid Nothing (millisToPosix 0)
 
         Just _ ->
             Err "You cannot have this type for this Entity"

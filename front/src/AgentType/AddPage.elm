@@ -44,10 +44,10 @@ validate : Model -> Result String Entity
 validate m =
     case m.flatselect of
         Just (Entity.AT t) ->
-            Ok (Entity.AT <| AgentType m.uuid (m.flatselect |> Maybe.map Entity.toUuid))
+            Ok <| Entity.AT <| AgentType m.uuid (Maybe.map Entity.toUuid m.flatselect) Nothing
 
         Just _ ->
             Err "You cannot have this type for this Entity"
 
         Nothing ->
-            Ok (Entity.AT (AgentType m.uuid Nothing))
+            Ok <| Entity.AT <| AgentType m.uuid Nothing Nothing
