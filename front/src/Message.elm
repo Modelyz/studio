@@ -1,15 +1,28 @@
 port module Message exposing (Message(..), Metadata, Payload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
 
+import Agent.Agent as Agent exposing (Agent)
+import AgentType.AgentType as AgentType exposing (AgentType)
+import Commitment.Commitment as Commitment exposing (Commitment)
+import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Configuration exposing (Configuration)
+import Contract.Contract as Contract exposing (Contract)
+import ContractType.ContractType as ContractType exposing (ContractType)
 import DictSet as Set
-import Entity.Entity as Entity exposing (Entity)
+import Event.Event as Event exposing (Event)
+import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
+import Group.Groupable as Groupable exposing (Groupable)
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
-import Json.Encode as Encode
+import Json.Encode as Encode exposing (Value)
 import MessageFlow exposing (MessageFlow, decoder)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process as Process exposing (Process)
+import ProcessType.ProcessType as ProcessType exposing (ProcessType)
+import Resource.Resource as Resource exposing (Resource)
+import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Restriction.Restriction as Restriction exposing (Restriction)
 import Time exposing (millisToPosix, posixToMillis)
 
@@ -52,18 +65,42 @@ type Message
 
 type Payload
     = ConnectionInitiated Connection
-    | Added Entity
-    | Removed Entity
+    | AddedResourceType ResourceType
+    | RemovedResourceType ResourceType
+    | AddedEventType EventType
+    | RemovedEventType EventType
+    | AddedAgentType AgentType
+    | RemovedAgentType AgentType
+    | AddedCommitmentType CommitmentType
+    | RemovedCommitmentType CommitmentType
+    | AddedContractType ContractType
+    | RemovedContractType ContractType
+    | AddedProcessType ProcessType
+    | RemovedProcessType ProcessType
+    | AddedResource Resource
+    | RemovedResource Resource
+    | AddedEvent Event
+    | RemovedEvent Event
+    | AddedAgent Agent
+    | RemovedAgent Agent
+    | AddedCommitment Commitment
+    | RemovedCommitment Commitment
+    | AddedContract Contract
+    | RemovedContract Contract
+    | AddedProcess Process
+    | RemovedProcess Process
     | Restricted Restriction
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved IdentifierType
     | IdentifierAdded Identifier
     | Configured Configuration
     | Unconfigured Configuration
-    | DefinedGroup Group -- TODO remove Group as Entity?
+    | AddedGroupType GroupType
+    | RemovedGroupType GroupType
+    | DefinedGroup Group
     | RemovedGroup Group
-    | Grouped Entity Group
-    | Ungrouped Entity Group
+    | Grouped Groupable Group
+    | Ungrouped Groupable Group
 
 
 toString : Payload -> String
@@ -81,11 +118,77 @@ toString p =
         IdentifierTypeRemoved _ ->
             "IdentifierTypeRemoved"
 
-        Added _ ->
-            "Added"
+        AddedResourceType _ ->
+            "AddedResourceType"
 
-        Removed _ ->
-            "Removed"
+        RemovedResourceType _ ->
+            "RemovedResourceType"
+
+        AddedEventType _ ->
+            "AddedEventType"
+
+        RemovedEventType _ ->
+            "RemovedEventType"
+
+        AddedAgentType _ ->
+            "AddedAgentType"
+
+        RemovedAgentType _ ->
+            "RemovedAgentType"
+
+        AddedCommitmentType _ ->
+            "AddedCommitmentType"
+
+        RemovedCommitmentType _ ->
+            "RemovedCommitmentType"
+
+        AddedContractType _ ->
+            "AddedContractType"
+
+        RemovedContractType _ ->
+            "RemovedContractType"
+
+        AddedProcessType _ ->
+            "AddedProcessType"
+
+        RemovedProcessType _ ->
+            "RemovedProcessType"
+
+        AddedResource _ ->
+            "AddedResource"
+
+        RemovedResource _ ->
+            "RemovedResource"
+
+        AddedEvent _ ->
+            "AddedEvent"
+
+        RemovedEvent _ ->
+            "RemovedEvent"
+
+        AddedAgent _ ->
+            "AddedAgent"
+
+        RemovedAgent _ ->
+            "RemovedAgent"
+
+        AddedCommitment _ ->
+            "AddedCommitment"
+
+        RemovedCommitment _ ->
+            "RemovedCommitment"
+
+        AddedContract _ ->
+            "AddedContract"
+
+        RemovedContract _ ->
+            "RemovedContract"
+
+        AddedProcess _ ->
+            "AddedProcess"
+
+        RemovedProcess _ ->
+            "RemovedProcess"
 
         IdentifierAdded _ ->
             "IdentifierAdded"
@@ -95,6 +198,12 @@ toString p =
 
         Unconfigured _ ->
             "Unconfigured"
+
+        AddedGroupType _ ->
+            "AddedGroupType"
+
+        RemovedGroupType _ ->
+            "RemovedGroupType"
 
         DefinedGroup _ ->
             "DefinedGroup"
@@ -179,11 +288,77 @@ encode (Message b p) =
             IdentifierTypeRemoved it ->
                 ( "load", IdentifierType.encode it )
 
-            Added e ->
-                ( "load", Entity.encode e )
+            AddedResourceType e ->
+                ( "load", ResourceType.encode e )
 
-            Removed e ->
-                ( "load", Entity.encode e )
+            RemovedResourceType e ->
+                ( "load", ResourceType.encode e )
+
+            AddedEventType e ->
+                ( "load", EventType.encode e )
+
+            RemovedEventType e ->
+                ( "load", EventType.encode e )
+
+            AddedAgentType e ->
+                ( "load", AgentType.encode e )
+
+            RemovedAgentType e ->
+                ( "load", AgentType.encode e )
+
+            AddedCommitmentType e ->
+                ( "load", CommitmentType.encode e )
+
+            RemovedCommitmentType e ->
+                ( "load", CommitmentType.encode e )
+
+            AddedContractType e ->
+                ( "load", ContractType.encode e )
+
+            RemovedContractType e ->
+                ( "load", ContractType.encode e )
+
+            AddedProcessType e ->
+                ( "load", ProcessType.encode e )
+
+            RemovedProcessType e ->
+                ( "load", ProcessType.encode e )
+
+            AddedResource e ->
+                ( "load", Resource.encode e )
+
+            RemovedResource e ->
+                ( "load", Resource.encode e )
+
+            AddedEvent e ->
+                ( "load", Event.encode e )
+
+            RemovedEvent e ->
+                ( "load", Event.encode e )
+
+            AddedAgent e ->
+                ( "load", Agent.encode e )
+
+            RemovedAgent e ->
+                ( "load", Agent.encode e )
+
+            AddedCommitment e ->
+                ( "load", Commitment.encode e )
+
+            RemovedCommitment e ->
+                ( "load", Commitment.encode e )
+
+            AddedContract e ->
+                ( "load", Contract.encode e )
+
+            RemovedContract e ->
+                ( "load", Contract.encode e )
+
+            AddedProcess e ->
+                ( "load", Process.encode e )
+
+            RemovedProcess e ->
+                ( "load", Process.encode e )
 
             IdentifierAdded i ->
                 ( "load", Identifier.encode i )
@@ -194,6 +369,12 @@ encode (Message b p) =
             Unconfigured c ->
                 ( "load", Configuration.encode c )
 
+            AddedGroupType gt ->
+                ( "load", GroupType.encode gt )
+
+            RemovedGroupType gt ->
+                ( "load", GroupType.encode gt )
+
             DefinedGroup g ->
                 ( "load", Group.encode g )
 
@@ -201,10 +382,10 @@ encode (Message b p) =
                 ( "load", Group.encode g )
 
             Grouped e g ->
-                ( "load", Encode.object [ ( "entity", Entity.encode e ), ( "group", Group.encode g ) ] )
+                ( "load", Encode.object [ ( "entity", Groupable.encode e ), ( "group", Group.encode g ) ] )
 
             Ungrouped e g ->
-                ( "load", Encode.object [ ( "entity", Entity.encode e ), ( "group", Group.encode g ) ] )
+                ( "load", Encode.object [ ( "entity", Groupable.encode e ), ( "group", Group.encode g ) ] )
         ]
 
 
@@ -255,13 +436,101 @@ decoder =
                             Decode.map IdentifierTypeRemoved
                                 (Decode.field "load" IdentifierType.decoder)
 
-                        "Added" ->
-                            Decode.map Added
-                                (Decode.field "load" Entity.decoder)
+                        "AddedResourceType" ->
+                            Decode.map AddedResourceType
+                                (Decode.field "load" ResourceType.decoder)
 
-                        "Removed" ->
-                            Decode.map Removed
-                                (Decode.field "load" Entity.decoder)
+                        "RemovedResourceType" ->
+                            Decode.map RemovedResourceType
+                                (Decode.field "load" ResourceType.decoder)
+
+                        "AddedEventType" ->
+                            Decode.map AddedEventType
+                                (Decode.field "load" EventType.decoder)
+
+                        "RemovedEventType" ->
+                            Decode.map RemovedEventType
+                                (Decode.field "load" EventType.decoder)
+
+                        "AddedAgentType" ->
+                            Decode.map AddedAgentType
+                                (Decode.field "load" AgentType.decoder)
+
+                        "RemovedAgentType" ->
+                            Decode.map RemovedAgentType
+                                (Decode.field "load" AgentType.decoder)
+
+                        "AddedCommitmentType" ->
+                            Decode.map AddedCommitmentType
+                                (Decode.field "load" CommitmentType.decoder)
+
+                        "RemovedCommitmentType" ->
+                            Decode.map RemovedCommitmentType
+                                (Decode.field "load" CommitmentType.decoder)
+
+                        "AddedContractType" ->
+                            Decode.map AddedContractType
+                                (Decode.field "load" ContractType.decoder)
+
+                        "RemovedContractType" ->
+                            Decode.map RemovedContractType
+                                (Decode.field "load" ContractType.decoder)
+
+                        "AddedProcessType" ->
+                            Decode.map AddedProcessType
+                                (Decode.field "load" ProcessType.decoder)
+
+                        "RemovedProcessType" ->
+                            Decode.map RemovedProcessType
+                                (Decode.field "load" ProcessType.decoder)
+
+                        "AddedResource" ->
+                            Decode.map AddedResource
+                                (Decode.field "load" Resource.decoder)
+
+                        "RemovedResource" ->
+                            Decode.map RemovedResource
+                                (Decode.field "load" Resource.decoder)
+
+                        "AddedEvent" ->
+                            Decode.map AddedEvent
+                                (Decode.field "load" Event.decoder)
+
+                        "RemovedEvent" ->
+                            Decode.map RemovedEvent
+                                (Decode.field "load" Event.decoder)
+
+                        "AddedAgent" ->
+                            Decode.map AddedAgent
+                                (Decode.field "load" Agent.decoder)
+
+                        "RemovedAgent" ->
+                            Decode.map RemovedAgent
+                                (Decode.field "load" Agent.decoder)
+
+                        "AddedCommitment" ->
+                            Decode.map AddedCommitment
+                                (Decode.field "load" Commitment.decoder)
+
+                        "RemovedCommitment" ->
+                            Decode.map RemovedCommitment
+                                (Decode.field "load" Commitment.decoder)
+
+                        "AddedContract" ->
+                            Decode.map AddedContract
+                                (Decode.field "load" Contract.decoder)
+
+                        "RemovedContract" ->
+                            Decode.map RemovedContract
+                                (Decode.field "load" Contract.decoder)
+
+                        "AddedProcess" ->
+                            Decode.map AddedProcess
+                                (Decode.field "load" Process.decoder)
+
+                        "RemovedProcess" ->
+                            Decode.map RemovedProcessType
+                                (Decode.field "load" ProcessType.decoder)
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
@@ -275,17 +544,23 @@ decoder =
                             Decode.map Unconfigured
                                 (Decode.field "load" Configuration.decoder)
 
+                        "AddedGroupType" ->
+                            Decode.map AddedGroupType (Decode.field "load" GroupType.decoder)
+
+                        "RemovedGroupType" ->
+                            Decode.map RemovedGroupType (Decode.field "load" GroupType.decoder)
+
                         "DefinedGroup" ->
-                            Decode.map DefinedGroup (Decode.field "group" Group.decoder)
+                            Decode.map DefinedGroup (Decode.field "load" Group.decoder)
 
                         "RemovedGroup" ->
-                            Decode.map RemovedGroup (Decode.field "group" Group.decoder)
+                            Decode.map RemovedGroup (Decode.field "load" Group.decoder)
 
                         "Grouped" ->
-                            Decode.map2 Grouped (Decode.field "entity" Entity.decoder) (Decode.field "group" Group.decoder)
+                            Decode.map2 Grouped (Decode.at [ "load", "groupable" ] Groupable.decoder) (Decode.at [ "load", "group" ] Group.decoder)
 
                         "Ungrouped" ->
-                            Decode.map2 Ungrouped (Decode.field "entity" Entity.decoder) (Decode.field "group" Group.decoder)
+                            Decode.map2 Ungrouped (Decode.at [ "load", "groupable" ] Groupable.decoder) (Decode.at [ "load", "group" ] Group.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

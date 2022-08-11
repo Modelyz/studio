@@ -4,10 +4,11 @@ import DictSet as Set exposing (DictSet)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.Scope as Scope
 import Ident.View
 import Message
 import Route exposing (Route, redirect)
+import Scope.Scope as Scope
+import Scope.View
 import Shared
 import Spa.Page
 import View exposing (..)
@@ -88,9 +89,8 @@ viewContent model s =
                 |> List.map
                     (\it ->
                         viewSmallCard (Removed it)
-                            Nothing
                             (text it.name)
-                            (row [] [ text <| "for ", Ident.View.displayScope s it.applyTo ])
+                            (row [] [ text <| "for ", text <| Scope.toString it.applyTo ])
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")
             )

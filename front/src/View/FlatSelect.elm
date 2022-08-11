@@ -8,19 +8,17 @@ import View exposing (..)
 import View.Style exposing (..)
 
 
-type alias Model m a =
-    { m | flatselect : Maybe a }
+type alias Model m ht =
+    { m | flatselect : Maybe ht }
 
 
-type alias Config a msg =
-    { all : List a
-    , toString : a -> Element msg
-    , toDesc : a -> Element msg
-    , onInput : Maybe a -> msg
+type alias Config tt msg =
+    { all : List tt
+    , toString : tt -> Element msg
+    , toDesc : tt -> Element msg
+    , onInput : Maybe tt -> msg
     , label : String
     , explain : Element msg
-
-    --, field : Model m a -> Maybe a
     }
 
 
@@ -37,7 +35,6 @@ flatselect model c =
                         ]
                 )
                 model.flatselect
-                -- TODO replace with a (c.field model)
                 |> Maybe.withDefault
                     (el
                         [ padding 5, Font.color color.text.disabled ]

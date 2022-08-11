@@ -87,7 +87,6 @@ viewContent model s =
                 |> List.map
                     (\c ->
                         viewSmallCard (Removed c)
-                            Nothing
                             (Configuration.View.display s c)
                             none
                     )

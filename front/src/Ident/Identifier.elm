@@ -1,10 +1,9 @@
 module Ident.Identifier exposing (..)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity, toUuid)
 import Group.Group as Group exposing (Group)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Ident.IdentifierType exposing (IdentifierType)
+import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,8 +11,8 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 type alias Identifier =
     -- This is the value of an identifier
-    -- TODO: consider reintroducing Identifiable to avoir linking Ident to REA ? (this is orthogonal)
-    { entity : Uuid
+    -- TODO: consider reintroducing Identifiable to avoid linking Ident to REA ? (this is orthogonal)
+    { identifiable : Uuid
     , name : String
     , fragments : List Fragment
     }
@@ -24,31 +23,30 @@ select name =
     Set.filter (\i -> i.name == name) >> Set.toList >> List.head
 
 
-fromEntity : Entity -> DictSet String Identifier -> DictSet String Identifier
-fromEntity entity =
-    -- return the identifiers corresponding to a certain entity
-    -- TODO replace with fromIdentifiable?
-    Set.filter (\i -> toUuid entity == i.entity)
+fromItem : Item a -> DictSet String Identifier -> DictSet String Identifier
+fromItem item =
+    -- keep the identifiers corresponding to a certain item
+    Set.filter (\i -> item.uuid == i.identifiable)
 
 
 compare : Identifier -> String
 compare i =
-    Uuid.toString i.entity ++ " " ++ i.name
+    Uuid.toString i.identifiable ++ " " ++ i.name
 
 
 encode : Identifier -> Encode.Value
-encode e =
+encode i =
     Encode.object
-        [ ( "entity", Uuid.encode e.entity )
-        , ( "name", Encode.string e.name )
-        , ( "fragments", Encode.list Fragment.encode e.fragments )
+        [ ( "identifiable", Uuid.encode i.identifiable )
+        , ( "name", Encode.string i.name )
+        , ( "fragments", Encode.list Fragment.encode i.fragments )
         ]
 
 
 decoder : Decoder Identifier
 decoder =
     Decode.map3 Identifier
-        (Decode.field "entity" Uuid.decoder)
+        (Decode.field "identifiable" Uuid.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
 
@@ -74,11 +72,6 @@ update index fragment identifier =
                     )
     in
     { identifier | fragments = fragments }
-
-
-fromIdentifierType : Uuid -> IdentifierType -> Identifier
-fromIdentifierType entityUuid it =
-    Identifier entityUuid it.name it.fragments
 
 
 match : String -> Identifier -> Bool

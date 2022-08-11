@@ -1,14 +1,19 @@
-module Ident.View exposing (..)
+module Ident.View exposing (displayScope)
 
 import Configuration exposing (Configuration(..))
 import DictSet as Set exposing (DictSet)
 import Element exposing (..)
-import Entity.Entity as Entity exposing (Entity)
-import Entity.Type as EntityType exposing (Type(..))
+import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Type as HType
 import Ident.Fragment as IdentFragment
+import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Scope as Scope exposing (Scope(..))
+import Item.Item as Item exposing (Item)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
+import Typed.Type as TType
+import Typed.Typed as Typed exposing (Typed)
 import View exposing (withDefaultContent)
 import View.Lang as Lang exposing (Lang(..))
 import View.Type as ViewType
@@ -24,54 +29,6 @@ type alias Config msg =
     { onEnter : msg
     , onInput : Identifier -> msg
     }
-
-
-display : Shared.Model -> Zone -> Lang -> Entity -> Element msg
-display s zone lang entity =
-    s.state.identifiers
-        |> Identifier.fromEntity entity
-        |> buildDisplayIdentifier s ViewType.Smallcard entity
-        |> displayIdentifiers (Entity.toUuidString entity)
-
-
-buildDisplayIdentifier : Shared.Model -> ViewType.Type -> Entity -> DictSet String Identifier -> List Identifier
-buildDisplayIdentifier s viewtype e identifiers =
-    let
-        -- TODO ugly
-        scope =
-            Scope.fromEntity e |> Maybe.withDefault (AllEntities (Entity.toType e))
-
-        parents =
-            Scope.getParentsToRoot e scope s.state.entities []
-
-        firstRelevant =
-            Configuration.findFirst s.state.configs parents
-
-        fragments =
-            firstRelevant |> Maybe.map (\(ZoneConfig _ fs _) -> fs) |> Maybe.withDefault []
-
-        fragmentStrings =
-            ZoneFragment.display identifiers fragments
-
-        entityIdentifiers =
-            Identifier.fromEntity e identifiers
-    in
-    case viewtype of
-        ViewType.Smallcard ->
-            fragments
-                |> List.map
-                    (\fragment ->
-                        case fragment of
-                            ZoneFragment.Fixed string ->
-                                [ Identifier (Entity.toUuid e) "Separator" [ IdentFragment.Fixed string ] ]
-
-                            ZoneFragment.IdentifierName name ->
-                                entityIdentifiers |> Set.filter (\i -> i.name == name) |> Set.toList
-                    )
-                |> List.concat
-
-        ViewType.New ->
-            []
 
 
 displayIdentifiers : String -> List Identifier -> Element msg
@@ -103,17 +60,36 @@ displayFragment fragment identifiers =
             text "(not implemented yet)"
 
 
-displayScope : Shared.Model -> Scope -> Element msg
-displayScope s id =
+displayScope : Scope -> Element msg
+displayScope scope =
     -- TODO refactor to avoid Element here
-    case id of
-        AllEntities type_ ->
-            text <| EntityType.toString type_
+    case scope of
+        TScope t mtuid ->
+            mtuid
+                |> Maybe.map
+                    (\uuid ->
+                        row []
+                            [ text <| TType.toString t ++ " of type "
+                            , text <| Uuid.toString uuid
 
-        AllEntitiesOfType type_ uuid ->
-            row []
-                [ text <| EntityType.toString type_ ++ " of type "
-                , Entity.fromUuid s.state.entities uuid
-                    |> Maybe.map (display s SmallcardItemTitle FR_fr)
-                    |> Maybe.withDefault (text "(deleted type)")
-                ]
+                            --                            , Identifiable.fromUuid all uuid
+                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardItemTitle FR_fr t)
+                            --                                |> Maybe.withDefault (text "(deleted type)")
+                            ]
+                    )
+                |> Maybe.withDefault (text <| TType.toString t)
+
+        HScope t mtuid ->
+            mtuid
+                |> Maybe.map
+                    (\uuid ->
+                        row []
+                            [ text <| HType.toString t ++ " of type "
+                            , text <| Uuid.toString uuid
+
+                            --                            , Identifiable.fromUuid all uuid
+                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardItemTitle FR_fr t)
+                            --                                |> Maybe.withDefault (text "(deleted type)")
+                            ]
+                    )
+                |> Maybe.withDefault (text <| HType.toString t)

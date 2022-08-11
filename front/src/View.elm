@@ -118,10 +118,14 @@ floatingContainer s title buttons children =
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
             [ topbar s title
             , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
-                [ column
-                    [ width fill, alignTop, spacing 20, padding 20 ]
-                    (buttons ++ children)
-                ]
+                ([ column
+                    [ width fill, alignTop ]
+                    [ wrappedRow [ width fill, spacing 20 ]
+                        buttons
+                    ]
+                 ]
+                    ++ children
+                )
             ]
         ]
 
@@ -203,21 +207,21 @@ onEnter msg =
 
 
 checkEmptyString : String -> String -> Result String String
-checkEmptyString field err =
-    if String.isEmpty field then
+checkEmptyString str err =
+    if String.isEmpty str then
         Err err
 
     else
-        Ok field
+        Ok str
 
 
 checkEmptyList : List a -> String -> Result String (List a)
-checkEmptyList field err =
-    if List.isEmpty field then
+checkEmptyList list err =
+    if List.isEmpty list then
         Err err
 
     else
-        Ok field
+        Ok list
 
 
 checkEmptyDict : DictSet comparable a -> String -> Result String (DictSet comparable a)
@@ -229,14 +233,14 @@ checkEmptyDict field err =
         Ok field
 
 
-checkNothing : Maybe a -> String -> Result String a
+checkNothing : Maybe a -> String -> Result String (Maybe a)
 checkNothing field err =
     case field of
         Nothing ->
             Err err
 
         Just x ->
-            Ok x
+            Ok (Just x)
 
 
 clickableCard : msg -> Element msg -> Element msg -> Element msg

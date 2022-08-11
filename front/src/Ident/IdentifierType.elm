@@ -1,17 +1,22 @@
 module Ident.IdentifierType exposing (..)
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity)
-import Entity.Type as Type exposing (Type)
+import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Type as HType
 import Ident.Fragment as Fragment exposing (Fragment)
-import Ident.Scope as Scope exposing (Scope(..))
+import Ident.Identifiable as Identifiable exposing (Identifiable)
+import Ident.Identifier as Identifier exposing (Identifier)
+import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Scope.Scope as Scope exposing (Scope(..))
+import Type exposing (Type)
+import Typed.Typed as TType exposing (Typed)
 
 
 type alias IdentifierType =
-    -- This is the configuration of an identifier
+    -- This is the definition of an identifier
     { name : String
     , fragments : List Fragment
     , applyTo : Scope
@@ -20,30 +25,23 @@ type alias IdentifierType =
     }
 
 
-
---within : IdentifierType -> DictSet String Entity -> ( Type, Maybe Uuid ) -> Bool
---within identifierType entities tuple =
---    -- TODO remove?
---    Scope.within identifierType.applyTo entities tuple
+toIdentifier : Uuid -> IdentifierType -> Identifier
+toIdentifier uuid it =
+    Identifier uuid it.name it.fragments
 
 
-select : ( Type, Maybe Uuid ) -> DictSet String Entity -> DictSet String IdentifierType -> DictSet String IdentifierType
-select ( type_, muuid ) entities its =
-    its
-        |> Set.filter
-            (\it ->
-                case it.applyTo of
-                    AllEntities t ->
-                        t == type_
+select : Scope -> DictSet String (Typed (Item a)) -> DictSet String (Hierarchic (Item b)) -> DictSet String IdentifierType -> DictSet String IdentifierType
+select scope allTyped allHierarchic its =
+    -- keep the identifiertypes corresponding to the Type or user type of the identifiable
+    Set.filter (\it -> Scope.containsScope allTyped allHierarchic scope it.applyTo) its
 
-                    AllEntitiesOfType t u ->
-                        (t == type_)
-                            && (muuid
-                                    |> Maybe.andThen (\x -> Entity.findEntity x entities)
-                                    |> Maybe.andThen (\e -> Maybe.map (\y -> Entity.isParentOf e entities y) (Entity.findEntity u entities))
-                                    |> Maybe.withDefault False
-                               )
-            )
+
+initIdentifiers : DictSet String (Typed (Item a)) -> DictSet String (Hierarchic (Item b)) -> DictSet String IdentifierType -> Type -> Maybe (Hierarchic (Item b)) -> Uuid -> DictSet String Identifier
+initIdentifiers allTyped allHierarchic identifierTypes t mh newUuid =
+    -- build the empty identifiers corresponding to the chosen type and possible user type
+    identifierTypes
+        |> select (Maybe.map (\h -> And (IsType t) (HasUserType h.uuid)) mh |> Maybe.withDefault (IsType t)) allTyped allHierarchic
+        |> Set.map Identifier.compare (toIdentifier newUuid)
 
 
 compare : IdentifierType -> String

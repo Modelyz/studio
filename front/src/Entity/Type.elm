@@ -4,7 +4,9 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
 
-type Type
+type
+    Type
+    -- TODO see if it's still useful
     = Resource
     | Event
     | Agent

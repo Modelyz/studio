@@ -4,11 +4,13 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Type exposing (Type)
 
 
 type alias CommitmentType =
-    { uuid : Uuid
-    , type_ : Maybe Uuid
+    { what : Type
+    , uuid : Uuid
+    , parent : Maybe Uuid
     , group : Maybe Uuid
     }
 
@@ -16,17 +18,19 @@ type alias CommitmentType =
 encode : CommitmentType -> Encode.Value
 encode ct =
     Encode.object <|
-        [ ( "uuid", Uuid.encode ct.uuid )
-        , ( "type", Maybe.map Uuid.encode ct.type_ |> Maybe.withDefault Encode.null )
+        [ ( "what", Type.encode ct.what )
+        , ( "uuid", Uuid.encode ct.uuid )
+        , ( "parent", Maybe.map Uuid.encode ct.parent |> Maybe.withDefault Encode.null )
         ]
             ++ (Maybe.map (\g -> [ ( "group", Uuid.encode g ) ]) ct.group |> Maybe.withDefault [])
 
 
 decoder : Decode.Decoder CommitmentType
 decoder =
-    Decode.map3 CommitmentType
+    Decode.map4 CommitmentType
+        (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" <| Decode.maybe Uuid.decoder)
+        (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.maybe (Decode.field "group" Uuid.decoder))
 
 

@@ -1,15 +1,15 @@
 module Search.Criteria exposing (Criteria(..))
 
 import DictSet as Set exposing (DictSet)
-import Entity.Entity as Entity exposing (Entity)
+import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 
 
-type Criteria
+type Criteria a
     = SearchNothing
-    | SearchFull Entity String
+    | SearchFull String
       -- TODO try not to depend on Ident
-    | SearchIdentifier Entity IdentifierType String
+    | SearchIdentifier IdentifierType String
 
 
 

@@ -1,26 +1,43 @@
 module Event.ListPage exposing (match, page)
 
-import Entity.ListPage exposing (Config, Flags, Model, Msg)
-import Route exposing (Route, redirect)
+import DictSet as Set exposing (DictSet)
+import Effect exposing (Effect)
+import Element exposing (..)
+import Event.Event exposing (Event)
+import Item.Item as Item exposing (Item)
+import Message exposing (Payload(..))
+import Prng.Uuid as Uuid exposing (Uuid)
+import Route exposing (Route, redirect, redirectAdd)
+import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
+import View.Smallcard exposing (viewSmallCard)
+import View.Type as ViewType
 
 
-config : Config
-config =
-    { pageTitle = "Events"
-    , entityType = "Event"
-    , emptyText = "There are no Events yet. Add your first one!"
+type alias Model =
+    { route : Route
+    , search : Criteria Event
     }
+
+
+type Msg
+    = Removed Event
+    | Add
+    | Search String
+
+
+type alias Flags =
+    { route : Route }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
-        { init = Entity.ListPage.init s
-        , update = Entity.ListPage.update s
-        , view = Entity.ListPage.view config s
+        { init = init s
+        , update = update s
+        , view = view s
         , subscriptions = \_ -> Sub.none
         }
 
@@ -33,3 +50,63 @@ match route =
 
         _ ->
             Nothing
+
+
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
+init s f =
+    ( { route = f.route, search = SearchNothing }, closeMenu f s.menu )
+
+
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
+update s msg model =
+    case msg of
+        Removed e ->
+            ( model, Shared.dispatch s <| RemovedEvent e )
+
+        Add ->
+            ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
+
+        Search str ->
+            ( { model | search = SearchFull str }, Effect.none )
+
+
+view : Shared.Model -> Model -> View Msg
+view s model =
+    { title = "Events"
+    , attributes = []
+    , element = viewContent model ViewType.Smallcard
+    , route = model.route
+    }
+
+
+viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
+viewContent model vt s =
+    --TODO |> Criteria.entitySearch model.search
+    case vt of
+        ViewType.Smallcard ->
+            flatContainer s
+                "Events"
+                [ button.primary Add "Add..."
+                ]
+                none
+                [ wrappedRow
+                    [ spacing 10 ]
+                    (s.state.events
+                        |> Set.toList
+                        |> List.map
+                            (\e ->
+                                viewSmallCard (Removed e)
+                                    (text <| Uuid.toString e.uuid)
+                                    (e.type_
+                                        |> Item.find s.state.eventTypes
+                                        |> Maybe.map
+                                            (\rt -> row [] [ text "Type: ", text <| Uuid.toString rt.uuid ])
+                                        |> Maybe.withDefault none
+                                    )
+                            )
+                        |> withDefaultContent (p "There are no Events yet. Add your first one!")
+                    )
+                ]
+
+        ViewType.New ->
+            text "New"

@@ -7,11 +7,12 @@ import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Contract.Contract as Contract exposing (Contract)
 import ContractType.ContractType as ContractType exposing (ContractType)
 import DictSet as Set exposing (DictSet)
-import Entity.Type as Type exposing (Type)
+import Entity.Type as EntityType
 import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import GroupType.GroupType as GroupType exposing (GroupType)
+import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -20,6 +21,7 @@ import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Time exposing (posixToMillis)
+import Type exposing (Type)
 
 
 type
@@ -31,30 +33,28 @@ type
     | Cm Commitment
     | Cn Contract
     | P Process
-    | G Group -- TODO remove from here?
     | RT ResourceType
     | ET EventType
     | AT AgentType
     | CmT CommitmentType
     | CnT ContractType
     | PT ProcessType
-    | GT GroupType -- TODO remove from here?
 
 
 fromUuid : DictSet String Entity -> Uuid -> Maybe Entity
-fromUuid entities uuid =
-    Set.filter (\e -> toUuid e == uuid) entities |> Set.toList |> List.head
+fromUuid allEntities uuid =
+    Set.filter (\e -> toUuid e == uuid) allEntities |> Set.toList |> List.head
 
 
-only : String -> DictSet String Entity -> DictSet String Entity
+only : Type -> DictSet String (Item a) -> DictSet String (Item a)
 only t es =
     -- only of a certain constructor
-    Set.filter (\e -> toString e == t) es
+    Set.filter (\e -> e.what == t) es
 
 
 onlyTypes : DictSet String Entity -> DictSet String Entity
 onlyTypes es =
-    Set.filter (toType >> Type.isType) es
+    Set.filter (toType >> EntityType.isType) es
 
 
 findEntity : Uuid -> DictSet String Entity -> Maybe Entity
@@ -85,75 +85,63 @@ toTypeUuid entity =
         P p ->
             Just p.type_
 
-        G g ->
-            Just g.type_
-
         RT rt ->
-            rt.type_
+            rt.parent
 
         ET et ->
-            et.type_
+            et.parent
 
         AT at ->
-            at.type_
+            at.parent
 
         CmT ct ->
-            ct.type_
+            ct.parent
 
         CnT ct ->
-            ct.type_
+            ct.parent
 
         PT pt ->
-            pt.type_
-
-        GT gt ->
-            gt.type_
+            pt.parent
 
 
-toType : Entity -> Type
+toType : Entity -> EntityType.Type
 toType e =
     case e of
         R _ ->
-            Type.Resource
+            EntityType.Resource
 
         E _ ->
-            Type.Event
+            EntityType.Event
 
         A _ ->
-            Type.Agent
+            EntityType.Agent
 
         Cm _ ->
-            Type.Commitment
+            EntityType.Commitment
 
         Cn _ ->
-            Type.Contract
-
-        G _ ->
-            Type.Group
+            EntityType.Contract
 
         P _ ->
-            Type.Process
+            EntityType.Process
 
         PT _ ->
-            Type.Process
+            EntityType.Process
 
         RT _ ->
-            Type.ResourceType
+            EntityType.ResourceType
 
         ET _ ->
-            Type.EventType
+            EntityType.EventType
 
         AT _ ->
-            Type.AgentType
+            EntityType.AgentType
 
         CmT _ ->
-            Type.CommitmentType
+            EntityType.CommitmentType
 
         CnT _ ->
-            Type.ContractType
-
-        GT _ ->
-            Type.GroupType
+            EntityType.ContractType
 
 
 encode : Entity -> Value
@@ -195,12 +183,6 @@ encode entity =
                 , ( "value", Process.encode p )
                 ]
 
-        G g ->
-            Encode.object
-                [ ( "what", Encode.string "Group" )
-                , ( "value", Group.encode g )
-                ]
-
         RT rt ->
             Encode.object
                 [ ( "what", Encode.string "ResourceType" )
@@ -237,12 +219,6 @@ encode entity =
                 , ( "value", ProcessType.encode pt )
                 ]
 
-        GT gt ->
-            Encode.object
-                [ ( "what", Encode.string "GroupType" )
-                , ( "value", GroupType.encode gt )
-                ]
-
 
 decoder : Decoder Entity
 decoder =
@@ -269,9 +245,6 @@ decoder =
                         "Process" ->
                             Decode.map P Process.decoder
 
-                        "Group" ->
-                            Decode.map G Group.decoder
-
                         "ResourceType" ->
                             Decode.map RT ResourceType.decoder
 
@@ -289,9 +262,6 @@ decoder =
 
                         "ProcessType" ->
                             Decode.map PT ProcessType.decoder
-
-                        "GroupType" ->
-                            Decode.map GT GroupType.decoder
 
                         _ ->
                             Decode.fail "Unknown entity"
@@ -317,9 +287,6 @@ toUuid e =
         Cn cn ->
             cn.uuid
 
-        G g ->
-            g.uuid
-
         P p ->
             p.uuid
 
@@ -338,16 +305,13 @@ toUuid e =
         CnT cnt ->
             cnt.uuid
 
-        GT gt ->
-            gt.uuid
-
         PT pt ->
             pt.uuid
 
 
 toString : Entity -> String
 toString =
-    toType >> Type.toString
+    toType >> EntityType.toString
 
 
 toPluralString : Entity -> String
@@ -372,9 +336,6 @@ toPluralString e =
         Cn _ ->
             "Contracts"
 
-        G _ ->
-            "Groups"
-
         RT _ ->
             "Resource Types"
 
@@ -389,9 +350,6 @@ toPluralString e =
 
         CnT _ ->
             "Contract Types"
-
-        GT _ ->
-            "Group Types"
 
         PT _ ->
             "Proces Types"

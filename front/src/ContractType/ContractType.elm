@@ -4,27 +4,31 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Type exposing (Type)
 
 
 type alias ContractType =
-    { uuid : Uuid
-    , type_ : Maybe Uuid
+    { what : Type
+    , uuid : Uuid
+    , parent : Maybe Uuid
     }
 
 
 encode : ContractType -> Encode.Value
-encode at =
+encode ct =
     Encode.object
-        [ ( "uuid", Uuid.encode at.uuid )
-        , ( "type", Maybe.map Uuid.encode at.type_ |> Maybe.withDefault Encode.null )
+        [ ( "what", Type.encode ct.what )
+        , ( "uuid", Uuid.encode ct.uuid )
+        , ( "parent", Maybe.map Uuid.encode ct.parent |> Maybe.withDefault Encode.null )
         ]
 
 
 decoder : Decode.Decoder ContractType
 decoder =
-    Decode.map2 ContractType
+    Decode.map3 ContractType
+        (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" <| Decode.maybe Uuid.decoder)
+        (Decode.field "parent" <| Decode.maybe Uuid.decoder)
 
 
 compare : ContractType -> String

@@ -13,16 +13,17 @@ import Entity.Entity as Entity
 import Entity.Type as Type exposing (Type(..))
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
-import Ident.Scope as Scope exposing (Scope(..))
 import Ident.View
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
 import View exposing (..)
 import View.Lang exposing (Lang(..))
-import View.Step as Step exposing (isFirst, nextOrValidate, nextStep, previousStep)
+import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
 import View.Style exposing (..)
 import View.Type exposing (Type(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -32,15 +33,13 @@ type
     Msg
     -- TODO replace with Input Identifier
     = InputName String
-    | InputScope (Maybe Scope)
+    | InputScope Scope
     | InputUnique Bool
     | InputMandatory Bool
     | InputFragments (List Fragment)
     | Warning String
-    | PreviousPage
-    | NextPage
-    | Cancel
     | Added
+    | Button Step.Msg
 
 
 type alias Flags =
@@ -53,7 +52,7 @@ type alias Model =
     , unique : Bool
     , mandatory : Bool
     , fragments : List Fragment
-    , applyTo : Maybe Scope
+    , scope : Scope
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -72,9 +71,36 @@ validate m =
     Result.map5 IdentifierType
         (checkEmptyString m.name "The name is Empty")
         (checkEmptyList m.fragments "Your identifier format is empty")
-        (checkNothing m.applyTo "You must select an entity type")
+        (if m.scope == Empty then
+            Err "You must choose a scope"
+
+         else
+            Ok m.scope
+        )
         (Ok m.unique)
         (Ok m.mandatory)
+
+
+checkStep : Model -> Result String ()
+checkStep model =
+    case model.step of
+        Step.Step StepOptions ->
+            Ok ()
+
+        Step.Step StepFormat ->
+            checkEmptyList model.fragments "The format is still empty"
+                |> Result.map (\_ -> ())
+
+        Step.Step StepName ->
+            checkEmptyString model.name "Please choose a name"
+                |> Result.map (\_ -> ())
+
+        Step.Step StepScope ->
+            if model.scope == Empty then
+                Err "You must choose a scope"
+
+            else
+                Ok ()
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -102,7 +128,7 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     { route = f.route
     , name = ""
-    , applyTo = Nothing
+    , scope = Empty
     , unique = False
     , mandatory = False
     , fragments = []
@@ -120,7 +146,7 @@ update s msg model =
             ( { model | name = x }, Effect.none )
 
         InputScope scope ->
-            ( { model | applyTo = scope }, Effect.none )
+            ( { model | scope = scope }, Effect.none )
 
         InputUnique x ->
             ( { model | unique = x }, Effect.none )
@@ -133,6 +159,10 @@ update s msg model =
 
         Warning err ->
             ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
         Added ->
             case validate model of
@@ -147,25 +177,6 @@ update s msg model =
                 Err err ->
                     ( { model | warning = err }, Effect.none )
 
-        PreviousPage ->
-            case previousStep model.step model.steps of
-                Just x ->
-                    ( { model | step = x }, Effect.none )
-
-                Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
-
-        NextPage ->
-            case nextStep model.step model.steps of
-                Just x ->
-                    ( { model | step = x }, Effect.none )
-
-                Nothing ->
-                    ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
-
-        Cancel ->
-            ( model, redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd )
-
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -176,49 +187,13 @@ view s model =
     }
 
 
-buttonNext : Model -> Element Msg
-buttonNext model =
-    case model.step of
-        Step.Step StepOptions ->
-            nextOrValidate model NextPage Added (Ok model.name)
-
-        Step.Step StepFormat ->
-            nextOrValidate model NextPage Added (checkEmptyList model.fragments "The format is still empty")
-
-        Step.Step StepName ->
-            nextOrValidate model NextPage Added (checkEmptyString model.name "Please choose a name")
-
-        Step.Step StepScope ->
-            nextOrValidate model NextPage Added (checkNothing model.applyTo "Please choose an option")
-
-
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
-        buttons : List (Element Msg)
-        buttons =
-            [ wrappedRow [ width fill, spacing 20 ]
-                [ (if isFirst model.step model.steps then
-                    button.disabled "This is the first page"
-
-                   else
-                    button.secondary PreviousPage
-                  )
-                    "← Previous"
-                , button.secondary Cancel "Cancel"
-                , buttonNext model
-                , if model.warning /= "" then
-                    paragraph [ Font.color color.text.warning ] [ text model.warning ]
-
-                  else
-                    none
-                ]
-            ]
-
         step =
             case model.step of
                 Step.Step StepScope ->
-                    inputScope s model
+                    inputScope s InputScope model
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -251,7 +226,7 @@ viewContent model s =
                         Input.text
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
-                            , Step.onEnter NextPage Added Warning model (checkEmptyString model.name "Please enter a name")
+                            , Step.onEnter (Button NextPage) Added Warning model (checkEmptyString model.name "Please enter a name" |> Result.map (\_ -> ()))
                             ]
                             { onChange = InputName
                             , text = model.name
@@ -262,74 +237,25 @@ viewContent model s =
     in
     floatingContainer s
         "Adding an identifierType"
-        buttons
+        (List.map (Element.map Button) (buttons model (checkStep model))
+            ++ [ buttonValidate model (checkStep model) ]
+        )
         [ step
         ]
 
 
-viewItem : Shared.Model -> Model -> Scope -> Element Msg
-viewItem s model scope =
-    row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (Ident.View.displayScope s scope)
-        , button.primary (InputScope Nothing) "×"
-        ]
+buttonValidate : Model -> Result String field -> Element Msg
+buttonValidate m result =
+    case result of
+        Ok _ ->
+            if isLast m.step m.steps then
+                button.primary Added "Validate and finish"
 
+            else
+                none
 
-inputScope : Shared.Model -> Model -> Element Msg
-inputScope s model =
-    -- TODO refactor with Zone which contains duplicate
-    column [ alignTop, spacing 20, width <| minimum 200 fill ]
-        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: [ Maybe.map (viewItem s model) model.applyTo |> Maybe.withDefault none ]
-        , h2 <| "Select the types of the entities that should have a \"" ++ model.name ++ "\" identifier"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Type.all
-                |> List.map
-                    (\t ->
-                        clickableCard (InputScope <| Just <| AllEntities t) (text <| "All " ++ Type.toPluralString t) none
-                    )
-            )
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (s.state.entities
-                |> Entity.onlyTypes
-                |> Set.toList
-                |> List.map
-                    (\e ->
-                        [ (Type.fromType <| Entity.toType e)
-                            |> Maybe.map
-                                (\t ->
-                                    [ clickableCard
-                                        (InputScope <| Just <| AllEntitiesOfType t (Entity.toUuid e))
-                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
-                                        (Entity.toTypeUuid e
-                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
-                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
-                                            |> Maybe.withDefault none
-                                        )
-                                    ]
-                                )
-                            |> Maybe.withDefault []
-                        , (Type.toType <| Entity.toType e)
-                            |> Maybe.map
-                                (\t ->
-                                    [ clickableCard
-                                        (InputScope <| Just <| AllEntitiesOfType (Entity.toType e) (Entity.toUuid e))
-                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
-                                        (Entity.toTypeUuid e
-                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
-                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
-                                            |> Maybe.withDefault none
-                                        )
-                                    ]
-                                )
-                            |> Maybe.withDefault []
-                        ]
-                    )
-                |> List.concat
-                |> List.concat
-            )
-        ]
+        Err err ->
+            none
 
 
 inputFragments : Model -> Element Msg

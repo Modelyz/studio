@@ -1,32 +1,48 @@
 module View.Step exposing (..)
 
-import Element exposing (Attribute, Element)
-import View exposing (button)
+import Effect exposing (Effect)
+import Element exposing (..)
+import Element.Font as Font
+import Route exposing (Route, redirectParent)
+import Shared
+import View exposing (..)
+import View.Style exposing (color)
 
 
 type Step step
     = Step step
 
 
+type Msg
+    = PreviousPage
+    | NextPage
+    | Cancel
+
+
 type alias Model model step =
-    { model | step : Step step, steps : List (Step step) }
+    { model
+        | route : Route
+        , step : Step step
+        , steps : List (Step step)
+        , warning : String
+    }
 
 
-nextOrValidate : Model model step -> msg -> msg -> Result String field -> Element msg
-nextOrValidate m next validate result =
+buttonNext : Model model step -> Result String () -> Element Msg
+buttonNext m result =
     case result of
         Ok _ ->
             if isLast m.step m.steps then
-                button.primary validate "Validate and finish"
+                none
 
             else
-                button.primary next "Next →"
+                button.primary NextPage "Next →"
 
         Err err ->
             button.disabled err "Next →"
 
 
-onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String field -> Attribute msg
+onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String () -> Attribute msg
 onEnter next validate warning m result =
     View.onEnter <|
         case result of
@@ -70,3 +86,45 @@ isLast x xs =
 isFirst : a -> List a -> Bool
 isFirst x xs =
     indexOf x xs |> Maybe.map ((==) 0) |> Maybe.withDefault False
+
+
+buttons : Model m s -> Result String () -> List (Element Msg)
+buttons model checkedStep =
+    [ (if isFirst model.step model.steps then
+        button.disabled "This is the first page"
+
+       else
+        button.secondary PreviousPage
+      )
+        "← Previous"
+    , button.secondary Cancel "Cancel"
+    , buttonNext model checkedStep
+    , if model.warning /= "" then
+        paragraph [ Font.color color.text.warning ] [ text model.warning ]
+
+      else
+        none
+    ]
+
+
+update : Shared.Model -> Msg -> Model m s -> ( Model m s, Effect Shared.Msg Msg )
+update s msg model =
+    case msg of
+        PreviousPage ->
+            case previousStep model.step model.steps of
+                Just x ->
+                    ( { model | step = x }, Effect.none )
+
+                Nothing ->
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
+
+        NextPage ->
+            case nextStep model.step model.steps of
+                Just step ->
+                    ( { model | step = step }, Effect.none )
+
+                Nothing ->
+                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
+
+        Cancel ->
+            ( model, redirectParent s.navkey model.route |> Effect.fromCmd )

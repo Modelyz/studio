@@ -1,6 +1,6 @@
 module Zone.AddPage exposing (..)
 
-import Configuration exposing (Configuration(..), only)
+import Configuration exposing (Configuration(..))
 import DictSet as Set exposing (DictSet)
 import Effect as Effect exposing (Effect)
 import Element exposing (..)
@@ -10,15 +10,23 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity
-import Entity.Type as Type exposing (Type(..))
+import Hierarchy.Hierarchic as Hierarchic
+import Hierarchy.Type as HType
+import Ident.Identifiable as Identifiable
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.Scope as Scope exposing (Scope(..))
 import Ident.View
+import Item.Item as Item exposing (Item)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectParent)
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
+import State
+import Type exposing (Type)
+import Typed.Type as TType
+import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
 import View.Lang exposing (Lang(..))
 import View.Style exposing (..)
@@ -28,7 +36,7 @@ import Zone.Zone as Zone exposing (Zone(..))
 
 type Msg
     = InputZone Zone
-    | InputScope (Maybe Scope)
+    | InputScope Scope
     | InputFragments (List Fragment)
     | Warning String
     | Cancel
@@ -42,7 +50,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , zone : Zone
-    , scope : Maybe Scope
+    , scope : Scope
     , fragments : List Fragment
     , warning : String
     }
@@ -81,7 +89,7 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     { route = f.route
     , zone = SmallcardItemTitle
-    , scope = Nothing
+    , scope = Empty
     , fragments = []
     , warning = ""
     }
@@ -143,7 +151,12 @@ validate m =
     Result.map3 ZoneConfig
         (Ok m.zone)
         (checkEmptyList m.fragments "You must choose at least an identifier")
-        (checkNothing m.scope "You must choose a scope")
+        (if m.scope == Empty then
+            Err "You must choose a scope"
+
+         else
+            Ok m.scope
+        )
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -166,7 +179,7 @@ viewContent model s =
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model
-        , inputScope s model
+        , inputScope s InputScope model
         , inputFragments s model
         ]
 
@@ -189,72 +202,6 @@ inputZone model =
                     [ Zone.toDesc zone |> text ]
             )
             Zone.all
-
-
-viewItem : Shared.Model -> Model -> Scope -> Element Msg
-viewItem s model scope =
-    -- TODO duplicated from Ident/AddPage
-    row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (Ident.View.displayScope s scope)
-        , button.primary (InputScope Nothing) "×"
-        ]
-
-
-inputScope : Shared.Model -> Model -> Element Msg
-inputScope s model =
-    -- TODO duplicated from Ident/AddPage → refactor
-    column [ alignTop, spacing 20, width <| minimum 200 fill ]
-        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: [ Maybe.map (viewItem s model) model.scope |> Maybe.withDefault none ]
-        , h2 <| "Select the types of the entities you want to configure the zone for"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (Type.all
-                |> List.map
-                    (\t ->
-                        clickableCard (InputScope (Just <| AllEntities t)) (text <| "All " ++ Type.toPluralString t) none
-                    )
-            )
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (s.state.entities
-                |> Entity.onlyTypes
-                |> Set.toList
-                |> List.map
-                    (\e ->
-                        [ (Type.fromType <| Entity.toType e)
-                            |> Maybe.map
-                                (\t ->
-                                    [ clickableCard
-                                        (InputScope <| Just <| AllEntitiesOfType t (Entity.toUuid e))
-                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
-                                        (Entity.toTypeUuid e
-                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
-                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
-                                            |> Maybe.withDefault none
-                                        )
-                                    ]
-                                )
-                            |> Maybe.withDefault []
-                        , (Type.toType <| Entity.toType e)
-                            |> Maybe.map
-                                (\t ->
-                                    [ clickableCard
-                                        (InputScope <| Just <| AllEntitiesOfType (Entity.toType e) (Entity.toUuid e))
-                                        (Ident.View.displayScope s (AllEntitiesOfType t (Entity.toUuid e)))
-                                        (Entity.toTypeUuid e
-                                            |> Maybe.andThen (Entity.fromUuid s.state.entities)
-                                            |> Maybe.map (\p -> row [ Font.size size.text.small ] [ text "Type: ", Ident.View.display s SmallcardItemTitle FR_fr p ])
-                                            |> Maybe.withDefault none
-                                        )
-                                    ]
-                                )
-                            |> Maybe.withDefault []
-                        ]
-                    )
-                |> List.concat
-                |> List.concat
-            )
-        ]
 
 
 inputFragments : Shared.Model -> Model -> Element Msg
@@ -288,7 +235,14 @@ inputFragments s model =
                             )
                     )
         , h2 "Click on the items below to construct the format of the zone"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
+        , let
+            allTyped =
+                Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault (Set.empty Typed.compare)
+
+            allHierarchic =
+                Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault (Set.empty Hierarchic.compare)
+          in
+          wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
                 (\f ->
                     column
@@ -308,7 +262,7 @@ inputFragments s model =
                     :: (s.state.identifierTypes
                             |> Set.filter
                                 (\it ->
-                                    Maybe.map (\sc2 -> Scope.isParentOf sc2 s.state.entities it.applyTo) model.scope |> Maybe.withDefault False
+                                    Scope.containsScope allTyped allHierarchic model.scope it.applyTo
                                 )
                             |> Set.toList
                             |> List.map (.name >> IdentifierName)

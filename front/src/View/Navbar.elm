@@ -4,9 +4,9 @@ import DictSet as Set
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import Entity.Entity as Entity
 import Html.Attributes as Attr
 import IOStatus as IO exposing (toText)
+import Prng.Uuid as Uuid
 import Route exposing (Route, firstSegment, toString)
 import Shared
 import Time exposing (posixToMillis)
@@ -48,24 +48,16 @@ links s r =
     , menuitem s r (Route.ProcessList Nothing) "Processes"
     , menuitem s r Route.ConfigurationList "Configuration"
     ]
-        ++ (let
-                processTypes =
-                    s.state.entities |> Entity.only "ProcessType"
-            in
-            if Set.size processTypes > 0 then
-                processTypes
-                    |> Set.toList
-                    |> List.map
-                        (\pt ->
-                            let
-                                name =
-                                    Entity.toUuidString pt
-                            in
-                            menuitem s r (Route.ProcessTypeView name) name
-                        )
-
-            else
-                []
+        ++ (s.state.processTypes
+                |> Set.toList
+                |> List.map
+                    (\pt ->
+                        let
+                            name =
+                                Uuid.toString pt.uuid
+                        in
+                        menuitem s r (Route.ProcessTypeView name) name
+                    )
            )
 
 
@@ -98,7 +90,6 @@ desktop s r =
                     , el [ Font.size 15, htmlAttribute <| Attr.id "LastMessageTime" ] (text <| "LastMessageTime=" ++ (String.fromInt <| posixToMillis s.state.lastMessageTime))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingMessages))
-                    , el [ Font.size 15, htmlAttribute <| Attr.id "entities" ] (text <| "entities=" ++ (String.fromInt <| Set.size s.state.entities))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "groups" ] (text <| "groups=" ++ (String.fromInt <| Set.size s.state.groups))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString r)

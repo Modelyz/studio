@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
+import Type exposing (Type)
 
 
 
@@ -13,21 +14,23 @@ import Time exposing (millisToPosix, posixToMillis)
 
 
 type alias Process =
-    { uuid : Uuid
+    { what : Type
+    , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
     }
 
 
-compare : Process -> Int
+compare : Process -> String
 compare =
-    .when >> posixToMillis
+    .uuid >> Uuid.toString
 
 
 encode : Process -> Encode.Value
 encode p =
     Encode.object
-        [ ( "type", Uuid.encode p.type_ )
+        [ ( "what", Type.encode p.what )
+        , ( "type", Uuid.encode p.type_ )
         , ( "uuid", Uuid.encode p.uuid )
         , ( "when", Encode.int <| posixToMillis p.when )
         ]
@@ -42,7 +45,8 @@ encode p =
 
 decoder : Decode.Decoder Process
 decoder =
-    Decode.map3 Process
+    Decode.map4 Process
+        (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
