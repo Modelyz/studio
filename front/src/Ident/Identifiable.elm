@@ -1,11 +1,13 @@
-module Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
+module Ident.Identifiable exposing (Identifiable, display, hWithIdentifiers, tWithIdentifiers)
 
+import Configuration exposing (Configuration(..), getMostSpecific)
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Identifier as Identifier exposing (Identifier, fromHierarchic, fromTyped)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Typed.Typed exposing (Typed)
+import Zone.Fragment exposing (displayFromDict)
 
 
 type alias Identifiable a =
@@ -31,3 +33,10 @@ hWithIdentifiers identifiers hs =
             }
         )
         hs
+
+
+display : Maybe Configuration -> Identifiable (Hierarchic b) -> String
+display mc hitem =
+    mc
+        |> Maybe.map (\(ZoneConfig _ fragments _) -> displayFromDict hitem.identifiers fragments)
+        |> Maybe.withDefault (Uuid.toString hitem.uuid)

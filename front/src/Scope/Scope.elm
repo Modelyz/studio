@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, containsItem, containsScope, decoder, encode, getUpperList, mainHType, mainTType, toString)
+module Scope.Scope exposing (Scope(..), compare, containsItem, containsScope, decoder, encode, fromHierarchic, fromTyped, getUpperList, mainHType, mainTType, toString)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
@@ -105,6 +105,16 @@ decoder =
                             Decode.fail "Invalid scope definition"
                 )
         ]
+
+
+fromTyped : Typed a -> Scope
+fromTyped t =
+    And (IsType t.what) (HasUserType t.type_)
+
+
+fromHierarchic : Hierarchic a -> Scope
+fromHierarchic h =
+    h.parent |> Maybe.map (\p -> And (IsType h.what) (HasUserType p)) |> Maybe.withDefault (IsType h.what)
 
 
 getUpper : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Maybe Scope

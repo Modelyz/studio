@@ -1,4 +1,4 @@
-module Zone.Fragment exposing (Fragment(..), decoder, display, encode, toDesc, toString, toValue)
+module Zone.Fragment exposing (Fragment(..), decoder, display, displayFromDict, encode, toDesc, toString, toValue)
 
 import Dict exposing (Dict)
 import Entity.Entity as Entity exposing (Entity)
@@ -35,6 +35,21 @@ toValue identifiers f =
 display : Dict String Identifier -> List Fragment -> String
 display identifiers fragments =
     fragments |> List.map (toValue identifiers) |> String.join ""
+
+
+displayFromDict : Dict String String -> List Fragment -> String
+displayFromDict identifiers fragments =
+    let
+        fromDict : Dict String String -> Fragment -> String
+        fromDict ids fragment =
+            case fragment of
+                IdentifierName name ->
+                    Dict.get name ids |> Maybe.withDefault "(missing)"
+
+                Fixed string ->
+                    string
+    in
+    fragments |> List.map (fromDict identifiers) |> String.join ""
 
 
 toDesc : Fragment -> String
