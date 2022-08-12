@@ -2,7 +2,6 @@ module ContractType.AddPage exposing (..)
 
 import ContractType.ContractType as ContractType exposing (ContractType)
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -148,7 +147,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "ContractTypes"
+    { title = "Adding a Contract Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -210,7 +209,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new ContractType (it can be hierarchical"
+                        , h2 "Optional parent type for the new Contract Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.contractTypes rt))
@@ -224,7 +223,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
     in
     floatingContainer s
-        "Adding a ContractType"
+        "Adding a Contract Type"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

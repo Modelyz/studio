@@ -1,7 +1,6 @@
 module Resource.AddPage exposing (..)
 
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -218,7 +217,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new Resource (it can be hierarchical"
+                        , h2 "Choose the type of the new Resource"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.resourceTypes rt))

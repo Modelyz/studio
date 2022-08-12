@@ -148,7 +148,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "GroupTypes"
+    { title = "Adding a Group Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -210,7 +210,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new GroupType (it can be hierarchical"
+                        , h2 "Optional parent type for the new Group Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.groupTypes rt))
@@ -224,7 +224,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
     in
     floatingContainer s
-        "Adding a GroupType"
+        "Adding a Group Type"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

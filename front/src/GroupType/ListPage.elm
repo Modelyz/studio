@@ -72,7 +72,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "GroupTypes"
+    { title = "Group Types"
     , attributes = []
     , element = viewContent model ViewType.Smallcard
     , route = model.route
@@ -85,7 +85,7 @@ viewContent model vt s =
     case vt of
         ViewType.Smallcard ->
             flatContainer s
-                "GroupTypes"
+                "Group Types"
                 [ button.primary Add "Add..."
                 ]
                 none
@@ -99,7 +99,7 @@ viewContent model vt s =
                                     (text <| Uuid.toString gt.uuid)
                                     none
                             )
-                        |> withDefaultContent (p "There are no GroupTypes yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
                     )
                 ]
 

@@ -142,7 +142,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "AgentTypes"
+    { title = "Adding an Agent Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -204,7 +204,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new AgentType (it can be hierarchical"
+                        , h2 "Optional parent type for the new Agent Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.agentTypes rt))

@@ -3,7 +3,6 @@ module Agent.AddPage exposing (..)
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -149,7 +148,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Agents"
+    { title = "Adding an Agent"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -218,7 +217,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new Agent (it can be hierarchical"
+                        , h2 "Choose the type of the new Agent"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.agentTypes rt))

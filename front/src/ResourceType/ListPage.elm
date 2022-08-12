@@ -72,7 +72,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Resources"
+    { title = "Resource Types"
     , attributes = []
     , element = viewContent model ViewType.Smallcard
     , route = model.route
@@ -85,7 +85,7 @@ viewContent model vt s =
     case vt of
         ViewType.Smallcard ->
             flatContainer s
-                "Resources"
+                "Resources Types"
                 [ button.primary Add "Add..."
                 ]
                 none
@@ -104,7 +104,7 @@ viewContent model vt s =
                                         |> Maybe.withDefault none
                                     )
                             )
-                        |> withDefaultContent (p "There are no Resources yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Resource Types yet. Add your first one!")
                     )
                 ]
 

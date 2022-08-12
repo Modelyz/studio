@@ -2,7 +2,6 @@ module CommitmentType.AddPage exposing (..)
 
 import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -149,7 +148,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "CommitmentTypes"
+    { title = "Adding a Commitment Types"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -211,7 +210,7 @@ viewContent model s =
                                         (text "Empty")
                                     )
                             ]
-                        , h2 "Choose the type of the new CommitmentType (it can be hierarchical"
+                        , h2 "Optional parent type for the new Commitment Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.commitmentTypes rt))
@@ -225,7 +224,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
     in
     floatingContainer s
-        "Adding a CommitmentType"
+        "Adding a Commitment Type"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

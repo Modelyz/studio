@@ -73,7 +73,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "AgentTypes"
+    { title = "Agent Types"
     , attributes = []
     , element = viewContent model ViewType.Smallcard
     , route = model.route
@@ -89,7 +89,7 @@ viewContent model vt s =
                     hWithIdentifiers s.state.identifiers s.state.agentTypes
             in
             flatContainer s
-                "AgentTypes"
+                "Agent Types"
                 [ button.primary Add "Add..."
                 ]
                 none
@@ -98,7 +98,7 @@ viewContent model vt s =
                     (allHwithIdentifiers
                         |> Dict.values
                         |> hViewSmallCard Removed s.state.agents allHwithIdentifiers s.state.configs
-                        |> withDefaultContent (p "There are no AgentTypes yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agent Types yet. Add your first one!")
                     )
                 ]
 
