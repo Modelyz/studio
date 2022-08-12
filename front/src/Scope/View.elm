@@ -1,7 +1,7 @@
 module Scope.View exposing (inputScope)
 
 import Configuration exposing (Configuration(..))
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect as Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -12,7 +12,7 @@ import Element.Input as Input
 import Entity.Entity as Entity
 import Hierarchy.Hierarchic as Hierarchic
 import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identification as Identification
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Ident.View
@@ -97,10 +97,10 @@ inputScope s input model =
                                 |> Maybe.withDefault Empty
                     in
                     allHierarchic
-                        |> Identifiable.hierarchicWithIdentifiers s.state.identifiers
-                        |> Set.filter
+                        |> hWithIdentifiers s.state.identifiers
+                        |> Dict.values
+                        |> List.filter
                             (\i -> Scope.containsScope allTyped allHierarchic configscope (HasUserType i.uuid))
-                        |> Set.toList
                         |> List.map
                             (\t ->
                                 clickableCard
@@ -131,10 +131,10 @@ inputScope s input model =
                                 |> Maybe.withDefault Empty
                     in
                     allHierarchic
-                        |> Identifiable.hierarchicWithIdentifiers s.state.identifiers
-                        |> Set.filter
+                        |> hWithIdentifiers s.state.identifiers
+                        |> Dict.values
+                        |> List.filter
                             (\i -> Scope.containsScope allTyped allHierarchic configscope (HasUserType i.uuid))
-                        |> Set.toList
                         |> List.map
                             (\t ->
                                 clickableCard

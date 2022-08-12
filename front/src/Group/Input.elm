@@ -1,6 +1,6 @@
 module Group.Input exposing (inputGroups)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -15,11 +15,11 @@ import View.Style exposing (..)
 
 
 type alias Model a =
-    { a | groups : DictSet String Group }
+    { a | groups : Dict String Group }
 
 
 type alias Config msg =
-    { onInput : DictSet String Group -> msg
+    { onInput : Dict String Group -> msg
     }
 
 
@@ -28,7 +28,7 @@ viewItem c s model group =
     -- TODO duplicated from Ident/AddPage
     row [ Background.color color.item.background ]
         [ el [ paddingXY 10 2 ] (Group.View.displayGroup s group)
-        , button.primary (c.onInput <| Set.remove group model.groups) "×"
+        , button.primary (c.onInput <| Dict.remove (Uuid.toString group.uuid) model.groups) "×"
         ]
 
 
@@ -38,14 +38,14 @@ inputGroups c s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: List.map (viewItem c s model) (Set.toList model.groups)
+                :: List.map (viewItem c s model) (Dict.values model.groups)
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.groups
-                |> Set.toList
+                |> Dict.values
                 |> List.map
                     (\g ->
-                        clickableCard (c.onInput <| Set.insert g model.groups) (text <| Uuid.toString g.uuid) none
+                        clickableCard (c.onInput <| Dict.insert (Uuid.toString g.uuid) g model.groups) (text <| Uuid.toString g.uuid) none
                      --TODO display identifiers
                     )
             )

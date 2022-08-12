@@ -1,6 +1,6 @@
 module GroupType.GroupType exposing (GroupType, compare, decoder, encode, find)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe(..))
@@ -15,11 +15,11 @@ type alias GroupType =
     }
 
 
-find : Uuid -> DictSet String GroupType -> Maybe GroupType
+find : Uuid -> Dict String GroupType -> Maybe GroupType
 find uuid gts =
     -- TODO consider moving that to the Metadata? Or replace GroupType with a type variable?
-    Set.filter (\gt -> .uuid gt == uuid) gts
-        |> Set.toList
+    Dict.filter (\_ gt -> .uuid gt == uuid) gts
+        |> Dict.values
         |> List.head
 
 

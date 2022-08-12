@@ -1,6 +1,6 @@
 module Search.Criteria exposing (Criteria(..))
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 
@@ -16,11 +16,11 @@ type Criteria a
 -- pour full : d'abord on cherche les identifiertypes, puis on filtre les EntityIdentifier selon la chaîne de recherche et on affiche les entities
 --entitySearch :
 --    Criteria
---    -> DictSet String IdentifierType
---    -> DictSet String EntityType
---    -> DictSet String EntityIdentifier
---    -> DictSet String Entity
---    -> DictSet String Entity
+--    -> Dict String IdentifierType
+--    -> Dict String EntityType
+--    -> Dict String EntityIdentifier
+--    -> Dict String Entity
+--    -> Dict String Entity
 --entitySearch criteria identifierTypes entityTypes entityIdentifiers entities =
 --    -- return the set of entities that match the criteria (given the catalog of entities and identifierTypes)
 --    case criteria of
@@ -32,17 +32,17 @@ type Criteria a
 --            let
 --                its =
 --                    identifierTypes
---                    |> Set.filter (\it -> IdentifierType.within it entityTypes identifiable)
+--                    |> Dict.filter (\_ it -> IdentifierType.within it entityTypes identifiable)
 --                eis =
 --                    entityIdentifiers
 --                    |> EntityIdentifier.restrict
---                    |> Set.map Identifier.compare .identifier |>Set.filter (\i
+--                    |> Dict.map Identifier.compare .identifier |>Dict.filter (\_ i
 --            in
 --            case identifiable of
 --                Identifiable.Entity entity ->
 ---                    entities
 --                        |> (\e -> EntityIdentifier.restrict e entities)
---                        |> Set.map .identifiable
+--                        |> Dict.map .identifiable
 --                        |> List.filter (\i -> Identifiable.toString i == Entity.toString entity)
 --
 --                _ ->

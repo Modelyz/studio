@@ -1,6 +1,7 @@
 module Group.Group exposing (Group, compare, decoder, encode, fromUuid)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -13,12 +14,13 @@ type alias Group =
     , uuid : Uuid
     , type_ : Uuid
     , scope : Scope
+    , identifiers : Dict String String
     }
 
 
-fromUuid : DictSet String Group -> Uuid -> Maybe Group
+fromUuid : Dict String Group -> Uuid -> Maybe Group
 fromUuid entities uuid =
-    Set.filter (\g -> g.uuid == uuid) entities |> Set.toList |> List.head
+    Dict.filter (\_ g -> g.uuid == uuid) entities |> Dict.values |> List.head
 
 
 encode : Group -> Encode.Value
@@ -33,11 +35,12 @@ encode g =
 
 decoder : Decoder Group
 decoder =
-    Decode.map4 Group
+    Decode.map5 Group
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)
+        (Decode.succeed Dict.empty)
 
 
 compare : Group -> String

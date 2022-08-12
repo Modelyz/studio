@@ -1,5 +1,6 @@
 module Contract.Contract exposing (Contract, compare, decoder, encode)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -10,6 +11,7 @@ type alias Contract =
     { what : Type
     , uuid : Uuid
     , type_ : Uuid
+    , identifiers : Dict String String
 
     --    , parties: List Agent
     --    , clauses:
@@ -30,10 +32,11 @@ encode c =
 
 decoder : Decode.Decoder Contract
 decoder =
-    Decode.map3 Contract
+    Decode.map4 Contract
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
+        (Decode.succeed Dict.empty)
 
 
 compare : Contract -> String

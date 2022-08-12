@@ -1,5 +1,6 @@
 module Commitment.Commitment exposing (Commitment, compare, decoder, encode)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -11,8 +12,8 @@ type alias Commitment =
     { what : Type
     , uuid : Uuid
     , type_ : Uuid
-    , group : Maybe Uuid
     , when : Time.Posix
+    , identifiers : Dict String String
 
     --        , qty: Float
     --        , rtype: ResourceType
@@ -29,7 +30,6 @@ encode c =
         , ( "type", Uuid.encode c.type_ )
         , ( "when", Encode.int <| posixToMillis c.when )
         ]
-            ++ (Maybe.map (\g -> [ ( "group", Uuid.encode g ) ]) c.group |> Maybe.withDefault [])
 
 
 decoder : Decode.Decoder Commitment
@@ -38,8 +38,8 @@ decoder =
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.maybe (Decode.field "group" Uuid.decoder))
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.succeed Dict.empty)
 
 
 compare : Commitment -> String

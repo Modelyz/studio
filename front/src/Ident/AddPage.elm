@@ -1,7 +1,7 @@
 module Ident.AddPage exposing (..)
 
 import Configuration exposing (Configuration(..))
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background

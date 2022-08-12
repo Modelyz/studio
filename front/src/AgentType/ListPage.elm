@@ -1,9 +1,10 @@
 module AgentType.ListPage exposing (match, page)
 
 import AgentType.AgentType exposing (AgentType)
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (newViewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed AgentType
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed at ->
-            ( model, Shared.dispatch s <| RemovedAgentType at )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedAgentType uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -92,20 +93,9 @@ viewContent model vt s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.agentTypes
-                        |> Set.toList
-                        |> List.map
-                            (\at ->
-                                viewSmallCard (Removed at)
-                                    (Uuid.toString at.uuid
-                                        |> text
-                                    )
-                                    (at.parent
-                                        |> Maybe.andThen (Item.find s.state.agentTypes)
-                                        |> Maybe.map
-                                            (\atp -> row [] [ text "Type: ", text <| Uuid.toString atp.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> hWithIdentifiers s.state.identifiers
+                        |> Dict.values
+                        |> newViewSmallCard Removed s.state.configs
                         |> withDefaultContent (p "There are no AgentTypes yet. Add your first one!")
                     )
                 ]

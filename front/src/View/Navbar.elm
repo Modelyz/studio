@@ -1,6 +1,6 @@
 module View.Navbar exposing (view)
 
-import DictSet as Set
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -49,7 +49,7 @@ links s r =
     , menuitem s r Route.ConfigurationList "Configuration"
     ]
         ++ (s.state.processTypes
-                |> Set.toList
+                |> Dict.values
                 |> List.map
                     (\pt ->
                         let
@@ -89,9 +89,9 @@ desktop s r =
                     , el [ htmlAttribute <| Attr.title <| "IOStatus" ++ "IO=" ++ IO.toText s.iostatus ] (text <| "IO  " ++ WS.toEmoji s.wsstatus)
                     , el [ Font.size 15, htmlAttribute <| Attr.id "LastMessageTime" ] (text <| "LastMessageTime=" ++ (String.fromInt <| posixToMillis s.state.lastMessageTime))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
-                    , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Set.size s.state.pendingMessages))
-                    , el [ Font.size 15, htmlAttribute <| Attr.id "groups" ] (text <| "groups=" ++ (String.fromInt <| Set.size s.state.groups))
-                    , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Set.size s.state.uuids))
+                    , el [ Font.size 15, htmlAttribute <| Attr.id "pending" ] (text <| "pending=" ++ (String.fromInt <| Dict.size s.state.pendingMessages))
+                    , el [ Font.size 15, htmlAttribute <| Attr.id "groups" ] (text <| "groups=" ++ (String.fromInt <| Dict.size s.state.groups))
+                    , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "msgs=" ++ (String.fromInt <| Dict.size s.state.uuids))
                     , el [ Font.size 15, htmlAttribute <| Attr.id "msgs" ] (text <| "Route=" ++ toString r)
                     ]
                ]

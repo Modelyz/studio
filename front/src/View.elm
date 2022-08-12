@@ -1,6 +1,6 @@
 module View exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -224,9 +224,9 @@ checkEmptyList list err =
         Ok list
 
 
-checkEmptyDict : DictSet comparable a -> String -> Result String (DictSet comparable a)
+checkEmptyDict : Dict comparable a -> String -> Result String (Dict comparable a)
 checkEmptyDict field err =
-    if Set.isEmpty field then
+    if Dict.isEmpty field then
         Err err
 
     else

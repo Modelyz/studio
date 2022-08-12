@@ -1,41 +1,41 @@
-module Ident.Identifiable exposing (Identifiable, hierarchicWithIdentifiers, typedWithIdentifiers)
+module Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
 
-import DictSet as Set exposing (DictSet)
-import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
-import Ident.Identifier as Identifier exposing (Identifier, fromItem)
-import Item.Item as Item exposing (Item, OnlyItem)
-import Typed.Typed as Typed exposing (Typed)
+import Dict exposing (Dict)
+import Hierarchy.Hierarchic as H exposing (Hierarchic, OnlyHierarchic)
+import Ident.Identifier as Identifier exposing (Identifier, fromHierarchic, fromTyped)
+import Item.Item as Item exposing (Item)
+import Prng.Uuid as Uuid exposing (Uuid)
+import Typed.Typed as T exposing (OnlyTyped, Typed)
 
 
 type alias Identifiable a =
     -- the shape of an identifiable
-    { a | identifiers : DictSet String Identifier }
+    { a | identifiers : Dict String String }
 
 
-typedWithIdentifiers : DictSet String Identifier -> DictSet String (Typed (Item a)) -> DictSet String (Identifiable (Typed OnlyItem))
-typedWithIdentifiers identifiers items =
-    -- enrich the set of items with their identifiers
-    Set.map compare
-        (\item ->
-            { what = item.what, uuid = item.uuid, type_ = item.type_, identifiers = fromItem item identifiers }
+tWithIdentifiers : Dict String Identifier -> Dict String (Typed a) -> Dict String (Identifiable OnlyTyped)
+tWithIdentifiers identifiers items =
+    -- enrich the set of items with their identifiers as a dict
+    Dict.map
+        (\_ item ->
+            { what = item.what
+            , uuid = item.uuid
+            , type_ = item.type_
+            , identifiers = fromTyped item identifiers |> Identifier.toDict
+            }
         )
         items
 
 
-hierarchicWithIdentifiers : DictSet String Identifier -> DictSet String (Hierarchic (Item a)) -> DictSet String (Identifiable (Hierarchic OnlyItem))
-hierarchicWithIdentifiers identifiers items =
-    -- enrich the set of items with their identifiers
-    Set.map compare
-        (\item ->
-            { what = item.what, uuid = item.uuid, parent = item.parent, identifiers = fromItem item identifiers }
+hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic a) -> Dict String (Identifiable OnlyHierarchic)
+hWithIdentifiers identifiers items =
+    -- enrich the set of items with their identifiers as a dict
+    Dict.map
+        (\_ item ->
+            { what = item.what
+            , uuid = item.uuid
+            , parent = item.parent
+            , identifiers = fromHierarchic item identifiers |> Identifier.toDict
+            }
         )
         items
-
-
-
--- display : Identifiable OnlyItem ->
-
-
-compare : Identifiable (Item a) -> String
-compare =
-    Item.compare

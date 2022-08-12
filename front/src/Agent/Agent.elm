@@ -1,5 +1,6 @@
 module Agent.Agent exposing (Agent, compare, decoder, encode)
 
+import Dict exposing (Dict)
 import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -11,7 +12,7 @@ type alias Agent =
     { what : Type
     , uuid : Uuid
     , type_ : Uuid
-    , group : Maybe Uuid
+    , identifiers : Dict String String
     }
 
 
@@ -22,7 +23,6 @@ encode a =
         , ( "uuid", Uuid.encode a.uuid )
         , ( "type", Uuid.encode a.type_ )
         ]
-            ++ (Maybe.map (\g -> [ ( "group", Uuid.encode g ) ]) a.group |> Maybe.withDefault [])
 
 
 decoder : Decoder Agent
@@ -31,7 +31,7 @@ decoder =
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.maybe (Decode.field "group" Uuid.decoder))
+        (Decode.succeed Dict.empty)
 
 
 compare : Agent -> String

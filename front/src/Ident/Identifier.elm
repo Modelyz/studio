@@ -1,32 +1,55 @@
 module Ident.Identifier exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Group.Group as Group exposing (Group)
+import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Typed.Typed exposing (Typed)
 
 
 type alias Identifier =
     -- This is the value of an identifier
-    -- TODO: consider reintroducing Identifiable to avoid linking Ident to REA ? (this is orthogonal)
     { identifiable : Uuid
     , name : String
     , fragments : List Fragment
     }
 
 
-select : String -> DictSet String Identifier -> Maybe Identifier
+select : String -> Dict String Identifier -> Maybe Identifier
 select name =
-    Set.filter (\i -> i.name == name) >> Set.toList >> List.head
+    Dict.filter (\_ i -> i.name == name) >> Dict.values >> List.head
 
 
-fromItem : Item a -> DictSet String Identifier -> DictSet String Identifier
+fromHierarchic : Hierarchic a -> Dict String Identifier -> Dict String Identifier
+fromHierarchic item =
+    -- keep the identifiers corresponding to a certain item
+    Dict.filter (\_ i -> item.uuid == i.identifiable)
+
+
+fromTyped : Typed a -> Dict String Identifier -> Dict String Identifier
+fromTyped item =
+    -- keep the identifiers corresponding to a certain item
+    Dict.filter (\_ i -> item.uuid == i.identifiable)
+
+
+fromItem : Item a -> Dict String Identifier -> Dict String Identifier
 fromItem item =
     -- keep the identifiers corresponding to a certain item
-    Set.filter (\i -> item.uuid == i.identifiable)
+    Dict.filter (\_ i -> item.uuid == i.identifiable)
+
+
+toDict : Dict String Identifier -> Dict String String
+toDict ids =
+    let
+        agg : comparable -> Identifier -> Dict String String -> Dict String String
+        agg _ i d =
+            Dict.insert i.name (toValue i) d
+    in
+    Dict.foldl agg Dict.empty ids
 
 
 compare : Identifier -> String

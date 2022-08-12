@@ -1,6 +1,7 @@
 module EventType.AddPage exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -38,8 +39,8 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , flatselect : Maybe EventType
-    , identifiers : DictSet String Identifier
-    , groups : DictSet String Group
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -55,7 +56,7 @@ type Step
 type Msg
     = InputType (Maybe EventType)
     | InputIdentifier Identifier
-    | InputGroups (DictSet String Group)
+    | InputGroups (Dict String Group)
     | Added
     | Button Step.Msg
 
@@ -91,7 +92,7 @@ init s f =
       , uuid = newUuid
       , seed = newSeed
       , identifiers = initIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes (Type.HType HType.EventType) Nothing newUuid
-      , groups = Set.empty Group.compare
+      , groups = Dict.empty
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
@@ -118,7 +119,7 @@ update s msg model =
             )
 
         InputIdentifier i ->
-            ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
+            ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
@@ -134,8 +135,8 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedEventType et
-                                :: List.map Message.IdentifierAdded (Set.toList model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.ET et) g) (Set.toList model.groups)
+                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
+                                ++ List.map (\g -> Message.Grouped (Groupable.ET et) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -169,7 +170,7 @@ checkStep model =
 
 validate : Model -> Result String EventType
 validate m =
-    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Nothing
+    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -213,7 +214,7 @@ viewContent model s =
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.eventTypes rt))
-                                (Set.toList <| s.state.eventTypes)
+                                (Dict.values <| s.state.eventTypes)
                         ]
 
                 Step.Step StepGroups ->

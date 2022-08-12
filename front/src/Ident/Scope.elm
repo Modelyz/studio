@@ -1,6 +1,6 @@
 module Ident.Scope exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
@@ -24,7 +24,7 @@ type
     | HScope HType.Type (Maybe Uuid)
 
 
-getParent : DictSet String (Hierarchic (Item a)) -> Scope -> Maybe Scope
+getParent : Dict String (Hierarchic (Item a)) -> Scope -> Maybe Scope
 getParent all scope =
     -- get the parent scope but without the root typed scope
     case scope of
@@ -43,7 +43,7 @@ getParent all scope =
                 |> Maybe.map (HScope t)
 
 
-getParentsToRoot : Item a -> Scope -> DictSet String (Hierarchic (Item a)) -> List Scope -> List Scope
+getParentsToRoot : Item a -> Scope -> Dict String (Hierarchic (Item a)) -> List Scope -> List Scope
 getParentsToRoot initial scope all currentList =
     case scope of
         TScope t m ->
@@ -57,7 +57,7 @@ getParentsToRoot initial scope all currentList =
                 |> Maybe.withDefault (HScope t Nothing :: scope :: currentList)
 
 
-isParentOf : Scope -> DictSet String (Hierarchic (Item a)) -> Scope -> Bool
+isParentOf : Scope -> Dict String (Hierarchic (Item a)) -> Scope -> Bool
 isParentOf childScope all parentScope =
     -- TODO review !
     case parentScope of

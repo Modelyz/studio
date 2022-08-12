@@ -7,7 +7,7 @@ import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Configuration exposing (Configuration)
 import Contract.Contract as Contract exposing (Contract)
 import ContractType.ContractType as ContractType exposing (ContractType)
-import DictSet as Set
+import Dict exposing (Dict)
 import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
@@ -23,7 +23,7 @@ import Process.Process as Process exposing (Process)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
-import Restriction.Restriction as Restriction exposing (Restriction)
+import Set exposing (Set)
 import Time exposing (millisToPosix, posixToMillis)
 
 
@@ -66,39 +66,38 @@ type Message
 type Payload
     = ConnectionInitiated Connection
     | AddedResourceType ResourceType
-    | RemovedResourceType ResourceType
+    | RemovedResourceType Uuid
     | AddedEventType EventType
-    | RemovedEventType EventType
+    | RemovedEventType Uuid
     | AddedAgentType AgentType
-    | RemovedAgentType AgentType
+    | RemovedAgentType Uuid
     | AddedCommitmentType CommitmentType
-    | RemovedCommitmentType CommitmentType
+    | RemovedCommitmentType Uuid
     | AddedContractType ContractType
-    | RemovedContractType ContractType
+    | RemovedContractType Uuid
     | AddedProcessType ProcessType
-    | RemovedProcessType ProcessType
+    | RemovedProcessType Uuid
     | AddedResource Resource
-    | RemovedResource Resource
+    | RemovedResource Uuid
     | AddedEvent Event
-    | RemovedEvent Event
+    | RemovedEvent Uuid
     | AddedAgent Agent
-    | RemovedAgent Agent
+    | RemovedAgent Uuid
     | AddedCommitment Commitment
-    | RemovedCommitment Commitment
+    | RemovedCommitment Uuid
     | AddedContract Contract
-    | RemovedContract Contract
+    | RemovedContract Uuid
     | AddedProcess Process
-    | RemovedProcess Process
-    | Restricted Restriction
+    | RemovedProcess Uuid
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved IdentifierType
     | IdentifierAdded Identifier
     | Configured Configuration
     | Unconfigured Configuration
     | AddedGroupType GroupType
-    | RemovedGroupType GroupType
+    | RemovedGroupType Uuid
     | DefinedGroup Group
-    | RemovedGroup Group
+    | RemovedGroup Uuid
     | Grouped Groupable Group
     | Ungrouped Groupable Group
 
@@ -108,9 +107,6 @@ toString p =
     case p of
         ConnectionInitiated _ ->
             "ConnectionInitiated"
-
-        Restricted _ ->
-            "Restricted"
 
         IdentifierTypeAdded _ ->
             "IdentifierTypeAdded"
@@ -220,7 +216,7 @@ toString p =
 
 type alias Connection =
     -- TODO move in its module?
-    { lastMessageTime : Time.Posix, uuids : Set.DictSet String Uuid }
+    { lastMessageTime : Time.Posix, uuids : Dict String Uuid }
 
 
 base : Message -> Metadata
@@ -271,14 +267,11 @@ encode (Message b p) =
         [ ( "what", Encode.string <| toString p )
         , ( "meta", encodeBase b )
         , case p of
-            Restricted r ->
-                ( "load", Restriction.encode r )
-
             ConnectionInitiated e ->
                 ( "load"
                 , Encode.object
                     [ ( "lastMessageTime", Encode.int <| posixToMillis e.lastMessageTime )
-                    , ( "uuids", Encode.list Uuid.encode <| Set.toList e.uuids )
+                    , ( "uuids", Encode.list Uuid.encode (Dict.values e.uuids) )
                     ]
                 )
 
@@ -291,74 +284,74 @@ encode (Message b p) =
             AddedResourceType e ->
                 ( "load", ResourceType.encode e )
 
-            RemovedResourceType e ->
-                ( "load", ResourceType.encode e )
+            RemovedResourceType uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedEventType e ->
                 ( "load", EventType.encode e )
 
-            RemovedEventType e ->
-                ( "load", EventType.encode e )
+            RemovedEventType uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedAgentType e ->
                 ( "load", AgentType.encode e )
 
             RemovedAgentType e ->
-                ( "load", AgentType.encode e )
+                ( "load", Uuid.encode e )
 
             AddedCommitmentType e ->
                 ( "load", CommitmentType.encode e )
 
-            RemovedCommitmentType e ->
-                ( "load", CommitmentType.encode e )
+            RemovedCommitmentType uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedContractType e ->
                 ( "load", ContractType.encode e )
 
-            RemovedContractType e ->
-                ( "load", ContractType.encode e )
+            RemovedContractType uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedProcessType e ->
                 ( "load", ProcessType.encode e )
 
-            RemovedProcessType e ->
-                ( "load", ProcessType.encode e )
+            RemovedProcessType uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedResource e ->
                 ( "load", Resource.encode e )
 
-            RemovedResource e ->
-                ( "load", Resource.encode e )
+            RemovedResource uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedEvent e ->
                 ( "load", Event.encode e )
 
-            RemovedEvent e ->
-                ( "load", Event.encode e )
+            RemovedEvent uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedAgent e ->
                 ( "load", Agent.encode e )
 
-            RemovedAgent e ->
-                ( "load", Agent.encode e )
+            RemovedAgent uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedCommitment e ->
                 ( "load", Commitment.encode e )
 
-            RemovedCommitment e ->
-                ( "load", Commitment.encode e )
+            RemovedCommitment uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedContract e ->
                 ( "load", Contract.encode e )
 
-            RemovedContract e ->
-                ( "load", Contract.encode e )
+            RemovedContract uuid ->
+                ( "load", Uuid.encode uuid )
 
             AddedProcess e ->
                 ( "load", Process.encode e )
 
-            RemovedProcess e ->
-                ( "load", Process.encode e )
+            RemovedProcess uuid ->
+                ( "load", Uuid.encode uuid )
 
             IdentifierAdded i ->
                 ( "load", Identifier.encode i )
@@ -372,14 +365,14 @@ encode (Message b p) =
             AddedGroupType gt ->
                 ( "load", GroupType.encode gt )
 
-            RemovedGroupType gt ->
-                ( "load", GroupType.encode gt )
+            RemovedGroupType uuid ->
+                ( "load", Uuid.encode uuid )
 
             DefinedGroup g ->
                 ( "load", Group.encode g )
 
-            RemovedGroup g ->
-                ( "load", Group.encode g )
+            RemovedGroup uuid ->
+                ( "load", Uuid.encode uuid )
 
             Grouped e g ->
                 ( "load", Encode.object [ ( "entity", Groupable.encode e ), ( "group", Group.encode g ) ] )
@@ -415,16 +408,12 @@ decoder =
             |> andThen
                 (\t ->
                     case t of
-                        "Restricted" ->
-                            Decode.map Restricted
-                                (Decode.field "load" Restriction.decoder)
-
                         "ConnectionInitiated" ->
                             Decode.map ConnectionInitiated
                                 (Decode.field "load"
                                     (Decode.map2 Connection
                                         (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
-                                        (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (\xs -> Decode.succeed (Set.fromList Uuid.toString xs)))
+                                        (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (List.map (\u -> ( Uuid.toString u, u )) >> Dict.fromList >> Decode.succeed))
                                     )
                                 )
 
@@ -442,7 +431,7 @@ decoder =
 
                         "RemovedResourceType" ->
                             Decode.map RemovedResourceType
-                                (Decode.field "load" ResourceType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedEventType" ->
                             Decode.map AddedEventType
@@ -450,7 +439,7 @@ decoder =
 
                         "RemovedEventType" ->
                             Decode.map RemovedEventType
-                                (Decode.field "load" EventType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedAgentType" ->
                             Decode.map AddedAgentType
@@ -458,7 +447,7 @@ decoder =
 
                         "RemovedAgentType" ->
                             Decode.map RemovedAgentType
-                                (Decode.field "load" AgentType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedCommitmentType" ->
                             Decode.map AddedCommitmentType
@@ -466,7 +455,7 @@ decoder =
 
                         "RemovedCommitmentType" ->
                             Decode.map RemovedCommitmentType
-                                (Decode.field "load" CommitmentType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedContractType" ->
                             Decode.map AddedContractType
@@ -474,7 +463,7 @@ decoder =
 
                         "RemovedContractType" ->
                             Decode.map RemovedContractType
-                                (Decode.field "load" ContractType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedProcessType" ->
                             Decode.map AddedProcessType
@@ -482,7 +471,7 @@ decoder =
 
                         "RemovedProcessType" ->
                             Decode.map RemovedProcessType
-                                (Decode.field "load" ProcessType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedResource" ->
                             Decode.map AddedResource
@@ -490,7 +479,7 @@ decoder =
 
                         "RemovedResource" ->
                             Decode.map RemovedResource
-                                (Decode.field "load" Resource.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedEvent" ->
                             Decode.map AddedEvent
@@ -498,7 +487,7 @@ decoder =
 
                         "RemovedEvent" ->
                             Decode.map RemovedEvent
-                                (Decode.field "load" Event.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedAgent" ->
                             Decode.map AddedAgent
@@ -506,7 +495,7 @@ decoder =
 
                         "RemovedAgent" ->
                             Decode.map RemovedAgent
-                                (Decode.field "load" Agent.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedCommitment" ->
                             Decode.map AddedCommitment
@@ -514,7 +503,7 @@ decoder =
 
                         "RemovedCommitment" ->
                             Decode.map RemovedCommitment
-                                (Decode.field "load" Commitment.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedContract" ->
                             Decode.map AddedContract
@@ -522,7 +511,7 @@ decoder =
 
                         "RemovedContract" ->
                             Decode.map RemovedContract
-                                (Decode.field "load" Contract.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "AddedProcess" ->
                             Decode.map AddedProcess
@@ -530,7 +519,7 @@ decoder =
 
                         "RemovedProcess" ->
                             Decode.map RemovedProcessType
-                                (Decode.field "load" ProcessType.decoder)
+                                (Decode.field "load" Uuid.decoder)
 
                         "IdentifierAdded" ->
                             Decode.map IdentifierAdded
@@ -548,13 +537,13 @@ decoder =
                             Decode.map AddedGroupType (Decode.field "load" GroupType.decoder)
 
                         "RemovedGroupType" ->
-                            Decode.map RemovedGroupType (Decode.field "load" GroupType.decoder)
+                            Decode.map RemovedGroupType (Decode.field "load" Uuid.decoder)
 
                         "DefinedGroup" ->
                             Decode.map DefinedGroup (Decode.field "load" Group.decoder)
 
                         "RemovedGroup" ->
-                            Decode.map RemovedGroup (Decode.field "load" Group.decoder)
+                            Decode.map RemovedGroup (Decode.field "load" Uuid.decoder)
 
                         "Grouped" ->
                             Decode.map2 Grouped (Decode.at [ "load", "groupable" ] Groupable.decoder) (Decode.at [ "load", "group" ] Group.decoder)

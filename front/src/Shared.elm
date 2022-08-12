@@ -1,7 +1,7 @@
 module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update, uuidAggregator)
 
 import Browser.Navigation as Nav
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
@@ -264,9 +264,11 @@ update msg model =
             , WS.wsSend <|
                 Encode.encode 0 <|
                     Encode.list Message.encode <|
-                        Set.toList <|
-                            Set.union model.state.pendingMessages <|
-                                Set.fromList Message.compare messages
+                        Dict.values <|
+                            Dict.union model.state.pendingMessages <|
+                                Dict.fromList <|
+                                    List.map (\ev -> ( Message.compare ev, ev )) <|
+                                        messages
             )
 
         StoreMessagesToSend messages ->
@@ -284,9 +286,11 @@ update msg model =
                             , wsSend <|
                                 Encode.encode 0 <|
                                     Encode.list Message.encode <|
-                                        Set.toList <|
-                                            Set.union model.state.pendingMessages <|
-                                                Set.fromList Message.compare evs
+                                        Dict.values <|
+                                            Dict.union model.state.pendingMessages <|
+                                                Dict.fromList <|
+                                                    List.map (\ev -> ( Message.compare ev, ev )) <|
+                                                        evs
                             ]
                         )
 
@@ -350,7 +354,7 @@ initiateConnection uuid model =
                         { uuid = uuid, when = t, flow = Flow.Requested }
                         (ConnectionInitiated
                             { lastMessageTime = model.state.lastMessageTime
-                            , uuids = Set.insert uuid model.state.uuids
+                            , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
                             }
                         )
             )

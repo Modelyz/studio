@@ -1,6 +1,6 @@
 module Group.ListPage exposing (match, page)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.Group exposing (Group)
@@ -61,7 +61,7 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Removed g ->
-            ( model, Shared.dispatch s <| RemovedGroup g )
+            ( model, Shared.dispatch s <| RemovedGroup g.uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -92,7 +92,7 @@ viewContent model vt s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
-                        |> Set.toList
+                        |> Dict.values
                         |> List.map
                             (\g ->
                                 viewSmallCard (Removed g)

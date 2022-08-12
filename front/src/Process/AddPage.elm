@@ -1,6 +1,7 @@
 module Process.AddPage exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -40,8 +41,8 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , flatselect : Maybe ProcessType
-    , identifiers : DictSet String Identifier
-    , groups : DictSet String Group
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -57,7 +58,7 @@ type Step
 type Msg
     = InputType (Maybe ProcessType)
     | InputIdentifier Identifier
-    | InputGroups (DictSet String Group)
+    | InputGroups (Dict String Group)
     | Added
     | Button Step.Msg
 
@@ -93,7 +94,7 @@ init s f =
       , uuid = newUuid
       , seed = newSeed
       , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.TType TType.Process) Nothing newUuid
-      , groups = Set.empty Group.compare
+      , groups = Dict.empty
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
@@ -120,7 +121,7 @@ update s msg model =
             )
 
         InputIdentifier i ->
-            ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
+            ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
@@ -136,8 +137,8 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedProcess p
-                                :: List.map Message.IdentifierAdded (Set.toList model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.P p) g) (Set.toList model.groups)
+                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
+                                ++ List.map (\g -> Message.Grouped (Groupable.P p) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -175,7 +176,7 @@ validate m =
     case m.flatselect of
         Just rt ->
             -- TODO check that TType thing is useful
-            Ok <| Process (Type.TType TType.Process) m.uuid rt.uuid (millisToPosix 0)
+            Ok <| Process (Type.TType TType.Process) m.uuid rt.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
             Err "You must select a Process Type"
@@ -222,7 +223,7 @@ viewContent model s =
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.processTypes rt))
-                                (Set.toList <| s.state.processTypes)
+                                (Dict.values <| s.state.processTypes)
                         ]
 
                 Step.Step StepGroups ->

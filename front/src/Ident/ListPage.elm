@@ -1,6 +1,6 @@
 module Ident.ListPage exposing (match, page, view)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
@@ -84,7 +84,7 @@ viewContent model s =
         [ wrappedRow
             [ spacing 10 ]
             (s.state.identifierTypes
-                |> Set.toList
+                |> Dict.values
                 |> List.sortBy .name
                 |> List.map
                     (\it ->

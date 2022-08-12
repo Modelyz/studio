@@ -1,7 +1,7 @@
 module Zone.AddPage exposing (..)
 
 import Configuration exposing (Configuration(..))
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect as Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -237,10 +237,10 @@ inputFragments s model =
         , h2 "Click on the items below to construct the format of the zone"
         , let
             allTyped =
-                Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault (Set.empty Typed.compare)
+                Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault Dict.empty
 
             allHierarchic =
-                Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault (Set.empty Hierarchic.compare)
+                Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault Dict.empty
           in
           wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
@@ -260,11 +260,11 @@ inputFragments s model =
                 )
                 (Fixed ""
                     :: (s.state.identifierTypes
-                            |> Set.filter
+                            |> Dict.values
+                            |> List.filter
                                 (\it ->
                                     Scope.containsScope allTyped allHierarchic model.scope it.applyTo
                                 )
-                            |> Set.toList
                             |> List.map (.name >> IdentifierName)
                        )
                 )

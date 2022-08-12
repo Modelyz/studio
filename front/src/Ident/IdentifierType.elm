@@ -1,6 +1,6 @@
 module Ident.IdentifierType exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Fragment as Fragment exposing (Fragment)
@@ -25,23 +25,24 @@ type alias IdentifierType =
     }
 
 
-toIdentifier : Uuid -> IdentifierType -> Identifier
-toIdentifier uuid it =
-    Identifier uuid it.name it.fragments
+
+--toIdentifier : comparable -> Uuid -> IdentifierType -> Identifier
+--toIdentifier _ uuid it =
+--    Identifier uuid it.name it.fragments
 
 
-select : Scope -> DictSet String (Typed (Item a)) -> DictSet String (Hierarchic (Item b)) -> DictSet String IdentifierType -> DictSet String IdentifierType
+select : Scope -> Dict String (Typed (Item a)) -> Dict String (Hierarchic (Item b)) -> Dict String IdentifierType -> Dict String IdentifierType
 select scope allTyped allHierarchic its =
     -- keep the identifiertypes corresponding to the Type or user type of the identifiable
-    Set.filter (\it -> Scope.containsScope allTyped allHierarchic scope it.applyTo) its
+    Dict.filter (\_ it -> Scope.containsScope allTyped allHierarchic scope it.applyTo) its
 
 
-initIdentifiers : DictSet String (Typed (Item a)) -> DictSet String (Hierarchic (Item b)) -> DictSet String IdentifierType -> Type -> Maybe (Hierarchic (Item b)) -> Uuid -> DictSet String Identifier
+initIdentifiers : Dict String (Typed (Item a)) -> Dict String (Hierarchic (Item b)) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic (Item b)) -> Uuid -> Dict String Identifier
 initIdentifiers allTyped allHierarchic identifierTypes t mh newUuid =
     -- build the empty identifiers corresponding to the chosen type and possible user type
     identifierTypes
         |> select (Maybe.map (\h -> And (IsType t) (HasUserType h.uuid)) mh |> Maybe.withDefault (IsType t)) allTyped allHierarchic
-        |> Set.map Identifier.compare (toIdentifier newUuid)
+        |> Dict.map (\_ i -> Identifier newUuid i.name i.fragments)
 
 
 compare : IdentifierType -> String

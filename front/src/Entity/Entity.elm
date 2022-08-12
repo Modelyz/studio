@@ -6,7 +6,7 @@ import Commitment.Commitment as Commitment exposing (Commitment)
 import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
 import Contract.Contract as Contract exposing (Contract)
 import ContractType.ContractType as ContractType exposing (ContractType)
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Entity.Type as EntityType
 import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
@@ -41,26 +41,26 @@ type
     | PT ProcessType
 
 
-fromUuid : DictSet String Entity -> Uuid -> Maybe Entity
+fromUuid : Dict String Entity -> Uuid -> Maybe Entity
 fromUuid allEntities uuid =
-    Set.filter (\e -> toUuid e == uuid) allEntities |> Set.toList |> List.head
+    Dict.filter (\_ e -> toUuid e == uuid) allEntities |> Dict.values |> List.head
 
 
-only : Type -> DictSet String (Item a) -> DictSet String (Item a)
+only : Type -> Dict String (Item a) -> Dict String (Item a)
 only t es =
     -- only of a certain constructor
-    Set.filter (\e -> e.what == t) es
+    Dict.filter (\_ e -> e.what == t) es
 
 
-onlyTypes : DictSet String Entity -> DictSet String Entity
+onlyTypes : Dict String Entity -> Dict String Entity
 onlyTypes es =
-    Set.filter (toType >> EntityType.isType) es
+    Dict.filter (\_ e -> toType e |> EntityType.isType) es
 
 
-findEntity : Uuid -> DictSet String Entity -> Maybe Entity
+findEntity : Uuid -> Dict String Entity -> Maybe Entity
 findEntity uuid es =
-    Set.filter (\e -> toUuid e == uuid) es
-        |> Set.toList
+    Dict.filter (\_ e -> toUuid e == uuid) es
+        |> Dict.values
         |> List.head
 
 
@@ -365,13 +365,13 @@ compare =
     toUuidString
 
 
-isChildOfAny : DictSet String Entity -> DictSet String Entity -> Entity -> Bool
+isChildOfAny : Dict String Entity -> Dict String Entity -> Entity -> Bool
 isChildOfAny entities es e =
     -- True if e is a child of one of the es (given the catalog of entities)
-    es |> Set.toList |> List.any (isParentOf e entities)
+    es |> Dict.values |> List.any (isParentOf e entities)
 
 
-isParentOf : Entity -> DictSet String Entity -> Entity -> Bool
+isParentOf : Entity -> Dict String Entity -> Entity -> Bool
 isParentOf child entities item =
     -- equality is considered parent
     if child == item then
@@ -384,7 +384,7 @@ isParentOf child entities item =
             |> Maybe.withDefault False
 
 
-isChildOf : Entity -> DictSet String Entity -> Entity -> Bool
+isChildOf : Entity -> Dict String Entity -> Entity -> Bool
 isChildOf parent entities item =
     -- true if item is a child of parent
     isParentOf item entities parent

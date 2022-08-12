@@ -15,8 +15,7 @@
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "mdgriffith/elm-ui": "1.1.8",
-            "orus-io/elm-spa": "2.0.0",
-            "truqu/elm-dictset": "2.1.0"
+            "orus-io/elm-spa": "2.0.0"
         },
         "indirect": {
             "NoRedInk/elm-random-general": "1.0.0",

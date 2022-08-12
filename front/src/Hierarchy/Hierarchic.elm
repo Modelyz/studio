@@ -1,16 +1,27 @@
-module Hierarchy.Hierarchic exposing (Hierarchic, compare, getParentsToRoot, isAscendantOf)
+module Hierarchy.Hierarchic exposing (Hierarchic, OnlyHierarchic, compare, find, getParentsToRoot, isAscendantOf)
 
-import DictSet as Set exposing (DictSet)
-import Item.Item as Item exposing (Item, find)
+import Dict exposing (Dict)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Type exposing (Type)
 
 
 type alias Hierarchic a =
     -- TODO rename Hierarchical
-    { a | parent : Maybe Uuid }
+    { a
+        | what : Type
+        , uuid : Uuid
+        , parent : Maybe Uuid
+    }
 
 
-isAscendantOf : Hierarchic (Item a) -> DictSet String (Hierarchic (Item a)) -> Hierarchic (Item a) -> Bool
+type alias OnlyHierarchic =
+    { what : Type
+    , uuid : Uuid
+    , parent : Maybe Uuid
+    }
+
+
+isAscendantOf : Hierarchic a -> Dict String (Hierarchic a) -> Hierarchic a -> Bool
 isAscendantOf child allItems parent =
     -- equality is considered parent TODO reconsider
     if child == parent then
@@ -23,19 +34,26 @@ isAscendantOf child allItems parent =
             |> Maybe.withDefault False
 
 
-getParent : DictSet String (Hierarchic (Item a)) -> Hierarchic (Item a) -> Maybe (Hierarchic (Item a))
+getParent : Dict String (Hierarchic a) -> Hierarchic a -> Maybe (Hierarchic a)
 getParent allItems item =
     item.parent
-        |> Maybe.andThen (Item.find allItems)
+        |> Maybe.andThen (find allItems)
 
 
-getParentsToRoot : Hierarchic (Item a) -> DictSet String (Hierarchic (Item a)) -> List (Hierarchic (Item a)) -> List (Hierarchic (Item a))
+find : Dict String (Hierarchic a) -> Uuid -> Maybe (Hierarchic a)
+find es uuid =
+    Dict.filter (\_ e -> e.uuid == uuid) es
+        |> Dict.values
+        |> List.head
+
+
+getParentsToRoot : Hierarchic a -> Dict String (Hierarchic a) -> List (Hierarchic a) -> List (Hierarchic a)
 getParentsToRoot initial allItems currentList =
     getParent allItems initial
         |> Maybe.map (\parent -> getParentsToRoot parent allItems currentList)
         |> Maybe.withDefault currentList
 
 
-compare : Hierarchic (Item a) -> String
+compare : Hierarchic a -> String
 compare =
-    Item.compare
+    .uuid >> Uuid.toString

@@ -1,7 +1,7 @@
 module Commitment.ListPage exposing (match, page)
 
 import Commitment.Commitment exposing (Commitment)
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Item.Item as Item exposing (Item)
@@ -61,7 +61,7 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Removed r ->
-            ( model, Shared.dispatch s <| RemovedCommitment r )
+            ( model, Shared.dispatch s <| RemovedCommitment r.uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -92,7 +92,7 @@ viewContent model vt s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.commitments
-                        |> Set.toList
+                        |> Dict.values
                         |> List.map
                             (\r ->
                                 viewSmallCard (Removed r)

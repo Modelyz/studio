@@ -1,6 +1,6 @@
 module Hierarchy.View exposing (toDesc)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Font as Font
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
@@ -9,7 +9,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import View.Style exposing (..)
 
 
-toDesc : DictSet String (Hierarchic (Item a)) -> Hierarchic (Item a) -> Element msg
+toDesc : Dict String (Hierarchic (Item a)) -> Hierarchic (Item a) -> Element msg
 toDesc allHierarchic ht =
     -- used in AddPages to display the parent of the selected entity Type
     ht.parent

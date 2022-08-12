@@ -2,7 +2,7 @@ module Zone.ListPage exposing (match, page, view)
 
 import Configuration exposing (Configuration(..))
 import Configuration.View
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Ident.Scope as Scope
@@ -83,7 +83,7 @@ viewContent model s =
         [ wrappedRow
             [ spacing 10 ]
             (s.state.configs
-                |> Set.toList
+                |> Dict.values
                 |> List.map
                     (\c ->
                         viewSmallCard (Removed c)

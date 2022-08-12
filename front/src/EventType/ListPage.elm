@@ -1,6 +1,6 @@
 module EventType.ListPage exposing (match, page)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import EventType.EventType exposing (EventType)
@@ -61,7 +61,7 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Removed et ->
-            ( model, Shared.dispatch s <| RemovedEventType et )
+            ( model, Shared.dispatch s <| RemovedEventType et.uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -92,7 +92,7 @@ viewContent model vt s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.eventTypes
-                        |> Set.toList
+                        |> Dict.values
                         |> List.map
                             (\et ->
                                 viewSmallCard (Removed et)

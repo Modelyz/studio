@@ -1,6 +1,6 @@
 module Configuration exposing (Configuration(..), compare, decoder, encode, findFirst, getMostSpecific, only)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
@@ -19,10 +19,10 @@ type
     = ZoneConfig Zone (List Fragment) Scope
 
 
-only : Zone -> DictSet String Configuration -> DictSet String Configuration
+only : Zone -> Dict String Configuration -> Dict String Configuration
 only zone cs =
-    Set.filter
-        (\c ->
+    Dict.filter
+        (\_ c ->
             case c of
                 ZoneConfig z _ _ ->
                     z == zone
@@ -30,19 +30,19 @@ only zone cs =
         cs
 
 
-getConfig : DictSet String Configuration -> Scope -> Maybe Configuration
+getConfig : Dict String Configuration -> Scope -> Maybe Configuration
 getConfig configs scope =
     -- find the first config that correspond exactly to the scope
-    List.head <| Set.toList <| Set.filter (\(ZoneConfig _ _ s) -> s == scope) configs
+    List.head <| Dict.values <| Dict.filter (\_ (ZoneConfig _ _ s) -> s == scope) configs
 
 
-getMostSpecific : DictSet String (Typed (Item a)) -> DictSet String (Hierarchic (Item a)) -> DictSet String Configuration -> Zone -> Scope -> Maybe Configuration
+getMostSpecific : Dict String (Typed a) -> Dict String (Hierarchic a) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
 getMostSpecific allTyped allHierarchic configs zone scope =
     -- returns the most specific config for a given zone and scope
     findFirst (configs |> only SmallcardItemTitle) (Scope.getUpperList allTyped allHierarchic scope [])
 
 
-findFirst : DictSet String Configuration -> List Scope -> Maybe Configuration
+findFirst : Dict String Configuration -> List Scope -> Maybe Configuration
 findFirst configs scopes =
     -- from a list of upperScopes, find the first one for which a config exists
     scopes

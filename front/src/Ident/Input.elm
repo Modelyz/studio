@@ -1,6 +1,6 @@
 module Ident.Input exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Input as Input
 import Ident.Fragment as Fragment exposing (Fragment(..))
@@ -10,7 +10,7 @@ import View.Type exposing (Type(..))
 
 
 type alias Model a =
-    { a | identifiers : DictSet String Identifier }
+    { a | identifiers : Dict String Identifier }
 
 
 type alias Config msg =
@@ -24,7 +24,7 @@ inputIdentifiers c model =
     -- display an input field for each relevant identifier
     column [ spacing 10 ]
         (model.identifiers
-            |> Set.toList
+            |> Dict.values
             |> List.map
                 (\i -> inputIdentifier c model i)
         )

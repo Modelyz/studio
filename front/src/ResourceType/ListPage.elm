@@ -1,6 +1,6 @@
 module ResourceType.ListPage exposing (match, page)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Item.Item as Item exposing (Item)
@@ -61,7 +61,7 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Removed rt ->
-            ( model, Shared.dispatch s <| RemovedResourceType rt )
+            ( model, Shared.dispatch s <| RemovedResourceType rt.uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -92,7 +92,7 @@ viewContent model vt s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.resourceTypes
-                        |> Set.toList
+                        |> Dict.values
                         |> List.map
                             (\rt ->
                                 viewSmallCard (Removed rt)

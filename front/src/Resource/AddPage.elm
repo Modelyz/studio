@@ -1,6 +1,7 @@
 module Resource.AddPage exposing (..)
 
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -39,8 +40,8 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , flatselect : Maybe ResourceType
-    , identifiers : DictSet String Identifier
-    , groups : DictSet String Group
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -56,7 +57,7 @@ type Step
 type Msg
     = InputType (Maybe ResourceType)
     | InputIdentifier Identifier
-    | InputGroups (DictSet String Group)
+    | InputGroups (Dict String Group)
     | Added
     | Button Step.Msg
 
@@ -92,7 +93,7 @@ init s f =
       , uuid = newUuid
       , seed = newSeed
       , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.TType TType.Resource) Nothing newUuid
-      , groups = Set.empty Group.compare
+      , groups = Dict.empty
       , warning = ""
       , step = Step.Step StepType
       , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
@@ -119,7 +120,7 @@ update s msg model =
             )
 
         InputIdentifier i ->
-            ( { model | identifiers = Set.insert i model.identifiers }, Effect.none )
+            ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
@@ -135,8 +136,8 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedResource r
-                                :: List.map Message.IdentifierAdded (Set.toList model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.R r) g) (Set.toList model.groups)
+                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
+                                ++ List.map (\g -> Message.Grouped (Groupable.R r) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -174,7 +175,7 @@ validate m =
     case m.flatselect of
         Just rt ->
             -- TODO check that TType thing is useful
-            Ok <| Resource (Type.TType TType.Resource) m.uuid rt.uuid Nothing
+            Ok <| Resource (Type.TType TType.Resource) m.uuid rt.uuid Dict.empty
 
         Nothing ->
             Err "You must select a Resource Type"
@@ -221,7 +222,7 @@ viewContent model s =
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             List.map
                                 (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.resourceTypes rt))
-                                (Set.toList <| s.state.resourceTypes)
+                                (Dict.values <| s.state.resourceTypes)
                         ]
 
                 Step.Step StepGroups ->

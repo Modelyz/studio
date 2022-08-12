@@ -1,7 +1,10 @@
-module Ident.View exposing (displayScope)
+module Ident.View exposing (..)
+
+-- TODO file seems unused
 
 import Configuration exposing (Configuration(..))
-import DictSet as Set exposing (DictSet)
+import Dict exposing (Dict)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
@@ -22,7 +25,7 @@ import Zone.Zone as Zone exposing (Zone(..))
 
 
 type alias Model a =
-    { a | identifiers : DictSet String Identifier }
+    { a | identifiers : Dict String String }
 
 
 type alias Config msg =
