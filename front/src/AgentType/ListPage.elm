@@ -84,6 +84,10 @@ viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
     case vt of
         ViewType.Smallcard ->
+            let
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.agentTypes
+            in
             flatContainer s
                 "AgentTypes"
                 [ button.primary Add "Add..."
@@ -91,10 +95,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.agentTypes
-                        |> hWithIdentifiers s.state.identifiers
+                    (allHwithIdentifiers
                         |> Dict.values
-                        |> hViewSmallCard Removed s.state.agents s.state.agentTypes s.state.configs
+                        |> hViewSmallCard Removed s.state.agents allHwithIdentifiers s.state.configs
                         |> withDefaultContent (p "There are no AgentTypes yet. Add your first one!")
                     )
                 ]

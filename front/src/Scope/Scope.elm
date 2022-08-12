@@ -130,13 +130,20 @@ getUpper allT allH scope =
             Nothing
 
         HasUserType uuid ->
-            H.find allH uuid |> Maybe.andThen .parent |> Maybe.map HasUserType
+            H.find allH uuid |> Maybe.map (\p -> p.parent |> Maybe.map HasUserType >> Maybe.withDefault (IsType p.what))
 
         And s1 s2 ->
-            Maybe.map2 And (getUpper allT allH s1) (getUpper allT allH s2)
+            let
+                up1 =
+                    getUpper allT allH s1
+
+                up2 =
+                    getUpper allT allH s2
+            in
+            Maybe.map2 And up1 up2 |> otherwise up1 |> otherwise up2
 
         Or s1 s2 ->
-            Maybe.map2 And (getUpper allT allH s1) (getUpper allT allH s2)
+            Maybe.map2 Or (getUpper allT allH s1) (getUpper allT allH s2)
 
         Not s ->
             Nothing
@@ -342,8 +349,8 @@ compare =
     toString
 
 
-oneOf : Maybe a -> Maybe a -> Maybe a
-oneOf x y =
+otherwise : Maybe a -> Maybe a -> Maybe a
+otherwise x y =
     case x of
         Just z ->
             Just z
@@ -364,10 +371,10 @@ mainTType scope =
                     Nothing
 
         And s1 s2 ->
-            oneOf (mainTType s1) (mainTType s2)
+            otherwise (mainTType s1) (mainTType s2)
 
         Or s1 s2 ->
-            oneOf (mainTType s1) (mainTType s2)
+            otherwise (mainTType s1) (mainTType s2)
 
         _ ->
             Nothing
@@ -385,10 +392,10 @@ mainHType scope =
                     Just ht
 
         And s1 s2 ->
-            oneOf (mainHType s1) (mainHType s2)
+            otherwise (mainHType s1) (mainHType s2)
 
         Or s1 s2 ->
-            oneOf (mainHType s1) (mainHType s2)
+            otherwise (mainHType s1) (mainHType s2)
 
         _ ->
             Nothing

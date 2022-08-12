@@ -18,21 +18,13 @@ type alias Identifiable a =
 tWithIdentifiers : Dict String Identifier -> Dict String (Typed (Identifiable a)) -> Dict String (Typed (Identifiable a))
 tWithIdentifiers identifiers ts =
     -- enrich the set of items with their identifiers as a dict
-    Dict.map
-        (\_ t -> { t | identifiers = fromTyped t identifiers |> Identifier.toDict })
-        ts
+    Dict.map (\_ t -> { t | identifiers = fromTyped t identifiers |> Identifier.toDict }) ts
 
 
 hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic (Identifiable a)) -> Dict String (Hierarchic (Identifiable a))
 hWithIdentifiers identifiers hs =
     -- enrich the set of items with their identifiers as a dict
-    Dict.map
-        (\_ h ->
-            { h
-                | identifiers = fromHierarchic h identifiers |> Identifier.toDict
-            }
-        )
-        hs
+    Dict.map (\_ h -> { h | identifiers = fromHierarchic h identifiers |> Identifier.toDict }) hs
 
 
 display : Maybe Configuration -> Identifiable (Hierarchic b) -> String
