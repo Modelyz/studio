@@ -1,4 +1,4 @@
-module Hierarchy.Hierarchic exposing (Hierarchic, OnlyHierarchic, compare, find, getParentsToRoot, isAscendantOf)
+module Hierarchy.Hierarchic exposing (Hierarchic, compare, find, getParentsToRoot, isAscendantOf)
 
 import Dict exposing (Dict)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -11,13 +11,6 @@ type alias Hierarchic a =
         | what : Type
         , uuid : Uuid
         , parent : Maybe Uuid
-    }
-
-
-type alias OnlyHierarchic =
-    { what : Type
-    , uuid : Uuid
-    , parent : Maybe Uuid
     }
 
 

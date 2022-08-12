@@ -21,6 +21,6 @@ displayGroup s g =
 
         -- TODO also display the group type
         --, Group.fromUuid s.state.groups g.type_
-        --    |> Maybe.map (Ident.View.display s SmallcardItemTitle FR_fr)
+        --    |> Maybe.map (Ident.View.display s SmallcardTitle FR_fr)
         --    |> Maybe.withDefault (text "(deleted type)")
         ]

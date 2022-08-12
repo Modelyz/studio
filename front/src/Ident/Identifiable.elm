@@ -1,11 +1,11 @@
 module Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic as H exposing (Hierarchic, OnlyHierarchic)
+import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Identifier as Identifier exposing (Identifier, fromHierarchic, fromTyped)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Typed.Typed as T exposing (OnlyTyped, Typed)
+import Typed.Typed exposing (Typed)
 
 
 type alias Identifiable a =
@@ -13,29 +13,21 @@ type alias Identifiable a =
     { a | identifiers : Dict String String }
 
 
-tWithIdentifiers : Dict String Identifier -> Dict String (Typed a) -> Dict String (Identifiable OnlyTyped)
-tWithIdentifiers identifiers items =
+tWithIdentifiers : Dict String Identifier -> Dict String (Typed (Identifiable a)) -> Dict String (Typed (Identifiable a))
+tWithIdentifiers identifiers ts =
     -- enrich the set of items with their identifiers as a dict
     Dict.map
-        (\_ item ->
-            { what = item.what
-            , uuid = item.uuid
-            , type_ = item.type_
-            , identifiers = fromTyped item identifiers |> Identifier.toDict
-            }
-        )
-        items
+        (\_ t -> { t | identifiers = fromTyped t identifiers |> Identifier.toDict })
+        ts
 
 
-hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic a) -> Dict String (Identifiable OnlyHierarchic)
-hWithIdentifiers identifiers items =
+hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic (Identifiable a)) -> Dict String (Hierarchic (Identifiable a))
+hWithIdentifiers identifiers hs =
     -- enrich the set of items with their identifiers as a dict
     Dict.map
-        (\_ item ->
-            { what = item.what
-            , uuid = item.uuid
-            , parent = item.parent
-            , identifiers = fromHierarchic item identifiers |> Identifier.toDict
+        (\_ h ->
+            { h
+                | identifiers = fromHierarchic h identifiers |> Identifier.toDict
             }
         )
-        items
+        hs

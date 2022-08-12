@@ -107,26 +107,26 @@ decoder =
         ]
 
 
-getUpper : Dict String (Typed a) -> Dict String (Hierarchic a) -> Scope -> Maybe Scope
-getUpper allTyped allHierarchic scope =
+getUpper : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Maybe Scope
+getUpper allT allH scope =
     case scope of
         TItem uuid ->
-            T.find allTyped uuid |> Maybe.map .type_ |> Maybe.map HasUserType
+            T.find allT uuid |> Maybe.map .type_ |> Maybe.map HasUserType
 
         HItem uuid ->
-            H.find allHierarchic uuid |> Maybe.andThen .parent |> Maybe.map HasUserType
+            H.find allH uuid |> Maybe.andThen .parent |> Maybe.map HasUserType
 
         IsType string ->
             Nothing
 
         HasUserType uuid ->
-            H.find allHierarchic uuid |> Maybe.andThen .parent |> Maybe.map HasUserType
+            H.find allH uuid |> Maybe.andThen .parent |> Maybe.map HasUserType
 
         And s1 s2 ->
-            Maybe.map2 And (getUpper allTyped allHierarchic s1) (getUpper allTyped allHierarchic s2)
+            Maybe.map2 And (getUpper allT allH s1) (getUpper allT allH s2)
 
         Or s1 s2 ->
-            Maybe.map2 And (getUpper allTyped allHierarchic s1) (getUpper allTyped allHierarchic s2)
+            Maybe.map2 And (getUpper allT allH s1) (getUpper allT allH s2)
 
         Not s ->
             Nothing
@@ -138,15 +138,15 @@ getUpper allTyped allHierarchic scope =
             Nothing
 
 
-getUpperList : Dict String (Typed a) -> Dict String (Hierarchic a) -> Scope -> List Scope -> List Scope
-getUpperList allTyped allHierarchic scope currentList =
-    getUpper allTyped allHierarchic scope
-        |> Maybe.map (\upperScope -> getUpperList allTyped allHierarchic upperScope currentList)
+getUpperList : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> List Scope -> List Scope
+getUpperList allT allH scope currentList =
+    getUpper allT allH scope
+        |> Maybe.map (\upperScope -> getUpperList allT allH upperScope currentList)
         |> Maybe.withDefault (scope :: currentList)
 
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool
-containsScope allTyped allHierarchic outscope inscope =
+containsScope allT allH outscope inscope =
     let
         emptyT =
             Dict.empty
@@ -175,7 +175,7 @@ containsScope allTyped allHierarchic outscope inscope =
         HItem outItem ->
             case inscope of
                 HItem inItem ->
-                    Maybe.map3 H.isAscendantOf (H.find allHierarchic inItem) (Just allHierarchic) (H.find allHierarchic outItem) |> Maybe.withDefault False
+                    Maybe.map3 H.isAscendantOf (H.find allH inItem) (Just allH) (H.find allH outItem) |> Maybe.withDefault False
 
                 And s1 s2 ->
                     containsScope emptyT emptyH s1 outscope && containsScope emptyT emptyH s2 outscope
@@ -189,16 +189,16 @@ containsScope allTyped allHierarchic outscope inscope =
         IsType t ->
             case inscope of
                 TItem uuid ->
-                    Maybe.map (.what >> (==) t) (T.find allTyped uuid) |> Maybe.withDefault False
+                    Maybe.map (.what >> (==) t) (T.find allT uuid) |> Maybe.withDefault False
 
                 HItem uuid ->
-                    Maybe.map (.what >> (==) t) (H.find allHierarchic uuid) |> Maybe.withDefault False
+                    Maybe.map (.what >> (==) t) (H.find allH uuid) |> Maybe.withDefault False
 
                 IsType u ->
                     t == u
 
                 HasUserType tuid ->
-                    Maybe.map (.what >> (==) t) (H.find allHierarchic tuid) |> Maybe.withDefault False
+                    Maybe.map (.what >> (==) t) (H.find allH tuid) |> Maybe.withDefault False
 
                 And s1 s2 ->
                     containsScope emptyT emptyH s1 outscope && containsScope emptyT emptyH s2 outscope
@@ -212,13 +212,13 @@ containsScope allTyped allHierarchic outscope inscope =
         HasUserType tuid ->
             case inscope of
                 TItem uuid ->
-                    Maybe.map3 T.isAscendantOf (T.find allTyped uuid) (Just allHierarchic) (H.find allHierarchic tuid) |> Maybe.withDefault False
+                    Maybe.map3 T.isAscendantOf (T.find allT uuid) (Just allH) (H.find allH tuid) |> Maybe.withDefault False
 
                 HItem uuid ->
-                    Maybe.map2 (\t u -> H.isAscendantOf u allHierarchic t) (H.find allHierarchic tuid) (H.find allHierarchic uuid) |> Maybe.withDefault False
+                    Maybe.map2 (\t u -> H.isAscendantOf u allH t) (H.find allH tuid) (H.find allH uuid) |> Maybe.withDefault False
 
                 HasUserType tuid2 ->
-                    Maybe.map2 (\t u -> H.isAscendantOf u allHierarchic t) (H.find allHierarchic tuid) (H.find allHierarchic tuid2) |> Maybe.withDefault False
+                    Maybe.map2 (\t u -> H.isAscendantOf u allH t) (H.find allH tuid) (H.find allH tuid2) |> Maybe.withDefault False
 
                 And s1 s2 ->
                     containsScope emptyT emptyH s1 outscope && containsScope emptyT emptyH s2 outscope
@@ -230,13 +230,13 @@ containsScope allTyped allHierarchic outscope inscope =
                     False
 
         And s1 s2 ->
-            containsScope allTyped allHierarchic inscope s1 && containsScope allTyped allHierarchic inscope s2
+            containsScope allT allH inscope s1 && containsScope allT allH inscope s2
 
         Or s1 s2 ->
-            containsScope allTyped allHierarchic inscope s1 || containsScope allTyped allHierarchic inscope s2
+            containsScope allT allH inscope s1 || containsScope allT allH inscope s2
 
         Not s ->
-            not (containsScope allTyped allHierarchic inscope s)
+            not (containsScope allT allH inscope s)
 
         _ ->
             False
@@ -275,10 +275,10 @@ containsItem scope item =
 
 
 containsTyped : Dict String (Typed a) -> Dict String (Hierarchic (Item a)) -> Scope -> Typed (Item a) -> Bool
-containsTyped allTyped allHierarchic scope item =
+containsTyped allT allH scope item =
     case scope of
         HasUserType tuid ->
-            Maybe.map (T.isAscendantOf item allHierarchic) (H.find allHierarchic tuid)
+            Maybe.map (T.isAscendantOf item allH) (H.find allH tuid)
                 |> Maybe.withDefault False
 
         _ ->
@@ -286,10 +286,10 @@ containsTyped allTyped allHierarchic scope item =
 
 
 containsHierarchic : Dict String (Hierarchic a) -> Dict String (Hierarchic (Item a)) -> Scope -> Hierarchic (Item a) -> Bool
-containsHierarchic allTyped allHierarchic scope item =
+containsHierarchic allT allH scope item =
     case scope of
         HasUserType tuid ->
-            Maybe.map (H.isAscendantOf item allHierarchic) (H.find allHierarchic tuid)
+            Maybe.map (H.isAscendantOf item allH) (H.find allH tuid)
                 |> Maybe.withDefault False
 
         _ ->

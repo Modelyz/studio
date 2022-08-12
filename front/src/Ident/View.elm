@@ -4,7 +4,6 @@ module Ident.View exposing (..)
 
 import Configuration exposing (Configuration(..))
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Element exposing (..)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
@@ -76,7 +75,7 @@ displayScope scope =
                             , text <| Uuid.toString uuid
 
                             --                            , Identifiable.fromUuid all uuid
-                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardItemTitle FR_fr t)
+                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardTitle FR_fr t)
                             --                                |> Maybe.withDefault (text "(deleted type)")
                             ]
                     )
@@ -91,7 +90,7 @@ displayScope scope =
                             , text <| Uuid.toString uuid
 
                             --                            , Identifiable.fromUuid all uuid
-                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardItemTitle FR_fr t)
+                            --                                |> Maybe.map (display allIdentifiers all allConfigs SmallcardTitle FR_fr t)
                             --                                |> Maybe.withDefault (text "(deleted type)")
                             ]
                     )

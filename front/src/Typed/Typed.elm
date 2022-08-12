@@ -1,7 +1,6 @@
 module Typed.Typed exposing (OnlyTyped, Typed, compare, find, isAscendantOf)
 
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)

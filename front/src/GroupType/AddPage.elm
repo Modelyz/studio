@@ -170,7 +170,7 @@ checkStep model =
 
 validate : Model -> Result String GroupType
 validate m =
-    Ok <| GroupType (Type.HType HType.GroupType) m.uuid (Maybe.map .uuid m.flatselect)
+    Ok <| GroupType (Type.HType HType.GroupType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

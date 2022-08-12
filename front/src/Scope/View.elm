@@ -84,7 +84,7 @@ inputScope s input model =
                             State.allHierarchic s.state (TType.toHierarchic tt)
 
                         config =
-                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardItemTitle model.scope
+                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map
@@ -118,7 +118,7 @@ inputScope s input model =
                             State.allHierarchic s.state ht
 
                         config =
-                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardItemTitle model.scope
+                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map

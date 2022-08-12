@@ -1,7 +1,6 @@
 module AgentType.AgentType exposing (AgentType, compare, decoder, encode, toString)
 
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode

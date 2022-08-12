@@ -9,32 +9,32 @@ import View.Lang as Lang exposing (Lang)
 
 
 type Zone
-    = SmallcardItemTitle
-    | SmallcardItemDescription
+    = SmallcardTitle
+    | SmallcardDescription
 
 
 all : List Zone
 all =
-    [ SmallcardItemTitle, SmallcardItemDescription ]
+    [ SmallcardTitle, SmallcardDescription ]
 
 
 toString : Zone -> String
 toString zone =
     case zone of
-        SmallcardItemTitle ->
-            "SmallcardItemTitle"
+        SmallcardTitle ->
+            "SmallcardTitle"
 
-        SmallcardItemDescription ->
-            "SmallcardItemDescription"
+        SmallcardDescription ->
+            "SmallcardDescription"
 
 
 toDesc : Zone -> String
 toDesc zone =
     case zone of
-        SmallcardItemTitle ->
+        SmallcardTitle ->
             "Title of the Smallcard Items"
 
-        SmallcardItemDescription ->
+        SmallcardDescription ->
             "Description of the Smallcard Items"
 
 
@@ -54,11 +54,11 @@ decoder =
         |> Decode.andThen
             (\zone ->
                 case zone of
-                    "SmallcardItemTitle" ->
-                        Decode.succeed SmallcardItemTitle
+                    "SmallcardTitle" ->
+                        Decode.succeed SmallcardTitle
 
-                    "SmallcardItemDescription" ->
-                        Decode.succeed SmallcardItemDescription
+                    "SmallcardDescription" ->
+                        Decode.succeed SmallcardDescription
 
                     _ ->
                         Decode.fail <| "Unknown Zone: " ++ zone

@@ -13,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (newViewSmallCard)
+import View.Smallcard exposing (hViewSmallCard)
 import View.Type as ViewType
 
 
@@ -82,7 +82,6 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
             flatContainer s
@@ -95,7 +94,7 @@ viewContent model vt s =
                     (s.state.agentTypes
                         |> hWithIdentifiers s.state.identifiers
                         |> Dict.values
-                        |> newViewSmallCard Removed s.state.configs
+                        |> hViewSmallCard Removed s.state.agents s.state.agentTypes s.state.configs
                         |> withDefaultContent (p "There are no AgentTypes yet. Add your first one!")
                     )
                 ]

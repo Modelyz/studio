@@ -14,7 +14,7 @@ import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Link as GroupLink
 import GroupType.GroupType as GroupType exposing (GroupType)
-import Hierarchy.Hierarchic as H exposing (Hierarchic, OnlyHierarchic)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -459,26 +459,29 @@ allTyped s t =
             s.groups |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty })
 
 
-allHierarchic : State -> HType.Type -> Dict String OnlyHierarchic
+
+--allHierarchic : State -> HType.Type -> Dict String (Identifiable (Hierarchic a))
+
+
 allHierarchic s t =
     case t of
         HType.ResourceType ->
-            s.resourceTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.resourceTypes
 
         HType.EventType ->
-            s.eventTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.eventTypes
 
         HType.AgentType ->
-            s.agentTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.agentTypes
 
         HType.CommitmentType ->
-            s.commitmentTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.commitmentTypes
 
         HType.ContractType ->
-            s.contractTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.contractTypes
 
         HType.ProcessType ->
-            s.processTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent })
+            s.processTypes
 
         HType.GroupType ->
-            s.groupTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = Nothing })
+            s.groupTypes

@@ -88,7 +88,7 @@ view s model =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     { route = f.route
-    , zone = SmallcardItemTitle
+    , zone = SmallcardTitle
     , scope = Empty
     , fragments = []
     , warning = ""
