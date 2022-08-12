@@ -15,4 +15,4 @@ type alias ProcessCommitments =
 
 compare : ProcessCommitments -> String
 compare pc =
-    Uuid.toString pc.process ++ " " ++ Uuid.toString pc.commitment
+    Uuid.toString pc.process ++ "|" ++ Uuid.toString pc.commitment

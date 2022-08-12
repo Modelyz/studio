@@ -2,7 +2,6 @@ module AgentType.AddPage exposing (..)
 
 import AgentType.AgentType as AgentType exposing (AgentType)
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -104,17 +103,11 @@ init s f =
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
-    let
-        ( newUuid, newSeed ) =
-            Random.step Uuid.generator model.seed
-    in
     case msg of
         InputType mat ->
             ( { model
                 | flatselect = mat
-                , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.HType HType.AgentType) mat newUuid
-                , uuid = newUuid
-                , seed = newSeed
+                , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.HType HType.AgentType) mat model.uuid
               }
             , Effect.none
             )

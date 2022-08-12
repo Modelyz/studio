@@ -64,7 +64,7 @@ compare : Configuration -> String
 compare config =
     case config of
         ZoneConfig zone names scope ->
-            "ZoneConfig" ++ " " ++ Zone.compare zone ++ " " ++ Scope.compare scope
+            "ZoneConfig" ++ "/" ++ Zone.compare zone ++ "/" ++ Scope.compare scope
 
 
 encode : Configuration -> Encode.Value

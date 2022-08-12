@@ -54,7 +54,7 @@ toDict ids =
 
 compare : Identifier -> String
 compare i =
-    Uuid.toString i.identifiable ++ " " ++ i.name
+    Uuid.toString i.identifiable ++ "/" ++ i.name
 
 
 encode : Identifier -> Encode.Value

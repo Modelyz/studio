@@ -15,4 +15,4 @@ type alias ProcessEvents =
 
 compare : ProcessEvents -> String
 compare pe =
-    Uuid.toString pe.process ++ " " ++ Uuid.toString pe.event
+    Uuid.toString pe.process ++ "|" ++ Uuid.toString pe.event

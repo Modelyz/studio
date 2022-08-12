@@ -42,12 +42,14 @@ initIdentifiers allT allH identifierTypes t mh newUuid =
     -- build the empty identifiers corresponding to the chosen type and possible user type
     identifierTypes
         |> select (Maybe.map (\h -> And (IsType t) (HasUserType h.uuid)) mh |> Maybe.withDefault (IsType t)) allT allH
-        |> Dict.map (\_ i -> Identifier newUuid i.name i.fragments)
+        |> Dict.values
+        |> List.map (\it -> ( Uuid.toString newUuid ++ "/" ++ it.name, Identifier newUuid it.name it.fragments ))
+        |> Dict.fromList
 
 
 compare : IdentifierType -> String
 compare it =
-    it.name ++ " " ++ Scope.compare it.applyTo
+    Scope.compare it.applyTo ++ "/" ++ it.name
 
 
 encode : IdentifierType -> Encode.Value
