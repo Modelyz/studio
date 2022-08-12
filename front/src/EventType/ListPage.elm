@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import EventType.EventType exposing (EventType)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (hViewSmallCard, viewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed EventType
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed et ->
-            ( model, Shared.dispatch s <| RemovedEventType et.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedEventType uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -81,9 +82,12 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.eventTypes
+            in
             flatContainer s
                 "Event Types"
                 [ button.primary Add "Add..."
@@ -91,19 +95,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.eventTypes
+                    (allHwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\et ->
-                                viewSmallCard (Removed et)
-                                    (text <| Uuid.toString et.uuid)
-                                    (et.parent
-                                        |> Maybe.andThen (Item.find s.state.eventTypes)
-                                        |> Maybe.map
-                                            (\rt -> row [] [ text "Type: ", text <| Uuid.toString rt.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> hViewSmallCard Removed s.state.events allHwithIdentifiers s.state.configs
                         |> withDefaultContent (p "There are no Event Types yet. Add your first one!")
                     )
                 ]

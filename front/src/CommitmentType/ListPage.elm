@@ -4,6 +4,7 @@ import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (hViewSmallCard, viewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed CommitmentType
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed cmt ->
-            ( model, Shared.dispatch s <| RemovedCommitmentType cmt.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedCommitmentType uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -81,9 +82,12 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.commitmentTypes
+            in
             flatContainer s
                 "Commitment Types"
                 [ button.primary Add "Add..."
@@ -91,19 +95,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.commitmentTypes
+                    (allHwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\cmt ->
-                                viewSmallCard (Removed cmt)
-                                    (text <| Uuid.toString cmt.uuid)
-                                    (cmt.parent
-                                        |> Maybe.andThen (Item.find s.state.commitmentTypes)
-                                        |> Maybe.map
-                                            (\cmtp -> row [] [ text "Type: ", text <| Uuid.toString cmtp.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> hViewSmallCard Removed s.state.commitments allHwithIdentifiers s.state.configs
                         |> withDefaultContent (p "There are no Commitment Types yet. Add your first one!")
                     )
                 ]

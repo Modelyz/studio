@@ -3,6 +3,7 @@ module ProcessType.ListPage exposing (match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (hViewSmallCard, viewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed ProcessType
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed pt ->
-            ( model, Shared.dispatch s <| RemovedProcessType pt.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedProcessType uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -81,9 +82,12 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.processTypes
+            in
             flatContainer s
                 "Process Types"
                 [ button.primary Add "Add..."
@@ -91,19 +95,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.processTypes
+                    (allHwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\pt ->
-                                viewSmallCard (Removed pt)
-                                    (text <| Uuid.toString pt.uuid)
-                                    (pt.parent
-                                        |> Maybe.andThen (Item.find s.state.processTypes)
-                                        |> Maybe.map
-                                            (\ptp -> row [] [ text "Type: ", text <| Uuid.toString ptp.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> hViewSmallCard Removed s.state.processes allHwithIdentifiers s.state.configs
                         |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
                     )
                 ]
