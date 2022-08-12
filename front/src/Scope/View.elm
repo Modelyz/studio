@@ -77,14 +77,14 @@ inputScope s input model =
             case model.scope of
                 IsType (Type.TType tt) ->
                     let
-                        allTyped =
+                        allT =
                             State.allTyped s.state tt
 
-                        allHierarchic =
+                        allH =
                             State.allHierarchic s.state (TType.toHierarchic tt)
 
                         config =
-                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardTitle model.scope
+                            Configuration.getMostSpecific allT allH s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map
@@ -96,11 +96,11 @@ inputScope s input model =
                                 config
                                 |> Maybe.withDefault Empty
                     in
-                    allHierarchic
+                    allH
                         |> hWithIdentifiers s.state.identifiers
                         |> Dict.values
                         |> List.filter
-                            (\i -> Scope.containsScope allTyped allHierarchic configscope (HasUserType i.uuid))
+                            (\i -> Scope.containsScope allT allH configscope (HasUserType i.uuid))
                         |> List.map
                             (\t ->
                                 clickableCard
@@ -111,14 +111,14 @@ inputScope s input model =
 
                 IsType (Type.HType ht) ->
                     let
-                        allTyped =
+                        allT =
                             State.allTyped s.state (TType.fromHierarchic ht)
 
-                        allHierarchic =
+                        allH =
                             State.allHierarchic s.state ht
 
                         config =
-                            Configuration.getMostSpecific allTyped allHierarchic s.state.configs SmallcardTitle model.scope
+                            Configuration.getMostSpecific allT allH s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map
@@ -130,11 +130,11 @@ inputScope s input model =
                                 config
                                 |> Maybe.withDefault Empty
                     in
-                    allHierarchic
+                    allH
                         |> hWithIdentifiers s.state.identifiers
                         |> Dict.values
                         |> List.filter
-                            (\i -> Scope.containsScope allTyped allHierarchic configscope (HasUserType i.uuid))
+                            (\i -> Scope.containsScope allT allH configscope (HasUserType i.uuid))
                         |> List.map
                             (\t ->
                                 clickableCard

@@ -236,10 +236,10 @@ inputFragments s model =
                     )
         , h2 "Click on the items below to construct the format of the zone"
         , let
-            allTyped =
+            allT =
                 Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault Dict.empty
 
-            allHierarchic =
+            allH =
                 Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault Dict.empty
           in
           wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
@@ -263,7 +263,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    Scope.containsScope allTyped allHierarchic model.scope it.applyTo
+                                    Scope.containsScope allT allH model.scope it.applyTo
                                 )
                             |> List.map (.name >> IdentifierName)
                        )

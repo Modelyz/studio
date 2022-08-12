@@ -434,7 +434,7 @@ updatePending e es =
             Dict.remove (Message.compare e) es
 
 
-allTyped : State -> TType.Type -> Dict String OnlyTyped
+allTyped : State -> TType.Type -> Dict String (Identifiable OnlyTyped)
 allTyped s t =
     case t of
         TType.Resource ->

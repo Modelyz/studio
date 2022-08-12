@@ -16,6 +16,7 @@ type alias Typed a =
 
 
 type alias OnlyTyped =
+    -- this seems necessary because all the Typed types have not the same field (see the end of State.elm)
     { what : Type
     , uuid : Uuid
     , type_ : Uuid

@@ -37,9 +37,9 @@ getConfig configs scope =
 
 
 getMostSpecific : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
-getMostSpecific allTyped allHierarchic configs zone scope =
+getMostSpecific allT allH configs zone scope =
     -- returns the most specific config for a given zone and scope
-    findFirst configs (Scope.getUpperList allTyped allHierarchic scope [])
+    findFirst configs (Scope.getUpperList allT allH scope [])
 
 
 findFirst : Dict String Configuration -> List Scope -> Maybe Configuration

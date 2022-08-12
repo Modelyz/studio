@@ -35,7 +35,7 @@ viewSmallCard deleteMsg title description =
 
 
 hViewSmallCard : (Uuid -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> List (Hierarchic b) -> List (Element msg)
-hViewSmallCard deleteMsg allTyped allHierarchic configs =
+hViewSmallCard deleteMsg allT allH configs =
     let
         title =
             none
@@ -50,7 +50,7 @@ hViewSmallCard deleteMsg allTyped allHierarchic configs =
         (\item ->
             let
                 mconfig =
-                    getMostSpecific allTyped allHierarchic configs SmallcardTitle (item.parent |> Maybe.map (\p -> And (IsType item.what) (HasUserType p)) |> Maybe.withDefault (IsType item.what))
+                    getMostSpecific allT allH configs SmallcardTitle (item.parent |> Maybe.map (\p -> And (IsType item.what) (HasUserType p)) |> Maybe.withDefault (IsType item.what))
             in
             row
                 []
