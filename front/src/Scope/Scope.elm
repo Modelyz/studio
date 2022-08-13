@@ -326,10 +326,10 @@ toString scope =
             "Hierarchic Item with uuid=" ++ Uuid.toString uuid
 
         IsType t ->
-            "IsType " ++ Type.toString t
+            Type.toPluralString t
 
         HasUserType tuid ->
-            "HasUserType " ++ Uuid.toString tuid
+            Uuid.toString tuid
 
         Identified _ ->
             "Identified"

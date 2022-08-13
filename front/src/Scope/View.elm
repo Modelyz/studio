@@ -29,6 +29,7 @@ import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
 import View.Lang exposing (Lang(..))
+import View.Smallcard exposing (viewHalfCard)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -38,41 +39,31 @@ type alias Model a =
     { a | scope : Scope }
 
 
-removableCard : (Scope -> msg) -> Scope -> Element msg
-removableCard input scope =
-    -- TODO duplicated from Ident/AddPage
-    row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (text <| toString scope)
-        , button.primary (input Empty) "×"
-        ]
-
-
 inputScope : Shared.Model -> (Scope -> msg) -> Model a -> Element msg
 inputScope s input model =
-    -- TODO duplicated from Ident/AddPage → refactor
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: [ removableCard input model.scope ]
-        , h2 <| "Select the types of the entities you want to configure the zone for"
+                :: [ viewHalfCard (input Empty) (text <| toString model.scope) ]
+        , h2 <| "What should it apply to?"
 
-        -- First the general types
+        -- First the concrete types
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (TType.all
                 |> List.map
                     (\t ->
-                        clickableCard (input (IsType (Type.TType t))) (text <| "All " ++ TType.toPluralString t) none
+                        clickableCard (input (IsType (Type.TType t))) (text <| TType.toPluralString t) none
                     )
             )
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (HType.all
                 |> List.map
                     (\t ->
-                        clickableCard (input (IsType (Type.HType t))) (text <| "All " ++ HType.toPluralString t) none
+                        clickableCard (input (IsType (Type.HType t))) (text <| HType.toPluralString t) none
                     )
             )
 
-        -- then the choice of user types, depending on the previously selected general type
+        -- then the choice of user type, depending on the previously selected concrete type
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case model.scope of
                 IsType (Type.TType tt) ->

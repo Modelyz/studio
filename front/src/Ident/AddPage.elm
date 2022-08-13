@@ -29,9 +29,7 @@ import View.Type exposing (Type(..))
 import Zone.Zone as Zone exposing (Zone(..))
 
 
-type
-    Msg
-    -- TODO replace with Input Identifier
+type Msg
     = InputName String
     | InputScope Scope
     | InputUnique Bool
