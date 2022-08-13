@@ -97,7 +97,7 @@ viewContent model vt s =
                     [ spacing 10 ]
                     (allHwithIdentifiers
                         |> Dict.values
-                        |> hViewSmallCard Removed s.state.agents allHwithIdentifiers s.state.configs
+                        |> List.map (\h -> hViewSmallCard (Removed h.uuid) s.state.agents allHwithIdentifiers s.state.configs h)
                         |> withDefaultContent (p "There are no Agent Types yet. Add your first one!")
                     )
                 ]

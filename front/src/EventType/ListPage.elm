@@ -97,7 +97,7 @@ viewContent model vt s =
                     [ spacing 10 ]
                     (allHwithIdentifiers
                         |> Dict.values
-                        |> hViewSmallCard Removed s.state.events allHwithIdentifiers s.state.configs
+                        |> List.map (\h -> hViewSmallCard (Removed h.uuid) s.state.events allHwithIdentifiers s.state.configs h)
                         |> withDefaultContent (p "There are no Event Types yet. Add your first one!")
                     )
                 ]

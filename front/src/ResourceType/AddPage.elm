@@ -11,6 +11,7 @@ import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
@@ -26,6 +27,7 @@ import Spa.Page
 import Type
 import Typed.Type as TType
 import View exposing (..)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
@@ -193,28 +195,23 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
+                    let
+                        allHwithIdentifiers =
+                            hWithIdentifiers s.state.identifiers s.state.resourceTypes
+                    in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map
-                                (\rt ->
-                                    row [ Background.color color.item.selected ]
-                                        [ el [ padding 5 ] (text (Uuid.toString rt.uuid))
-                                        , button.secondary (InputType Nothing) "×"
-                                        ]
-                                )
-                                model.flatselect
-                                |> Maybe.withDefault
-                                    (el
-                                        [ padding 5, Font.color color.text.disabled ]
-                                        (text "Empty")
-                                    )
+                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.resources allHwithIdentifiers s.state.configs) model.flatselect
+                                |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Optional parent type for the new Resource Type (it can be hierarchical)"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
-                            List.map
-                                (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.resourceTypes rt))
-                                (Dict.values <| s.state.resourceTypes)
+                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                            (allHwithIdentifiers
+                                |> Dict.values
+                                |> List.map (hClickableCard InputType s.state.resources allHwithIdentifiers s.state.configs)
+                                |> withDefaultContent (p "(There are no Resource Types yet)")
+                            )
                         ]
 
                 Step.Step StepGroups ->
@@ -224,7 +221,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
     in
     floatingContainer s
-        "Adding a Resource Type"
+        "Adding an ResourceType"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

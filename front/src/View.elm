@@ -245,7 +245,7 @@ checkNothing field err =
 
 clickableCard : msg -> Element msg -> Element msg -> Element msg
 clickableCard onInput title desc =
-    -- TODO choose a more explicit name
+    -- TODO remove?
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
         [ row [ alignLeft, width <| minimum 150 shrink ]
             [ button.primary onInput "+"
