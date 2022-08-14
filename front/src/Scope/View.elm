@@ -20,7 +20,7 @@ import Item.Item as Item exposing (Item)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..), toString)
+import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import State
@@ -44,7 +44,7 @@ inputScope s input model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: [ viewHalfCard (input Empty) (text <| toString model.scope) ]
+                :: [ viewHalfCard (input Empty) (text <| Scope.toString model.scope) ]
         , h2 <| "What should it apply to?"
 
         -- First the concrete types
@@ -96,7 +96,7 @@ inputScope s input model =
                             (\t ->
                                 clickableCard
                                     (input <| And model.scope (HItem t.uuid))
-                                    (text <| toString (HItem t.uuid))
+                                    (text <| Scope.toString (HItem t.uuid))
                                     (t.parent |> Maybe.map (Uuid.toString >> text) |> Maybe.withDefault none)
                             )
 
@@ -127,11 +127,11 @@ inputScope s input model =
                         |> List.filter
                             (\i -> Scope.containsScope allT allH configscope (HasUserType i.uuid))
                         |> List.map
-                            (\t ->
+                            (\h ->
                                 clickableCard
-                                    (input <| And model.scope (HItem t.uuid))
-                                    (text <| toString (HItem t.uuid))
-                                    (t.parent |> Maybe.map (Uuid.toString >> text) |> Maybe.withDefault none)
+                                    (input <| And model.scope (HItem h.uuid))
+                                    (text <| Scope.toString (HItem h.uuid))
+                                    (h.parent |> Maybe.map (Uuid.toString >> text) |> Maybe.withDefault none)
                             )
 
                 _ ->

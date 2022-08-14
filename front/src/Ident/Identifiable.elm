@@ -27,7 +27,7 @@ hWithIdentifiers identifiers hs =
     Dict.map (\_ h -> { h | identifiers = fromHierarchic h identifiers |> Identifier.toDict }) hs
 
 
-display : Maybe Configuration -> Identifiable (Hierarchic b) -> String
+display : Maybe Configuration -> Identifiable (Item b) -> String
 display mc hitem =
     mc
         |> Maybe.map (\(ZoneConfig _ fragments _) -> displayFromDict hitem.identifiers fragments)

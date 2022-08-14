@@ -94,3 +94,51 @@ hClickableCard onInput allT allH configs h =
             h.parent |> Maybe.andThen (Hierarchic.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
     clickableCard (onInput (Just h)) (text title) (text description)
+
+
+tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tViewHalfCard deleteMsg allT allH configs t =
+    -- smallcard for hierarchic items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (Scope.fromTyped t)
+
+        title =
+            Identifiable.display mconfig t
+
+        description =
+            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+    in
+    viewHalfCard deleteMsg (text title)
+
+
+tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tViewSmallCard deleteMsg allT allH configs t =
+    -- smallcard for hierarchic items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (Scope.fromTyped t)
+
+        title =
+            Identifiable.display mconfig t
+
+        description =
+            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+    in
+    viewSmallCard deleteMsg (text title) (text description)
+
+
+tClickableCard : (Maybe (Identifiable (Typed b)) -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tClickableCard onInput allT allH configs t =
+    -- clickable card for typed items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (Scope.fromTyped t)
+
+        title =
+            Identifiable.display mconfig t
+
+        description =
+            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+    in
+    clickableCard (onInput (Just t)) (text title) (text description)

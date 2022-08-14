@@ -315,6 +315,7 @@ containsHierarchic allT allH scope item =
 
 toString : Scope -> String
 toString scope =
+    -- for technical use (compare)
     case scope of
         Empty ->
             "Empty"
@@ -326,10 +327,43 @@ toString scope =
             "Hierarchic Item with uuid=" ++ Uuid.toString uuid
 
         IsType t ->
-            Type.toPluralString t
+            "IsType " ++ Type.toString t
 
         HasUserType tuid ->
-            Uuid.toString tuid
+            "HasUserType " ++ Uuid.toString tuid
+
+        Identified _ ->
+            "Identified"
+
+        And s1 s2 ->
+            "(" ++ toString s1 ++ ") And (" ++ toString s2 ++ ")"
+
+        Or s1 s2 ->
+            "(" ++ toString s1 ++ ") Or (" ++ toString s2 ++ ")"
+
+        Not s ->
+            "Not (" ++ toString s ++ ")"
+
+
+toDisplay : Scope -> String
+toDisplay scope =
+    -- for user display
+    -- TODO resolve the uuids
+    case scope of
+        Empty ->
+            "Nothing"
+
+        TItem uuid ->
+            "Typed Item with uuid=" ++ Uuid.toString uuid
+
+        HItem uuid ->
+            "Hierarchic Item with uuid=" ++ Uuid.toString uuid
+
+        IsType t ->
+            "IsType " ++ Type.toString t
+
+        HasUserType tuid ->
+            "HasUserType " ++ Uuid.toString tuid
 
         Identified _ ->
             "Identified"
