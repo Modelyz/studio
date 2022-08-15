@@ -10,6 +10,7 @@ type alias OnlyItem =
 
 
 type alias Item a =
+    -- TODO could "what" be removed by turning all the items into a non-alias type?
     { a | what : Type, uuid : Uuid }
 
 

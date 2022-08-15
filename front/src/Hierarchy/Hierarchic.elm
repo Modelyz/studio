@@ -15,22 +15,22 @@ type alias Hierarchic a =
 
 
 isAscendantOf : Hierarchic a -> Dict String (Hierarchic a) -> Hierarchic a -> Bool
-isAscendantOf child allItems parent =
+isAscendantOf child allH parent =
     -- equality is considered parent TODO reconsider
     if child == parent then
         True
 
     else
         child.parent
-            |> Maybe.andThen (\i -> find allItems i)
-            |> Maybe.map (\x -> isAscendantOf x allItems parent)
+            |> Maybe.andThen (\i -> find allH i)
+            |> Maybe.map (\x -> isAscendantOf x allH parent)
             |> Maybe.withDefault False
 
 
 getParent : Dict String (Hierarchic a) -> Hierarchic a -> Maybe (Hierarchic a)
-getParent allItems item =
+getParent allH item =
     item.parent
-        |> Maybe.andThen (find allItems)
+        |> Maybe.andThen (find allH)
 
 
 find : Dict String (Hierarchic a) -> Uuid -> Maybe (Hierarchic a)
@@ -41,9 +41,9 @@ find es uuid =
 
 
 getParentsToRoot : Hierarchic a -> Dict String (Hierarchic a) -> List (Hierarchic a) -> List (Hierarchic a)
-getParentsToRoot initial allItems currentList =
-    getParent allItems initial
-        |> Maybe.map (\parent -> getParentsToRoot parent allItems currentList)
+getParentsToRoot initial allH currentList =
+    getParent allH initial
+        |> Maybe.map (\parent -> getParentsToRoot parent allH currentList)
         |> Maybe.withDefault currentList
 
 

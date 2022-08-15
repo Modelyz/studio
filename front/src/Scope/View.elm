@@ -1,6 +1,6 @@
 module Scope.View exposing (inputScope)
 
-import Configuration exposing (Configuration(..))
+import Configuration as Config exposing (Configuration(..))
 import Dict exposing (Dict)
 import Effect as Effect exposing (Effect)
 import Element exposing (..)
@@ -10,10 +10,11 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Entity.Entity as Entity
-import Hierarchy.Hierarchic as Hierarchic
+import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
+import Ident.Identifiable as Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
 import Ident.Identification as Identification
+import Ident.Identifier as Identifier
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Ident.View
 import Item.Item as Item exposing (Item)
@@ -29,7 +30,7 @@ import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
 import View.Lang exposing (Lang(..))
-import View.Smallcard exposing (viewHalfCard)
+import View.Smallcard exposing (sClickableCard, viewHalfCard)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -52,30 +53,32 @@ inputScope s input model =
             (TType.all
                 |> List.map
                     (\t ->
-                        clickableCard (input (IsType (Type.TType t))) (text <| TType.toPluralString t) none
+                        clickableCard (input (HasType (Type.TType t))) (text <| TType.toPluralString t) none
                     )
             )
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (HType.all
                 |> List.map
                     (\t ->
-                        clickableCard (input (IsType (Type.HType t))) (text <| HType.toPluralString t) none
+                        clickableCard (input (HasType (Type.HType t))) (text <| HType.toPluralString t) none
                     )
             )
 
         -- then the choice of user type, depending on the previously selected concrete type
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case model.scope of
-                IsType (Type.TType tt) ->
+                HasType (Type.TType tt) ->
                     let
+                        -- all the typed items
                         allT =
                             State.allTyped s.state tt
 
-                        allH =
-                            State.allHierarchic s.state (TType.toHierarchic tt)
+                        -- all the hierarchic items corresponding to the typed ones
+                        allHwithIdentifiers =
+                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state (TType.toHierarchic tt)
 
                         config =
-                            Configuration.getMostSpecific allT allH s.state.configs SmallcardTitle model.scope
+                            Config.getMostSpecific allT allHwithIdentifiers s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map
@@ -87,29 +90,22 @@ inputScope s input model =
                                 config
                                 |> Maybe.withDefault Empty
                     in
-                    allH
-                        |> hWithIdentifiers s.state.identifiers
-                        |> Dict.values
-                        |> List.filter
-                            (\i -> Scope.containsScope allT allH configscope (HasUserType i.uuid))
-                        |> List.map
-                            (\t ->
-                                clickableCard
-                                    (input <| And model.scope (HItem t.uuid))
-                                    (text <| Scope.toString (HItem t.uuid))
-                                    (t.parent |> Maybe.map (Uuid.toString >> text) |> Maybe.withDefault none)
-                            )
+                    (h2 <| "And more precisely:")
+                        :: (allHwithIdentifiers
+                                |> Dict.values
+                                |> List.map (\h -> sClickableCard input allT allHwithIdentifiers s.state.configs h)
+                           )
 
-                IsType (Type.HType ht) ->
+                HasType (Type.HType ht) ->
                     let
                         allT =
-                            State.allTyped s.state (TType.fromHierarchic ht)
+                            Dict.empty
 
-                        allH =
-                            State.allHierarchic s.state ht
+                        allHwithIdentifiers =
+                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state ht
 
                         config =
-                            Configuration.getMostSpecific allT allH s.state.configs SmallcardTitle model.scope
+                            Config.getMostSpecific allT allHwithIdentifiers s.state.configs SmallcardTitle model.scope
 
                         configscope =
                             Maybe.map
@@ -121,18 +117,11 @@ inputScope s input model =
                                 config
                                 |> Maybe.withDefault Empty
                     in
-                    allH
-                        |> hWithIdentifiers s.state.identifiers
-                        |> Dict.values
-                        |> List.filter
-                            (\i -> Scope.containsScope allT allH configscope (HasUserType i.uuid))
-                        |> List.map
-                            (\h ->
-                                clickableCard
-                                    (input <| And model.scope (HItem h.uuid))
-                                    (text <| Scope.toString (HItem h.uuid))
-                                    (h.parent |> Maybe.map (Uuid.toString >> text) |> Maybe.withDefault none)
-                            )
+                    (h2 <| "And more precisely:")
+                        :: (allHwithIdentifiers
+                                |> Dict.values
+                                |> List.map (\h -> sClickableCard input allT allHwithIdentifiers s.state.configs h)
+                           )
 
                 _ ->
                     []

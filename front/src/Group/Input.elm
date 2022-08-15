@@ -37,7 +37,7 @@ inputGroups c s model =
     -- TODO duplicated from Ident/AddPage and Zone/AddPage
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
+            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
                 :: List.map (viewItem c s model) (Dict.values model.groups)
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]

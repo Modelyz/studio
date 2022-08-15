@@ -5,6 +5,8 @@ import Element exposing (..)
 import Element.Input as Input
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
+import Scope.Scope as Scope exposing (Scope(..))
+import Type exposing (Type)
 import View exposing (..)
 import View.Type exposing (Type(..))
 
@@ -22,11 +24,31 @@ type alias Config msg =
 inputIdentifiers : Config msg -> Model a -> Element msg
 inputIdentifiers c model =
     -- display an input field for each relevant identifier
+    -- TODO remove
     column [ spacing 10 ]
         (model.identifiers
             |> Dict.values
             |> List.map
                 (\i -> inputIdentifier c model i)
+        )
+
+
+inputIdentifiers2 : Config msg -> Model a -> Scope -> Element msg
+inputIdentifiers2 c model scope =
+    -- display an input field for each relevant identifier
+    let
+        scopestr =
+            Scope.toString scope
+    in
+    column [ spacing 10 ]
+        (h2 "Input identifiers"
+            :: (model.identifiers
+                    |> Dict.values
+                    |> List.map
+                        (\i -> inputIdentifier c model i)
+                    |> withDefaultContent (p <| "Apparently there are no identifiers defined for " ++ scopestr ++ ". Please first create one.")
+                --TODO + link
+               )
         )
 
 

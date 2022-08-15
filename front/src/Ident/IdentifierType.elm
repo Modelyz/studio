@@ -25,23 +25,16 @@ type alias IdentifierType =
     }
 
 
-
---toIdentifier : comparable -> Uuid -> IdentifierType -> Identifier
---toIdentifier _ uuid it =
---    Identifier uuid it.name it.fragments
-
-
-select : Scope -> Dict String (Typed (Item a)) -> Dict String (Hierarchic (Item b)) -> Dict String IdentifierType -> Dict String IdentifierType
-select scope allT allH its =
-    -- keep the identifiertypes corresponding to the Type or user type of the identifiable
-    Dict.filter (\_ it -> Scope.containsScope allT allH scope it.applyTo) its
-
-
 initIdentifiers : Dict String (Typed (Item a)) -> Dict String (Hierarchic (Item b)) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic (Item b)) -> Uuid -> Dict String Identifier
-initIdentifiers allT allH identifierTypes t mh newUuid =
+initIdentifiers allT allH its t mh newUuid =
     -- build the empty identifiers corresponding to the chosen type and possible user type
-    identifierTypes
-        |> select (Maybe.map (\h -> And (IsType t) (HasUserType h.uuid)) mh |> Maybe.withDefault (IsType t)) allT allH
+    let
+        scope =
+            Maybe.map (\h -> HasUserType t h.uuid) mh |> Maybe.withDefault (HasType t)
+    in
+    (its
+        |> Dict.filter (\_ it -> Scope.containsScope allT allH scope it.applyTo)
+    )
         |> Dict.values
         |> List.map (\it -> ( Uuid.toString newUuid ++ "/" ++ it.name, Identifier newUuid it.name it.fragments ))
         |> Dict.fromList

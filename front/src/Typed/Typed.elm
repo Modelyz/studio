@@ -25,8 +25,8 @@ type alias OnlyTyped =
 
 
 isAscendantOf : Typed a -> Dict String (Hierarchic b) -> Hierarchic b -> Bool
-isAscendantOf typed allItems someType =
-    Maybe.map (\t -> Hierarchic.isAscendantOf t allItems someType) (Hierarchic.find allItems typed.type_)
+isAscendantOf childT allItems parentH =
+    Maybe.map (\t -> Hierarchic.isAscendantOf t allItems parentH) (Hierarchic.find allItems childT.type_)
         |> Maybe.withDefault False
 
 

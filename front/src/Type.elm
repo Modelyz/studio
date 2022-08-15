@@ -1,4 +1,4 @@
-module Type exposing (Type(..), all, allStrings, decoder, encode, fromType, isType, toPluralString, toString, toType)
+module Type exposing (Type(..), all, allStrings, decoder, encode, fromType, isType, toHierarchic, toPluralString, toString, toType)
 
 import Hierarchy.Type as HType exposing (Type(..))
 import Json.Decode as Decode exposing (Decoder)
@@ -92,3 +92,13 @@ encode =
 decoder : Decoder Type
 decoder =
     Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))
+
+
+toHierarchic : Type -> Type
+toHierarchic t =
+    case t of
+        TType tt ->
+            HType (TType.toHierarchic tt)
+
+        HType ht ->
+            HType ht
