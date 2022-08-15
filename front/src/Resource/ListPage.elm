@@ -3,6 +3,7 @@ module Resource.ListPage exposing (match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (tViewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed Resource
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed r ->
-            ( model, Shared.dispatch s <| RemovedResource r.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedResource uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -84,6 +85,13 @@ viewContent model vt s =
     --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allTwithIdentifiers =
+                    tWithIdentifiers s.state.identifiers s.state.resources
+
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.resourceTypes
+            in
             flatContainer s
                 "Resources"
                 [ button.primary Add "Add..."
@@ -91,19 +99,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.resources
+                    (allTwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\r ->
-                                viewSmallCard (Removed r)
-                                    (text <| Uuid.toString r.uuid)
-                                    (r.type_
-                                        |> Item.find s.state.resourceTypes
-                                        |> Maybe.map
-                                            (\rt -> row [] [ text "Type: ", text <| Uuid.toString rt.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> List.map (\t -> tViewSmallCard (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
                         |> withDefaultContent (p "There are no Resources yet. Add your first one!")
                     )
                 ]

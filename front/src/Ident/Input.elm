@@ -21,20 +21,8 @@ type alias Config msg =
     }
 
 
-inputIdentifiers : Config msg -> Model a -> Element msg
-inputIdentifiers c model =
-    -- display an input field for each relevant identifier
-    -- TODO remove
-    column [ spacing 10 ]
-        (model.identifiers
-            |> Dict.values
-            |> List.map
-                (\i -> inputIdentifier c model i)
-        )
-
-
-inputIdentifiers2 : Config msg -> Model a -> Scope -> Element msg
-inputIdentifiers2 c model scope =
+inputIdentifiers : Config msg -> Model a -> Scope -> Element msg
+inputIdentifiers c model scope =
     -- display an input field for each relevant identifier
     let
         scopestr =

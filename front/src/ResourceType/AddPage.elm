@@ -22,6 +22,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
+import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import State exposing (State)
@@ -132,7 +133,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedResourceType rt
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.AT rt) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.RT rt) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -212,7 +213,11 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.ResourceType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.ResourceType))
+                    in
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an ResourceType"

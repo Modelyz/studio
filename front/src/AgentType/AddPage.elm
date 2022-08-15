@@ -22,6 +22,7 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
+import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import State exposing (State)
@@ -212,7 +213,11 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.AgentType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.AgentType))
+                    in
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an AgentType"

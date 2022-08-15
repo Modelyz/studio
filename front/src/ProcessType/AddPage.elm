@@ -22,6 +22,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
+import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import State exposing (State)
@@ -132,7 +133,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedProcessType pt
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.AT pt) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.PT pt) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -144,7 +145,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Process Type"
+    { title = "Adding a Process Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -212,10 +213,14 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.ProcessType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.ProcessType))
+                    in
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
-        "Adding an ProcessType"
+        "Adding a ProcessType"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

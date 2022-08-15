@@ -461,6 +461,7 @@ allTyped s t =
 
 
 --allHierarchic : State -> HType.Type -> Dict String (Identifiable (Hierarchic a))
+-- TODO annotation?
 
 
 allHierarchic s t =

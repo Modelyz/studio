@@ -12,6 +12,7 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
 import Hierarchy.View exposing (toDesc)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
@@ -27,6 +28,7 @@ import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
 import View exposing (..)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
@@ -109,10 +111,10 @@ update s msg model =
             Random.step Uuid.generator model.seed
     in
     case msg of
-        InputType mcmt ->
+        InputType mat ->
             ( { model
-                | flatselect = mcmt
-                , identifiers = initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) mcmt newUuid
+                | flatselect = mat
+                , identifiers = initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) mat newUuid
                 , uuid = newUuid
                 , seed = newSeed
               }
@@ -131,13 +133,13 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok cm ->
+                Ok r ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedCommitment cm
+                            (Message.AddedCommitment r
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.Cm cm) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.Cm r) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -149,7 +151,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Commitment"
+    { title = "Adding an Commitment"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -174,11 +176,11 @@ validate : Model -> Result String Commitment
 validate m =
     case m.flatselect of
         Just rt ->
-            -- TODO when?
+            -- TODO check that TType thing is useful
             Ok <| Commitment (Type.TType TType.Commitment) m.uuid rt.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select a Commitment Type"
+            Err "You must select an Commitment Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -201,38 +203,37 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
+                    let
+                        allHwithIdentifiers =
+                            hWithIdentifiers s.state.identifiers s.state.commitmentTypes
+                    in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map
-                                (\rt ->
-                                    row [ Background.color color.item.selected ]
-                                        [ el [ padding 5 ] (text (Uuid.toString rt.uuid))
-                                        , button.secondary (InputType Nothing) "×"
-                                        ]
-                                )
-                                model.flatselect
-                                |> Maybe.withDefault
-                                    (el
-                                        [ padding 5, Font.color color.text.disabled ]
-                                        (text "Empty")
-                                    )
+                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.commitments allHwithIdentifiers s.state.configs) model.flatselect
+                                |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Choose the type of the new Commitment"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
-                            List.map
-                                (\rt -> clickableCard (InputType <| Just rt) (text <| Uuid.toString rt.uuid) (toDesc s.state.commitmentTypes rt))
-                                (Dict.values <| s.state.commitmentTypes)
+                            (allHwithIdentifiers
+                                |> Dict.values
+                                |> List.map (hClickableCard InputType s.state.commitments allHwithIdentifiers s.state.configs)
+                                |> withDefaultContent (p "(There are no Commitment Types yet)")
+                            )
                         ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Commitment) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Commitment))
+                    in
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
-        "Adding a Commitment"
+        "Adding an Commitment"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

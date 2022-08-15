@@ -27,7 +27,7 @@ import Spa.Page
 import Type
 import Typed.Type as TType
 import View exposing (..)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
@@ -110,10 +110,10 @@ update s msg model =
             Random.step Uuid.generator model.seed
     in
     case msg of
-        InputType mrt ->
+        InputType mat ->
             ( { model
-                | flatselect = mrt
-                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.TType TType.Resource) mrt newUuid
+                | flatselect = mat
+                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.TType TType.Resource) mat newUuid
                 , uuid = newUuid
                 , seed = newSeed
               }
@@ -150,7 +150,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Resources"
+    { title = "Adding an Resource"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -179,7 +179,7 @@ validate m =
             Ok <| Resource (Type.TType TType.Resource) m.uuid rt.uuid Dict.empty
 
         Nothing ->
-            Err "You must select a Resource Type"
+            Err "You must select an Resource Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -196,6 +196,7 @@ buttonValidate m result =
             none
 
 
+viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
         step =
@@ -212,11 +213,11 @@ viewContent model s =
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Choose the type of the new Resource"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
                             (allHwithIdentifiers
                                 |> Dict.values
                                 |> List.map (hClickableCard InputType s.state.resources allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Resources yet)")
+                                |> withDefaultContent (p "(There are no Resource Types yet)")
                             )
                         ]
 
@@ -224,7 +225,11 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Resource) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Resource))
+                    in
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an Resource"

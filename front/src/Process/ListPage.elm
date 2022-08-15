@@ -3,6 +3,7 @@ module Process.ListPage exposing (match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (tViewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed Process
+    = Removed Uuid
     | Add
     | Search String
 
@@ -45,7 +46,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessList mbs ->
+        Route.ProcessList _ ->
             Just { route = route }
 
         _ ->
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed p ->
-            ( model, Shared.dispatch s <| RemovedProcess p.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedProcess uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -84,6 +85,13 @@ viewContent model vt s =
     --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allTwithIdentifiers =
+                    tWithIdentifiers s.state.identifiers s.state.processes
+
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.processTypes
+            in
             flatContainer s
                 "Processes"
                 [ button.primary Add "Add..."
@@ -91,19 +99,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.processes
+                    (allTwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\p ->
-                                viewSmallCard (Removed p)
-                                    (text <| Uuid.toString p.uuid)
-                                    (p.type_
-                                        |> Item.find s.state.processTypes
-                                        |> Maybe.map
-                                            (\pt -> row [] [ text "Type: ", text <| Uuid.toString pt.uuid ])
-                                        |> Maybe.withDefault none
-                                    )
-                            )
+                        |> List.map (\t -> tViewSmallCard (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
                         |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
                 ]

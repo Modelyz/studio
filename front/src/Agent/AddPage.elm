@@ -15,7 +15,7 @@ import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
-import Ident.Input exposing (inputIdentifiers, inputIdentifiers2)
+import Ident.Input exposing (inputIdentifiers)
 import Item.Item as Item
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -138,7 +138,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedAgent r
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.R r) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.A r) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -229,7 +229,7 @@ viewContent model s =
                         scope =
                             model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Agent) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Agent))
                     in
-                    inputIdentifiers2 { onEnter = Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an Agent"

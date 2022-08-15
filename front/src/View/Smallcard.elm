@@ -133,7 +133,7 @@ hClickableCard onInput allT allH configs h =
 --
 
 
-tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed a) -> Element msg
 tViewSmallCard deleteMsg allT allH configs t =
     -- smallcard for hierarchic items
     let
