@@ -9,23 +9,23 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
-import Item.Item as Item
+import Item.Item as Item exposing (Item)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Type
-import Typed.Type as TType
+import State exposing (State)
+import Type exposing (Type)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -105,17 +105,11 @@ init s f =
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
-    let
-        ( newUuid, newSeed ) =
-            Random.step Uuid.generator model.seed
-    in
     case msg of
         InputType mrt ->
             ( { model
                 | flatselect = mrt
-                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) mrt newUuid
-                , uuid = newUuid
-                , seed = newSeed
+                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) mrt model.uuid
               }
             , Effect.none
             )
@@ -138,7 +132,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedResourceType rt
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.RT rt) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.AT rt) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -150,7 +144,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Resource Type"
+    { title = "Adding an Resource Type"
     , attributes = []
     , element = viewContent model
     , route = model.route

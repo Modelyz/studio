@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import GroupType.GroupType exposing (GroupType)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (hViewSmallCard)
 import View.Type as ViewType
 
 
@@ -23,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = Removed GroupType
+    = Removed Uuid
     | Add
     | Search String
 
@@ -60,8 +61,8 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        Removed gt ->
-            ( model, Shared.dispatch s <| RemovedGroupType gt.uuid )
+        Removed uuid ->
+            ( model, Shared.dispatch s <| RemovedGroupType uuid )
 
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
@@ -81,9 +82,12 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
+            let
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.groupTypes
+            in
             flatContainer s
                 "Group Types"
                 [ button.primary Add "Add..."
@@ -91,14 +95,9 @@ viewContent model vt s =
                 none
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.groupTypes
+                    (allHwithIdentifiers
                         |> Dict.values
-                        |> List.map
-                            (\gt ->
-                                viewSmallCard (Removed gt)
-                                    (text <| Uuid.toString gt.uuid)
-                                    none
-                            )
+                        |> List.map (\h -> hViewSmallCard (Removed h.uuid) s.state.groups allHwithIdentifiers s.state.configs h)
                         |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
                     )
                 ]

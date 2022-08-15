@@ -9,23 +9,23 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
-import Item.Item as Item
+import Item.Item as Item exposing (Item)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Type
-import Typed.Type as TType
+import State exposing (State)
+import Type exposing (Type)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -105,17 +105,11 @@ init s f =
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
-    let
-        ( newUuid, newSeed ) =
-            Random.step Uuid.generator model.seed
-    in
     case msg of
         InputType mpt ->
             ( { model
                 | flatselect = mpt
-                , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.HType HType.ProcessType) mpt newUuid
-                , uuid = newUuid
-                , seed = newSeed
+                , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.HType HType.ProcessType) mpt model.uuid
               }
             , Effect.none
             )
@@ -138,7 +132,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedProcessType pt
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.PT pt) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.AT pt) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -150,7 +144,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Process Type"
+    { title = "Adding an Process Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -197,19 +191,19 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers s.state.agentTypes
+                            hWithIdentifiers s.state.identifiers s.state.processTypes
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.agents allHwithIdentifiers s.state.configs) model.flatselect
+                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Optional parent type for the new Process Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (hClickableCard InputType s.state.agents allHwithIdentifiers s.state.configs)
+                                |> List.map (hClickableCard InputType s.state.processes allHwithIdentifiers s.state.configs)
                                 |> withDefaultContent (p "(There are no Process Types yet)")
                             )
                         ]

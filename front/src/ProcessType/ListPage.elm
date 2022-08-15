@@ -13,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (hViewSmallCard, viewSmallCard)
+import View.Smallcard exposing (hViewSmallCard)
 import View.Type as ViewType
 
 
