@@ -59,9 +59,6 @@ hViewHalfCard deleteMsg allT allH configs h =
 
         title =
             Identifiable.display mconfig h
-
-        description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
     viewHalfCard deleteMsg (text title)
 
@@ -82,8 +79,8 @@ hViewSmallCard deleteMsg allT allH configs h =
     viewSmallCard deleteMsg (text title) (text description)
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
-sClickableCard onInput allT allH configs h =
+sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg
+sClickableCard onInput allT allH configs h t =
     -- clickable card for typed items
     let
         mconfig =
@@ -95,7 +92,20 @@ sClickableCard onInput allT allH configs h =
         description =
             h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
-    clickableCard (onInput (HasUserType h.what h.uuid)) (text title) (text description)
+    clickableCard (onInput (HasUserType t h.uuid)) (text title) (text description)
+
+
+sViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
+sViewHalfCard deleteMsg allT allH configs h =
+    -- smallcard for hierarchic items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+
+        title =
+            Identifiable.display mconfig h
+    in
+    viewHalfCard deleteMsg (text title)
 
 
 hClickableCard : (Maybe (Identifiable (Hierarchic b)) -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg

@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, containsItem, containsScope, decoder, encode, getUpperList, mainHType, mainTType, toDisplay, toString)
+module Scope.Scope exposing (Scope(..), compare, containsItem, containsScope, decoder, encode, getUpperList, mainHType, mainTType, toString)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
@@ -311,36 +311,6 @@ toString scope =
 
         HasUserType t tuid ->
             Type.toString t ++ "(parent=" ++ Uuid.toString tuid ++ ")"
-
-        Identified _ ->
-            "Identified"
-
-        And s1 s2 ->
-            "(" ++ toString s1 ++ ") And (" ++ toString s2 ++ ")"
-
-        Or s1 s2 ->
-            "(" ++ toString s1 ++ ") Or (" ++ toString s2 ++ ")"
-
-        Not s ->
-            "Not (" ++ toString s ++ ")"
-
-
-toDisplay : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> String
-toDisplay allT allH scope =
-    -- for user display
-    -- TODO resolve the uuids
-    case scope of
-        Empty ->
-            "Nothing"
-
-        IsItem t uuid ->
-            Type.toString t ++ " with uuid=" ++ Uuid.toString uuid
-
-        HasType t ->
-            Type.toString t
-
-        HasUserType t tuid ->
-            Type.toString t ++ " with type=" ++ Uuid.toString tuid
 
         Identified _ ->
             "Identified"

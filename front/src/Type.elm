@@ -1,4 +1,4 @@
-module Type exposing (Type(..), all, allStrings, decoder, encode, fromType, isType, toHierarchic, toPluralString, toString, toType)
+module Type exposing (Type(..), all, allStrings, decoder, encode, fromHierarchic, fromType, isType, toHierarchic, toPluralString, toString, toType)
 
 import Hierarchy.Type as HType exposing (Type(..))
 import Json.Decode as Decode exposing (Decoder)
@@ -102,3 +102,13 @@ toHierarchic t =
 
         HType ht ->
             HType ht
+
+
+fromHierarchic : Type -> Type
+fromHierarchic t =
+    case t of
+        TType tt ->
+            TType tt
+
+        HType ht ->
+            TType (TType.fromHierarchic ht)
