@@ -1,7 +1,6 @@
 module Group.Group exposing (Group, compare, decoder, encode, fromUuid)
 
 import Dict exposing (Dict)
-import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -29,7 +28,7 @@ encode g =
         [ ( "what", Type.encode g.what )
         , ( "uuid", Uuid.encode g.uuid )
         , ( "type", Uuid.encode g.type_ )
-        , ( "def", Scope.encode g.scope )
+        , ( "scope", Scope.encode g.scope )
         ]
 
 
