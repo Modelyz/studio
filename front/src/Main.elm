@@ -10,33 +10,45 @@ import Browser
 import Browser.Events as Events
 import Commitment.AddPage
 import Commitment.ListPage
+import Commitment.ViewPage
 import CommitmentType.AddPage
 import CommitmentType.ListPage
+import CommitmentType.ViewPage
 import Contract.AddPage
 import Contract.ListPage
+import Contract.ViewPage
 import ContractType.AddPage
 import ContractType.ListPage
+import ContractType.ViewPage
 import Element exposing (..)
 import Event.AddPage
 import Event.ListPage
+import Event.ViewPage
 import EventType.AddPage
 import EventType.ListPage
+import EventType.ViewPage
 import Group.AddPage
 import Group.ListPage
+import Group.ViewPage
 import GroupType.AddPage
 import GroupType.ListPage
+import GroupType.ViewPage
 import HomePage
 import Ident.AddPage
 import Ident.ListPage
 import Json.Encode as Encode
 import Process.AddPage
 import Process.ListPage
+import Process.ViewPage
 import ProcessType.AddPage
 import ProcessType.ListPage
+import ProcessType.ViewPage
 import Resource.AddPage
 import Resource.ListPage
+import Resource.ViewPage
 import ResourceType.AddPage
 import ResourceType.ListPage
+import ResourceType.ViewPage
 import Route exposing (toRoute)
 import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)

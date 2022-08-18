@@ -13,45 +13,67 @@ type Route
     = Home
       -- Process
     | ProcessTypeList
-    | ProcessList (Maybe String)
-    | ProcessView String
     | ProcessTypeView String
     | ProcessTypeAdd
+    | ProcessTypeEdit String
+    | ProcessList (Maybe String)
+    | ProcessView String
+    | ProcessEdit String
     | ProcessAdd
       -- Resource
     | ResourceTypeList
-    | ResourceList
     | ResourceTypeAdd
+    | ResourceTypeEdit String
+    | ResourceTypeView String
+    | ResourceList
     | ResourceAdd
+    | ResourceEdit String
+    | ResourceView String
       -- Agent
     | AgentTypeList
     | AgentTypeAdd
     | AgentTypeEdit String
     | AgentTypeView String
     | AgentList
+    | AgentAdd
     | AgentEdit String
     | AgentView String
-    | AgentAdd
       -- Commitment
     | CommitmentTypeAdd
-    | CommitmentAdd
     | CommitmentTypeList
+    | CommitmentTypeEdit String
+    | CommitmentTypeView String
+    | CommitmentAdd
     | CommitmentList
+    | CommitmentEdit String
+    | CommitmentView String
       -- Contract
-    | ContractTypeAdd
-    | ContractAdd
     | ContractTypeList
+    | ContractTypeAdd
+    | ContractTypeEdit String
+    | ContractTypeView String
     | ContractList
+    | ContractAdd
+    | ContractEdit String
+    | ContractView String
       -- Event
     | EventTypeList
-    | EventList
     | EventTypeAdd
+    | EventTypeEdit String
+    | EventTypeView String
+    | EventList
     | EventAdd
+    | EventEdit String
+    | EventView String
       -- Group
     | GroupTypeList
     | GroupTypeAdd
+    | GroupTypeEdit String
+    | GroupTypeView String
     | GroupList
     | GroupAdd
+    | GroupEdit String
+    | GroupView String
       -- Ident
     | IdentifierTypeList
     | IdentifierTypeAdd
@@ -146,11 +168,15 @@ toString r =
         ProcessTypeView ptype ->
             absolute [ "process-type", percentEncode ptype ] []
 
-        ProcessAdd ->
-            absolute [ "process", "add" ] []
+        ProcessTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "process-type", "edit", percentEncode uuid ] []
 
         ProcessTypeAdd ->
             absolute [ "process-type", "add" ] []
+
+        ProcessAdd ->
+            absolute [ "process", "add" ] []
 
         ProcessView p ->
             absolute [ "process", percentEncode p ] []
@@ -163,17 +189,55 @@ toString r =
                 Nothing ->
                     absolute [ "process" ] []
 
+        ProcessEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "process", "edit", percentEncode uuid ] []
+
         ResourceList ->
             absolute [ "resource" ] []
+
+        ResourceView uuid ->
+            absolute [ "resource", percentEncode uuid ] []
 
         ResourceAdd ->
             absolute [ "resource", "add" ] []
 
-        ResourceTypeList ->
-            absolute [ "resource-type" ] []
+        ResourceEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "resource", "edit", percentEncode uuid ] []
+
+        ResourceTypeView uuid ->
+            absolute [ "resource-type", percentEncode uuid ] []
+
+        ResourceTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "resource-type", "edit", percentEncode uuid ] []
 
         ResourceTypeAdd ->
             absolute [ "resource-type", "add" ] []
+
+        ResourceTypeList ->
+            absolute [ "resource-type" ] []
+
+        EventList ->
+            absolute [ "event" ] []
+
+        EventView uuid ->
+            absolute [ "event", percentEncode uuid ] []
+
+        EventAdd ->
+            absolute [ "event", "add" ] []
+
+        EventEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "event", "edit", percentEncode uuid ] []
+
+        EventTypeView uuid ->
+            absolute [ "event-type", percentEncode uuid ] []
+
+        EventTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "event-type", "edit", percentEncode uuid ] []
 
         EventTypeAdd ->
             absolute [ "event-type", "add" ] []
@@ -181,17 +245,11 @@ toString r =
         EventTypeList ->
             absolute [ "event-type" ] []
 
-        EventAdd ->
-            absolute [ "event", "add" ] []
-
-        EventList ->
-            absolute [ "event" ] []
-
         AgentList ->
             absolute [ "agent" ] []
 
         AgentView uuid ->
-            absolute [ "agent-type", percentEncode uuid ] []
+            absolute [ "agent", percentEncode uuid ] []
 
         AgentAdd ->
             absolute [ "agent", "add" ] []
@@ -213,41 +271,83 @@ toString r =
         AgentTypeList ->
             absolute [ "agent-type" ] []
 
-        CommitmentTypeList ->
-            absolute [ "commitment-type" ] []
-
-        CommitmentTypeAdd ->
-            absolute [ "commitment-type", "add" ] []
-
         CommitmentList ->
             absolute [ "commitment" ] []
+
+        CommitmentView uuid ->
+            absolute [ "commitment", percentEncode uuid ] []
 
         CommitmentAdd ->
             absolute [ "commitment", "add" ] []
 
-        ContractTypeList ->
-            absolute [ "contract-type" ] []
+        CommitmentEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "commitment", "edit", percentEncode uuid ] []
 
-        ContractTypeAdd ->
-            absolute [ "contract-type", "add" ] []
+        CommitmentTypeView uuid ->
+            absolute [ "commitment-type", percentEncode uuid ] []
+
+        CommitmentTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "commitment-type", "edit", percentEncode uuid ] []
+
+        CommitmentTypeAdd ->
+            absolute [ "commitment-type", "add" ] []
+
+        CommitmentTypeList ->
+            absolute [ "commitment-type" ] []
 
         ContractList ->
             absolute [ "contract" ] []
 
+        ContractView uuid ->
+            absolute [ "contract", percentEncode uuid ] []
+
         ContractAdd ->
             absolute [ "contract", "add" ] []
 
-        GroupTypeAdd ->
-            absolute [ "group-type", "add" ] []
+        ContractEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "contract", "edit", percentEncode uuid ] []
+
+        ContractTypeView uuid ->
+            absolute [ "contract-type", percentEncode uuid ] []
+
+        ContractTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "contract-type", "edit", percentEncode uuid ] []
+
+        ContractTypeAdd ->
+            absolute [ "contract-type", "add" ] []
+
+        ContractTypeList ->
+            absolute [ "contract-type" ] []
+
+        GroupList ->
+            absolute [ "group" ] []
+
+        GroupView uuid ->
+            absolute [ "group", percentEncode uuid ] []
 
         GroupAdd ->
             absolute [ "group", "add" ] []
 
+        GroupEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "group", "edit", percentEncode uuid ] []
+
+        GroupTypeView uuid ->
+            absolute [ "group-type", percentEncode uuid ] []
+
+        GroupTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "group-type", "edit", percentEncode uuid ] []
+
+        GroupTypeAdd ->
+            absolute [ "group-type", "add" ] []
+
         GroupTypeList ->
             absolute [ "group-type" ] []
-
-        GroupList ->
-            absolute [ "group" ] []
 
         IdentifierTypeList ->
             absolute [ "identifier-type" ] []

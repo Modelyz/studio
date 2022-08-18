@@ -1,9 +1,9 @@
 module GroupType.ListPage exposing (match, page)
 
+import GroupType.GroupType exposing (GroupType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import GroupType.GroupType exposing (GroupType)
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
@@ -13,7 +13,7 @@ import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (hViewSmallCard)
+import View.Smallcard exposing (hClickableRemovableCard)
 import View.Type as ViewType
 
 
@@ -26,6 +26,7 @@ type alias Model =
 type Msg
     = Removed Uuid
     | Add
+    | View Uuid
     | Search String
 
 
@@ -67,6 +68,9 @@ update s msg model =
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
 
+        View uuid ->
+            ( model, redirectAdd (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+
         Search str ->
             ( { model | search = SearchFull str }, Effect.none )
 
@@ -97,7 +101,7 @@ viewContent model vt s =
                     [ spacing 10 ]
                     (allHwithIdentifiers
                         |> Dict.values
-                        |> List.map (\h -> hViewSmallCard (Removed h.uuid) s.state.groups allHwithIdentifiers s.state.configs h)
+                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.groups allHwithIdentifiers s.state.configs h)
                         |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
                     )
                 ]

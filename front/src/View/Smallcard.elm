@@ -8,7 +8,7 @@ import Element.Events as Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Identifiable as Identifiable exposing (Identifiable)
-import Item.Item as Item exposing (Item, OnlyItem)
+import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Type as Type
@@ -139,7 +139,7 @@ hClickableCard onInput allT allH configs h =
     clickableCard (onInput (Just h)) (text title) (text description)
 
 
-tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
 tClickableRemovableCard onChoose onDelete allT allH configs t =
     -- clickable card for typed items
     let
@@ -158,7 +158,7 @@ tClickableRemovableCard onChoose onDelete allT allH configs t =
     clickableRemovableCard onChoose onDelete (text title) (text description)
 
 
-hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
+hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hClickableRemovableCard onChoose onDelete allT allH configs h =
     -- clickable card for typed items
     let
@@ -172,25 +172,6 @@ hClickableRemovableCard onChoose onDelete allT allH configs h =
             h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)
-
-
-
---tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
---tViewHalfCard onDelete allT allH configs t =
---    -- smallcard for hierarchic items
---    let
---        mconfig =
---            Config.getMostSpecific allT allH configs SmallcardTitle (HasType t.what t.parent)
---
---        title =
---            Identifiable.display mconfig t
---
---        description =
---            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
---    in
---    viewHalfCard onDelete (text title)
---
---
 
 
 tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed a) -> Element msg
@@ -210,22 +191,3 @@ tViewSmallCard onDelete allT allH configs t =
             H.find allH t.type_ |> Maybe.map (Identifiable.display mhconfig) |> Maybe.withDefault ""
     in
     viewSmallCard onDelete (text title) (text description)
-
-
-
---
---
---tClickableCard : (Maybe (Identifiable (Hierarchic b)) -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
---tClickableCard onInput allT allH configs t =
---    -- clickable card for typed items
---    let
---        mconfig =
---            Config.getMostSpecific allT allH configs SmallcardTitle (HasType t.what t.parent)
---
---        title =
---            Identifiable.display mconfig t
---
---        description =
---            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
---    in
---    clickableCard (onInput (Just t)) (text title) (text description)

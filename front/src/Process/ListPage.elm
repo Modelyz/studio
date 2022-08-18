@@ -1,5 +1,6 @@
 module Process.ListPage exposing (match, page)
 
+import Process.Process exposing (Process)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -7,13 +8,12 @@ import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
 import Route exposing (Route, redirect, redirectAdd)
 import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (tViewSmallCard)
+import View.Smallcard exposing (tClickableRemovableCard)
 import View.Type as ViewType
 
 
@@ -26,6 +26,7 @@ type alias Model =
 type Msg
     = Removed Uuid
     | Add
+    | View Uuid
     | Search String
 
 
@@ -46,7 +47,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessList _ ->
+        Route.ProcessList _->
             Just { route = route }
 
         _ ->
@@ -67,6 +68,9 @@ update s msg model =
         Add ->
             ( model, redirectAdd "add" s.navkey model.route |> Effect.fromCmd )
 
+        View uuid ->
+            ( model, redirectAdd (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+
         Search str ->
             ( { model | search = SearchFull str }, Effect.none )
 
@@ -82,7 +86,6 @@ view s model =
 
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
-    --TODO |> Criteria.entitySearch model.search
     case vt of
         ViewType.Smallcard ->
             let
@@ -101,7 +104,7 @@ viewContent model vt s =
                     [ spacing 10 ]
                     (allTwithIdentifiers
                         |> Dict.values
-                        |> List.map (\t -> tViewSmallCard (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
+                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
                         |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
                 ]

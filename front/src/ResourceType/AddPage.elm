@@ -1,5 +1,6 @@
 module ResourceType.AddPage exposing (..)
 
+import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,21 +10,21 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Item.Item as Item exposing (Item)
+import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
-import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
-import Shared
+import Shared exposing (flip)
 import Spa.Page
 import State exposing (State)
 import Type exposing (Type)
@@ -34,7 +35,7 @@ import View.Style exposing (..)
 
 
 type alias Flags =
-    { route : Route }
+    { route : Route, uuid : Maybe Uuid }
 
 
 type alias Model =
@@ -78,7 +79,10 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.ResourceTypeAdd ->
-            Just { route = route }
+            Just { route = route, uuid = Nothing }
+
+        Route.ResourceTypeEdit uuid ->
+            Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
             Nothing
@@ -90,16 +94,34 @@ init s f =
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
     in
-    ( { route = f.route
-      , flatselect = Nothing
-      , uuid = newUuid
-      , seed = newSeed
-      , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing newUuid
-      , groups = Dict.empty
-      , warning = ""
-      , step = Step.Step StepType
-      , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
-      }
+    ( f.uuid
+        |> Maybe.andThen (H.find s.state.resourceTypes)
+        |> Maybe.map
+            (\at ->
+                { route = f.route
+                , flatselect = at.parent |> Maybe.andThen (H.find s.state.resourceTypes)
+                , uuid = at.uuid
+                , seed = newSeed
+                , identifiers =
+                    initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing at.uuid
+                        |> Dict.union (Identifier.fromUuid at.what at.uuid s.state.identifiers)
+                , groups = Dict.empty
+                , warning = ""
+                , step = Step.Step StepType
+                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                }
+            )
+        |> Maybe.withDefault
+            { route = f.route
+            , flatselect = Nothing
+            , uuid = newUuid
+            , seed = newSeed
+            , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing newUuid
+            , groups = Dict.empty
+            , warning = ""
+            , step = Step.Step StepType
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+            }
     , closeMenu f s.menu
     )
 
@@ -107,10 +129,10 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mrt ->
+        InputType mat ->
             ( { model
-                | flatselect = mrt
-                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) mrt model.uuid
+                | flatselect = mat
+                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) mat model.uuid
               }
             , Effect.none
             )
@@ -127,13 +149,13 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok rt ->
+                Ok at ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedResourceType rt
+                            (Message.AddedResourceType at
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.RT rt) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.AT at) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -172,6 +194,7 @@ validate m =
 
 buttonValidate : Model -> Result String field -> Element Msg
 buttonValidate m result =
+    -- TODO try to suppress using at View.Step.nextMsg
     case result of
         Ok _ ->
             if isLast m.step m.steps then
@@ -217,7 +240,7 @@ viewContent model s =
                         scope =
                             model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.ResourceType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.ResourceType))
                     in
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an ResourceType"

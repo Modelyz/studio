@@ -28,6 +28,7 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Shared exposing (flip)
 import Spa.Page
 import State exposing (State)
+import Time exposing (millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T
