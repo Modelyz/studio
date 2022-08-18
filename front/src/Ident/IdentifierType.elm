@@ -33,7 +33,14 @@ initIdentifiers allT allH its t mh newUuid =
         |> Dict.filter (\_ it -> Scope.containsScope allT allH scope it.applyTo)
     )
         |> Dict.values
-        |> List.map (\it -> ( Uuid.toString newUuid ++ "/" ++ it.name, Identifier newUuid it.name it.fragments ))
+        |> List.map
+            (\it ->
+                let
+                    i =
+                        Identifier t newUuid it.name it.fragments
+                in
+                ( Identifier.compare i, i )
+            )
         |> Dict.fromList
 
 

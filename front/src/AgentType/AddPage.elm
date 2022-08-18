@@ -104,7 +104,7 @@ init s f =
                 , seed = newSeed
                 , identifiers =
                     initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.HType HType.AgentType) Nothing at.uuid
-                        |> flip Dict.intersect (Identifier.fromUuid at.uuid s.state.identifiers)
+                        |> Dict.union (Identifier.fromUuid at.what at.uuid s.state.identifiers)
                 , groups = Dict.empty
                 , warning = ""
                 , step = Step.Step StepType

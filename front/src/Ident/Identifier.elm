@@ -4,16 +4,18 @@ import Dict exposing (Dict)
 import Group.Group as Group exposing (Group)
 import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Item.Item as Item exposing (Item)
+import Item.Item as Item exposing (Item, OnlyItem)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Type exposing (Type)
 import Typed.Typed exposing (Typed)
 
 
 type alias Identifier =
     -- This is the value of an identifier
-    { identifiable : Uuid -- TODO also the Type
+    { what : Type
+    , identifiable : Uuid
     , name : String
     , fragments : List Fragment
     }
@@ -24,9 +26,10 @@ select name =
     Dict.filter (\_ i -> i.name == name) >> Dict.values >> List.head
 
 
-fromUuid : Uuid -> Dict String Identifier -> Dict String Identifier
-fromUuid uuid =
-    Dict.filter (\_ i -> uuid == i.identifiable)
+fromUuid : Type -> Uuid -> Dict String Identifier -> Dict String Identifier
+fromUuid what uuid =
+    -- TODO rename fromUuid? Change args?
+    Dict.filter (\_ i -> what == i.what && uuid == i.identifiable)
 
 
 toDict : Dict String Identifier -> Dict String String
@@ -41,13 +44,14 @@ toDict ids =
 
 compare : Identifier -> String
 compare i =
-    Uuid.toString i.identifiable ++ "/" ++ i.name
+    Type.compare i.what ++ "/" ++ Uuid.toString i.identifiable ++ "/" ++ i.name
 
 
 encode : Identifier -> Encode.Value
 encode i =
     Encode.object
-        [ ( "identifiable", Uuid.encode i.identifiable )
+        [ ( "what", Type.encode i.what )
+        , ( "identifiable", Uuid.encode i.identifiable )
         , ( "name", Encode.string i.name )
         , ( "fragments", Encode.list Fragment.encode i.fragments )
         ]
@@ -55,7 +59,8 @@ encode i =
 
 decoder : Decoder Identifier
 decoder =
-    Decode.map3 Identifier
+    Decode.map4 Identifier
+        (Decode.field "what" Type.decoder)
         (Decode.field "identifiable" Uuid.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))

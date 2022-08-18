@@ -11,6 +11,7 @@ type alias Hierarchic a =
         | what : Type
         , uuid : Uuid
         , parent : Maybe Uuid
+        , identifiers : Dict String String
     }
 
 

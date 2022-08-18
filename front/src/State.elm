@@ -148,8 +148,25 @@ aggregate (Message b p) state =
         IdentifierTypeRemoved it ->
             { state
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
+                , identifiers =
+                    -- keep the identifiers whose name are different from the one removed, and whose item is in the scope of the identifier type
+                    state.identifiers
+                        |> Dict.filter
+                            (\_ i ->
+                                i.name
+                                    /= it.name
+                                    && ((case i.what of
+                                            Type.TType tt ->
+                                                T.find (allTyped state tt) i.identifiable
+                                                    |> Maybe.map (containsItem it.applyTo)
 
-                -- TODO , identifiers = Dict.filter (\k i -> containsItem ) state.identifiers
+                                            Type.HType ht ->
+                                                H.find (allHierarchic state ht) i.identifiable
+                                                    |> Maybe.map (containsItem it.applyTo)
+                                        )
+                                            |> Maybe.withDefault False
+                                       )
+                            )
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids

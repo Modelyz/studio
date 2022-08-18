@@ -123,13 +123,13 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , at.parent
                         |> Maybe.andThen (H.find s.state.agentTypes)
-                        |> Maybe.map (\p -> withIdentifiers s.state.identifiers p.uuid p)
+                        |> Maybe.map (\p -> withIdentifiers s.state.identifiers p.what p.uuid p)
                         |> Maybe.map (\pat -> Identifiable.display mconfig pat)
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
                     , at
-                        |> withIdentifiers s.state.identifiers at.uuid
+                        |> withIdentifiers s.state.identifiers at.what at.uuid
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     ]

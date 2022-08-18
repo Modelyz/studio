@@ -6,6 +6,7 @@ import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Identifier as Identifier exposing (Identifier, fromUuid)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Type exposing (Type)
 import Typed.Typed exposing (Typed)
 import Zone.Fragment exposing (displayFromDict)
 
@@ -15,22 +16,22 @@ type alias Identifiable a =
     { a | identifiers : Dict String String }
 
 
-tWithIdentifiers : Dict String Identifier -> Dict String (Typed (Identifiable a)) -> Dict String (Typed (Identifiable a))
+tWithIdentifiers : Dict String Identifier -> Dict String (Typed a) -> Dict String (Typed a)
 tWithIdentifiers allIds ts =
     -- enrich the set of items with their identifiers as a dict
     -- TODO remove tWithIdentifiers and hWithIdentifiers and replace with just withIdentifiers
-    Dict.map (\_ t -> withIdentifiers allIds t.uuid t) ts
+    Dict.map (\_ t -> withIdentifiers allIds t.what t.uuid t) ts
 
 
-hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic (Identifiable a)) -> Dict String (Hierarchic (Identifiable a))
+hWithIdentifiers : Dict String Identifier -> Dict String (Hierarchic a) -> Dict String (Hierarchic a)
 hWithIdentifiers allIds hs =
     -- enrich the set of items with their identifiers as a dict
-    Dict.map (\_ h -> withIdentifiers allIds h.uuid h) hs
+    Dict.map (\_ h -> withIdentifiers allIds h.what h.uuid h) hs
 
 
-withIdentifiers : Dict String Identifier -> Uuid -> Identifiable a -> Identifiable a
-withIdentifiers allIds uuid i =
-    { i | identifiers = fromUuid uuid allIds |> Identifier.toDict }
+withIdentifiers : Dict String Identifier -> Type -> Uuid -> Identifiable a -> Identifiable a
+withIdentifiers allIds what uuid i =
+    { i | identifiers = fromUuid what uuid allIds |> Identifier.toDict }
 
 
 display : Maybe Configuration -> Identifiable (Item b) -> String
