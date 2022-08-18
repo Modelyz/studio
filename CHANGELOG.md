@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 2 -- 2022-08-18
+
+* Edit Page and View Page for all entities
+
 ## version 1 -- 2022-08-16
 
 * Gigantic refactoring to allow future search feature
