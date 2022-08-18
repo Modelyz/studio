@@ -139,6 +139,25 @@ hClickableCard onInput allT allH configs h =
     clickableCard (onInput (Just h)) (text title) (text description)
 
 
+tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
+tClickableRemovableCard onChoose onDelete allT allH configs t =
+    -- clickable card for typed items
+    let
+        mtconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.type_)
+
+        mhconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t.what) t.type_)
+
+        title =
+            Identifiable.display mtconfig t
+
+        description =
+            H.find allH t.type_ |> Maybe.map (Identifiable.display mhconfig) |> Maybe.withDefault ""
+    in
+    clickableRemovableCard onChoose onDelete (text title) (text description)
+
+
 hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
 hClickableRemovableCard onChoose onDelete allT allH configs h =
     -- clickable card for typed items

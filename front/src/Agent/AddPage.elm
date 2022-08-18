@@ -11,29 +11,34 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
+import Hierarchy.Type as TType
 import Hierarchy.View exposing (toDesc)
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
-import Item.Item as Item
+import Item.Item as Item exposing (Item)
+import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
-import Shared
+import Shared exposing (flip)
 import Spa.Page
-import Type
+import State exposing (State)
+import Type exposing (Type)
 import Typed.Type as TType
+import Typed.Typed as T
 import View exposing (..)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
 
 type alias Flags =
-    { route : Route }
+    { route : Route, uuid : Maybe Uuid }
 
 
 type alias Model =
@@ -77,7 +82,10 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.AgentAdd ->
-            Just { route = route }
+            Just { route = route, uuid = Nothing }
+
+        Route.AgentEdit uuid ->
+            Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
             Nothing
@@ -89,33 +97,45 @@ init s f =
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
     in
-    ( { route = f.route
-      , flatselect = Nothing
-      , uuid = newUuid
-      , seed = newSeed
-      , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.TType TType.Agent) Nothing newUuid
-      , groups = Dict.empty
-      , warning = ""
-      , step = Step.Step StepType
-      , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
-      }
+    ( f.uuid
+        |> Maybe.andThen (T.find s.state.agents)
+        |> Maybe.map
+            (\a ->
+                { route = f.route
+                , flatselect = H.find s.state.agentTypes a.type_
+                , uuid = a.uuid
+                , seed = newSeed
+                , identifiers =
+                    initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.TType TType.Agent) Nothing a.uuid
+                        |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
+                , groups = Dict.empty
+                , warning = ""
+                , step = Step.Step StepType
+                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                }
+            )
+        |> Maybe.withDefault
+            { route = f.route
+            , flatselect = Nothing
+            , uuid = newUuid
+            , seed = newSeed
+            , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.TType TType.Agent) Nothing newUuid
+            , groups = Dict.empty
+            , warning = ""
+            , step = Step.Step StepType
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+            }
     , closeMenu f s.menu
     )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
-    let
-        ( newUuid, newSeed ) =
-            Random.step Uuid.generator model.seed
-    in
     case msg of
         InputType mat ->
             ( { model
                 | flatselect = mat
-                , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.TType TType.Agent) mat newUuid
-                , uuid = newUuid
-                , seed = newSeed
+                , identifiers = initIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes (Type.TType TType.Agent) mat model.uuid
               }
             , Effect.none
             )
@@ -132,13 +152,13 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok r ->
+                Ok a ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedAgent r
+                            (Message.AddedAgent a
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.A r) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.A a) g) (Dict.values model.groups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -150,7 +170,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Agent"
+    { title = "Adding an Agent Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -161,8 +181,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            checkNothing model.flatselect "Please choose a type"
-                |> Result.map (\_ -> ())
+            Ok ()
 
         Step StepIdentifiers ->
             Ok ()
@@ -174,16 +193,17 @@ checkStep model =
 validate : Model -> Result String Agent
 validate m =
     case m.flatselect of
-        Just rt ->
+        Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Agent (Type.TType TType.Agent) m.uuid rt.uuid Dict.empty
+            Ok <| Agent (Type.TType TType.Agent) m.uuid at.uuid Dict.empty
 
         Nothing ->
-            Err "You must select an Agent Type"
+            Err "You must select an Resource Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
 buttonValidate m result =
+    -- TODO try to suppress using at View.Step.nextMsg
     case result of
         Ok _ ->
             if isLast m.step m.steps then
@@ -203,6 +223,9 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     let
+                        allTwithIdentifiers =
+                            tWithIdentifiers s.state.identifiers s.state.agents
+
                         allHwithIdentifiers =
                             hWithIdentifiers s.state.identifiers s.state.agentTypes
                     in
@@ -212,8 +235,8 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.agents allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Choose the type of the new Agent"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ] <|
+                        , h2 "Optional parent type for the new Agent Type (it can be hierarchical)"
+                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
                                 |> List.map (hClickableCard InputType s.state.agents allHwithIdentifiers s.state.configs)
@@ -229,7 +252,7 @@ viewContent model s =
                         scope =
                             model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Agent) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Agent))
                     in
-                    inputIdentifiers { onEnter = Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
         "Adding an Agent"

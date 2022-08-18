@@ -27,9 +27,11 @@ type Route
     | AgentTypeList
     | AgentTypeAdd
     | AgentTypeEdit String
-    | AgentList
-    | AgentAdd
     | AgentTypeView String
+    | AgentList
+    | AgentEdit String
+    | AgentView String
+    | AgentAdd
       -- Commitment
     | CommitmentTypeAdd
     | CommitmentAdd
@@ -110,8 +112,10 @@ routeParser =
         , map AgentTypeView (s "agent-type" </> encodedString)
         , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
         , map AgentTypeList (s "agent-type") -- TODO add "/list"
-        , map AgentList (s "agent")
         , map AgentAdd (s "agent" </> s "add")
+        , map AgentView (s "agent" </> encodedString)
+        , map AgentEdit (s "agent" </> s "edit" </> encodedString)
+        , map AgentList (s "agent")
 
         -- configure display
         , map ConfigurationList (s "config")
@@ -186,8 +190,15 @@ toString r =
         AgentList ->
             absolute [ "agent" ] []
 
+        AgentView uuid ->
+            absolute [ "agent-type", percentEncode uuid ] []
+
         AgentAdd ->
             absolute [ "agent", "add" ] []
+
+        AgentEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "agent", "edit", percentEncode uuid ] []
 
         AgentTypeView uuid ->
             absolute [ "agent-type", percentEncode uuid ] []

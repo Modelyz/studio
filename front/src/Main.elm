@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Agent.AddPage
 import Agent.ListPage
+import Agent.ViewPage
 import AgentType.AddPage
 import AgentType.ListPage
 import AgentType.ViewPage
@@ -145,6 +146,7 @@ main =
         |> Spa.addPublicPage mappers AgentType.ViewPage.match AgentType.ViewPage.page
         |> Spa.addPublicPage mappers AgentType.ListPage.match AgentType.ListPage.page
         |> Spa.addPublicPage mappers AgentType.AddPage.match AgentType.AddPage.page
+        |> Spa.addPublicPage mappers Agent.ViewPage.match Agent.ViewPage.page
         |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page
         |> Spa.addPublicPage mappers Agent.AddPage.match Agent.AddPage.page
         -- Commitment

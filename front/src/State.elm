@@ -149,13 +149,15 @@ aggregate (Message b p) state =
             { state
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
                 , identifiers =
-                    -- keep the identifiers whose name are different from the one removed, and whose item is in the scope of the identifier type
+                    -- keep the identifiers whose name are different from the one removed,
+                    -- or if this is the same name, whose item is not in the scope of the identifier type
                     state.identifiers
                         |> Dict.filter
                             (\_ i ->
                                 i.name
                                     /= it.name
-                                    && ((case i.what of
+                                    || not
+                                        ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
                                                     |> Maybe.map (containsItem it.applyTo)
@@ -163,9 +165,9 @@ aggregate (Message b p) state =
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
                                                     |> Maybe.map (containsItem it.applyTo)
-                                        )
+                                         )
                                             |> Maybe.withDefault False
-                                       )
+                                        )
                             )
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
