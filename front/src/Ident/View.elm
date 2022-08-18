@@ -5,6 +5,8 @@ module Ident.View exposing (..)
 import Configuration exposing (Configuration(..))
 import Dict exposing (Dict)
 import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Fragment as IdentFragment
@@ -16,8 +18,9 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
 import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
-import View exposing (withDefaultContent)
+import View exposing (..)
 import View.Lang as Lang exposing (Lang(..))
+import View.Style exposing (..)
 import View.Type as ViewType
 import Zone.Fragment as ZoneFragment
 import Zone.Zone as Zone exposing (Zone(..))
@@ -34,13 +37,14 @@ type alias Config msg =
 
 
 displayIdentifiers : String -> List Identifier -> Element msg
-displayIdentifiers default identifiers =
+displayIdentifiers default is =
+    -- Display the identifiers, using a default text if none
     row []
-        (identifiers
+        (is
             |> List.map
-                (\identifier ->
+                (\i ->
                     row [] <|
-                        List.map (\f -> displayFragment f identifiers) identifier.fragments
+                        List.map (\f -> displayFragment f is) i.fragments
                 )
             |> withDefaultContent (text default)
         )
@@ -95,3 +99,32 @@ displayScope scope =
                             ]
                     )
                 |> Maybe.withDefault (text <| HType.toString t)
+
+
+type alias IdentColumn r msg =
+    { header : Element msg, width : Length, view : r -> Element msg }
+
+
+headerCell : String -> Element msg
+headerCell =
+    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.header.background ]
+
+
+innerCell : String -> Element msg
+innerCell =
+    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
+
+
+displayIdentifierDict : String -> Dict String String -> Element msg
+displayIdentifierDict default data =
+    if Dict.size data > 0 then
+        table [ width shrink, Background.color color.item.background ]
+            { data = Dict.toList data
+            , columns =
+                [ { header = headerCell "Identifier", width = fill, view = Tuple.first >> innerCell }
+                , { header = headerCell "Value", width = fill, view = Tuple.second >> innerCell }
+                ]
+            }
+
+    else
+        text "(none)"

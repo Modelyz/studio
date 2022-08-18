@@ -1,4 +1,4 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, identity, init, update, uuidAggregator)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, flip, identity, init, update, uuidAggregator)
 
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
@@ -70,6 +70,11 @@ type alias Flags =
     , url : Maybe Url
     , windowSize : WindowSize
     }
+
+
+flip : (a -> b -> c) -> b -> a -> c
+flip =
+    \f x y -> f y x
 
 
 flagsDecoder : Decode.Decoder Flags

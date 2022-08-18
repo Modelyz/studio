@@ -57,6 +57,15 @@ onEnter next validate warning m result =
                 warning err
 
 
+nextMsg : Model model step -> (Msg -> msg) -> Msg -> msg -> msg
+nextMsg m c next validate =
+    if isLast m.step m.steps then
+        validate
+
+    else
+        c next
+
+
 indexOf : a -> List a -> Maybe Int
 indexOf x =
     -- 1st index is 1

@@ -2,6 +2,7 @@ module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectP
 
 import Browser.Navigation as Nav
 import Effect exposing (Effect)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
@@ -25,6 +26,7 @@ type Route
       -- Agent
     | AgentTypeList
     | AgentTypeAdd
+    | AgentTypeEdit String
     | AgentList
     | AgentAdd
     | AgentTypeView String
@@ -103,10 +105,11 @@ routeParser =
         , map CommitmentTypeList (s "commitment-type")
         , map CommitmentList (s "commitment")
 
-        -- Agent
+        -- Agent -- TODO replace add with new
         , map AgentTypeAdd (s "agent-type" </> s "add")
-        , map AgentTypeList (s "agent-type")
         , map AgentTypeView (s "agent-type" </> encodedString)
+        , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
+        , map AgentTypeList (s "agent-type") -- TODO add "/list"
         , map AgentList (s "agent")
         , map AgentAdd (s "agent" </> s "add")
 
@@ -186,8 +189,12 @@ toString r =
         AgentAdd ->
             absolute [ "agent", "add" ] []
 
-        AgentTypeView at ->
-            absolute [ "agent-type", percentEncode at ] []
+        AgentTypeView uuid ->
+            absolute [ "agent-type", percentEncode uuid ] []
+
+        AgentTypeEdit uuid ->
+            -- TODO put "edit" at the end
+            absolute [ "agent-type", "edit", percentEncode uuid ] []
 
         AgentTypeAdd ->
             absolute [ "agent-type", "add" ] []
@@ -263,5 +270,5 @@ redirectParent navkey route =
 
 redirectAdd : String -> Nav.Key -> Route -> Cmd msg
 redirectAdd path navkey route =
-    -- redirect to a subpath
+    -- redirect to a subpath -- TODO rename to redirectSub
     toString route ++ "/" ++ path |> Nav.pushUrl navkey

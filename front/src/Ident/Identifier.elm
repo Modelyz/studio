@@ -13,7 +13,7 @@ import Typed.Typed exposing (Typed)
 
 type alias Identifier =
     -- This is the value of an identifier
-    { identifiable : Uuid
+    { identifiable : Uuid -- TODO also the Type
     , name : String
     , fragments : List Fragment
     }
@@ -24,22 +24,9 @@ select name =
     Dict.filter (\_ i -> i.name == name) >> Dict.values >> List.head
 
 
-fromHierarchic : Hierarchic a -> Dict String Identifier -> Dict String Identifier
-fromHierarchic item =
-    -- keep the identifiers corresponding to a certain item
-    Dict.filter (\_ i -> item.uuid == i.identifiable)
-
-
-fromTyped : Typed a -> Dict String Identifier -> Dict String Identifier
-fromTyped item =
-    -- keep the identifiers corresponding to a certain item
-    Dict.filter (\_ i -> item.uuid == i.identifiable)
-
-
-fromItem : Item a -> Dict String Identifier -> Dict String Identifier
-fromItem item =
-    -- keep the identifiers corresponding to a certain item
-    Dict.filter (\_ i -> item.uuid == i.identifiable)
+fromUuid : Uuid -> Dict String Identifier -> Dict String Identifier
+fromUuid uuid =
+    Dict.filter (\_ i -> uuid == i.identifiable)
 
 
 toDict : Dict String Identifier -> Dict String String

@@ -13,7 +13,7 @@ type alias AgentType =
     { what : Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String String
+    , identifiers : Dict String String -- TODO replace with Dict String Fragment
     }
 
 

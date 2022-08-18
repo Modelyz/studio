@@ -20,12 +20,27 @@ import Zone.Fragment exposing (displayFromDict)
 import Zone.Zone exposing (Zone(..))
 
 
+
+-- TODO merge all this
+
+
 viewSmallCard : msg -> Element msg -> Element msg -> Element msg
-viewSmallCard deleteMsg title description =
+viewSmallCard onDelete title description =
     column [ Background.color color.item.background ]
         [ row [ spacing 10, width fill ]
             [ row [ Font.size size.text.main, padding 10 ] [ title ]
-            , el [ alignRight ] (button.primary deleteMsg "×")
+            , el [ alignRight ] (button.primary onDelete "×")
+            ]
+        , row [ padding 10, Font.size size.text.small ] [ description ]
+        ]
+
+
+clickableRemovableCard : msg -> msg -> Element msg -> Element msg -> Element msg
+clickableRemovableCard onChoose onDelete title description =
+    column [ Background.color color.item.background, pointer, onClick onChoose ]
+        [ row [ spacing 10, width fill ]
+            [ row [ Font.size size.text.main, padding 10 ] [ title ]
+            , el [ alignRight ] (button.primary onDelete "×")
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
         ]
@@ -43,15 +58,15 @@ clickableCard onInput title description =
 
 
 viewHalfCard : msg -> Element msg -> Element msg
-viewHalfCard deleteMsg title =
+viewHalfCard onDelete title =
     row [ Background.color color.item.selected ]
         [ el [ padding 10 ] title
-        , button.secondary deleteMsg "×"
+        , button.secondary onDelete "×"
         ]
 
 
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
-hViewHalfCard deleteMsg allT allH configs h =
+hViewHalfCard onDelete allT allH configs h =
     -- smallcard for hierarchic items
     let
         mconfig =
@@ -60,11 +75,11 @@ hViewHalfCard deleteMsg allT allH configs h =
         title =
             Identifiable.display mconfig h
     in
-    viewHalfCard deleteMsg (text title)
+    viewHalfCard onDelete (text title)
 
 
 hViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
-hViewSmallCard deleteMsg allT allH configs h =
+hViewSmallCard onDelete allT allH configs h =
     -- smallcard for hierarchic items
     let
         mconfig =
@@ -76,7 +91,7 @@ hViewSmallCard deleteMsg allT allH configs h =
         description =
             h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
-    viewSmallCard deleteMsg (text title) (text description)
+    viewSmallCard onDelete (text title) (text description)
 
 
 sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg
@@ -96,7 +111,7 @@ sClickableCard onInput allT allH configs h t =
 
 
 sViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
-sViewHalfCard deleteMsg allT allH configs h =
+sViewHalfCard onDelete allT allH configs h =
     -- smallcard for hierarchic items
     let
         mconfig =
@@ -105,7 +120,7 @@ sViewHalfCard deleteMsg allT allH configs h =
         title =
             Identifiable.display mconfig h
     in
-    viewHalfCard deleteMsg (text title)
+    viewHalfCard onDelete (text title)
 
 
 hClickableCard : (Maybe (Identifiable (Hierarchic b)) -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
@@ -124,9 +139,25 @@ hClickableCard onInput allT allH configs h =
     clickableCard (onInput (Just h)) (text title) (text description)
 
 
+hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
+hClickableRemovableCard onChoose onDelete allT allH configs h =
+    -- clickable card for typed items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+
+        title =
+            Identifiable.display mconfig h
+
+        description =
+            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+    in
+    clickableRemovableCard onChoose onDelete (text title) (text description)
+
+
 
 --tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed b) -> Element msg
---tViewHalfCard deleteMsg allT allH configs t =
+--tViewHalfCard onDelete allT allH configs t =
 --    -- smallcard for hierarchic items
 --    let
 --        mconfig =
@@ -138,13 +169,13 @@ hClickableCard onInput allT allH configs h =
 --        description =
 --            Item.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
 --    in
---    viewHalfCard deleteMsg (text title)
+--    viewHalfCard onDelete (text title)
 --
 --
 
 
 tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed a) -> Element msg
-tViewSmallCard deleteMsg allT allH configs t =
+tViewSmallCard onDelete allT allH configs t =
     -- smallcard for hierarchic items
     let
         mtconfig =
@@ -159,7 +190,7 @@ tViewSmallCard deleteMsg allT allH configs t =
         description =
             H.find allH t.type_ |> Maybe.map (Identifiable.display mhconfig) |> Maybe.withDefault ""
     in
-    viewSmallCard deleteMsg (text title) (text description)
+    viewSmallCard onDelete (text title) (text description)
 
 
 

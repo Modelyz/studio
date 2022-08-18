@@ -4,6 +4,7 @@ import Agent.AddPage
 import Agent.ListPage
 import AgentType.AddPage
 import AgentType.ListPage
+import AgentType.ViewPage
 import Browser
 import Browser.Events as Events
 import Commitment.AddPage
@@ -141,6 +142,7 @@ main =
         |> Spa.addPublicPage mappers Event.AddPage.match Event.AddPage.page
         |> Spa.addPublicPage mappers Event.ListPage.match Event.ListPage.page
         -- Agent
+        |> Spa.addPublicPage mappers AgentType.ViewPage.match AgentType.ViewPage.page
         |> Spa.addPublicPage mappers AgentType.ListPage.match AgentType.ListPage.page
         |> Spa.addPublicPage mappers AgentType.AddPage.match AgentType.AddPage.page
         |> Spa.addPublicPage mappers Agent.ListPage.match Agent.ListPage.page

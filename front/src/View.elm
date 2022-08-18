@@ -11,7 +11,7 @@ import Element.Input as Input
 import Element.Region as Region
 import Html.Attributes as Attr
 import Html.Events
-import Json.Decode exposing (..)
+import Json.Decode as Decode
 import Route exposing (Route)
 import Shared
 import View.Style as Style exposing (..)
@@ -52,6 +52,11 @@ h3 title =
 p : String -> Element msg
 p content =
     paragraph [ Font.size size.text.main ] [ text content ]
+
+
+field : String -> Element msg
+field content =
+    paragraph [ Font.size size.text.main, Background.color color.item.background, padding 5 ] [ text content ]
 
 
 separator : Color -> Element msg
@@ -193,14 +198,14 @@ onEnter : msg -> Element.Attribute msg
 onEnter msg =
     Element.htmlAttribute
         (Html.Events.on "keyup"
-            (field "key" string
-                |> andThen
+            (Decode.field "key" Decode.string
+                |> Decode.andThen
                     (\key ->
                         if key == "Enter" then
-                            succeed msg
+                            Decode.succeed msg
 
                         else
-                            fail "Not the enter key"
+                            Decode.fail "Not the enter key"
                     )
             )
         )
@@ -225,17 +230,17 @@ checkEmptyList list err =
 
 
 checkEmptyDict : Dict comparable a -> String -> Result String (Dict comparable a)
-checkEmptyDict field err =
-    if Dict.isEmpty field then
+checkEmptyDict f err =
+    if Dict.isEmpty f then
         Err err
 
     else
-        Ok field
+        Ok f
 
 
 checkNothing : Maybe a -> String -> Result String (Maybe a)
-checkNothing field err =
-    case field of
+checkNothing f err =
+    case f of
         Nothing ->
             Err err
 

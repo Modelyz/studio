@@ -2,11 +2,8 @@ module Ident.IdentifierType exposing (..)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
-import Hierarchy.Type as HType
 import Ident.Fragment as Fragment exposing (Fragment)
-import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -25,7 +22,7 @@ type alias IdentifierType =
     }
 
 
-initIdentifiers : Dict String (Typed (Item a)) -> Dict String (Hierarchic (Item b)) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic (Item b)) -> Uuid -> Dict String Identifier
+initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic b) -> Uuid -> Dict String Identifier
 initIdentifiers allT allH its t mh newUuid =
     -- build the empty identifiers corresponding to the chosen type and possible user type
     let

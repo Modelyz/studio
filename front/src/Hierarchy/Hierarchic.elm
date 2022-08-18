@@ -34,8 +34,8 @@ getParent allH item =
 
 
 find : Dict String (Hierarchic a) -> Uuid -> Maybe (Hierarchic a)
-find es uuid =
-    Dict.filter (\_ e -> e.uuid == uuid) es
+find hs uuid =
+    Dict.filter (\_ e -> e.uuid == uuid) hs
         |> Dict.values
         |> List.head
 

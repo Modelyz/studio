@@ -26,8 +26,8 @@ size =
     { text =
         { main = 15
         , small = 12
-        , h1 = 35
-        , h2 = 25
+        , h1 = 28
+        , h2 = 24
         , h3 = 20
         , topbar = 20
         }
@@ -56,6 +56,16 @@ color =
     , widget =
         { background = rgb255 0xFF 0xFF 0xFF
         , selected = rgb255 0xC5 0xE8 0xF7
+        }
+    , table =
+        { header =
+            { background = rgb255 0xC5 0xE8 0xF7
+            , text = rgb255 0x00 0x00 0x00
+            }
+        , inner =
+            { background = rgb255 0xE0 0xE0 0xE0
+            , text = rgb255 0x00 0x00 0x00
+            }
         }
     , border =
         { main = rgb255 0x72 0x9F 0xCF

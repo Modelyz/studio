@@ -31,6 +31,7 @@ import Relation.ProcessCommitments as PC exposing (ProcessCommitments)
 import Relation.ProcessEvents as PE exposing (ProcessEvents)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
+import Scope.Scope exposing (containsItem)
 import Time exposing (millisToPosix)
 import Type exposing (Type(..))
 import Typed.Type as TType
@@ -128,6 +129,7 @@ insertUuid uuid =
 aggregate : Message -> State -> State
 aggregate (Message b p) state =
     case p of
+        -- TODO review the names (some are StuffAdded, some AddedStuff)
         ConnectionInitiated e ->
             { state
                 | lastMessageTime = b.when
@@ -135,17 +137,19 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        IdentifierTypeAdded e ->
+        IdentifierTypeAdded it ->
             { state
-                | identifierTypes = Dict.insert (IdentifierType.compare e) e state.identifierTypes
+                | identifierTypes = Dict.insert (IdentifierType.compare it) it state.identifierTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        IdentifierTypeRemoved e ->
+        IdentifierTypeRemoved it ->
             { state
-                | identifierTypes = Dict.remove (IdentifierType.compare e) state.identifierTypes
+                | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
+
+                -- TODO , identifiers = Dict.filter (\k i -> containsItem ) state.identifiers
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
