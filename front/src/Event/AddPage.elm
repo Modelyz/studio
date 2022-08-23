@@ -1,13 +1,13 @@
 module Event.AddPage exposing (..)
 
-import Event.Event as Event exposing (Event)
-import EventType.EventType as EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Event.Event as Event exposing (Event)
+import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
@@ -199,7 +199,7 @@ validate m =
             Ok <| Event (Type.TType TType.Event) m.uuid at.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select an Resource Type"
+            Err "You must select an Event Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -236,7 +236,7 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.events allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Optional parent type for the new Event Type (it can be hierarchical)"
+                        , h2 "Choose the type of the new Event:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values

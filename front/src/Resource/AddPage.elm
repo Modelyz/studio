@@ -1,7 +1,5 @@
 module Resource.AddPage exposing (..)
 
-import Resource.Resource as Resource exposing (Resource)
-import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -23,6 +21,8 @@ import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
+import Resource.Resource as Resource exposing (Resource)
+import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared exposing (flip)
@@ -236,7 +236,7 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.resources allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Optional parent type for the new Resource Type (it can be hierarchical)"
+                        , h2 "Choose the type of the new Resource:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values

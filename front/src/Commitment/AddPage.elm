@@ -199,7 +199,7 @@ validate m =
             Ok <| Commitment (Type.TType TType.Commitment) m.uuid at.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select an Resource Type"
+            Err "You must select an Commitment Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -236,7 +236,7 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.commitments allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Optional parent type for the new Commitment Type (it can be hierarchical)"
+                        , h2 "Choose the type of the new Commitment"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values

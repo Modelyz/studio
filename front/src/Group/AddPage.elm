@@ -1,7 +1,5 @@
 module Group.AddPage exposing (..)
 
-import Group.Group as Group exposing (Group)
-import GroupType.GroupType as GroupType exposing (GroupType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -11,6 +9,7 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as TType
 import Hierarchy.View exposing (toDesc)
@@ -199,7 +198,7 @@ validate m =
             Ok <| Group (Type.TType TType.Group) m.uuid at.uuid Empty Dict.empty
 
         Nothing ->
-            Err "You must select an Resource Type"
+            Err "You must select a Group Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -236,7 +235,7 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.groups allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Optional parent type for the new Group Type (it can be hierarchical)"
+                        , h2 "Choose the type of the new Group:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values

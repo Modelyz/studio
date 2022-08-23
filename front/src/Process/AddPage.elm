@@ -1,7 +1,5 @@
 module Process.AddPage exposing (..)
 
-import Process.Process as Process exposing (Process)
-import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -22,6 +20,8 @@ import Item.Item as Item exposing (Item)
 import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process as Process exposing (Process)
+import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
@@ -199,7 +199,7 @@ validate m =
             Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select an Resource Type"
+            Err "You must select an Process Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -236,7 +236,7 @@ viewContent model s =
                             , Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs) model.flatselect
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Optional parent type for the new Process Type (it can be hierarchical)"
+                        , h2 "Choose the type of the new Process:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
