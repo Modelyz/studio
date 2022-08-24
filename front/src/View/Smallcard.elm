@@ -13,7 +13,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Type as Type
 import Typed.Type as TType
-import Typed.Typed exposing (Typed)
+import Typed.Typed as T exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
 import Zone.Fragment exposing (displayFromDict)
@@ -92,6 +92,22 @@ hViewSmallCard onDelete allT allH configs h =
             h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
     in
     viewSmallCard onDelete (text title) (text description)
+
+
+tClickableCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
+tClickableCard onInput allT allH configs t =
+    -- clickable card for typed items
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.uuid)
+
+        title =
+            Identifiable.display mconfig t
+
+        description =
+            H.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+    in
+    clickableCard onInput (text title) (text description)
 
 
 sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg

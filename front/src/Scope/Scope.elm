@@ -111,7 +111,19 @@ getUpper allT allH scope =
             Nothing
 
         HasUserType t uuid ->
-            H.find allH uuid |> Maybe.map (\p -> p.parent |> Maybe.map (HasUserType t) >> Maybe.withDefault (HasType t))
+            -- uuid here is always a hierarchic type
+            H.find allH uuid
+                |> Maybe.map .parent
+                |> Maybe.map
+                    (\p ->
+                        case p of
+                            Nothing ->
+                                Just (HasType t)
+
+                            Just x ->
+                                Just (HasUserType t x)
+                    )
+                |> Maybe.withDefault (Just (HasType t))
 
         And s1 s2 ->
             let
@@ -137,10 +149,14 @@ getUpper allT allH scope =
 
 
 getUpperList : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> List Scope -> List Scope
-getUpperList allT allH scope currentList =
+getUpperList allT allH scope oldList =
+    let
+        newList =
+            scope :: oldList
+    in
     getUpper allT allH scope
-        |> Maybe.map (\upperScope -> getUpperList allT allH upperScope (scope :: currentList))
-        |> Maybe.withDefault (scope :: currentList)
+        |> Maybe.map (\upperScope -> getUpperList allT allH upperScope newList)
+        |> Maybe.withDefault newList
 
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool

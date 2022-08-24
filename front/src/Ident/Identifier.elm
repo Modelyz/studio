@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Group.Group as Group exposing (Group)
 import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Item.Item as Item exposing (Item, OnlyItem)
+import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
