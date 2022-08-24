@@ -142,17 +142,23 @@ main =
         -- Process
         |> Spa.addPublicPage mappers ProcessType.ListPage.match ProcessType.ListPage.page
         |> Spa.addPublicPage mappers ProcessType.AddPage.match ProcessType.AddPage.page
+        |> Spa.addPublicPage mappers ProcessType.ViewPage.match ProcessType.ViewPage.page
         |> Spa.addPublicPage mappers Process.AddPage.match Process.AddPage.page
+        |> Spa.addPublicPage mappers Process.ViewPage.match Process.ViewPage.page
         |> Spa.addPublicPage mappers Process.ListPage.match Process.ListPage.page
         -- Resource
         |> Spa.addPublicPage mappers ResourceType.ListPage.match ResourceType.ListPage.page
         |> Spa.addPublicPage mappers ResourceType.AddPage.match ResourceType.AddPage.page
+        |> Spa.addPublicPage mappers ResourceType.ViewPage.match ResourceType.ViewPage.page
         |> Spa.addPublicPage mappers Resource.AddPage.match Resource.AddPage.page
+        |> Spa.addPublicPage mappers Resource.ViewPage.match Resource.ViewPage.page
         |> Spa.addPublicPage mappers Resource.ListPage.match Resource.ListPage.page
         -- Event
         |> Spa.addPublicPage mappers EventType.ListPage.match EventType.ListPage.page
         |> Spa.addPublicPage mappers EventType.AddPage.match EventType.AddPage.page
+        |> Spa.addPublicPage mappers EventType.ViewPage.match EventType.ViewPage.page
         |> Spa.addPublicPage mappers Event.AddPage.match Event.AddPage.page
+        |> Spa.addPublicPage mappers Event.ViewPage.match Event.ViewPage.page
         |> Spa.addPublicPage mappers Event.ListPage.match Event.ListPage.page
         -- Agent
         |> Spa.addPublicPage mappers AgentType.ViewPage.match AgentType.ViewPage.page
@@ -165,15 +171,21 @@ main =
         |> Spa.addPublicPage mappers CommitmentType.ListPage.match CommitmentType.ListPage.page
         |> Spa.addPublicPage mappers Commitment.ListPage.match Commitment.ListPage.page
         |> Spa.addPublicPage mappers CommitmentType.AddPage.match CommitmentType.AddPage.page
+        |> Spa.addPublicPage mappers CommitmentType.ViewPage.match CommitmentType.ViewPage.page
         |> Spa.addPublicPage mappers Commitment.AddPage.match Commitment.AddPage.page
+        |> Spa.addPublicPage mappers Commitment.ViewPage.match Commitment.ViewPage.page
         -- Contract
         |> Spa.addPublicPage mappers ContractType.ListPage.match ContractType.ListPage.page
         |> Spa.addPublicPage mappers ContractType.AddPage.match ContractType.AddPage.page
+        |> Spa.addPublicPage mappers ContractType.ViewPage.match ContractType.ViewPage.page
         |> Spa.addPublicPage mappers Contract.AddPage.match Contract.AddPage.page
+        |> Spa.addPublicPage mappers Contract.ViewPage.match Contract.ViewPage.page
         |> Spa.addPublicPage mappers Contract.ListPage.match Contract.ListPage.page
         -- Group
         |> Spa.addPublicPage mappers GroupType.ListPage.match GroupType.ListPage.page
+        |> Spa.addPublicPage mappers GroupType.ViewPage.match GroupType.ViewPage.page
         |> Spa.addPublicPage mappers GroupType.AddPage.match GroupType.AddPage.page
+        |> Spa.addPublicPage mappers Group.ViewPage.match Group.ViewPage.page
         |> Spa.addPublicPage mappers Group.AddPage.match Group.AddPage.page
         |> Spa.addPublicPage mappers Group.ListPage.match Group.ListPage.page
         -- Ident

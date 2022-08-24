@@ -92,12 +92,20 @@ routeParser =
         , map ResourceList (s "resource")
         , map ResourceTypeAdd (s "resource-type" </> s "add")
         , map ResourceAdd (s "resource" </> s "add")
+        , map ResourceTypeView (s "resource-type" </> encodedString)
+        , map ResourceView (s "resource" </> encodedString)
+        , map ResourceEdit (s "resource" </> s "edit" </> encodedString)
+        , map ResourceTypeEdit (s "resource-type" </> s "edit" </> encodedString)
 
         -- Contract
         , map ContractTypeList (s "contract-type")
         , map ContractList (s "contract")
         , map ContractTypeAdd (s "contract-type" </> s "add")
         , map ContractAdd (s "contract" </> s "add")
+        , map ContractTypeView (s "contract-type" </> encodedString)
+        , map ContractView (s "contract" </> encodedString)
+        , map ContractEdit (s "contract" </> s "edit" </> encodedString)
+        , map ContractTypeEdit (s "contract-type" </> s "edit" </> encodedString)
 
         -- Process
         , map ProcessTypeList (s "process-type")
@@ -106,12 +114,18 @@ routeParser =
         , map ProcessList (s "process" <?> Query.string "type")
         , map ProcessTypeView (s "process-type" </> encodedString)
         , map ProcessView (s "process" </> encodedString)
+        , map ProcessEdit (s "process" </> s "edit" </> encodedString)
+        , map ProcessTypeEdit (s "process-type" </> s "edit" </> encodedString)
 
         -- Group
         , map GroupTypeList (s "group-type")
         , map GroupTypeAdd (s "group-type" </> s "add")
         , map GroupList (s "group")
         , map GroupAdd (s "group" </> s "add")
+        , map GroupTypeView (s "group-type" </> encodedString)
+        , map GroupView (s "group" </> encodedString)
+        , map GroupEdit (s "group" </> s "edit" </> encodedString)
+        , map GroupTypeEdit (s "group-type" </> s "edit" </> encodedString)
 
         -- Ident
         , map IdentifierTypeAdd (s "identifier-type" </> s "add")
@@ -122,12 +136,20 @@ routeParser =
         , map EventAdd (s "event" </> s "add")
         , map EventTypeList (s "event-type")
         , map EventList (s "event")
+        , map EventTypeView (s "event-type" </> encodedString)
+        , map EventView (s "event" </> encodedString)
+        , map EventEdit (s "event" </> s "edit" </> encodedString)
+        , map EventTypeEdit (s "event-type" </> s "edit" </> encodedString)
 
         -- Commitment
         , map CommitmentTypeAdd (s "commitment-type" </> s "add")
         , map CommitmentAdd (s "commitment" </> s "add")
         , map CommitmentTypeList (s "commitment-type")
         , map CommitmentList (s "commitment")
+        , map CommitmentTypeView (s "commitment-type" </> encodedString)
+        , map CommitmentView (s "commitment" </> encodedString)
+        , map CommitmentEdit (s "commitment" </> s "edit" </> encodedString)
+        , map CommitmentTypeEdit (s "commitment-type" </> s "edit" </> encodedString)
 
         -- Agent -- TODO replace add with new
         , map AgentTypeAdd (s "agent-type" </> s "add")
