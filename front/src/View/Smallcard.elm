@@ -65,7 +65,7 @@ viewHalfCard onDelete title =
         ]
 
 
-hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
+hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hViewHalfCard onDelete allT allH configs h =
     -- smallcard for hierarchic items
     let

@@ -1,13 +1,13 @@
 module Event.AddPage exposing (..)
 
+import Event.Event as Event exposing (Event)
+import EventType.EventType as EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Event.Event as Event exposing (Event)
-import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
@@ -233,7 +233,9 @@ viewContent model s =
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.events allHwithIdentifiers s.state.configs) model.flatselect
+                            , model.flatselect
+                                |> Maybe.map (\i -> withIdentifiers s.state.identifiers i.what i.uuid i)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.events allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Choose the type of the new Event:"

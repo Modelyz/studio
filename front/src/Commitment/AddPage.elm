@@ -233,10 +233,12 @@ viewContent model s =
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.commitments allHwithIdentifiers s.state.configs) model.flatselect
+                            , model.flatselect
+                                |> Maybe.map (\i -> withIdentifiers s.state.identifiers i.what i.uuid i)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.commitments allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Choose the type of the new Commitment"
+                        , h2 "Choose the type of the new Commitment:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values

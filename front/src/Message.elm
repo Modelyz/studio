@@ -375,10 +375,10 @@ encode (Message b p) =
                 ( "load", Uuid.encode uuid )
 
             Grouped e g ->
-                ( "load", Encode.object [ ( "entity", Groupable.encode e ), ( "group", Group.encode g ) ] )
+                ( "load", Encode.object [ ( "groupable", Groupable.encode e ), ( "group", Group.encode g ) ] )
 
             Ungrouped e g ->
-                ( "load", Encode.object [ ( "entity", Groupable.encode e ), ( "group", Group.encode g ) ] )
+                ( "load", Encode.object [ ( "groupable", Groupable.encode e ), ( "group", Group.encode g ) ] )
         ]
 
 

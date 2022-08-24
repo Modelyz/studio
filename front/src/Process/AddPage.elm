@@ -1,5 +1,7 @@
 module Process.AddPage exposing (..)
 
+import Process.Process as Process exposing (Process)
+import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -20,8 +22,6 @@ import Item.Item as Item exposing (Item)
 import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process as Process exposing (Process)
-import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
@@ -233,7 +233,9 @@ viewContent model s =
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
-                            , Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs) model.flatselect
+                            , model.flatselect
+                                |> Maybe.map (\i -> withIdentifiers s.state.identifiers i.what i.uuid i)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Choose the type of the new Process:"
