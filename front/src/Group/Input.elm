@@ -14,7 +14,7 @@ import Shared
 import Type
 import Typed.Type as TType
 import View exposing (..)
-import View.Smallcard exposing (tClickableCard)
+import View.Smallcard exposing (tClickableCard, tViewHalfCard)
 import View.Style exposing (..)
 
 
@@ -49,7 +49,11 @@ inputGroups c s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
-                :: List.map (viewItem c s model) (Dict.values model.groups)
+                :: (model.groups
+                        |> Dict.values
+                        |> List.map (\g -> withIdentifiers s.state.identifiers g.what g.uuid g)
+                        |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) s.state.groups allHwithIdentifiers s.state.configs g)
+                   )
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (allTwithIdentifiers
