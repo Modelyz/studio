@@ -1,6 +1,5 @@
 module Group.ViewPage exposing (..)
 
-import Group.Group as Group exposing (Group)
 import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -98,7 +97,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Group Type"
+    { title = "Adding a Group Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
