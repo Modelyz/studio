@@ -1,5 +1,6 @@
 module GroupType.AddPage exposing (..)
 
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,7 +10,6 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
-import GroupType.GroupType as GroupType exposing (GroupType)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)

@@ -48,6 +48,7 @@ type alias Model =
     , seed : Seed
     , flatselect : Maybe CommitmentType
     , identifiers : Dict String Identifier
+    , oldGroups : Dict String Group
     , groups : Dict String Group
     , warning : String
     , step : Step.Step Step
@@ -102,6 +103,12 @@ init s f =
         |> Maybe.andThen (T.find s.state.commitments)
         |> Maybe.map
             (\a ->
+                let
+                    oldGroups =
+                        s.state.grouped
+                            |> Dict.filter (\_ v -> a.uuid == Groupable.uuid v.groupable)
+                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+                in
                 { route = f.route
                 , flatselect = H.find s.state.commitmentTypes a.type_
                 , uuid = a.uuid
@@ -109,7 +116,8 @@ init s f =
                 , identifiers =
                     initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) Nothing a.uuid
                         |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
-                , groups = Dict.empty
+                , oldGroups = oldGroups
+                , groups = oldGroups
                 , warning = ""
                 , step = Step.Step StepType
                 , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
@@ -121,6 +129,7 @@ init s f =
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) Nothing newUuid
+            , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
@@ -154,12 +163,20 @@ update s msg model =
         Added ->
             case validate model of
                 Ok a ->
+                    let
+                        addedGroups =
+                            Dict.diff model.groups model.oldGroups
+
+                        removedGroups =
+                            Dict.diff model.oldGroups model.groups
+                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedCommitment a
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.Cm a) g) (Dict.values model.groups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.Cm a) g) (Dict.values addedGroups)
+                                ++ List.map (\g -> Message.Ungrouped (Groupable.Cm a) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]

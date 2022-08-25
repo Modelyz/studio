@@ -11,6 +11,7 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import Group.View exposing (displayGroupTable)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
@@ -48,6 +49,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , resource : Maybe Resource
+    , groups : Dict String Group
     }
 
 
@@ -77,8 +79,21 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
+    let
+        mresource =
+            f.uuid |> Maybe.andThen (T.find s.state.resources)
+    in
     ( { route = f.route
-      , resource = f.uuid |> Maybe.andThen (T.find s.state.resources)
+      , resource = mresource
+      , groups =
+            mresource
+                |> Maybe.map
+                    (\resource ->
+                        s.state.grouped
+                            |> Dict.filter (\_ v -> resource.uuid == Groupable.uuid v.groupable)
+                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+                    )
+                |> Maybe.withDefault Dict.empty
       }
     , closeMenu f s.menu
     )
@@ -133,6 +148,19 @@ viewContent model s =
                         |> withIdentifiers s.state.identifiers a.what a.uuid
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
+                    , h2 "Groups:"
+                    , model.groups
+                        |> Dict.values
+                        |> List.map (\g -> withIdentifiers s.state.identifiers g.what g.uuid g)
+                        |> List.map
+                            (\g ->
+                                let
+                                    config =
+                                        Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
+                                in
+                                Identifiable.display config g
+                            )
+                        |> displayGroupTable "(none)"
                     ]
             )
         |> Maybe.withDefault
