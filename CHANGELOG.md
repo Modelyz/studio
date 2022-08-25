@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 3 -- 2022-08-26
+
+* Better group management
+
 ## version 2 -- 2022-08-18
 
 * Edit Page and View Page for all entities
