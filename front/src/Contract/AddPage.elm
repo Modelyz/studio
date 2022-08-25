@@ -188,7 +188,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Contract Type"
+    { title = "Adding a Contract Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -216,7 +216,7 @@ validate m =
             Ok <| Contract (Type.TType TType.Contract) m.uuid at.uuid Dict.empty
 
         Nothing ->
-            Err "You must select an Contract Type"
+            Err "You must select a Contract Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -275,7 +275,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
-        "Adding an Contract"
+        "Adding a Contract"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

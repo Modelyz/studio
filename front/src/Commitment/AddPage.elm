@@ -188,7 +188,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Commitment Type"
+    { title = "Adding a Commitment Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -216,7 +216,7 @@ validate m =
             Ok <| Commitment (Type.TType TType.Commitment) m.uuid at.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select an Commitment Type"
+            Err "You must select a Commitment Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -275,7 +275,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
-        "Adding an Commitment"
+        "Adding a Commitment"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )

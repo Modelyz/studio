@@ -113,7 +113,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Process Type"
+    { title = "Adding a Process Type"
     , attributes = []
     , element = viewContent model
     , route = model.route

@@ -11,6 +11,7 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import Group.View exposing (displayGroupTable)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Hierarchy.View exposing (toDesc)
@@ -30,6 +31,7 @@ import Shared
 import Spa.Page
 import State exposing (State)
 import Type exposing (Type)
+import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -46,6 +48,7 @@ type alias Flags =
 type alias Model =
     { route : Route
     , contractType : Maybe ContractType
+    , groups : Dict String Group
     }
 
 
@@ -75,8 +78,21 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
+    let
+        mcontract =
+            f.uuid |> Maybe.andThen (H.find s.state.contractTypes)
+    in
     ( { route = f.route
       , contractType = f.uuid |> Maybe.andThen (H.find s.state.contractTypes)
+      , groups =
+            mcontract
+                |> Maybe.map
+                    (\contract ->
+                        s.state.grouped
+                            |> Dict.filter (\_ v -> contract.uuid == Groupable.uuid v.groupable)
+                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+                    )
+                |> Maybe.withDefault Dict.empty
       }
     , closeMenu f s.menu
     )
@@ -96,7 +112,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Contract Type"
+    { title = "Adding a Contract Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -132,6 +148,19 @@ viewContent model s =
                         |> withIdentifiers s.state.identifiers at.what at.uuid
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
+                    , h2 "Groups:"
+                    , model.groups
+                        |> Dict.values
+                        |> List.map (\g -> withIdentifiers s.state.identifiers g.what g.uuid g)
+                        |> List.map
+                            (\g ->
+                                let
+                                    config =
+                                        Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
+                                in
+                                Identifiable.display config g
+                            )
+                        |> displayGroupTable "(none)"
                     ]
             )
         |> Maybe.withDefault

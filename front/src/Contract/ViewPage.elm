@@ -113,7 +113,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Contract Type"
+    { title = "Adding a Contract Type"
     , attributes = []
     , element = viewContent model
     , route = model.route

@@ -188,7 +188,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Process Type"
+    { title = "Adding a Process Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -216,7 +216,7 @@ validate m =
             Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty
 
         Nothing ->
-            Err "You must select an Process Type"
+            Err "You must select a Process Type"
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -275,7 +275,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
     in
     floatingContainer s
-        "Adding an Process"
+        "Adding a Process"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )
