@@ -258,3 +258,13 @@ clickableCard onInput title desc =
             ]
         , desc
         ]
+
+
+headerCell : String -> Element msg
+headerCell =
+    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.header.background ]
+
+
+innerCell : String -> Element msg
+innerCell =
+    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]

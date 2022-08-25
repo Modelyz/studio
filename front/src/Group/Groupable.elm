@@ -1,4 +1,4 @@
-module Group.Groupable exposing (Groupable(..), compare, decoder, encode)
+module Group.Groupable exposing (Groupable(..), compare, decoder, encode, uuid)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -12,6 +12,7 @@ import Group.Group as Group exposing (Group)
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
@@ -33,6 +34,52 @@ type Groupable
     | CnT ContractType
     | PT ProcessType
     | GT GroupType
+
+
+uuid : Groupable -> Uuid
+uuid x =
+    case x of
+        R r ->
+            r.uuid
+
+        E e ->
+            e.uuid
+
+        A a ->
+            a.uuid
+
+        Cm cm ->
+            cm.uuid
+
+        Cn cn ->
+            cn.uuid
+
+        P p ->
+            p.uuid
+
+        G g ->
+            g.uuid
+
+        RT rt ->
+            rt.uuid
+
+        ET et ->
+            et.uuid
+
+        AT at ->
+            at.uuid
+
+        CmT cmt ->
+            cmt.uuid
+
+        CnT cnt ->
+            cnt.uuid
+
+        PT pt ->
+            pt.uuid
+
+        GT gt ->
+            gt.uuid
 
 
 encode : Groupable -> Encode.Value

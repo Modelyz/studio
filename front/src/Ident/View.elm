@@ -18,7 +18,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
 import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
-import View exposing (..)
+import View exposing (headerCell, innerCell, withDefaultContent)
 import View.Lang as Lang exposing (Lang(..))
 import View.Style exposing (..)
 import View.Type as ViewType
@@ -105,16 +105,6 @@ type alias IdentColumn r msg =
     { header : Element msg, width : Length, view : r -> Element msg }
 
 
-headerCell : String -> Element msg
-headerCell =
-    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.header.background ]
-
-
-innerCell : String -> Element msg
-innerCell =
-    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
-
-
 displayIdentifierDict : String -> Dict String String -> Element msg
 displayIdentifierDict default data =
     if Dict.size data > 0 then
@@ -127,4 +117,4 @@ displayIdentifierDict default data =
             }
 
     else
-        text "(none)"
+        text default
