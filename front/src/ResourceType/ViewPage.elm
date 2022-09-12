@@ -167,5 +167,5 @@ viewContent model s =
             (floatingContainer s
                 "ResourceType"
                 []
-                [ h1 "Not found", text "The URL you entered does not correspond to anything" ]
+                [ h1 "Not found", text "The current URL does not correspond to anything" ]
             )
