@@ -37,9 +37,9 @@ viewSmallCard onDelete title description =
 
 clickableRemovableCard : msg -> msg -> Element msg -> Element msg -> Element msg
 clickableRemovableCard onChoose onDelete title description =
-    column [ Background.color color.item.background, pointer, onClick onChoose ]
+    column [ Background.color color.item.background, pointer ]
         [ row [ spacing 10, width fill ]
-            [ row [ Font.size size.text.main, padding 10 ] [ title ]
+            [ row [ Font.size size.text.main, padding 10, onClick onChoose ] [ title ]
             , el [ alignRight ] (button.primary onDelete "×")
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
