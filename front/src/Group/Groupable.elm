@@ -123,7 +123,7 @@ encode groupable =
 
         G g ->
             Encode.object
-                [ ( "what", Encode.string "Process" )
+                [ ( "what", Encode.string "Group" )
                 , ( "value", Group.encode g )
                 ]
 
@@ -165,7 +165,7 @@ encode groupable =
 
         GT gt ->
             Encode.object
-                [ ( "what", Encode.string "ProcessType" )
+                [ ( "what", Encode.string "GroupType" )
                 , ( "value", GroupType.encode gt )
                 ]
 
