@@ -12,7 +12,6 @@ import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectAdd)
 import Scope.Scope as Scope exposing (Scope(..))
-import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
 import Type exposing (Type(..))
@@ -26,7 +25,6 @@ import View.Type as ViewType exposing (Type(..))
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
-    , search : Criteria Agent
     }
 
 
@@ -64,7 +62,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard, search = SearchNothing }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -83,7 +81,7 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
         Search str ->
-            ( { model | search = SearchFull str }, Effect.none )
+            ( model, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg

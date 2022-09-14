@@ -4,23 +4,27 @@ import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Element.Background as Background
+import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.View exposing (tableColumn)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectAdd)
-import Search.Criteria as Criteria exposing (Criteria(..))
+import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
+import Type exposing (Type(..))
 import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
+import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
 
 
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
-    , search : Criteria ProcessType
     }
 
 
@@ -58,7 +62,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard, search = SearchNothing }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -77,21 +81,21 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
         Search str ->
-            ( { model | search = SearchFull str }, Effect.none )
+            ( model, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Process Types"
     , attributes = []
-    , element = viewContent model Smallcard
+    , element = viewContent model
     , route = model.route
     }
 
 
-viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
-viewContent model vt s =
-    case vt of
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
+    case model.viewtype of
         Smallcard ->
             let
                 allHwithIdentifiers =
@@ -125,9 +129,10 @@ viewContent model vt s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allHwithIdentifiers
-                        |> Dict.values
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes allHwithIdentifiers s.state.configs h)
-                        |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
-                    )
+                    [ table [ width fill, Background.color color.table.inner.background ]
+                        { data = Dict.values allHwithIdentifiers
+                        , columns =
+                            List.map tableColumn <| List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType))) <| Dict.values s.state.identifierTypes
+                        }
+                    ]
                 ]
