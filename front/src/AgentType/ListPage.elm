@@ -4,16 +4,22 @@ import AgentType.AgentType exposing (AgentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Element.Background as Background
+import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.View exposing (tableColumn)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectAdd)
+import Scope.Scope as Scope exposing (Scope(..))
 import Search.Criteria as Criteria exposing (Criteria(..))
 import Shared
 import Spa.Page
+import Type exposing (Type(..))
 import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
+import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
 
 
@@ -84,14 +90,14 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Agent Types"
     , attributes = []
-    , element = viewContent model Smallcard
+    , element = viewContent model
     , route = model.route
     }
 
 
-viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
-viewContent model vt s =
-    case vt of
+viewContent : Model -> Shared.Model -> Element Msg
+viewContent model s =
+    case model.viewtype of
         Smallcard ->
             let
                 allHwithIdentifiers =
@@ -125,9 +131,10 @@ viewContent model vt s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allHwithIdentifiers
-                        |> Dict.values
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.agents allHwithIdentifiers s.state.configs h)
-                        |> withDefaultContent (p "There are no Agent Types yet. Add your first one!")
-                    )
+                    [ table [ width fill, Background.color color.table.inner.background ]
+                        { data = Dict.values allHwithIdentifiers
+                        , columns =
+                            List.map tableColumn <| List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.HType HType.AgentType))) <| Dict.values s.state.identifierTypes
+                        }
+                    ]
                 ]
