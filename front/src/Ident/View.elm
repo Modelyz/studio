@@ -12,6 +12,7 @@ import Hierarchy.Type as HType
 import Ident.Fragment as IdentFragment
 import Ident.Identifiable as Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.IdentifierType exposing (IdentifierType)
 import Ident.Scope as Scope exposing (Scope(..))
 import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -118,3 +119,11 @@ displayIdentifierDict default data =
 
     else
         text default
+
+
+tableColumn : IdentifierType -> Column (Identifiable a) msg
+tableColumn it =
+    { header = headerCell it.name
+    , width = fill
+    , view = \x -> x.identifiers |> Dict.get it.name |> Maybe.map innerCell |> Maybe.withDefault none
+    }

@@ -14,11 +14,12 @@ import Shared
 import Spa.Page
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
-import View.Type as ViewType
+import View.Type as ViewType exposing (Type(..))
 
 
 type alias Model =
     { route : Route
+    , viewtype : ViewType.Type
     , search : Criteria Event
     }
 
@@ -27,6 +28,7 @@ type Msg
     = Removed Uuid
     | Add
     | View Uuid
+    | ChangeView ViewType.Type
     | Search String
 
 
@@ -56,7 +58,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, search = SearchNothing }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = Smallcard, search = SearchNothing }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -71,6 +73,9 @@ update s msg model =
         View uuid ->
             ( model, redirectAdd (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
+        ChangeView vt ->
+            ( { model | viewtype = vt }, Effect.none )
+
         Search str ->
             ( { model | search = SearchFull str }, Effect.none )
 
@@ -79,7 +84,7 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Events"
     , attributes = []
-    , element = viewContent model ViewType.Smallcard
+    , element = viewContent model Smallcard
     , route = model.route
     }
 
@@ -87,7 +92,7 @@ view s model =
 viewContent : Model -> ViewType.Type -> Shared.Model -> Element Msg
 viewContent model vt s =
     case vt of
-        ViewType.Smallcard ->
+        Smallcard ->
             let
                 allTwithIdentifiers =
                     tWithIdentifiers s.state.identifiers s.state.events
@@ -100,6 +105,7 @@ viewContent model vt s =
                 [ button.primary Add "Add..."
                 ]
                 none
+                none
                 [ wrappedRow
                     [ spacing 10 ]
                     (allTwithIdentifiers
@@ -109,5 +115,25 @@ viewContent model vt s =
                     )
                 ]
 
-        ViewType.New ->
-            text "New"
+        Table ->
+            let
+                allTwithIdentifiers =
+                    tWithIdentifiers s.state.identifiers s.state.events
+
+                allHwithIdentifiers =
+                    hWithIdentifiers s.state.identifiers s.state.eventTypes
+            in
+            flatContainer s
+                "Events"
+                [ button.primary Add "Add..."
+                ]
+                none
+                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                [ wrappedRow
+                    [ spacing 10 ]
+                    (allTwithIdentifiers
+                        |> Dict.values
+                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
+                        |> withDefaultContent (p "There are no Events yet. Add your first one!")
+                    )
+                ]

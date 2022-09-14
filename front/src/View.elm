@@ -5,7 +5,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events as Events exposing (onClick)
+import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -15,6 +15,7 @@ import Json.Decode as Decode
 import Route exposing (Route)
 import Shared
 import View.Style as Style exposing (..)
+import View.Type as ViewType
 
 
 type alias View msg =
@@ -81,7 +82,7 @@ hamburger title s =
             , spacing 5
             , Background.color color.navbar.background
             , paddingEach { left = 10, top = 10, right = 50, bottom = 10 }
-            , Events.onClick Shared.ToggleMenu
+            , onClick Shared.ToggleMenu
             , pointer
             ]
             (List.repeat 3 <|
@@ -135,15 +136,17 @@ floatingContainer s title buttons children =
         ]
 
 
-flatContainer : Shared.Model -> String -> List (Element msg) -> Element msg -> List (Element msg) -> Element msg
-flatContainer s title buttons search children =
+flatContainer : Shared.Model -> String -> List (Element msg) -> Element msg -> Element msg -> List (Element msg) -> Element msg
+flatContainer s title buttons search viewselector children =
     -- container for main content
     column [ width fill, alignTop, padding 0 ]
         [ topbar s title
         , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
             [ column
                 [ width fill, alignTop, spacing 20, padding 20 ]
-                (buttons ++ [ search ] ++ children)
+                ([ wrappedRow [ spacing 20 ] (buttons ++ [ viewselector ] ++ [ search ]) ]
+                    ++ children
+                )
             ]
         ]
 
@@ -268,3 +271,18 @@ headerCell =
 innerCell : String -> Element msg
 innerCell =
     text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
+
+
+viewSelector : List ViewType.Type -> ViewType.Type -> (ViewType.Type -> msg) -> Element msg
+viewSelector all selected change =
+    -- display the view type selector
+    row [] <|
+        List.map
+            (\t ->
+                if t == selected then
+                    button.primary (change t) (ViewType.toString t)
+
+                else
+                    button.secondary (change t) (ViewType.toString t)
+            )
+            all

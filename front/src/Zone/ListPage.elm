@@ -80,6 +80,7 @@ viewContent model s =
         [ button.primary Add "Add..."
         ]
         none
+        none
         [ wrappedRow
             [ spacing 10 ]
             (s.state.configs
