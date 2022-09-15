@@ -138,7 +138,10 @@ viewContent model s =
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data = Dict.values allTwithIdentifiers
                         , columns =
-                            List.map tableColumn <| List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.TType TType.Agent))) <| Dict.values s.state.identifierTypes
+                            s.state.identifierTypes
+                                |> Dict.values
+                                |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.TType TType.Agent)))
+                                |> List.map tableColumn
                         }
                     ]
                 ]
