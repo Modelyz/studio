@@ -1,12 +1,16 @@
 module Event.ListPage exposing (match, page)
 
 import Event.Event exposing (Event)
+import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
-import Ident.View exposing (tableColumn)
+import Group.Groupable as Groupable
+import Group.Link as GroupLink exposing (groupsOf)
+import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
+import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.IdentifierType exposing (IdentifierType)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -20,11 +24,25 @@ import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.Zone exposing (Zone(..))
 
 
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
+    }
+
+
+type alias Record =
+    { identifiers : Dict String Identifier
+    , grouped : Dict String GroupLink.Link
+    }
+
+
+toRecord : Dict String Identifier -> Dict String GroupLink.Link -> Item a -> Record
+toRecord allIds allGroupLinks i =
+    { identifiers = allIds |> Dict.filter (\_ v -> v.identifiable == i.uuid)
+    , grouped = allGroupLinks |> Dict.filter (\_ v -> Groupable.uuid v.groupable == i.uuid)
     }
 
 
@@ -97,13 +115,6 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            let
-                allTwithIdentifiers =
-                    tWithIdentifiers s.state.identifiers s.state.events
-
-                allHwithIdentifiers =
-                    hWithIdentifiers s.state.identifiers s.state.eventTypes
-            in
             flatContainer s
                 "Events"
                 [ button.primary Add "Add..."
@@ -112,21 +123,14 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allTwithIdentifiers
+                    (s.state.events
                         |> Dict.values
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) allTwithIdentifiers allHwithIdentifiers s.state.configs t)
+                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events s.state.eventTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            let
-                allTwithIdentifiers =
-                    tWithIdentifiers s.state.identifiers s.state.events
-
-                allHwithIdentifiers =
-                    hWithIdentifiers s.state.identifiers s.state.eventTypes
-            in
             flatContainer s
                 "Events"
                 [ button.primary Add "Add..."
@@ -136,12 +140,49 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
-                        { data = Dict.values allTwithIdentifiers
+                        { data = Dict.values s.state.events |> List.map (toRecord s.state.identifiers s.state.grouped)
                         , columns =
-                            s.state.identifierTypes
+                            (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.applyTo (HasType (Type.TType TType.Event)))
-                                |> List.map tableColumn
+                                |> List.map identifierColumn
+                            )
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
+
+
+groupsColumn : Shared.Model -> Column Record msg
+groupsColumn s =
+    { header = headerCell "Groups"
+    , width = fill
+    , view =
+        .grouped
+            >> Dict.values
+            >> List.map
+                (\gl ->
+                    let
+                        config =
+                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) gl.group.uuid)
+                    in
+                    Identifiable.display config gl.group
+                )
+            >> String.join ", "
+            >> text
+    }
+
+
+identifierColumn : IdentifierType -> Column Record msg
+identifierColumn it =
+    { header = headerCell it.name
+    , width = fill
+    , view =
+        .identifiers
+            >> Dict.values
+            >> List.filter (\id -> id.name == it.name)
+            >> List.map Identifier.toValue
+            >> List.head
+            >> Maybe.withDefault ""
+            >> innerCell
+    }

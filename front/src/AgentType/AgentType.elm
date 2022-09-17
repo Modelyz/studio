@@ -13,7 +13,7 @@ type alias AgentType =
     { what : Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String String -- TODO replace with Dict String Fragment
+    , identifiers : Dict String String -- TODO don't store here, only in the view model in a dedicated field?
     }
 
 

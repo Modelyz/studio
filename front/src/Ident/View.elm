@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Group.WithGroups exposing (WithGroups)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Fragment as IdentFragment
@@ -119,11 +120,3 @@ displayIdentifierDict default data =
 
     else
         text default
-
-
-tableColumn : IdentifierType -> Column (Identifiable a) msg
-tableColumn it =
-    { header = headerCell it.name
-    , width = fill
-    , view = \x -> x.identifiers |> Dict.get it.name |> Maybe.map innerCell |> Maybe.withDefault none
-    }

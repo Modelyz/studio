@@ -1,13 +1,19 @@
 module ProcessType.ListPage exposing (match, page)
 
 import ProcessType.ProcessType exposing (ProcessType)
+import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
+import Group.Group as Group exposing (Group)
+import Group.Groupable as Groupable
+import Group.Link as GroupLink exposing (groupsOf)
+import Group.WithGroups exposing (WithGroups)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers)
-import Ident.View exposing (tableColumn)
+import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
+import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.IdentifierType exposing (IdentifierType)
 import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -16,15 +22,30 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import Type exposing (Type(..))
+import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.Zone exposing (Zone(..))
 
 
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
+    }
+
+
+type alias Record =
+    { identifiers : Dict String Identifier
+    , grouped : Dict String GroupLink.Link
+    }
+
+
+toRecord : Dict String Identifier -> Dict String GroupLink.Link -> Item a -> Record
+toRecord allIds allGroupLinks i =
+    { identifiers = allIds |> Dict.filter (\_ v -> v.identifiable == i.uuid)
+    , grouped = allGroupLinks |> Dict.filter (\_ v -> Groupable.uuid v.groupable == i.uuid)
     }
 
 
@@ -62,7 +83,11 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
+    ( { route = f.route
+      , viewtype = Smallcard
+      }
+    , closeMenu f s.menu
+    )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -97,10 +122,6 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            let
-                allHwithIdentifiers =
-                    hWithIdentifiers s.state.identifiers s.state.processTypes
-            in
             flatContainer s
                 "Process Types"
                 [ button.primary Add "Add..."
@@ -109,18 +130,14 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allHwithIdentifiers
+                    (s.state.processTypes
                         |> Dict.values
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes allHwithIdentifiers s.state.configs h)
+                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes s.state.processTypes s.state.configs h)
                         |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            let
-                allHwithIdentifiers =
-                    hWithIdentifiers s.state.identifiers s.state.processTypes
-            in
             flatContainer s
                 "Process Types"
                 [ button.primary Add "Add..."
@@ -130,9 +147,49 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
-                        { data = Dict.values allHwithIdentifiers
+                        { data = Dict.values s.state.processTypes |> List.map (toRecord s.state.identifiers s.state.grouped)
                         , columns =
-                            List.map tableColumn <| List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType))) <| Dict.values s.state.identifierTypes
+                            (s.state.identifierTypes
+                                |> Dict.values
+                                |> List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType)))
+                                |> List.map identifierColumn
+                            )
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
+
+
+groupsColumn : Shared.Model -> Column Record msg
+groupsColumn s =
+    { header = headerCell "Groups"
+    , width = fill
+    , view =
+        .grouped
+            >> Dict.values
+            >> List.map
+                (\gl ->
+                    let
+                        config =
+                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) gl.group.uuid)
+                    in
+                    Identifiable.display config gl.group
+                )
+            >> String.join ", "
+            >> text
+    }
+
+
+identifierColumn : IdentifierType -> Column Record msg
+identifierColumn it =
+    { header = headerCell it.name
+    , width = fill
+    , view =
+        .identifiers
+            >> Dict.values
+            >> List.filter (\id -> id.name == it.name)
+            >> List.map Identifier.toValue
+            >> List.head
+            >> Maybe.withDefault ""
+            >> innerCell
+    }

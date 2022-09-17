@@ -1,7 +1,9 @@
-module Group.Link exposing (Link, compare, decoder, encode)
+module Group.Link exposing (Link, compare, decoder, encode, groupsOf)
 
+import Dict exposing (Dict)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
+import Item.Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -32,3 +34,10 @@ decoder =
 compare : Link -> String
 compare eg =
     Groupable.compare eg.groupable ++ Group.compare eg.group
+
+
+groupsOf : Dict String Link -> Item a -> Dict String Group
+groupsOf gs i =
+    gs
+        |> Dict.filter (\_ v -> i.uuid == Groupable.uuid v.groupable)
+        |> Dict.map (\_ v -> v.group)

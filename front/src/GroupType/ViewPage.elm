@@ -79,13 +79,13 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
-        mgroup =
+        mgroupType =
             f.uuid |> Maybe.andThen (H.find s.state.groupTypes)
     in
     ( { route = f.route
       , groupType = f.uuid |> Maybe.andThen (H.find s.state.groupTypes)
       , groups =
-            mgroup
+            mgroupType
                 |> Maybe.map
                     (\group ->
                         s.state.grouped
