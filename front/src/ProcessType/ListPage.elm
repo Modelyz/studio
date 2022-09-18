@@ -9,7 +9,6 @@ import Element.Background as Background
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
-import Group.WithGroups exposing (WithGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)

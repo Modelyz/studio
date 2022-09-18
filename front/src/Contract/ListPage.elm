@@ -21,6 +21,7 @@ import Spa.Page
 import Type exposing (Type(..))
 import Typed.Type as TType
 import View exposing (..)
+import View.Record exposing (Record, toRecord)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
@@ -30,19 +31,6 @@ import Zone.Zone exposing (Zone(..))
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
-    }
-
-
-type alias Record =
-    { identifiers : Dict String Identifier
-    , grouped : Dict String GroupLink.Link
-    }
-
-
-toRecord : Dict String Identifier -> Dict String GroupLink.Link -> Item a -> Record
-toRecord allIds allGroupLinks i =
-    { identifiers = allIds |> Dict.filter (\_ v -> v.identifiable == i.uuid)
-    , grouped = allGroupLinks |> Dict.filter (\_ v -> Groupable.uuid v.groupable == i.uuid)
     }
 
 

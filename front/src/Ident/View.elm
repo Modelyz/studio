@@ -7,7 +7,6 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.WithGroups exposing (WithGroups)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Fragment as IdentFragment
