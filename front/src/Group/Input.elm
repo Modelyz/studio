@@ -51,13 +51,14 @@ inputGroups c s model =
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
                 :: (model.groups
                         |> Dict.values
-                        |> List.map (\g -> withIdentifiers s.state.identifiers g)
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) s.state.groups allHwithIdentifiers s.state.configs g)
                    )
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (allTwithIdentifiers
                 |> Dict.values
+                |> List.map (withIdentifiers s.state.identifiers)
                 |> List.map (\g -> tClickableCard (c.onInput (Dict.insert (Group.compare g) g model.groups)) allTwithIdentifiers allHwithIdentifiers s.state.configs g)
                 |> withDefaultContent (p "(There are no Groups yet)")
             )

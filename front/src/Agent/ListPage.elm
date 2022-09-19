@@ -134,8 +134,8 @@ viewContent model s =
                         { data =
                             s.state.agents
                                 |> Dict.values
-                                |> List.map (\t -> withIdentifiers s.state.identifiers t)
-                                |> List.map (\t -> withGroups s.state.grouped t)
+                                |> List.map (withIdentifiers s.state.identifiers)
+                                |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
