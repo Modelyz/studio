@@ -263,14 +263,14 @@ clickableCard onInput title desc =
         ]
 
 
-headerCell : String -> Element msg
-headerCell =
-    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.header.background ]
+headerCell : Color -> String -> Element msg
+headerCell c =
+    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color c ]
 
 
 innerCell : String -> Element msg
 innerCell =
-    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
+    text >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
 
 
 viewSelector : List ViewType.Type -> ViewType.Type -> (ViewType.Type -> msg) -> Element msg

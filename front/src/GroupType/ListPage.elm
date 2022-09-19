@@ -1,6 +1,5 @@
 module GroupType.ListPage exposing (match, page)
 
-import GroupType.GroupType exposing (GroupType)
 import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -10,6 +9,7 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
 import Group.WithGroups as WithGroups exposing (withGroups)
+import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -119,6 +119,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groupTypes
                         |> Dict.values
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.groups s.state.groupTypes s.state.configs h)
                         |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
                     )
@@ -137,7 +138,7 @@ viewContent model s =
                         { data =
                             s.state.groupTypes
                                 |> Dict.values
-                                |> List.map (\h -> withIdentifiers s.state.identifiers (Type.HType HType.GroupType) h.uuid h)
+                                |> List.map (\h -> withIdentifiers s.state.identifiers h)
                                 |> List.map (\h -> withGroups s.state.grouped h)
                         , columns =
                             (s.state.identifierTypes
@@ -153,7 +154,7 @@ viewContent model s =
 
 groupsColumn : Shared.Model -> Column GroupType msg
 groupsColumn s =
-    { header = headerCell "Groups"
+    { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
         .groups
@@ -173,7 +174,7 @@ groupsColumn s =
 
 identifierColumn : IdentifierType -> Column GroupType msg
 identifierColumn it =
-    { header = headerCell it.name
+    { header = headerCell color.table.header.background it.name
     , width = fill
     , view =
         .identifiers

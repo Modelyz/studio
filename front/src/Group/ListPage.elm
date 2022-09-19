@@ -114,6 +114,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Dict.values
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups s.state.groupTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )
@@ -132,7 +133,7 @@ viewContent model s =
                         { data =
                             s.state.groups
                                 |> Dict.values
-                                |> List.map (\t -> withIdentifiers s.state.identifiers (Type.HType HType.GroupType) t.uuid t)
+                                |> List.map (\t -> withIdentifiers s.state.identifiers t)
                         , columns =
                             s.state.identifierTypes
                                 |> Dict.values
@@ -145,7 +146,7 @@ viewContent model s =
 
 identifierColumn : IdentifierType -> Column Group msg
 identifierColumn it =
-    { header = headerCell it.name
+    { header = headerCell color.table.header.background it.name
     , width = fill
     , view =
         .identifiers

@@ -6,6 +6,7 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
 import Group.WithGroups as WithGroups exposing (withGroups)
@@ -114,6 +115,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.commitments
                         |> Dict.values
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.commitments s.state.commitmentTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Commitments yet. Add your first one!")
                     )
@@ -132,7 +134,7 @@ viewContent model s =
                         { data =
                             s.state.commitments
                                 |> Dict.values
-                                |> List.map (\t -> withIdentifiers s.state.identifiers (Type.HType HType.CommitmentType) t.uuid t)
+                                |> List.map (\t -> withIdentifiers s.state.identifiers t)
                                 |> List.map (\t -> withGroups s.state.grouped t)
                         , columns =
                             (s.state.identifierTypes
@@ -148,7 +150,7 @@ viewContent model s =
 
 groupsColumn : Shared.Model -> Column Commitment msg
 groupsColumn s =
-    { header = headerCell "Groups"
+    { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
         .groups
@@ -163,12 +165,13 @@ groupsColumn s =
                 )
             >> String.join ", "
             >> text
+            >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
     }
 
 
 identifierColumn : IdentifierType -> Column Commitment msg
 identifierColumn it =
-    { header = headerCell it.name
+    { header = headerCell color.table.header.background it.name
     , width = fill
     , view =
         .identifiers

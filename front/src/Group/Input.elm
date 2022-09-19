@@ -51,7 +51,7 @@ inputGroups c s model =
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
                 :: (model.groups
                         |> Dict.values
-                        |> List.map (\g -> withIdentifiers s.state.identifiers g.what g.uuid g)
+                        |> List.map (\g -> withIdentifiers s.state.identifiers g)
                         |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) s.state.groups allHwithIdentifiers s.state.configs g)
                    )
         , h2 <| "Select the groups this entity should belong to"

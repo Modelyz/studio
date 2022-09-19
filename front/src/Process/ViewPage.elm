@@ -139,19 +139,19 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
                     , H.find s.state.processTypes a.type_
-                        |> Maybe.map (\p -> withIdentifiers s.state.identifiers p.what p.uuid p)
+                        |> Maybe.map (withIdentifiers s.state.identifiers)
                         |> Maybe.map (\pat -> Identifiable.display mconfig pat)
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
                     , a
-                        |> withIdentifiers s.state.identifiers a.what a.uuid
+                        |> withIdentifiers s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (\g -> withIdentifiers s.state.identifiers g.what g.uuid g)
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map
                             (\g ->
                                 let

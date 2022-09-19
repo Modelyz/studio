@@ -60,6 +60,7 @@ color =
     , table =
         { header =
             { background = rgb255 0xC5 0xE8 0xF7
+            , background2 = rgb255 0xF7 0xD2 0xC5
             , text = rgb255 0x00 0x00 0x00
             }
         , inner =

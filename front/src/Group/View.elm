@@ -36,7 +36,7 @@ displayGroupTable default groups =
         table [ width shrink, Background.color color.item.background ]
             { data = groups
             , columns =
-                [ { header = headerCell "Groups", width = fill, view = innerCell }
+                [ { header = headerCell color.table.header.background2 "Groups", width = fill, view = innerCell }
                 ]
             }
 

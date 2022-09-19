@@ -16,7 +16,6 @@ import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
-import Zone.Fragment exposing (displayFromDict)
 import Zone.Zone exposing (Zone(..))
 
 

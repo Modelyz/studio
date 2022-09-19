@@ -119,6 +119,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.resourceTypes
                         |> Dict.values
+                        |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.resources s.state.resourceTypes s.state.configs h)
                         |> withDefaultContent (p "There are no Resource Types yet. Add your first one!")
                     )
@@ -137,7 +138,7 @@ viewContent model s =
                         { data =
                             s.state.resourceTypes
                                 |> Dict.values
-                                |> List.map (\h -> withIdentifiers s.state.identifiers (Type.HType HType.ResourceType) h.uuid h)
+                                |> List.map (\h -> withIdentifiers s.state.identifiers h)
                                 |> List.map (\h -> withGroups s.state.grouped h)
                         , columns =
                             (s.state.identifierTypes
@@ -153,7 +154,7 @@ viewContent model s =
 
 groupsColumn : Shared.Model -> Column ResourceType msg
 groupsColumn s =
-    { header = headerCell "Groups"
+    { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
         .groups
@@ -173,7 +174,7 @@ groupsColumn s =
 
 identifierColumn : IdentifierType -> Column ResourceType msg
 identifierColumn it =
-    { header = headerCell it.name
+    { header = headerCell color.table.header.background it.name
     , width = fill
     , view =
         .identifiers

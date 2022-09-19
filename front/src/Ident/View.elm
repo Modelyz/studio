@@ -112,8 +112,8 @@ displayIdentifierDict default data =
         table [ width shrink, Background.color color.item.background ]
             { data = Dict.values data
             , columns =
-                [ { header = headerCell "Identifier", width = fill, view = .name >> innerCell }
-                , { header = headerCell "Value", width = fill, view = Identifier.toValue >> innerCell }
+                [ { header = headerCell color.table.header.background "Identifier", width = fill, view = .name >> innerCell }
+                , { header = headerCell color.table.header.background "Value", width = fill, view = Identifier.toValue >> innerCell }
                 ]
             }
 
