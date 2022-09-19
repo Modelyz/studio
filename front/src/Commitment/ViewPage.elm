@@ -20,7 +20,7 @@ import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T
 import View exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (display, hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -109,22 +109,16 @@ viewContent model s =
     model.commitment
         |> Maybe.map
             (\t ->
-                let
-                    mconfig =
-                        model.commitment
-                            |> Maybe.map .type_
-                            |> Maybe.andThen
-                                (\uuid ->
-                                    Config.getMostSpecific s.state.commitments s.state.commitmentTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Commitment) uuid)
-                                )
-                in
                 floatingContainer s
                     "Commitment"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
-                    , H.find s.state.commitmentTypes t.type_
+                    , t.type_
+                        |> H.find s.state.commitmentTypes
                         |> Maybe.map (withIdentifiers s.state.identifiers)
-                        |> Maybe.map (\pat -> display mconfig pat)
+                        |> Maybe.map (hWithDisplay s.state.commitments s.state.commitmentTypes s.state.configs SmallcardTitle)
+                        |> Maybe.map .display
+                        |> Maybe.andThen (Dict.get "SmallcardTitle")
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
@@ -136,14 +130,9 @@ viewContent model s =
                     , model.groups
                         |> Dict.values
                         |> List.map (withIdentifiers s.state.identifiers)
-                        |> List.map
-                            (\g ->
-                                let
-                                    config =
-                                        Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
-                                in
-                                display config g
-                            )
+                        |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+                        |> List.map .display
+                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")
                         |> displayGroupTable "(none)"
                     ]
             )

@@ -20,7 +20,7 @@ import Spa.Page
 import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (display, hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -89,8 +89,8 @@ update s msg model =
         Edit ->
             model.processType
                 |> Maybe.map
-                    (\at ->
-                        ( model, Effect.fromCmd <| redirect s.navkey (Route.ProcessTypeEdit (Uuid.toString at.uuid)) )
+                    (\h ->
+                        ( model, Effect.fromCmd <| redirect s.navkey (Route.ProcessTypeEdit (Uuid.toString h.uuid)) )
                     )
                 |> Maybe.withDefault ( model, Effect.none )
 
@@ -108,28 +108,21 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     model.processType
         |> Maybe.map
-            (\at ->
-                let
-                    mconfig =
-                        model.processType
-                            |> Maybe.map .uuid
-                            |> Maybe.andThen
-                                (\uuid ->
-                                    Config.getMostSpecific s.state.processes s.state.processTypes s.state.configs SmallcardTitle (HasUserType (Type.HType HType.ProcessType) uuid)
-                                )
-                in
+            (\h ->
                 floatingContainer s
                     "ProcessType"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
-                    , at.parent
+                    , h.parent
                         |> Maybe.andThen (H.find s.state.processTypes)
                         |> Maybe.map (withIdentifiers s.state.identifiers)
-                        |> Maybe.map (display mconfig)
+                        |> Maybe.map (hWithDisplay s.state.processes s.state.processTypes s.state.configs SmallcardTitle)
+                        |> Maybe.map .display
+                        |> Maybe.andThen (Dict.get "SmallcardTitle")
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
-                    , at
+                    , h
                         |> withIdentifiers s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
@@ -137,14 +130,9 @@ viewContent model s =
                     , model.groups
                         |> Dict.values
                         |> List.map (withIdentifiers s.state.identifiers)
-                        |> List.map
-                            (\g ->
-                                let
-                                    config =
-                                        Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
-                                in
-                                display config g
-                            )
+                        |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+                        |> List.map .display
+                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")
                         |> displayGroupTable "(none)"
                     ]
             )
