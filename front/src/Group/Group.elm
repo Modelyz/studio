@@ -1,6 +1,7 @@
 module Group.Group exposing (Group, compare, decoder, encode, fromUuid)
 
 import Dict exposing (Dict)
+import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -13,7 +14,8 @@ type alias Group =
     , uuid : Uuid
     , type_ : Uuid
     , scope : Scope
-    , identifiers : Dict String String
+    , identifiers : Dict String Identifier
+    , display : Dict String String
     }
 
 
@@ -34,11 +36,12 @@ encode g =
 
 decoder : Decoder Group
 decoder =
-    Decode.map5 Group
+    Decode.map6 Group
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
 
 

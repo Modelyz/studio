@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String ProcessType
 validate m =
-    Ok <| ProcessType (Type.HType HType.ProcessType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| ProcessType (Type.HType HType.ProcessType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

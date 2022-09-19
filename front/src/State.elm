@@ -485,6 +485,7 @@ allTyped s t =
 
 --allHierarchic : State -> HType.Type -> Dict String (Identifiable (Hierarchic a))
 -- TODO annotation?
+-- TODO this function fails to compile if all the entity types are not homomorphic. If one field is added in one, it must be added in all
 
 
 allHierarchic s t =

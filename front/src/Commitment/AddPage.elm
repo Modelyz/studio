@@ -213,7 +213,7 @@ validate m =
     case m.flatselect of
         Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Commitment (Type.TType TType.Commitment) m.uuid at.uuid (millisToPosix 0) Dict.empty
+            Ok <| Commitment (Type.TType TType.Commitment) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Commitment Type"

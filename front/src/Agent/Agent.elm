@@ -1,6 +1,8 @@
 module Agent.Agent exposing (Agent, compare, decoder, encode)
 
 import Dict exposing (Dict)
+import Group.Group exposing (Group)
+import Ident.Identifier exposing (Identifier)
 import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -12,7 +14,9 @@ type alias Agent =
     { what : Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String String
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
+    , display : Dict String String
     }
 
 
@@ -27,10 +31,12 @@ encode a =
 
 decoder : Decoder Agent
 decoder =
-    Decode.map4 Agent
+    Decode.map6 Agent
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
+        (Decode.succeed Dict.empty)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
 
 

@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String ContractType
 validate m =
-    Ok <| ContractType (Type.HType HType.ContractType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| ContractType (Type.HType HType.ContractType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

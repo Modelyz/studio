@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String CommitmentType
 validate m =
-    Ok <| CommitmentType (Type.HType HType.CommitmentType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| CommitmentType (Type.HType HType.CommitmentType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

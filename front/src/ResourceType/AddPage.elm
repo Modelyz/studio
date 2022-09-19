@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String ResourceType
 validate m =
-    Ok <| ResourceType (Type.HType HType.ResourceType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| ResourceType (Type.HType HType.ResourceType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

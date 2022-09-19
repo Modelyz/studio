@@ -8,6 +8,8 @@ import Element exposing (..)
 import Element.Background as Background
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
+import Group.WithGroups as WithGroups exposing (withGroups)
+import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
@@ -21,7 +23,6 @@ import Spa.Page
 import Type exposing (Type(..))
 import Typed.Type as TType
 import View exposing (..)
-import View.Record exposing (Record, toRecord)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
@@ -128,7 +129,11 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
-                        { data = Dict.values s.state.contracts |> List.map (toRecord s.state.identifiers s.state.grouped)
+                        { data =
+                            s.state.contracts
+                                |> Dict.values
+                                |> List.map (\t -> withIdentifiers s.state.identifiers (Type.HType HType.ContractType) t.uuid t)
+                                |> List.map (\t -> withGroups s.state.grouped t)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
@@ -141,27 +146,27 @@ viewContent model s =
                 ]
 
 
-groupsColumn : Shared.Model -> Column Record msg
+groupsColumn : Shared.Model -> Column Contract msg
 groupsColumn s =
     { header = headerCell "Groups"
     , width = fill
     , view =
-        .grouped
+        .groups
             >> Dict.values
             >> List.map
-                (\gl ->
+                (\g ->
                     let
                         config =
-                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) gl.group.uuid)
+                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                     in
-                    Identifiable.display config gl.group
+                    Identifiable.display config g
                 )
             >> String.join ", "
             >> text
     }
 
 
-identifierColumn : IdentifierType -> Column Record msg
+identifierColumn : IdentifierType -> Column Contract msg
 identifierColumn it =
     { header = headerCell it.name
     , width = fill

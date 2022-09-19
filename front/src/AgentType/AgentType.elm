@@ -1,6 +1,7 @@
 module AgentType.AgentType exposing (AgentType, compare, decoder, encode, toString)
 
 import Dict exposing (Dict)
+import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -13,7 +14,9 @@ type alias AgentType =
     { what : Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String String -- TODO don't store here, only in the view model in a dedicated field?
+    , identifiers : Dict String Identifier -- TODO replace Dict String String with Dict String Identifier
+    , groups : Dict String Group
+    , display : Dict String String
     }
 
 
@@ -29,10 +32,12 @@ encode at =
 
 decoder : Decode.Decoder AgentType
 decoder =
-    Decode.map4 AgentType
+    Decode.map6 AgentType
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
+        (Decode.succeed Dict.empty)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
 
 

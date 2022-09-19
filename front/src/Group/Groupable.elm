@@ -26,14 +26,12 @@ type Groupable
     | Cm Commitment
     | Cn Contract
     | P Process
-    | G Group
     | RT ResourceType
     | ET EventType
     | AT AgentType
     | CmT CommitmentType
     | CnT ContractType
     | PT ProcessType
-    | GT GroupType
 
 
 uuid : Groupable -> Uuid
@@ -57,9 +55,6 @@ uuid x =
         P p ->
             p.uuid
 
-        G g ->
-            g.uuid
-
         RT rt ->
             rt.uuid
 
@@ -77,9 +72,6 @@ uuid x =
 
         PT pt ->
             pt.uuid
-
-        GT gt ->
-            gt.uuid
 
 
 encode : Groupable -> Encode.Value
@@ -121,12 +113,6 @@ encode groupable =
                 , ( "value", Process.encode p )
                 ]
 
-        G g ->
-            Encode.object
-                [ ( "what", Encode.string "Group" )
-                , ( "value", Group.encode g )
-                ]
-
         RT rt ->
             Encode.object
                 [ ( "what", Encode.string "ResourceType" )
@@ -163,12 +149,6 @@ encode groupable =
                 , ( "value", ProcessType.encode pt )
                 ]
 
-        GT gt ->
-            Encode.object
-                [ ( "what", Encode.string "GroupType" )
-                , ( "value", GroupType.encode gt )
-                ]
-
 
 decoder : Decoder Groupable
 decoder =
@@ -195,9 +175,6 @@ decoder =
                         "Process" ->
                             Decode.map P Process.decoder
 
-                        "Group" ->
-                            Decode.map G Group.decoder
-
                         "ResourceType" ->
                             Decode.map RT ResourceType.decoder
 
@@ -215,9 +192,6 @@ decoder =
 
                         "ProcessType" ->
                             Decode.map PT ProcessType.decoder
-
-                        "GroupType" ->
-                            Decode.map GT GroupType.decoder
 
                         _ ->
                             Decode.fail "Unknown entity"
@@ -246,9 +220,6 @@ compare groupable =
         P p ->
             Process.compare p
 
-        G g ->
-            Group.compare g
-
         RT rt ->
             ResourceType.compare rt
 
@@ -266,6 +237,3 @@ compare groupable =
 
         PT pt ->
             ProcessType.compare pt
-
-        GT gt ->
-            GroupType.compare gt

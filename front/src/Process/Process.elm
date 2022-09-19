@@ -1,6 +1,8 @@
 module Process.Process exposing (Process, compare, decoder, encode)
 
 import Dict exposing (Dict)
+import Group.Group exposing (Group)
+import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -19,7 +21,9 @@ type alias Process =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
-    , identifiers : Dict String String
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
+    , display : Dict String String
     }
 
 
@@ -47,9 +51,11 @@ encode p =
 
 decoder : Decode.Decoder Process
 decoder =
-    Decode.map5 Process
+    Decode.map7 Process
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.succeed Dict.empty)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)

@@ -37,14 +37,14 @@ display identifiers fragments =
     fragments |> List.map (toValue identifiers) |> String.join ""
 
 
-displayFromDict : Dict String String -> List Fragment -> String
+displayFromDict : Dict String Identifier -> List Fragment -> String
 displayFromDict identifiers fragments =
     let
-        fromDict : Dict String String -> Fragment -> String
+        fromDict : Dict String Identifier -> Fragment -> String
         fromDict ids fragment =
             case fragment of
                 IdentifierName name ->
-                    Dict.get name ids |> Maybe.withDefault "(missing)"
+                    Dict.get name ids |> Maybe.map Identifier.toValue |> Maybe.withDefault "(missing)"
 
                 Fixed string ->
                     string

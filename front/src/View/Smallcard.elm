@@ -15,7 +15,6 @@ import Type as Type
 import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
 import View exposing (..)
-import View.Record exposing (Record)
 import View.Style exposing (..)
 import Zone.Fragment exposing (displayFromDict)
 import Zone.Zone exposing (Zone(..))
@@ -68,7 +67,7 @@ viewHalfCard onDelete title =
 
 tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
 tViewHalfCard onDelete allT allH configs h =
-    -- smallcard for hierarchic items
+    -- smallcard for typed items
     let
         mconfig =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)

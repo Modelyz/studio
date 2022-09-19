@@ -1,13 +1,15 @@
 module Group.ListPage exposing (match, page)
 
-import Group.Group exposing (Group)
 import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
+import Group.Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
+import Group.WithGroups as WithGroups exposing (withGroups)
+import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
@@ -21,7 +23,6 @@ import Spa.Page
 import Type exposing (Type(..))
 import Typed.Type as TType
 import View exposing (..)
-import View.Record exposing (Record, toRecord)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
@@ -128,40 +129,21 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
-                        { data = Dict.values s.state.groups |> List.map (toRecord s.state.identifiers s.state.grouped)
+                        { data =
+                            s.state.groups
+                                |> Dict.values
+                                |> List.map (\t -> withIdentifiers s.state.identifiers (Type.HType HType.GroupType) t.uuid t)
                         , columns =
-                            (s.state.identifierTypes
+                            s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.groups s.state.groupTypes it.applyTo (HasType (Type.TType TType.Group)))
                                 |> List.map identifierColumn
-                            )
-                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
 
 
-groupsColumn : Shared.Model -> Column Record msg
-groupsColumn s =
-    { header = headerCell "Groups"
-    , width = fill
-    , view =
-        .grouped
-            >> Dict.values
-            >> List.map
-                (\gl ->
-                    let
-                        config =
-                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) gl.group.uuid)
-                    in
-                    Identifiable.display config gl.group
-                )
-            >> String.join ", "
-            >> text
-    }
-
-
-identifierColumn : IdentifierType -> Column Record msg
+identifierColumn : IdentifierType -> Column Group msg
 identifierColumn it =
     { header = headerCell it.name
     , width = fill

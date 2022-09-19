@@ -1,6 +1,7 @@
 module GroupType.GroupType exposing (GroupType, compare, decoder, encode, find)
 
 import Dict exposing (Dict)
+import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -13,7 +14,9 @@ type alias GroupType =
     { what : Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String String
+    , identifiers : Dict String Identifier
+    , groups : Dict String Group
+    , display : Dict String String
     }
 
 
@@ -36,10 +39,12 @@ encode gt =
 
 decoder : Decode.Decoder GroupType
 decoder =
-    Decode.map4 GroupType
+    Decode.map6 GroupType
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
+        (Decode.succeed Dict.empty)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
 
 

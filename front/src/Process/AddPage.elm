@@ -213,7 +213,7 @@ validate m =
     case m.flatselect of
         Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty
+            Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Process Type"

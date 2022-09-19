@@ -1,6 +1,7 @@
 module Hierarchy.Hierarchic exposing (Hierarchic, compare, find, getParentsToRoot, isAscendantOf)
 
 import Dict exposing (Dict)
+import Ident.Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 
@@ -11,7 +12,8 @@ type alias Hierarchic a =
         | what : Type
         , uuid : Uuid
         , parent : Maybe Uuid
-        , identifiers : Dict String String
+        , identifiers : Dict String Identifier
+        , display : Dict String String
     }
 
 

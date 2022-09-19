@@ -9,6 +9,7 @@ import Element.Background as Background
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
+import Group.WithGroups as WithGroups exposing (withGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -32,19 +33,6 @@ import Zone.Zone exposing (Zone(..))
 type alias Model =
     { route : Route
     , viewtype : ViewType.Type
-    }
-
-
-type alias Record =
-    { identifiers : Dict String Identifier
-    , grouped : Dict String GroupLink.Link
-    }
-
-
-toRecord : Dict String Identifier -> Dict String GroupLink.Link -> Item a -> Record
-toRecord allIds allGroupLinks i =
-    { identifiers = allIds |> Dict.filter (\_ v -> v.identifiable == i.uuid)
-    , grouped = allGroupLinks |> Dict.filter (\_ v -> Groupable.uuid v.groupable == i.uuid)
     }
 
 
@@ -146,7 +134,11 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
-                        { data = Dict.values s.state.processTypes |> List.map (toRecord s.state.identifiers s.state.grouped)
+                        { data =
+                            s.state.processTypes
+                                |> Dict.values
+                                |> List.map (\h -> withIdentifiers s.state.identifiers (Type.HType HType.ProcessType) h.uuid h)
+                                |> List.map (\h -> withGroups s.state.grouped h)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
@@ -159,27 +151,27 @@ viewContent model s =
                 ]
 
 
-groupsColumn : Shared.Model -> Column Record msg
+groupsColumn : Shared.Model -> Column ProcessType msg
 groupsColumn s =
     { header = headerCell "Groups"
     , width = fill
     , view =
-        .grouped
+        .groups
             >> Dict.values
             >> List.map
-                (\gl ->
+                (\g ->
                     let
                         config =
-                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) gl.group.uuid)
+                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                     in
-                    Identifiable.display config gl.group
+                    Identifiable.display config g
                 )
             >> String.join ", "
             >> text
     }
 
 
-identifierColumn : IdentifierType -> Column Record msg
+identifierColumn : IdentifierType -> Column ProcessType msg
 identifierColumn it =
     { header = headerCell it.name
     , width = fill

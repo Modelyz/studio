@@ -1,7 +1,5 @@
 module Group.AddPage exposing (..)
 
-import Group.Group as Group exposing (Group)
-import GroupType.GroupType as GroupType exposing (GroupType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -11,6 +9,7 @@ import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
+import GroupType.GroupType as GroupType exposing (GroupType)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as TType
 import Hierarchy.View exposing (toDesc)
@@ -48,8 +47,6 @@ type alias Model =
     , seed : Seed
     , flatselect : Maybe GroupType
     , identifiers : Dict String Identifier
-    , oldGroups : Dict String Group
-    , groups : Dict String Group
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -59,13 +56,11 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
-    | StepGroups
 
 
 type Msg
     = InputType (Maybe GroupType)
     | InputIdentifier Identifier
-    | InputGroups (Dict String Group)
     | Added
     | Button Step.Msg
 
@@ -116,11 +111,9 @@ init s f =
                 , identifiers =
                     initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing a.uuid
                         |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
-                , oldGroups = oldGroups
-                , groups = oldGroups
                 , warning = ""
                 , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
                 }
             )
         |> Maybe.withDefault
@@ -129,11 +122,9 @@ init s f =
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing newUuid
-            , oldGroups = Dict.empty
-            , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
             }
     , closeMenu f s.menu
     )
@@ -153,9 +144,6 @@ update s msg model =
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
-        InputGroups gs ->
-            ( { model | groups = gs }, Effect.none )
-
         Button stepmsg ->
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
@@ -163,20 +151,11 @@ update s msg model =
         Added ->
             case validate model of
                 Ok a ->
-                    let
-                        addedGroups =
-                            Dict.diff model.groups model.oldGroups
-
-                        removedGroups =
-                            Dict.diff model.oldGroups model.groups
-                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.DefinedGroup a
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.G a) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.G a) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -204,16 +183,13 @@ checkStep model =
         Step StepIdentifiers ->
             Ok ()
 
-        Step StepGroups ->
-            Ok ()
-
 
 validate : Model -> Result String Group
 validate m =
     case m.flatselect of
         Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Group (Type.TType TType.Group) m.uuid at.uuid Empty Dict.empty
+            Ok <| Group (Type.TType TType.Group) m.uuid at.uuid Empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Group Type"
@@ -263,9 +239,6 @@ viewContent model s =
                                 |> withDefaultContent (p "(There are no Group Types yet)")
                             )
                         ]
-
-                Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
                     let

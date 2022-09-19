@@ -13,7 +13,7 @@ import Zone.Fragment exposing (displayFromDict)
 
 type alias Identifiable a =
     -- the shape of an identifiable
-    { a | identifiers : Dict String String }
+    { a | identifiers : Dict String Identifier }
 
 
 tWithIdentifiers : Dict String Identifier -> Dict String (Typed a) -> Dict String (Typed a)
@@ -32,7 +32,7 @@ hWithIdentifiers allIds hs =
 withIdentifiers : Dict String Identifier -> Type -> Uuid -> Identifiable a -> Identifiable a
 withIdentifiers allIds what uuid i =
     -- TODO only take i as arg and add what and uuid in Identifiable
-    { i | identifiers = fromUuid what uuid allIds |> Identifier.toDict }
+    { i | identifiers = allIds |> Dict.filter (\_ id -> uuid == id.identifiable) }
 
 
 display : Maybe Configuration -> Identifiable (Item b) -> String

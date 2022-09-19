@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String EventType
 validate m =
-    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

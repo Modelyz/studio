@@ -2,6 +2,7 @@ module Typed.Typed exposing (OnlyTyped, Typed, compare, find, isAscendantOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Ident.Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 
@@ -11,7 +12,7 @@ type alias Typed a =
         | what : Type
         , uuid : Uuid
         , type_ : Uuid
-        , identifiers : Dict String String
+        , identifiers : Dict String Identifier
     }
 
 

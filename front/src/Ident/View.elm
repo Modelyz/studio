@@ -106,14 +106,14 @@ type alias IdentColumn r msg =
     { header : Element msg, width : Length, view : r -> Element msg }
 
 
-displayIdentifierDict : String -> Dict String String -> Element msg
+displayIdentifierDict : String -> Dict String Identifier -> Element msg
 displayIdentifierDict default data =
     if Dict.size data > 0 then
         table [ width shrink, Background.color color.item.background ]
-            { data = Dict.toList data
+            { data = Dict.values data
             , columns =
-                [ { header = headerCell "Identifier", width = fill, view = Tuple.first >> innerCell }
-                , { header = headerCell "Value", width = fill, view = Tuple.second >> innerCell }
+                [ { header = headerCell "Identifier", width = fill, view = .name >> innerCell }
+                , { header = headerCell "Value", width = fill, view = Identifier.toValue >> innerCell }
                 ]
             }
 

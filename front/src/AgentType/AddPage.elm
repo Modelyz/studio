@@ -206,7 +206,7 @@ checkStep model =
 
 validate : Model -> Result String AgentType
 validate m =
-    Ok <| AgentType (Type.HType HType.AgentType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty
+    Ok <| AgentType (Type.HType HType.AgentType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg
