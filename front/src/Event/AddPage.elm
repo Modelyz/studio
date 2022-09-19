@@ -1,25 +1,20 @@
 module Event.AddPage exposing (..)
 
-import Event.Event as Event exposing (Event)
+import Event.Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
 import Group.Input exposing (inputGroups)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Hierarchy.Type as TType
-import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
-import Item.Item as Item exposing (Item)
-import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
@@ -27,7 +22,6 @@ import Route exposing (Route, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared exposing (flip)
 import Spa.Page
-import State exposing (State)
 import Time exposing (millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
