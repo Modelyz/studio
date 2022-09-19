@@ -13,6 +13,7 @@ type alias Typed a =
         , uuid : Uuid
         , type_ : Uuid
         , identifiers : Dict String Identifier
+        , display : Dict String String
     }
 
 
@@ -22,6 +23,7 @@ type alias OnlyTyped =
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String String
+    , display : Dict String String
     }
 
 

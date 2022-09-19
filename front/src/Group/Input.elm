@@ -40,11 +40,8 @@ inputGroups : Config msg -> Shared.Model -> Model a -> Element msg
 inputGroups c s model =
     -- TODO duplicated from Ident/AddPage and Zone/AddPage
     let
-        allTwithIdentifiers =
+        groups =
             s.state.groups |> tWithIdentifiers s.state.identifiers
-
-        allHwithIdentifiers =
-            s.state.groupTypes |> hWithIdentifiers s.state.identifiers
     in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
@@ -52,14 +49,13 @@ inputGroups c s model =
                 :: (model.groups
                         |> Dict.values
                         |> List.map (withIdentifiers s.state.identifiers)
-                        |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) s.state.groups allHwithIdentifiers s.state.configs g)
+                        |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) groups s.state.groupTypes s.state.configs g)
                    )
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (allTwithIdentifiers
+            (groups
                 |> Dict.values
-                |> List.map (withIdentifiers s.state.identifiers)
-                |> List.map (\g -> tClickableCard (c.onInput (Dict.insert (Group.compare g) g model.groups)) allTwithIdentifiers allHwithIdentifiers s.state.configs g)
+                |> List.map (\g -> tClickableCard (c.onInput (Dict.insert (Group.compare g) g model.groups)) groups s.state.groupTypes s.state.configs g)
                 |> withDefaultContent (p "(There are no Groups yet)")
             )
         ]

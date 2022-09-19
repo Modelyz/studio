@@ -7,14 +7,10 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.Groupable as Groupable
-import Group.Link as GroupLink exposing (groupsOf)
 import Group.WithGroups as WithGroups exposing (withGroups)
-import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
-import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectAdd)
@@ -27,6 +23,7 @@ import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -134,8 +131,8 @@ viewContent model s =
                         { data =
                             s.state.events
                                 |> Dict.values
-                                |> List.map (\t -> withIdentifiers s.state.identifiers t)
-                                |> List.map (\t -> withGroups s.state.grouped t)
+                                |> List.map (withIdentifiers s.state.identifiers)
+                                |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
@@ -153,15 +150,17 @@ groupsColumn s =
     { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
-        .groups
+        withGroups s.state.grouped
+            >> .groups
             >> Dict.values
+            >> List.map (withIdentifiers s.state.identifiers)
             >> List.map
                 (\g ->
                     let
                         config =
                             Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                     in
-                    Identifiable.display config g
+                    display config g
                 )
             >> String.join ", "
             >> text

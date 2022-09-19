@@ -6,15 +6,11 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
-import Group.Link as GroupLink exposing (groupsOf)
 import Group.WithGroups as WithGroups exposing (withGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
-import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect, redirectAdd)
@@ -27,6 +23,7 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -165,7 +162,7 @@ groupsColumn s =
                         config =
                             Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                     in
-                    Identifiable.display config g
+                    display config g
                 )
             >> String.join ", "
             >> text

@@ -5,38 +5,22 @@ import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
-import Group.Input exposing (inputGroups)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Hierarchy.Type as HType
-import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable as Identifiable exposing (withIdentifiers)
-import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (initIdentifiers)
-import Ident.Input exposing (inputIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
-import Item.Item as Item exposing (Item)
-import Json.Decode as Decode
-import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
 import Route exposing (Route, redirect, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T
 import View exposing (..)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
-import View.Step as Step exposing (Step(..), buttons, isLast)
-import View.Style exposing (..)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -124,11 +108,11 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     model.commitment
         |> Maybe.map
-            (\a ->
+            (\t ->
                 let
                     mconfig =
                         model.commitment
-                            |> Maybe.map .uuid
+                            |> Maybe.map .type_
                             |> Maybe.andThen
                                 (\uuid ->
                                     Config.getMostSpecific s.state.commitments s.state.commitmentTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Commitment) uuid)
@@ -138,13 +122,13 @@ viewContent model s =
                     "Commitment"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
-                    , H.find s.state.commitmentTypes a.type_
+                    , H.find s.state.commitmentTypes t.type_
                         |> Maybe.map (withIdentifiers s.state.identifiers)
-                        |> Maybe.map (\pat -> Identifiable.display mconfig pat)
+                        |> Maybe.map (\pat -> display mconfig pat)
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
-                    , a
+                    , t
                         |> withIdentifiers s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
@@ -158,7 +142,7 @@ viewContent model s =
                                     config =
                                         Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                                 in
-                                Identifiable.display config g
+                                display config g
                             )
                         |> displayGroupTable "(none)"
                     ]

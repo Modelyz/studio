@@ -36,6 +36,7 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
+import Zone.View exposing (hWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -123,43 +124,24 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     model.group
         |> Maybe.map
-            (\a ->
-                let
-                    mconfig =
-                        model.group
-                            |> Maybe.map .uuid
-                            |> Maybe.andThen
-                                (\uuid ->
-                                    Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) uuid)
-                                )
-                in
+            (\t ->
                 floatingContainer s
                     "Group"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
-                    , H.find s.state.groupTypes a.type_
+                    , t.type_
+                        |> H.find s.state.groupTypes
                         |> Maybe.map (withIdentifiers s.state.identifiers)
-                        |> Maybe.map (\pat -> Identifiable.display mconfig pat)
+                        |> Maybe.map (hWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+                        |> Maybe.map .display
+                        |> Maybe.andThen (Dict.get "SmallcardTitle")
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
-                    , a
+                    , t
                         |> withIdentifiers s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
-                    , h2 "Groups:"
-                    , model.groups
-                        |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
-                        |> List.map
-                            (\g ->
-                                let
-                                    config =
-                                        Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
-                                in
-                                Identifiable.display config g
-                            )
-                        |> displayGroupTable "(none)"
                     ]
             )
         |> Maybe.withDefault

@@ -23,7 +23,7 @@ type
     | IsItem Type Uuid
       -- The set of items with a specific concrete typz
     | HasType Type
-      -- the set of items whose type or parent is child of a user type
+      -- the set of items of type Type whose type or parent is child of a user type uuid
     | HasUserType Type Uuid
       -- The union of two sets
     | And Scope Scope -- entities of both groups
@@ -154,9 +154,11 @@ getUpperList allT allH scope oldList =
         newList =
             scope :: oldList
     in
-    getUpper allT allH scope
-        |> Maybe.map (\upperScope -> getUpperList allT allH upperScope newList)
-        |> Maybe.withDefault newList
+    Debug.log "getUpperList"
+        (getUpper allT allH scope
+            |> Maybe.map (\upperScope -> getUpperList allT allH upperScope newList)
+            |> Maybe.withDefault newList
+        )
 
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool

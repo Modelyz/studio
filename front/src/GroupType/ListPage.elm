@@ -27,6 +27,7 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -165,7 +166,7 @@ groupsColumn s =
                         config =
                             Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
                     in
-                    Identifiable.display config g
+                    display config g
                 )
             >> String.join ", "
             >> text

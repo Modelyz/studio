@@ -16,6 +16,7 @@ import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -65,14 +66,14 @@ viewHalfCard onDelete title =
 
 
 tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tViewHalfCard onDelete allT allH configs h =
+tViewHalfCard onDelete allT allH configs t =
     -- smallcard for typed items
     let
         mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig t
     in
     viewHalfCard onDelete (text title)
 
@@ -85,7 +86,7 @@ hViewHalfCard onDelete allT allH configs h =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig h
     in
     viewHalfCard onDelete (text title)
 
@@ -98,10 +99,10 @@ hViewSmallCard onDelete allT allH configs h =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig h
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     viewSmallCard onDelete (text title) (text description)
 
@@ -114,10 +115,10 @@ tClickableCard onInput allT allH configs t =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.uuid)
 
         title =
-            Identifiable.display mconfig t
+            display mconfig t
 
         description =
-            H.find allH t.type_ |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+            H.find allH t.type_ |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableCard onInput (text title) (text description)
 
@@ -130,10 +131,10 @@ sClickableCard onInput allT allH configs h t =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig h
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableCard (onInput (HasUserType t h.uuid)) (text title) (text description)
 
@@ -146,10 +147,10 @@ hClickableCard onInput allT allH configs h =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig h
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableCard (onInput (Just h)) (text title) (text description)
 
@@ -165,10 +166,10 @@ tClickableRemovableCard onChoose onDelete allT allH configs t =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t.what) t.type_)
 
         title =
-            Identifiable.display mtconfig t
+            display mtconfig t
 
         description =
-            H.find allH t.type_ |> Maybe.map (Identifiable.display mhconfig) |> Maybe.withDefault ""
+            H.find allH t.type_ |> Maybe.map (display mhconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)
 
@@ -181,10 +182,10 @@ hClickableRemovableCard onChoose onDelete allT allH configs h =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
 
         title =
-            Identifiable.display mconfig h
+            display mconfig h
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault ""
+            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)
 
@@ -200,9 +201,9 @@ tViewSmallCard onDelete allT allH configs t =
             Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t.what) t.type_)
 
         title =
-            Identifiable.display mtconfig t
+            display mtconfig t
 
         description =
-            H.find allH t.type_ |> Maybe.map (Identifiable.display mhconfig) |> Maybe.withDefault ""
+            H.find allH t.type_ |> Maybe.map (display mhconfig) |> Maybe.withDefault ""
     in
     viewSmallCard onDelete (text title) (text description)

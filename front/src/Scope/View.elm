@@ -2,37 +2,23 @@ module Scope.View exposing (inputScope, toDisplay)
 
 import Configuration as Config exposing (Configuration(..))
 import Dict exposing (Dict)
-import Effect as Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
-import Element.Input as Input
-import Entity.Entity as Entity
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identifiable as Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
-import Ident.Identification as Identification
-import Ident.Identifier as Identifier
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.View
 import Item.Item as Item exposing (Item)
-import Message
-import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirect, redirectParent)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
-import Spa.Page
 import State
 import Type exposing (Type(..))
 import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
-import View.Lang exposing (Lang(..))
 import View.Smallcard exposing (sClickableCard, viewHalfCard)
 import View.Style exposing (..)
-import Zone.Fragment as Fragment exposing (Fragment(..))
+import Zone.View exposing (display)
 import Zone.Zone as Zone exposing (Zone(..))
 
 
@@ -179,7 +165,7 @@ toDisplay allT allH configs scope =
                 mconfig =
                     Config.getMostSpecific allT allH configs SmallcardTitle (IsItem t uuid)
             in
-            Item.find allT uuid |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault "(missing)"
+            Item.find allT uuid |> Maybe.map (display mconfig) |> Maybe.withDefault "(missing)"
 
         HasType t ->
             Type.toString t
@@ -192,7 +178,7 @@ toDisplay allT allH configs scope =
                     Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t) tuid)
 
                 title =
-                    H.find allH tuid |> Maybe.map (Identifiable.display mconfig) |> Maybe.withDefault "(missing)"
+                    H.find allH tuid |> Maybe.map (display mconfig) |> Maybe.withDefault "(missing)"
             in
             Type.toString t ++ " of type " ++ title
 

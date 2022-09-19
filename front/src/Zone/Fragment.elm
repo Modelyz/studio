@@ -34,6 +34,7 @@ toValue identifiers f =
 
 display : Dict String Identifier -> List Fragment -> String
 display identifiers fragments =
+    -- display the fragments corresponding to identifiers to construct the zone
     fragments |> List.map (toValue identifiers) |> String.join ""
 
 
