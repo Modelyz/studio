@@ -1,7 +1,6 @@
 module EventType.ListPage exposing (match, page)
 
 import EventType.EventType exposing (EventType)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)

@@ -1,6 +1,5 @@
 module GroupType.ListPage exposing (match, page)
 
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)

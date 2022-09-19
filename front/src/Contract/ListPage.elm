@@ -1,7 +1,6 @@
 module Contract.ListPage exposing (match, page)
 
 import Contract.Contract exposing (Contract)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)

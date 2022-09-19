@@ -1,7 +1,6 @@
 module Commitment.ListPage exposing (match, page)
 
 import Commitment.Commitment exposing (Commitment)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)

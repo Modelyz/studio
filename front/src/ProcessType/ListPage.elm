@@ -1,7 +1,6 @@
 module ProcessType.ListPage exposing (match, page)
 
 import ProcessType.ProcessType exposing (ProcessType)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)

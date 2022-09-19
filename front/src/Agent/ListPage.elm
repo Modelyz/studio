@@ -1,7 +1,6 @@
 module Agent.ListPage exposing (match, page)
 
 import Agent.Agent exposing (Agent)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
