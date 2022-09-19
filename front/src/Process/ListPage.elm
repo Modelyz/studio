@@ -23,7 +23,7 @@ import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (display)
+import Zone.View exposing (display, hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -154,14 +154,9 @@ groupsColumn s =
             >> .groups
             >> Dict.values
             >> List.map (withIdentifiers s.state.identifiers)
-            >> List.map
-                (\g ->
-                    let
-                        config =
-                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
-                    in
-                    display config g
-                )
+            >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+            >> List.map .display
+            >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
             >> String.join ", "
             >> text
             >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]

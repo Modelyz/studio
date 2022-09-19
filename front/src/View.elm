@@ -251,16 +251,17 @@ checkNothing f err =
             Ok (Just x)
 
 
-clickableCard : msg -> Element msg -> Element msg -> Element msg
-clickableCard onInput title desc =
-    -- TODO remove?
-    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
-        [ row [ alignLeft, width <| minimum 150 shrink ]
-            [ button.primary onInput "+"
-            , el [ paddingXY 10 0 ] title
-            ]
-        , desc
-        ]
+
+--clickableCard : msg -> Element msg -> Element msg -> Element msg
+--clickableCard onInput title desc =
+--    -- TODO remove?
+--    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
+--        [ row [ alignLeft, width <| minimum 150 shrink ]
+--            [ button.primary onInput "+"
+--            , el [ paddingXY 10 0 ] title
+--            ]
+--        , desc
+--        ]
 
 
 headerCell : Color -> String -> Element msg

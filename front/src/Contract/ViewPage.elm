@@ -132,7 +132,7 @@ viewContent model s =
                         |> List.map (withIdentifiers s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
-                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")
+                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
                         |> displayGroupTable "(none)"
                     ]
             )

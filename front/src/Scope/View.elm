@@ -16,7 +16,7 @@ import Type exposing (Type(..))
 import Typed.Type as TType
 import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
-import View.Smallcard exposing (sClickableCard, viewHalfCard)
+import View.Smallcard exposing (clickableCard, sClickableCard, viewHalfCard)
 import View.Style exposing (..)
 import Zone.View exposing (display)
 import Zone.Zone as Zone exposing (Zone(..))

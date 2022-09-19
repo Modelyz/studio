@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Link as GroupLink exposing (groupsOf)
@@ -27,7 +28,7 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (display)
+import Zone.View exposing (display, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -158,18 +159,16 @@ groupsColumn s =
     { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
-        .groups
+        withGroups s.state.grouped
+            >> .groups
             >> Dict.values
-            >> List.map
-                (\g ->
-                    let
-                        config =
-                            Config.getMostSpecific s.state.groups s.state.groupTypes s.state.configs SmallcardTitle (HasUserType (Type.TType TType.Group) g.uuid)
-                    in
-                    display config g
-                )
+            >> List.map (withIdentifiers s.state.identifiers)
+            >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+            >> List.map .display
+            >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
             >> String.join ", "
             >> text
+            >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
     }
 
 

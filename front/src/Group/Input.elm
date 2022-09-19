@@ -8,18 +8,20 @@ import Element.Font as Font
 import Element.Input as Input
 import Group.Group as Group exposing (Group)
 import Group.View
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
+import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
 import Type
 import Typed.Type as TType
 import View exposing (..)
-import View.Smallcard exposing (tClickableCard, tViewHalfCard)
+import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
+import Zone.View exposing (display, hWithDisplay, tWithDisplay)
+import Zone.Zone exposing (Zone(..))
 
 
 type alias Model a =
-    { a | groups : Dict String Group }
+    { a | uuid : Uuid, groups : Dict String Group }
 
 
 type alias Config msg =
@@ -39,23 +41,30 @@ viewItem c s model group =
 inputGroups : Config msg -> Shared.Model -> Model a -> Element msg
 inputGroups c s model =
     -- TODO duplicated from Ident/AddPage and Zone/AddPage
-    let
-        groups =
-            s.state.groups |> tWithIdentifiers s.state.identifiers
-    in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
                 :: (model.groups
                         |> Dict.values
                         |> List.map (withIdentifiers s.state.identifiers)
-                        |> List.map (\g -> tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString g.uuid) model.groups) groups s.state.groupTypes s.state.configs g)
+                        |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+                        |> List.map
+                            (\t ->
+                                viewHalfCard (c.onInput <| Dict.remove (Uuid.toString model.uuid) model.groups) (t.display |> Dict.get "SmallcardTitle" |> Maybe.withDefault "(missing zone config)" |> text)
+                            )
                    )
         , h2 <| "Select the groups this entity should belong to"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-            (groups
+            (s.state.groups
                 |> Dict.values
-                |> List.map (\g -> tClickableCard (c.onInput (Dict.insert (Group.compare g) g model.groups)) groups s.state.groupTypes s.state.configs g)
+                |> List.map (withIdentifiers s.state.identifiers)
+                |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
+                |> List.map
+                    (\t ->
+                        clickableCard (c.onInput <| Dict.insert (Uuid.toString t.uuid) t model.groups)
+                            (t.display |> Dict.get "SmallcardTitle" |> Maybe.withDefault "(missing zone config)" |> text)
+                            none
+                    )
                 |> withDefaultContent (p "(There are no Groups yet)")
             )
         ]

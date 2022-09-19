@@ -15,7 +15,7 @@ hWithDisplay : Dict String (Typed t) -> Dict String (Hierarchic h) -> Dict Strin
 hWithDisplay allT allH configs zone h =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs zone (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs zone (HasUserType h.what h.uuid {- FIXME h.parent?? -})
     in
     { h | display = Dict.insert (Zone.toString zone) (display mconfig h) h.display }
 
@@ -24,7 +24,7 @@ tWithDisplay : Dict String (Typed t) -> Dict String (Hierarchic h) -> Dict Strin
 tWithDisplay allT allH configs zone t =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs zone (HasUserType t.what t.uuid)
+            Config.getMostSpecific allT allH configs zone (HasUserType t.what t.type_)
     in
     { t | display = Dict.insert (Zone.toString zone) (display mconfig t) t.display }
 
