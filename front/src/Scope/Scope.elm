@@ -154,11 +154,9 @@ getUpperList allT allH scope oldList =
         newList =
             scope :: oldList
     in
-    Debug.log "getUpperList"
-        (getUpper allT allH scope
-            |> Maybe.map (\upperScope -> getUpperList allT allH upperScope newList)
-            |> Maybe.withDefault newList
-        )
+    getUpper allT allH scope
+        |> Maybe.map (\upperScope -> getUpperList allT allH upperScope newList)
+        |> Maybe.withDefault newList
 
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool
