@@ -1,9 +1,9 @@
-module Typed.Typed exposing (OnlyTyped, Typed, compare, find, isAscendantOf)
+module Typed.Typed exposing (OnlyTyped, Typed, find, isAscendantOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Ident.Identifier exposing (Identifier)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
 
 
@@ -38,8 +38,3 @@ find es uuid =
     Dict.filter (\_ e -> e.uuid == uuid) es
         |> Dict.values
         |> List.head
-
-
-compare : Typed a -> String
-compare =
-    .uuid >> Uuid.toString

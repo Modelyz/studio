@@ -1,4 +1,4 @@
-module View.Style exposing (..)
+module View.Style exposing (Menu(..), WindowSize, color, isMobile, itemHoverstyle, navbarHoverstyle, shadowStyle, size)
 
 import Element exposing (..)
 import Element.Background as Background

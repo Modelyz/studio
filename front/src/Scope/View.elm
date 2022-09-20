@@ -1,25 +1,25 @@
-module Scope.View exposing (inputScope, toDisplay)
+module Scope.View exposing (Model, inputScope)
 
-import Configuration as Config exposing (Configuration(..))
+import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
-import Item.Item as Item exposing (Item)
-import Scope.Scope as Scope exposing (Scope(..))
+import Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
+import Item.Item as Item
+import Scope.Scope exposing (Scope(..))
 import Shared
 import State
-import Type exposing (Type(..))
+import Type
 import Typed.Type as TType
-import Typed.Typed as Typed exposing (Typed)
+import Typed.Typed exposing (Typed)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, sClickableCard, viewHalfCard)
 import View.Style exposing (..)
 import Zone.View exposing (display)
-import Zone.Zone as Zone exposing (Zone(..))
+import Zone.Zone exposing (Zone(..))
 
 
 type alias Model a =
@@ -74,8 +74,7 @@ inputScope s input model =
     in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ")
-                :: [ viewHalfCard (input Empty) (text <| toDisplay allT allH s.state.configs model.scope) ]
+            [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ", viewHalfCard (input Empty) (text <| toDisplay allT allH s.state.configs model.scope) ]
         , h2 <| "What should it apply to?"
 
         -- First the concrete types
@@ -103,19 +102,6 @@ inputScope s input model =
                         -- all the hierarchic items corresponding to the typed ones
                         allHwithIdentifiers =
                             hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state (TType.toHierarchic tt)
-
-                        config =
-                            Config.getMostSpecific allT allHwithIdentifiers s.state.configs SmallcardTitle model.scope
-
-                        configscope =
-                            Maybe.map
-                                (\c ->
-                                    case c of
-                                        ZoneConfig _ _ scope ->
-                                            scope
-                                )
-                                config
-                                |> Maybe.withDefault Empty
                     in
                     (h2 <| "And more precisely:")
                         :: (allHwithIdentifiers
@@ -127,19 +113,6 @@ inputScope s input model =
                     let
                         allHwithIdentifiers =
                             hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state ht
-
-                        config =
-                            Config.getMostSpecific allT allHwithIdentifiers s.state.configs SmallcardTitle model.scope
-
-                        configscope =
-                            Maybe.map
-                                (\c ->
-                                    case c of
-                                        ZoneConfig _ _ scope ->
-                                            scope
-                                )
-                                config
-                                |> Maybe.withDefault Empty
                     in
                     (h2 <| "And more precisely:")
                         :: (allHwithIdentifiers

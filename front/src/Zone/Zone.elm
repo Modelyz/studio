@@ -1,12 +1,7 @@
 module Zone.Zone exposing (Zone(..), all, compare, decoder, encode, toDesc, toString)
 
-import Dict exposing (Dict)
-import Entity.Entity as Entity exposing (Entity)
-import Entity.Type as Type exposing (Type(..))
-import Ident.Identifier as Identifier
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import View.Lang as Lang exposing (Lang)
 
 
 type Zone

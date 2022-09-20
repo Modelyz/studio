@@ -1,8 +1,8 @@
-module Hierarchy.Hierarchic exposing (Hierarchic, compare, find, getParentsToRoot, isAscendantOf)
+module Hierarchy.Hierarchic exposing (Hierarchic, find, isAscendantOf)
 
 import Dict exposing (Dict)
 import Ident.Identifier exposing (Identifier)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
 
 
@@ -30,26 +30,8 @@ isAscendantOf child allH parent =
             |> Maybe.withDefault False
 
 
-getParent : Dict String (Hierarchic a) -> Hierarchic a -> Maybe (Hierarchic a)
-getParent allH item =
-    item.parent
-        |> Maybe.andThen (find allH)
-
-
 find : Dict String (Hierarchic a) -> Uuid -> Maybe (Hierarchic a)
 find hs uuid =
     Dict.filter (\_ e -> e.uuid == uuid) hs
         |> Dict.values
         |> List.head
-
-
-getParentsToRoot : Hierarchic a -> Dict String (Hierarchic a) -> List (Hierarchic a) -> List (Hierarchic a)
-getParentsToRoot initial allH currentList =
-    getParent allH initial
-        |> Maybe.map (\parent -> getParentsToRoot parent allH currentList)
-        |> Maybe.withDefault currentList
-
-
-compare : Hierarchic a -> String
-compare =
-    .uuid >> Uuid.toString

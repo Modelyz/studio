@@ -1,14 +1,12 @@
-module Ident.ListPage exposing (match, page, view)
+module Ident.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.View
+import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope
-import Scope.View
 import Shared
 import Spa.Page
 import View exposing (..)

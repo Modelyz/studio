@@ -1,4 +1,4 @@
-module Configuration.View exposing (..)
+module Configuration.View exposing (display)
 
 import Configuration exposing (Configuration(..))
 import Element exposing (..)
@@ -10,5 +10,5 @@ import Zone.Zone as Zone
 display : Shared.Model -> Configuration -> Element msg
 display s c =
     case c of
-        ZoneConfig zone fs scope ->
+        ZoneConfig zone _ scope ->
             row [] [ text <| Zone.toDesc zone ++ " for ", text <| Scope.toString scope ]

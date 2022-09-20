@@ -1,11 +1,9 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectParent, routeParser, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectParent, toRoute, toString)
 
 import Browser.Navigation as Nav
-import Effect exposing (Effect)
-import Prng.Uuid as Uuid exposing (Uuid)
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (absolute)
-import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
+import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
 
 

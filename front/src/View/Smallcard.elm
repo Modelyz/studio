@@ -1,19 +1,16 @@
-module View.Smallcard exposing (..)
+module View.Smallcard exposing (clickableCard, hClickableCard, hClickableRemovableCard, hViewHalfCard, sClickableCard, tClickableRemovableCard, viewHalfCard, viewSmallCard)
 
-import Configuration as Config exposing (Configuration(..))
+import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Events as Events exposing (onClick)
+import Element.Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Ident.Identifiable as Identifiable exposing (Identifiable)
-import Item.Item as Item exposing (Item)
-import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope as Scope exposing (Scope(..))
-import Type as Type
-import Typed.Type as TType
-import Typed.Typed as T exposing (Typed)
+import Ident.Identifiable exposing (Identifiable)
+import Scope.Scope exposing (Scope(..))
+import Type
+import Typed.Typed exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
 import Zone.View exposing (display)
@@ -65,19 +62,6 @@ viewHalfCard onDelete title =
         ]
 
 
-tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tViewHalfCard onDelete allT allH configs t =
-    -- smallcard for typed items
-    let
-        mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.uuid)
-
-        title =
-            display mconfig t
-    in
-    viewHalfCard onDelete (text title)
-
-
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hViewHalfCard onDelete allT allH configs h =
     -- smallcard for hierarchic items
@@ -89,38 +73,6 @@ hViewHalfCard onDelete allT allH configs h =
             display mconfig h
     in
     viewHalfCard onDelete (text title)
-
-
-hViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
-hViewSmallCard onDelete allT allH configs h =
-    -- smallcard for hierarchic items
-    let
-        mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
-
-        title =
-            display mconfig h
-
-        description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
-    in
-    viewSmallCard onDelete (text title) (text description)
-
-
-tClickableCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tClickableCard onInput allT allH configs t =
-    -- clickable card for typed items
-    let
-        mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.uuid)
-
-        title =
-            display mconfig t
-
-        description =
-            H.find allH t.type_ |> Maybe.map (display mconfig) |> Maybe.withDefault ""
-    in
-    clickableCard onInput (text title) (text description)
 
 
 sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg
@@ -188,22 +140,3 @@ hClickableRemovableCard onChoose onDelete allT allH configs h =
             h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)
-
-
-tViewSmallCard : msg -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Typed a) -> Element msg
-tViewSmallCard onDelete allT allH configs t =
-    -- smallcard for hierarchic items
-    let
-        mtconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.type_)
-
-        mhconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t.what) t.type_)
-
-        title =
-            display mtconfig t
-
-        description =
-            H.find allH t.type_ |> Maybe.map (display mhconfig) |> Maybe.withDefault ""
-    in
-    viewSmallCard onDelete (text title) (text description)

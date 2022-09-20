@@ -5,7 +5,7 @@ import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Maybe exposing (Maybe(..))
+import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 

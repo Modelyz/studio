@@ -1,9 +1,9 @@
-module View.Radio exposing (view)
+module View.Radio exposing (Config, view)
 
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import View.Style exposing (color, size)
+import View.Style exposing (size)
 
 
 type alias Config a msg =

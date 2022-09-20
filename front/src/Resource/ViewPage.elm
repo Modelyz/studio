@@ -1,26 +1,22 @@
-module Resource.ViewPage exposing (..)
+module Resource.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Resource.Resource as Resource exposing (Resource)
-import Configuration as Config
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable exposing (Groupable)
+import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Ident.Identifiable as Identifiable exposing (withIdentifiers)
+import Hierarchy.Hierarchic as H
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirect, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
+import Resource.Resource exposing (Resource)
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Type exposing (Type)
-import Typed.Type as TType
 import Typed.Typed as T
 import View exposing (..)
-import Zone.View exposing (display, hWithDisplay, tWithDisplay)
+import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 

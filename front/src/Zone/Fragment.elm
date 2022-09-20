@@ -1,7 +1,6 @@
-module Zone.Fragment exposing (Fragment(..), decoder, display, encode, toDesc, toString, toValue)
+module Zone.Fragment exposing (Fragment(..), decoder, display, encode, toDesc, toString)
 
 import Dict exposing (Dict)
-import Entity.Entity as Entity exposing (Entity)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -18,7 +17,7 @@ toString f =
         IdentifierName name ->
             name
 
-        Fixed string ->
+        Fixed _ ->
             ""
 
 
@@ -35,16 +34,16 @@ toValue identifiers f =
 display : Dict String Identifier -> List Fragment -> String
 display identifiers fragments =
     -- display the fragments corresponding to identifiers to construct the zone
-    fragments |> List.map (toValue identifiers) |> String.join ""
+    fragments |> List.map (toValue identifiers) |> String.concat
 
 
 toDesc : Fragment -> String
 toDesc f =
     case f of
-        IdentifierName name ->
+        IdentifierName _ ->
             "(Identifier)"
 
-        Fixed string ->
+        Fixed _ ->
             "(Fixed string)"
 
 

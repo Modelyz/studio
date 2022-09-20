@@ -1,15 +1,15 @@
-module Ident.IdentifierType exposing (..)
+module Ident.IdentifierType exposing (IdentifierType, compare, decoder, encode, initIdentifiers)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Type exposing (Type)
-import Typed.Typed as TType exposing (Typed)
+import Typed.Typed exposing (Typed)
 
 
 type alias IdentifierType =
@@ -68,21 +68,3 @@ decoder =
         (Decode.field "applyTo" Scope.decoder)
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)
-
-
-update : Int -> Fragment -> IdentifierType -> IdentifierType
-update index fragment identifierType =
-    let
-        fragments =
-            identifierType.fragments
-                |> List.indexedMap Tuple.pair
-                |> List.map
-                    (\( i, f ) ->
-                        if i == index then
-                            fragment
-
-                        else
-                            f
-                    )
-    in
-    { identifierType | fragments = fragments }

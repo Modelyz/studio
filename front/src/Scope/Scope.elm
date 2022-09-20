@@ -4,11 +4,10 @@ import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identification as Identification exposing (Identification)
-import Item.Item as Item exposing (Item)
+import Item.Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Tuple
 import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
@@ -138,10 +137,10 @@ getUpper allT allH scope =
         Or s1 s2 ->
             Maybe.map2 Or (getUpper allT allH s1) (getUpper allT allH s2)
 
-        Not s ->
+        Not _ ->
             Nothing
 
-        Identified id ->
+        Identified _ ->
             Nothing
 
         Empty ->
@@ -175,7 +174,7 @@ containsScope allT allH inscope outscope =
 
         IsItem outType outUuid ->
             case outType of
-                Type.TType tt ->
+                Type.TType _ ->
                     case inscope of
                         IsItem inType inUuid ->
                             outType == inType && outUuid == inUuid
@@ -189,7 +188,7 @@ containsScope allT allH inscope outscope =
                         _ ->
                             False
 
-                Type.HType ht ->
+                Type.HType _ ->
                     case inscope of
                         IsItem inType inUuid ->
                             outType == inType && outUuid == inUuid
@@ -272,7 +271,7 @@ containsItem scope item =
             -- TODO a non-alias type would allow to get rid of "what"
             item.what == t
 
-        HasUserType t uuid ->
+        HasUserType _ _ ->
             -- ancestor search is in functions below
             False
 
@@ -288,28 +287,6 @@ containsItem scope item =
 
         Not s ->
             not <| containsItem s item
-
-
-containsTyped : Dict String (Typed a) -> Dict String (Hierarchic (Item b)) -> Scope -> Typed (Item a) -> Bool
-containsTyped allT allH scope item =
-    case scope of
-        HasUserType t tuid ->
-            (item.what == t)
-                && (Maybe.map (T.isAscendantOf item allH) (H.find allH tuid) |> Maybe.withDefault False)
-
-        _ ->
-            containsItem scope item
-
-
-containsHierarchic : Dict String (Hierarchic a) -> Dict String (Hierarchic (Item a)) -> Scope -> Hierarchic (Item a) -> Bool
-containsHierarchic allT allH scope item =
-    case scope of
-        HasUserType t tuid ->
-            (item.what == t)
-                && (Maybe.map (H.isAscendantOf item allH) (H.find allH tuid) |> Maybe.withDefault False)
-
-        _ ->
-            containsItem scope item
 
 
 toString : Scope -> String

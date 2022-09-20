@@ -1,14 +1,12 @@
-module Ident.Input exposing (..)
+module Ident.Input exposing (Config, Model, inputIdentifiers)
 
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Input as Input
-import Ident.Fragment as Fragment exposing (Fragment(..))
+import Ident.Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import Scope.Scope as Scope exposing (Scope(..))
-import Type exposing (Type)
+import Scope.Scope as Scope exposing (Scope)
 import View exposing (..)
-import View.Type exposing (Type(..))
 
 
 type alias Model a =
@@ -68,7 +66,7 @@ inputFragment c model index fragment ident =
         Fixed value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
 
-        Sequence padding step start value ->
+        Sequence _ _ _ value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
 
         _ ->

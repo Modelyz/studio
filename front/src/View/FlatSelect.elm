@@ -1,4 +1,4 @@
-module View.FlatSelect exposing (..)
+module View.FlatSelect exposing (Config, Model, flatselect)
 
 import Element exposing (..)
 import Element.Background as Background

@@ -1,11 +1,11 @@
-module GroupType.GroupType exposing (GroupType, compare, decoder, encode, find)
+module GroupType.GroupType exposing (GroupType, decoder, encode)
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Maybe exposing (Maybe(..))
+import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 
@@ -18,14 +18,6 @@ type alias GroupType =
     , groups : Dict String Group
     , display : Dict String String
     }
-
-
-find : Uuid -> Dict String GroupType -> Maybe GroupType
-find uuid gts =
-    -- TODO consider moving that to the Metadata? Or replace GroupType with a type variable?
-    Dict.filter (\_ gt -> .uuid gt == uuid) gts
-        |> Dict.values
-        |> List.head
 
 
 encode : GroupType -> Encode.Value
@@ -46,13 +38,3 @@ decoder =
         (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
-
-
-compare : GroupType -> String
-compare =
-    toString
-
-
-toString : GroupType -> String
-toString =
-    .uuid >> Uuid.toString

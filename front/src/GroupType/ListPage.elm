@@ -1,33 +1,28 @@
-module GroupType.ListPage exposing (match, page)
+module GroupType.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
-import Group.Link as GroupLink exposing (groupsOf)
-import Group.WithGroups as WithGroups exposing (withGroups)
+import Group.WithGroups exposing (withGroups)
 import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, withIdentifiers)
-import Ident.Identifier as Identifier exposing (Identifier)
+import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
-import Item.Item as Item exposing (Item)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirect, redirectAdd)
+import Route exposing (Route, redirectAdd)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import Type exposing (Type(..))
-import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (display, tWithDisplay)
+import Zone.View exposing (tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -42,7 +37,6 @@ type Msg
     | Add
     | View Uuid
     | ChangeView ViewType.Type
-    | Search String
 
 
 type alias Flags =
@@ -92,9 +86,6 @@ update s msg model =
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
-
-        Search str ->
-            ( model, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg

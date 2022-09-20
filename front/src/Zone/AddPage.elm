@@ -1,34 +1,22 @@
-module Zone.AddPage exposing (..)
+module Zone.AddPage exposing (Flags, Model, Msg(..), match, page)
 
 import Configuration exposing (Configuration(..))
-import Dict exposing (Dict)
-import Effect as Effect exposing (Effect)
+import Dict
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
-import Entity.Entity as Entity
-import Hierarchy.Hierarchic as Hierarchic
-import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable
-import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Ident.View
-import Item.Item as Item exposing (Item)
 import Message
-import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirect, redirectParent)
+import Route exposing (Route, redirect)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
 import State
-import Type exposing (Type)
-import Typed.Type as TType
-import Typed.Typed as Typed exposing (Typed)
 import View exposing (..)
-import View.Lang exposing (Lang(..))
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -38,7 +26,6 @@ type Msg
     = InputZone Zone
     | InputScope Scope
     | InputFragments (List Fragment)
-    | Warning String
     | Cancel
     | Added
 
@@ -125,9 +112,6 @@ update s msg model =
 
         InputFragments fragments ->
             { model | fragments = fragments } |> Effect.withNone
-
-        Warning string ->
-            { model | warning = string } |> Effect.withNone
 
         Cancel ->
             ( model, redirect s.navkey Route.ConfigurationList |> Effect.fromCmd )
@@ -295,5 +279,5 @@ inputFragment fragments index fragment =
                 , label = Input.labelHidden <| "Fixed"
                 }
 
-        IdentifierName name ->
+        IdentifierName _ ->
             none

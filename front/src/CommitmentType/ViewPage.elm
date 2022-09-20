@@ -1,26 +1,21 @@
-module CommitmentType.ViewPage exposing (..)
+module CommitmentType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
-import Configuration as Config
+import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable exposing (Groupable)
+import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable exposing (withIdentifiers)
+import Hierarchy.Hierarchic as H
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirect, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
+import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Type exposing (Type)
-import Typed.Type as TType
 import View exposing (..)
-import Zone.View exposing (display, hWithDisplay, tWithDisplay)
+import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 

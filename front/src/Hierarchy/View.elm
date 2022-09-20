@@ -3,9 +3,9 @@ module Hierarchy.View exposing (toDesc)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Font as Font
-import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic exposing (Hierarchic)
 import Item.Item as Item exposing (Item)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid as Uuid
 import View.Style exposing (..)
 
 

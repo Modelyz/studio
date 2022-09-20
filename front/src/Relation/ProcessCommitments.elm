@@ -1,6 +1,6 @@
-module Relation.ProcessCommitments exposing (ProcessCommitments, compare)
+module Relation.ProcessCommitments exposing (ProcessCommitments)
 
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 
 
 
@@ -11,8 +11,3 @@ type alias ProcessCommitments =
     { process : Uuid
     , commitment : Uuid
     }
-
-
-compare : ProcessCommitments -> String
-compare pc =
-    Uuid.toString pc.process ++ "|" ++ Uuid.toString pc.commitment

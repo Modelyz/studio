@@ -1,6 +1,5 @@
-module Ident.Identification exposing (Identification, decoder, encode, view)
+module Ident.Identification exposing (Identification, decoder, encode)
 
-import Element exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
@@ -35,21 +34,3 @@ decoder =
         , Decode.map EndsWith (Decode.field "EndsWith" Decode.string)
         , Decode.map Contains (Decode.field "Contains" Decode.string)
         ]
-
-
-toString : Identification -> String
-toString i =
-    case i of
-        StartsWith str ->
-            "Starts with \"" ++ str ++ "\""
-
-        EndsWith str ->
-            "Ends with with \"" ++ str ++ "\""
-
-        Contains str ->
-            "Contains \"" ++ str ++ "\""
-
-
-view : Identification -> Element msg
-view i =
-    row [] [ text <| toString i ]

@@ -1,7 +1,5 @@
-module Ident.AddPage exposing (..)
+module Ident.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Configuration exposing (Configuration(..))
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,24 +7,17 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
-import Entity.Entity as Entity
-import Entity.Type as Type exposing (Type(..))
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
-import Ident.View
 import Message
-import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope.Scope exposing (Scope(..))
 import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Lang exposing (Lang(..))
 import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
 import View.Style exposing (..)
-import View.Type exposing (Type(..))
-import Zone.Zone as Zone exposing (Zone(..))
 
 
 type Msg
@@ -252,7 +243,7 @@ buttonValidate m result =
             else
                 none
 
-        Err err ->
+        Err _ ->
             none
 
 
@@ -332,7 +323,7 @@ inputFragment fragments index fragment =
                 , label = Input.labelHidden <| "Fixed"
                 }
 
-        Existing name value ->
+        Existing _ value ->
             Input.text [ width (px 75) ]
                 { onChange =
                     \n ->

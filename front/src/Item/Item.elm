@@ -1,12 +1,8 @@
-module Item.Item exposing (Item, OnlyItem, compare, find)
+module Item.Item exposing (Item, find)
 
 import Dict exposing (Dict)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
-
-
-type alias OnlyItem =
-    { what : Type, uuid : Uuid }
 
 
 type alias Item a =
@@ -19,8 +15,3 @@ find es uuid =
     Dict.filter (\_ e -> e.uuid == uuid) es
         |> Dict.values
         |> List.head
-
-
-compare : Item a -> String
-compare =
-    .uuid >> Uuid.toString

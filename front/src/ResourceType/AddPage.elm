@@ -1,35 +1,30 @@
-module ResourceType.AddPage exposing (..)
+module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable exposing (Groupable)
+import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
+import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
-import Hierarchy.View exposing (toDesc)
 import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
-import Item.Item as Item exposing (Item)
-import Json.Decode as Decode
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
+import Random.Pcg.Extended as Random exposing (Seed)
+import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
-import Shared exposing (flip)
+import Scope.Scope exposing (Scope(..))
+import Shared
 import Spa.Page
-import State exposing (State)
-import Type exposing (Type)
+import Type
 import View exposing (..)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
@@ -220,7 +215,7 @@ buttonValidate m result =
             else
                 none
 
-        Err err ->
+        Err _ ->
             none
 
 

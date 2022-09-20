@@ -1,41 +1,38 @@
 module State exposing (State, aggregate, allHierarchic, allTyped, empty)
 
-import Agent.Agent as Agent exposing (Agent)
-import AgentType.AgentType as AgentType exposing (AgentType)
-import Commitment.Commitment as Commitment exposing (Commitment)
-import CommitmentType.CommitmentType as CommitmentType exposing (CommitmentType)
+import Agent.Agent exposing (Agent)
+import AgentType.AgentType exposing (AgentType)
+import Commitment.Commitment exposing (Commitment)
+import CommitmentType.CommitmentType exposing (CommitmentType)
 import Configuration exposing (Configuration)
-import Contract.Contract as Contract exposing (Contract)
-import ContractType.ContractType as ContractType exposing (ContractType)
+import Contract.Contract exposing (Contract)
+import ContractType.ContractType exposing (ContractType)
 import Dict exposing (Dict)
-import Entity.Entity as Entity exposing (Entity)
-import Event.Event as Event exposing (Event)
-import EventType.EventType as EventType exposing (EventType)
-import Group.Group as Group exposing (Group)
+import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
+import Group.Group exposing (Group)
 import Group.Link as GroupLink
-import GroupType.GroupType as GroupType exposing (GroupType)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
+import GroupType.GroupType exposing (GroupType)
+import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
-import Ident.Identifiable as Identifiable exposing (Identifiable)
+import Ident.Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Item.Item as Item exposing (Item, OnlyItem)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode exposing (Value)
+import Item.Item exposing (Item)
 import Message exposing (Message(..), Payload(..), base)
 import MessageFlow exposing (MessageFlow(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process as Process exposing (Process)
-import ProcessType.ProcessType as ProcessType exposing (ProcessType)
-import Relation.ProcessCommitments as PC exposing (ProcessCommitments)
-import Relation.ProcessEvents as PE exposing (ProcessEvents)
-import Resource.Resource as Resource exposing (Resource)
-import ResourceType.ResourceType as ResourceType exposing (ResourceType)
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
+import Relation.ProcessCommitments exposing (ProcessCommitments)
+import Relation.ProcessEvents exposing (ProcessEvents)
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Scope.Scope exposing (containsItem)
 import Time exposing (millisToPosix)
-import Type exposing (Type(..))
+import Type
 import Typed.Type as TType
-import Typed.Typed as T exposing (OnlyTyped, Typed)
+import Typed.Typed as T exposing (OnlyTyped)
 
 
 type alias State =
@@ -130,7 +127,7 @@ aggregate : Message -> State -> State
 aggregate (Message b p) state =
     case p of
         -- TODO review the names (some are StuffAdded, some AddedStuff)
-        ConnectionInitiated e ->
+        ConnectionInitiated _ ->
             { state
                 | lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages

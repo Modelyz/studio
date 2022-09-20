@@ -1,22 +1,17 @@
-module Group.Input exposing (inputGroups)
+module Group.Input exposing (Config, Model, inputGroups)
 
 import Dict exposing (Dict)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Element.Input as Input
-import Group.Group as Group exposing (Group)
-import Group.View
-import Ident.Identifiable as Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
+import Group.Group exposing (Group)
+import Ident.Identifiable exposing (withIdentifiers)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
-import Type
-import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
-import Zone.View exposing (display, hWithDisplay, tWithDisplay)
+import Zone.View exposing (tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -27,15 +22,6 @@ type alias Model a =
 type alias Config msg =
     { onInput : Dict String Group -> msg
     }
-
-
-viewItem : Config msg -> Shared.Model -> Model a -> Group -> Element msg
-viewItem c s model group =
-    -- TODO duplicated from Ident/AddPage
-    row [ Background.color color.item.background ]
-        [ el [ paddingXY 10 2 ] (Group.View.displayGroup s group)
-        , button.primary (c.onInput <| Dict.remove (Uuid.toString group.uuid) model.groups) "×"
-        ]
 
 
 inputGroups : Config msg -> Shared.Model -> Model a -> Element msg

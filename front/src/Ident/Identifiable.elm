@@ -1,10 +1,9 @@
 module Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 
-import Configuration exposing (Configuration(..), getMostSpecific)
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifier as Identifier exposing (Identifier, fromUuid)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Ident.Identifier exposing (Identifier)
+import Prng.Uuid exposing (Uuid)
 import Typed.Typed exposing (Typed)
 
 

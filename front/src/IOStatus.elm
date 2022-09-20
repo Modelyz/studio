@@ -1,11 +1,10 @@
-module IOStatus exposing (IOStatus(..), toEmoji, toText)
+module IOStatus exposing (IOStatus(..), toText)
 
 
 type IOStatus
     = IOIdle
     | ESReading
-    | ESStoring
-    | WSReceiving -- for instance, reading the ES from the MS through WS
+    | ESStoring -- for instance, reading the ES from the MS through WS
     | WSSending
     | IOError String
 
@@ -22,33 +21,8 @@ toText status =
         ESStoring ->
             "ESStoring"
 
-        WSReceiving ->
-            "WSReceiving"
-
         WSSending ->
             "WSSending"
 
         IOError err ->
             "IOError: " ++ err
-
-
-toEmoji : IOStatus -> String
-toEmoji status =
-    case status of
-        IOIdle ->
-            "🔵"
-
-        ESReading ->
-            "📤"
-
-        ESStoring ->
-            "📥"
-
-        WSReceiving ->
-            "🔻"
-
-        WSSending ->
-            "🔺"
-
-        IOError err ->
-            "🔴 (" ++ err ++ ")"

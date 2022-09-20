@@ -1,9 +1,9 @@
-module Type exposing (Type(..), all, allStrings, compare, decoder, encode, fromHierarchic, fromType, isType, toHierarchic, toPluralString, toString, toType)
+module Type exposing (Type(..), compare, decoder, encode, toHierarchic, toString)
 
-import Hierarchy.Type as HType exposing (Type(..))
+import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Typed.Type as TType exposing (Type(..))
+import Typed.Type as TType
 
 
 type
@@ -11,41 +11,6 @@ type
     -- TODO see if it's still useful
     = TType TType.Type
     | HType HType.Type
-
-
-all : List Type
-all =
-    [ HType ResourceType, HType EventType, HType AgentType, HType CommitmentType, HType ContractType, HType ProcessType, HType GroupType, TType Resource, TType Event, TType Agent, TType Commitment, TType Process, TType Group ]
-
-
-allStrings : List String
-allStrings =
-    List.map toString all
-
-
-isType : Type -> Bool
-isType t =
-    (String.slice 0 4 <| String.reverse <| toString t) == "epyT"
-
-
-toType : Type -> Maybe Type
-toType t =
-    -- TODO rename to be more explicit
-    if isType t then
-        Just t
-
-    else
-        fromString <| (\ts -> ts ++ "Type") <| toString t
-
-
-fromType : Type -> Maybe Type
-fromType t =
-    -- TODO rename to be more explicit
-    if isType t then
-        fromString <| String.slice 0 -4 <| toString t
-
-    else
-        Just t
 
 
 toString : Type -> String
@@ -56,17 +21,6 @@ toString t =
 
         HType ht ->
             HType.toString ht
-
-
-toPluralString : Type -> String
-toPluralString t =
-    -- TODO not i18n friendly
-    case t of
-        TType tt ->
-            TType.toPluralString tt
-
-        HType ht ->
-            HType.toPluralString ht
 
 
 fromString : String -> Maybe Type
@@ -102,16 +56,6 @@ toHierarchic t =
 
         HType ht ->
             HType ht
-
-
-fromHierarchic : Type -> Type
-fromHierarchic t =
-    case t of
-        TType tt ->
-            TType tt
-
-        HType ht ->
-            TType (TType.fromHierarchic ht)
 
 
 compare : Type -> String

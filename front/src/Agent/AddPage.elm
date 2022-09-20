@@ -1,33 +1,32 @@
-module Agent.AddPage exposing (..)
+module Agent.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
 import Agent.Agent exposing (Agent)
-import AgentType.AgentType as AgentType exposing (AgentType)
+import AgentType.AgentType exposing (AgentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable exposing (Groupable)
+import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers, withIdentifiers)
+import Hierarchy.Hierarchic as H
+import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
+import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
-import Scope.Scope as Scope exposing (Scope(..))
-import Shared exposing (flip)
+import Scope.Scope exposing (Scope(..))
+import Shared
 import Spa.Page
-import Time exposing (millisToPosix)
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Typed.Typed as T
 import View exposing (..)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard, hViewSmallCard)
+import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
@@ -224,7 +223,7 @@ buttonValidate m result =
             else
                 none
 
-        Err err ->
+        Err _ ->
             none
 
 
@@ -235,9 +234,6 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     let
-                        allTwithIdentifiers =
-                            tWithIdentifiers s.state.identifiers s.state.agents
-
                         allHwithIdentifiers =
                             hWithIdentifiers s.state.identifiers s.state.agentTypes
                     in

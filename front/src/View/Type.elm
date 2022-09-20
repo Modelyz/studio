@@ -1,9 +1,5 @@
 module View.Type exposing (Type(..), toString)
 
-import Element exposing (..)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
-
 
 type Type
     = Smallcard

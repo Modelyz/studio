@@ -1,22 +1,18 @@
 module View.Navbar exposing (view)
 
-import Dict exposing (Dict)
+import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Html.Attributes as Attr
-import IOStatus as IO exposing (toText)
+import IOStatus as IO
 import Prng.Uuid as Uuid
 import Route exposing (Route, firstSegment, toString)
 import Shared
 import Time exposing (posixToMillis)
 import View exposing (hamburger, separator)
-import View.Style as Style exposing (color, itemHoverstyle, navbarHoverstyle, shadowStyle)
-import Websocket as WS exposing (toText)
-
-
-type alias Model a =
-    { a | route : Route }
+import View.Style as Style exposing (color, navbarHoverstyle)
+import Websocket as WS
 
 
 view : String -> Shared.Model -> Route -> Element Shared.Msg
@@ -67,8 +63,8 @@ mobile title s r =
         List.intersperse
             (separator color.navbar.separator)
         <|
-            [ hamburger title s ]
-                ++ (if s.menu == Style.MobileClosed then
+            hamburger title s
+                :: (if s.menu == Style.MobileClosed then
                         []
 
                     else

@@ -1,8 +1,6 @@
-module Typed.Type exposing (Type(..), all, decoder, encode, fromHierarchic, fromString, toHierarchic, toPluralString, toString)
+module Typed.Type exposing (Type(..), all, fromHierarchic, fromString, toHierarchic, toPluralString, toString)
 
 import Hierarchy.Type as HType
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
 
 
 type
@@ -134,13 +132,3 @@ fromString s =
 
         _ ->
             Nothing
-
-
-encode : Type -> Encode.Value
-encode =
-    toString >> Encode.string
-
-
-decoder : Decoder Type
-decoder =
-    Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))

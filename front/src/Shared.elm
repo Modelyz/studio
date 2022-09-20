@@ -1,23 +1,22 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, dispatchT, flip, identity, init, update, uuidAggregator)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, identity, init, update)
 
 import Browser.Navigation as Nav
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
-import Message exposing (Message(..), Metadata, Payload(..), exceptCI, getTime)
+import Message exposing (Message(..), Payload(..), exceptCI, getTime)
 import MessageFlow as Flow
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
-import Route exposing (Route(..), toString)
+import Route exposing (Route(..))
 import State exposing (State)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
-import Url as Url exposing (Url)
-import Url.Parser as Parser
-import View.Style as Style exposing (Menu(..), WindowSize, isMobile)
+import Url exposing (Url)
+import View.Style exposing (Menu(..), WindowSize, isMobile)
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
@@ -44,12 +43,9 @@ type alias Model =
 
 
 type Msg
-    = None ()
-    | WindowResized WindowSize
+    = WindowResized WindowSize
     | ToggleMenu
     | SetRoute Route
-    | PushRoute Route
-    | ReplaceRoute Route
     | WSDisconnected Decode.Value
     | WSError Decode.Value
     | WSConnect ()
@@ -70,11 +66,6 @@ type alias Flags =
     , url : Maybe Url
     , windowSize : WindowSize
     }
-
-
-flip : (a -> b -> c) -> b -> a -> c
-flip =
-    \f x y -> f y x
 
 
 flagsDecoder : Decode.Decoder Flags
@@ -137,9 +128,6 @@ update msg model =
             Random.step Uuid.generator model.currentSeed
     in
     case msg of
-        None _ ->
-            ( model, Cmd.none )
-
         WindowResized size ->
             ( { model
                 | windowSize = size
@@ -172,12 +160,6 @@ update msg model =
         SetRoute route ->
             -- store the route to reload page init to the same route after reading messages
             ( { model | route = route }, Cmd.none )
-
-        PushRoute route ->
-            ( model, Nav.pushUrl model.navkey <| Route.toString route )
-
-        ReplaceRoute route ->
-            ( model, Nav.replaceUrl model.navkey <| Route.toString route )
 
         WSConnect _ ->
             ( model, wsConnect () )
@@ -369,30 +351,18 @@ initiateConnection uuid model =
 dispatch : Model -> Payload -> Effect Msg msg
 dispatch model payload =
     -- take a Message payload and add the Metadata informations
-    let
-        ( newUuid, _ ) =
-            Random.step Uuid.generator model.currentSeed
-    in
     Effect.fromSharedCmd <|
         Task.perform
             StoreMessagesToSend
         <|
             Task.map
-                (\time -> List.singleton <| Message { uuid = newUuid, when = time, flow = Flow.Requested } payload)
-                Time.now
-
-
-dispatchT : Model -> (Uuid -> Time.Posix -> Payload) -> Effect Msg msg
-dispatchT model newPayload =
-    -- take a Message payload, feed with a uuid and posixtime, and add the Metadata informations
-    let
-        ( newUuid, _ ) =
-            Random.step Uuid.generator model.currentSeed
-    in
-    Effect.fromSharedCmd <|
-        Task.perform StoreMessagesToSend <|
-            Task.map
-                (\t -> List.singleton <| Message { uuid = newUuid, when = t, flow = Flow.Requested } (newPayload newUuid t))
+                (\time ->
+                    let
+                        ( newUuid, _ ) =
+                            Random.step Uuid.generator model.currentSeed
+                    in
+                    List.singleton <| Message { uuid = newUuid, when = time, flow = Flow.Requested } payload
+                )
                 Time.now
 
 
@@ -430,7 +400,7 @@ uuidAggregator firstSeed i tuples =
                         case mt of
                             Just t ->
                                 let
-                                    ( lastUuid, lastSeed ) =
+                                    ( _, lastSeed ) =
                                         Tuple.first t
 
                                     ( newUuid, newSeed ) =
@@ -455,14 +425,15 @@ uuidMerger tuples =
     List.map
         (\t ->
             let
-                ( uuid, _ ) =
-                    Tuple.first t
-
                 message =
                     Tuple.second t
             in
             case message of
                 Message metadata payload ->
+                    let
+                        ( uuid, _ ) =
+                            Tuple.first t
+                    in
                     Message { metadata | uuid = uuid } payload
         )
         tuples

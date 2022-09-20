@@ -1,4 +1,4 @@
-module HomePage exposing (match, page, view)
+module HomePage exposing (Flags, Model, Msg, match, page)
 
 import Effect exposing (Effect)
 import Element as E exposing (..)
@@ -7,8 +7,7 @@ import Route exposing (Route)
 import Shared
 import Spa.Page
 import View exposing (View, closeMenu)
-import View.Navbar as Navbar
-import View.Style as Style exposing (..)
+import View.Style exposing (..)
 
 
 type alias Model =

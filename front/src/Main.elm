@@ -49,7 +49,7 @@ import Resource.ViewPage
 import ResourceType.AddPage
 import ResourceType.ListPage
 import ResourceType.ViewPage
-import Route exposing (toRoute)
+import Route
 import Shared exposing (Msg(..))
 import Spa exposing (mapSharedMsg)
 import View exposing (View)

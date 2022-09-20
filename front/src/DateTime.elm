@@ -1,8 +1,8 @@
-module DateTime exposing (..)
+module DateTime exposing (decodeMonth, decodeWeekday, encodeMonth, encodeWeekday, monthToString, toStrMM, weekdayToString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
+import Time exposing (Month(..), Weekday(..))
 
 
 toStrMM : Month -> String

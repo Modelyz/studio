@@ -3,7 +3,6 @@ module ProcessType.ProcessTypeCommitmentType exposing (ProcessTypeCommitmentType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import ProcessType.ProcessTypeEventType as PTET
 
 
 

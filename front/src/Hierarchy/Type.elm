@@ -1,7 +1,4 @@
-module Hierarchy.Type exposing (Type(..), all, decoder, encode, fromString, toPluralString, toString)
-
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
+module Hierarchy.Type exposing (Type(..), all, fromString, toPluralString, toString)
 
 
 type
@@ -78,13 +75,3 @@ fromString s =
 
         _ ->
             Nothing
-
-
-encode : Type -> Encode.Value
-encode =
-    toString >> Encode.string
-
-
-decoder : Decoder Type
-decoder =
-    Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))

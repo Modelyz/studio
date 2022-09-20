@@ -1,6 +1,5 @@
-module View exposing (..)
+module View exposing (View, button, checkEmptyList, checkEmptyString, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
-import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -55,11 +54,6 @@ p content =
     paragraph [ Font.size size.text.main ] [ text content ]
 
 
-field : String -> Element msg
-field content =
-    paragraph [ Font.size size.text.main, Background.color color.item.background, padding 5 ] [ text content ]
-
-
 separator : Color -> Element msg
 separator c =
     row [ width fill, Border.width 1, Border.color c ] []
@@ -67,14 +61,6 @@ separator c =
 
 hamburger : String -> Shared.Model -> Element Shared.Msg
 hamburger title s =
-    let
-        msg =
-            if s.menu == Style.Desktop then
-                Shared.None ()
-
-            else
-                Shared.ToggleMenu
-    in
     row []
         [ column
             [ width (px 40)
@@ -124,13 +110,12 @@ floatingContainer s title buttons children =
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
             [ topbar s title
             , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
-                ([ column
+                (column
                     [ width fill, alignTop ]
                     [ wrappedRow [ width fill, spacing 20 ]
                         buttons
                     ]
-                 ]
-                    ++ children
+                    :: children
                 )
             ]
         ]
@@ -144,9 +129,7 @@ flatContainer s title buttons search viewselector children =
         , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
             [ column
                 [ width fill, alignTop, spacing 20, padding 20 ]
-                ([ wrappedRow [ spacing 20 ] (buttons ++ [ viewselector ] ++ [ search ]) ]
-                    ++ children
-                )
+                (wrappedRow [ spacing 20 ] (buttons ++ [ viewselector, search ]) :: children)
             ]
         ]
 
@@ -230,25 +213,6 @@ checkEmptyList list err =
 
     else
         Ok list
-
-
-checkEmptyDict : Dict comparable a -> String -> Result String (Dict comparable a)
-checkEmptyDict f err =
-    if Dict.isEmpty f then
-        Err err
-
-    else
-        Ok f
-
-
-checkNothing : Maybe a -> String -> Result String (Maybe a)
-checkNothing f err =
-    case f of
-        Nothing ->
-            Err err
-
-        Just x ->
-            Ok (Just x)
 
 
 

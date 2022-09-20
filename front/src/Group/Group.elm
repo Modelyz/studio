@@ -1,4 +1,4 @@
-module Group.Group exposing (Group, compare, decoder, encode, fromUuid)
+module Group.Group exposing (Group, compare, decoder, encode)
 
 import Dict exposing (Dict)
 import Ident.Identifier exposing (Identifier)
@@ -17,11 +17,6 @@ type alias Group =
     , identifiers : Dict String Identifier
     , display : Dict String String
     }
-
-
-fromUuid : Dict String Group -> Uuid -> Maybe Group
-fromUuid entities uuid =
-    Dict.filter (\_ g -> g.uuid == uuid) entities |> Dict.values |> List.head
 
 
 encode : Group -> Encode.Value

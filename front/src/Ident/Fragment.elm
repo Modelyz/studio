@@ -1,4 +1,4 @@
-module Ident.Fragment exposing (..)
+module Ident.Fragment exposing (Fragment(..), Name, Padding, Start, Step, all, decoder, encode, toDesc, toString, toValue)
 
 import DateTime exposing (..)
 import Json.Decode as Decode exposing (Decoder)
@@ -61,93 +61,47 @@ all =
 toString : Fragment -> String
 toString f =
     case f of
-        Free value ->
+        Free _ ->
             "Free"
 
-        Fixed value ->
+        Fixed _ ->
             "Fixed"
 
-        Sequence padding step start value ->
+        Sequence _ _ _ _ ->
             "Sequence"
 
-        Existing name value ->
+        Existing _ _ ->
             "Existing"
 
-        YYYY value ->
+        YYYY _ ->
             "YYYY"
 
-        YY value ->
+        YY _ ->
             "YY"
 
-        MMMM value ->
+        MMMM _ ->
             "MMMM"
 
-        MM value ->
+        MM _ ->
             "MM"
 
-        Weekday value ->
+        Weekday _ ->
             "Weekday"
 
-        DoM value ->
+        DoM _ ->
             "DoM"
 
-        Hour value ->
+        Hour _ ->
             "hh"
 
-        Minute value ->
+        Minute _ ->
             "mm"
 
-        Second value ->
+        Second _ ->
             "ss"
 
-        DateFrom from value ->
+        DateFrom _ _ ->
             "Date from another field"
-
-
-toName : Fragment -> Maybe String
-toName f =
-    case f of
-        Free value ->
-            Nothing
-
-        Fixed value ->
-            Nothing
-
-        Sequence padding step start value ->
-            Nothing
-
-        Existing name value ->
-            Just name
-
-        YYYY value ->
-            Nothing
-
-        YY value ->
-            Nothing
-
-        MMMM value ->
-            Nothing
-
-        MM value ->
-            Nothing
-
-        Weekday value ->
-            Nothing
-
-        DoM value ->
-            Nothing
-
-        Hour value ->
-            Nothing
-
-        Minute value ->
-            Nothing
-
-        Second value ->
-            Nothing
-
-        DateFrom from value ->
-            Nothing
 
 
 toValue : Fragment -> String
@@ -159,10 +113,10 @@ toValue f =
         Fixed value ->
             value
 
-        Sequence padding step start value ->
+        Sequence _ _ _ value ->
             Maybe.withDefault "(Not yet assigned)" value
 
-        Existing name value ->
+        Existing _ value ->
             value
 
         YYYY value ->
@@ -192,7 +146,7 @@ toValue f =
         Second value ->
             String.fromInt value
 
-        DateFrom from value ->
+        DateFrom _ value ->
             String.fromInt <| posixToMillis value
 
 
@@ -208,7 +162,7 @@ toDesc f =
         Sequence _ _ _ _ ->
             "A sequence number used to identify an entity."
 
-        Existing name _ ->
+        Existing _ _ ->
             "An existing identifierType for an entity."
 
         YYYY _ ->
@@ -390,15 +344,3 @@ decoder =
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t
             )
-
-
-match : String -> Fragment -> Bool
-match str fragment =
-    -- the string is contained in the fragment
-    String.contains str <| String.toLower <| toValue fragment
-
-
-matchAny : String -> List Fragment -> Bool
-matchAny str fragments =
-    -- the string is contained in any fragment
-    fragments |> List.any (match str)

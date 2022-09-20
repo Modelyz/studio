@@ -1,8 +1,7 @@
-module Ident.Identifier exposing (..)
+module Ident.Identifier exposing (Identifier, compare, decoder, encode, fromUuid, select, toValue, update)
 
 import Dict exposing (Dict)
 import Ident.Fragment as Fragment exposing (Fragment)
-import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -27,16 +26,6 @@ fromUuid : Type -> Uuid -> Dict String Identifier -> Dict String Identifier
 fromUuid what uuid =
     -- TODO rename fromUuid? Change args?
     Dict.filter (\_ i -> what == i.what && uuid == i.identifiable)
-
-
-toDict : Dict String Identifier -> Dict String String
-toDict ids =
-    let
-        agg : comparable -> Identifier -> Dict String String -> Dict String String
-        agg _ i d =
-            Dict.insert i.name (toValue i) d
-    in
-    Dict.foldl agg Dict.empty ids
 
 
 compare : Identifier -> String
@@ -84,9 +73,3 @@ update index fragment identifier =
                     )
     in
     { identifier | fragments = fragments }
-
-
-match : String -> Identifier -> Bool
-match string identifier =
-    -- True if the string is contained in any fragment of the identifier
-    Fragment.matchAny string identifier.fragments

@@ -1,6 +1,6 @@
-module Relation.ProcessEvents exposing (ProcessEvents, compare)
+module Relation.ProcessEvents exposing (ProcessEvents)
 
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 
 
 
@@ -11,8 +11,3 @@ type alias ProcessEvents =
     { process : Uuid
     , event : Uuid
     }
-
-
-compare : ProcessEvents -> String
-compare pe =
-    Uuid.toString pe.process ++ "|" ++ Uuid.toString pe.event

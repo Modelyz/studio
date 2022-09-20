@@ -1,4 +1,4 @@
-port module Message exposing (Message(..), Metadata, Payload(..), base, compare, decodelist, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
+port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -15,15 +15,14 @@ import Group.Groupable as Groupable exposing (Groupable)
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Json.Decode as Decode exposing (Decoder, andThen, decodeValue)
-import Json.Encode as Encode exposing (Value)
-import MessageFlow exposing (MessageFlow, decoder)
+import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Encode as Encode
+import MessageFlow exposing (MessageFlow)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
-import Set exposing (Set)
 import Time exposing (millisToPosix, posixToMillis)
 
 
@@ -237,7 +236,7 @@ getTime =
 exceptCI : List Message -> List Message
 exceptCI es =
     List.filter
-        (\(Message b p) ->
+        (\(Message _ p) ->
             case p of
                 ConnectionInitiated _ ->
                     False
@@ -380,11 +379,6 @@ encode (Message b p) =
             Ungrouped e g ->
                 ( "load", Encode.object [ ( "groupable", Groupable.encode e ), ( "group", Group.encode g ) ] )
         ]
-
-
-decodelist : Decode.Value -> List Message
-decodelist =
-    Result.withDefault [] << decodeValue (Decode.list decoder)
 
 
 toPosix : Int -> Decoder Time.Posix

@@ -2,9 +2,9 @@ module View.List exposing (Record, toRecord)
 
 import Dict exposing (Dict)
 import Group.Groupable as Groupable
-import Group.Link as GroupLink exposing (groupsOf)
-import Ident.Identifier as Identifier exposing (Identifier)
-import Item.Item as Item exposing (Item)
+import Group.Link as GroupLink
+import Ident.Identifier exposing (Identifier)
+import Item.Item exposing (Item)
 
 
 type alias Record =

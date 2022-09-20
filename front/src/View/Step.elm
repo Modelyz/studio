@@ -1,4 +1,4 @@
-module View.Step exposing (..)
+module View.Step exposing (Model, Msg(..), Step(..), buttons, isLast, nextMsg, onEnter, update)
 
 import Effect exposing (Effect)
 import Element exposing (..)

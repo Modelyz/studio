@@ -3,7 +3,6 @@ module Agent.Agent exposing (Agent, compare, decoder, encode)
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
-import Item.Item as Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
