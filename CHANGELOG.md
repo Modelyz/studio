@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 4 -- 2022-09-20
+
+* Display groups with their identifiers
+
 ## version 3 -- 2022-08-26
 
 * Better group management
