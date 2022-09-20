@@ -36,7 +36,7 @@ inputGroups c s model =
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map
                             (\t ->
-                                viewHalfCard (c.onInput <| Dict.remove (Uuid.toString model.uuid) model.groups) (t.display |> Dict.get "SmallcardTitle" |> Maybe.withDefault "(missing zone config)" |> text)
+                                viewHalfCard (c.onInput <| Dict.remove (Uuid.toString t.uuid) model.groups) (t.display |> Dict.get "SmallcardTitle" |> Maybe.withDefault "(missing zone config)" |> text)
                             )
                    )
         , h2 <| "Select the groups this entity should belong to"
