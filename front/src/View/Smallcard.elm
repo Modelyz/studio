@@ -54,11 +54,11 @@ clickableCard onInput title description =
         ]
 
 
-viewHalfCard : msg -> Element msg -> Element msg
-viewHalfCard onDelete title =
+viewHalfCard : Maybe msg -> Element msg -> Element msg
+viewHalfCard maybeOnDelete title =
     row [ Background.color color.item.selected ]
         [ el [ padding 10 ] title
-        , button.secondary onDelete "×"
+        , Maybe.map (\onDelete -> button.secondary onDelete "×") maybeOnDelete |> Maybe.withDefault none
         ]
 
 
@@ -72,7 +72,7 @@ hViewHalfCard onDelete allT allH configs h =
         title =
             display mconfig h
     in
-    viewHalfCard onDelete (text title)
+    viewHalfCard (Just onDelete) (text title)
 
 
 sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg

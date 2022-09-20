@@ -74,7 +74,15 @@ inputScope s input model =
     in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: ", viewHalfCard (input Empty) (text <| toDisplay allT allH s.state.configs model.scope) ]
+            [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
+            , (if model.scope == Empty then
+                viewHalfCard Nothing
+
+               else
+                viewHalfCard (Just <| input Empty)
+              )
+                (text <| toDisplay allT allH s.state.configs model.scope)
+            ]
         , h2 <| "What should it apply to?"
 
         -- First the concrete types
