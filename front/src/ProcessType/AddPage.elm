@@ -11,7 +11,7 @@ import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
@@ -227,7 +227,7 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers s.state.processTypes
+                            s.state.processTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|

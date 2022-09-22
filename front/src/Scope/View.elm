@@ -7,7 +7,6 @@ import Element.Border as Border
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Item.Item as Item
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -35,18 +34,22 @@ inputScope s input model =
                 HasType t ->
                     case t of
                         Type.TType tt ->
-                            tWithIdentifiers s.state.identifiers <| State.allTyped s.state tt
+                            State.allTyped s.state tt
+                                |> Dict.map (\_ x -> { x | identifiers = s.state.identifiers |> Dict.filter (\_ id -> x.uuid == id.identifiable) })
 
                         Type.HType ht ->
-                            tWithIdentifiers s.state.identifiers <| State.allTyped s.state (TType.fromHierarchic ht)
+                            State.allTyped s.state (TType.fromHierarchic ht)
+                                |> Dict.map (\_ x -> { x | identifiers = s.state.identifiers |> Dict.filter (\_ id -> x.uuid == id.identifiable) })
 
                 HasUserType t _ ->
                     case t of
                         Type.TType tt ->
-                            tWithIdentifiers s.state.identifiers <| State.allTyped s.state tt
+                            State.allTyped s.state tt
+                                |> Dict.map (\_ x -> { x | identifiers = s.state.identifiers |> Dict.filter (\_ id -> x.uuid == id.identifiable) })
 
                         Type.HType ht ->
-                            tWithIdentifiers s.state.identifiers <| State.allTyped s.state (TType.fromHierarchic ht)
+                            State.allTyped s.state (TType.fromHierarchic ht)
+                                |> Dict.map (\_ x -> { x | identifiers = s.state.identifiers |> Dict.filter (\_ id -> x.uuid == id.identifiable) })
 
                 _ ->
                     Dict.empty
@@ -56,18 +59,22 @@ inputScope s input model =
                 HasType t ->
                     case t of
                         Type.TType tt ->
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state (TType.toHierarchic tt)
+                            State.allHierarchic s.state (TType.toHierarchic tt)
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
 
                         Type.HType ht ->
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state ht
+                            State.allHierarchic s.state ht
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
 
                 HasUserType t _ ->
                     case t of
                         Type.TType tt ->
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state (TType.toHierarchic tt)
+                            State.allHierarchic s.state (TType.toHierarchic tt)
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
 
                         Type.HType ht ->
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state ht
+                            State.allHierarchic s.state ht
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
 
                 _ ->
                     Dict.empty
@@ -109,7 +116,8 @@ inputScope s input model =
                         -- all the typed items
                         -- all the hierarchic items corresponding to the typed ones
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state (TType.toHierarchic tt)
+                            State.allHierarchic s.state (TType.toHierarchic tt)
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     (h2 <| "And more precisely:")
                         :: (allHwithIdentifiers
@@ -120,7 +128,8 @@ inputScope s input model =
                 HasType (Type.HType ht) ->
                     let
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers <| State.allHierarchic s.state ht
+                            State.allHierarchic s.state ht
+                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     (h2 <| "And more precisely:")
                         :: (allHwithIdentifiers

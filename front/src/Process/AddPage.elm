@@ -1,5 +1,7 @@
 module Process.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,19 +11,19 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -236,7 +238,7 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers s.state.processTypes
+                            s.state.processTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|

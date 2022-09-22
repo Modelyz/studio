@@ -1,17 +1,17 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
-import Event.Event exposing (Event)
-import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (hWithIdentifiers, withIdentifiers)
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
@@ -22,6 +22,17 @@ import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -236,7 +247,7 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            hWithIdentifiers s.state.identifiers s.state.eventTypes
+                            s.state.eventTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
