@@ -7,7 +7,6 @@ import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Ident.Identifiable exposing (Identifiable)
 import Scope.Scope exposing (Scope(..))
 import Type
 import Typed.Typed exposing (Typed)
@@ -75,7 +74,7 @@ hViewHalfCard onDelete allT allH configs h =
     viewHalfCard (Just onDelete) (text title)
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Type.Type -> Element msg
+sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
 sClickableCard onInput allT allH configs h t =
     -- clickable card for typed items
     let
@@ -91,7 +90,7 @@ sClickableCard onInput allT allH configs h t =
     clickableCard (onInput (HasUserType t h.uuid)) (text title) (text description)
 
 
-hClickableCard : (Maybe (Identifiable (Hierarchic b)) -> msg) -> Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Identifiable (Hierarchic b) -> Element msg
+hClickableCard : (Maybe (Hierarchic b) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hClickableCard onInput allT allH configs h =
     -- clickable card for typed items
     let

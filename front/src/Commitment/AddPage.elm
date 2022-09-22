@@ -109,7 +109,7 @@ init s f =
                 , seed = newSeed
                 , identifiers =
                     initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) Nothing a.uuid
-                        |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
+                        |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
                 , oldGroups = oldGroups
                 , groups = oldGroups
                 , warning = ""
@@ -242,7 +242,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.identifiers)
+                                |> Maybe.map (withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.commitments allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]

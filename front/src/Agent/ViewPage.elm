@@ -111,7 +111,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , t.type_
                         |> H.find s.state.agentTypes
-                        |> Maybe.map (withIdentifiers s.state.identifiers)
+                        |> Maybe.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.agents s.state.agentTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -119,13 +119,13 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , t
-                        |> withIdentifiers s.state.identifiers
+                        |> withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
                         |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

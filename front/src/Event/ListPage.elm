@@ -1,11 +1,11 @@
 module Event.ListPage exposing (Flags, Model, Msg, match, page)
 
+import Event.Event exposing (Event)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Event.Event exposing (Event)
 import Group.WithGroups exposing (withGroups)
 import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier
@@ -107,7 +107,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.events
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events s.state.eventTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
                     )
@@ -126,7 +126,7 @@ viewContent model s =
                         { data =
                             s.state.events
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.identifiers)
+                                |> List.map (withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
@@ -148,7 +148,7 @@ groupsColumn s =
         withGroups s.state.grouped
             >> .groups
             >> Dict.values
-            >> List.map (withIdentifiers s.state.identifiers)
+            >> List.map (withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

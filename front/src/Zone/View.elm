@@ -3,7 +3,7 @@ module Zone.View exposing (display, hWithDisplay, tWithDisplay)
 import Configuration as Config exposing (Configuration(..))
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifiable exposing (Identifiable)
+import Item.Item exposing (Item)
 import Prng.Uuid as Uuid
 import Scope.Scope exposing (Scope(..))
 import Typed.Typed exposing (Typed)
@@ -29,7 +29,7 @@ tWithDisplay allT allH configs zone t =
     { t | display = Dict.insert (Zone.toString zone) (display mconfig t) t.display }
 
 
-display : Maybe Configuration -> Identifiable b -> String
+display : Maybe Configuration -> Item i -> String
 display mc i =
     mc
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display i.identifiers fragments)

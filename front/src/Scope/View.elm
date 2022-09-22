@@ -7,7 +7,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (Identifiable, hWithIdentifiers, tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Item.Item as Item
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -133,7 +133,7 @@ inputScope s input model =
         ]
 
 
-toDisplay : Dict String (Typed a) -> Dict String (Identifiable (Hierarchic b)) -> Dict String Configuration -> Scope -> String
+toDisplay : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Scope -> String
 toDisplay allT allH configs scope =
     -- for user display
     -- TODO resolve the uuids

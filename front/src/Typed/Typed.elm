@@ -22,7 +22,7 @@ type alias OnlyTyped =
     { what : Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String String
+    , identifiers : Dict String Identifier
     , display : Dict String String
     }
 

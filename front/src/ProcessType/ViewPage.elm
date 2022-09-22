@@ -1,5 +1,6 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -10,7 +11,6 @@ import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (withIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -110,7 +110,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , h.parent
                         |> Maybe.andThen (H.find s.state.processTypes)
-                        |> Maybe.map (withIdentifiers s.state.identifiers)
+                        |> Maybe.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.processes s.state.processTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -118,13 +118,13 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , h
-                        |> withIdentifiers s.state.identifiers
+                        |> withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
                         |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")

@@ -22,10 +22,9 @@ select name =
     Dict.filter (\_ i -> i.name == name) >> Dict.values >> List.head
 
 
-fromUuid : Type -> Uuid -> Dict String Identifier -> Dict String Identifier
-fromUuid what uuid =
-    -- TODO rename fromUuid? Change args?
-    Dict.filter (\_ i -> what == i.what && uuid == i.identifiable)
+fromUuid : Uuid -> Dict String Identifier -> Dict String Identifier
+fromUuid uuid =
+    Dict.filter (\_ i -> uuid == i.identifiable)
 
 
 compare : Identifier -> String

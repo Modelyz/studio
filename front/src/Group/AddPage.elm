@@ -95,7 +95,7 @@ init s f =
                 , seed = newSeed
                 , identifiers =
                     initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing a.uuid
-                        |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
+                        |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
                 , warning = ""
                 , step = Step.Step StepType
                 , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -209,7 +209,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.identifiers)
+                                |> Maybe.map (withIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.groups allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]

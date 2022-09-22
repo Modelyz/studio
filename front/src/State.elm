@@ -15,7 +15,6 @@ import Group.Link as GroupLink
 import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (Identifiable)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
 import Item.Item exposing (Item)
@@ -454,7 +453,7 @@ updatePending e es =
             Dict.remove (Message.compare e) es
 
 
-allTyped : State -> TType.Type -> Dict String (Identifiable OnlyTyped)
+allTyped : State -> TType.Type -> Dict String OnlyTyped
 allTyped s t =
     case t of
         TType.Resource ->
@@ -480,7 +479,7 @@ allTyped s t =
 
 
 
---allHierarchic : State -> HType.Type -> Dict String (Identifiable (Hierarchic a))
+--allHierarchic : State -> HType.Type -> Dict String ((Hierarchic a))
 -- TODO annotation?
 -- TODO this function fails to compile if all the entity types are not homomorphic. If one field is added in one, it must be added in all
 

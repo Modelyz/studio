@@ -103,7 +103,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups s.state.groupTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )
@@ -122,7 +122,7 @@ viewContent model s =
                         { data =
                             s.state.groups
                                 |> Dict.values
-                                |> List.map (\t -> withIdentifiers s.state.identifiers t)
+                                |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         , columns =
                             s.state.identifierTypes
                                 |> Dict.values

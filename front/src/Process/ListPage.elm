@@ -1,5 +1,6 @@
 module Process.ListPage exposing (Flags, Model, Msg, match, page)
 
+import Process.Process exposing (Process)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -11,7 +12,6 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
 import Route exposing (Route, redirectAdd)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
@@ -56,7 +56,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessList _ ->
+        Route.ProcessList _->
             Just { route = route }
 
         _ ->
@@ -107,7 +107,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.processes
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes s.state.processTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
@@ -126,7 +126,7 @@ viewContent model s =
                         { data =
                             s.state.processes
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.identifiers)
+                                |> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
@@ -148,7 +148,7 @@ groupsColumn s =
         withGroups s.state.grouped
             >> .groups
             >> Dict.values
-            >> List.map (withIdentifiers s.state.identifiers)
+            >> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

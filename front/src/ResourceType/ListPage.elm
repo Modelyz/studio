@@ -1,5 +1,6 @@
 module ResourceType.ListPage exposing (Flags, Model, Msg, match, page)
 
+import ResourceType.ResourceType exposing (ResourceType)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -12,7 +13,6 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectAdd)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
@@ -111,7 +111,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.resourceTypes
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.resources s.state.resourceTypes s.state.configs h)
                         |> withDefaultContent (p "There are no Resource Types yet. Add your first one!")
                     )
@@ -130,8 +130,8 @@ viewContent model s =
                         { data =
                             s.state.resourceTypes
                                 |> Dict.values
-                                |> List.map (\h -> withIdentifiers s.state.identifiers h)
-                                |> List.map (\h -> withGroups s.state.grouped h)
+                                |> List.map (withIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
+                                |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
@@ -152,7 +152,7 @@ groupsColumn s =
         withGroups s.state.grouped
             >> .groups
             >> Dict.values
-            >> List.map (withIdentifiers s.state.identifiers)
+            >> List.map (withIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

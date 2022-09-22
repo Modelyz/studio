@@ -1,5 +1,6 @@
 module ProcessType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -16,7 +17,6 @@ import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
@@ -106,7 +106,7 @@ init s f =
                 , seed = newSeed
                 , identifiers =
                     initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.HType HType.ProcessType) Nothing at.uuid
-                        |> Dict.union (Identifier.fromUuid at.what at.uuid s.state.identifiers)
+                        |> Dict.union (Identifier.fromUuid at.uuid s.state.identifiers)
                 , oldGroups = oldGroups
                 , groups = oldGroups
                 , warning = ""
@@ -233,7 +233,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.identifiers)
+                                |> Maybe.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]

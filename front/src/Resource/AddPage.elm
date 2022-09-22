@@ -1,5 +1,7 @@
 module Resource.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -16,8 +18,6 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -108,7 +108,7 @@ init s f =
                 , seed = newSeed
                 , identifiers =
                     initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.TType TType.Resource) Nothing a.uuid
-                        |> Dict.union (Identifier.fromUuid a.what a.uuid s.state.identifiers)
+                        |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
                 , oldGroups = oldGroups
                 , groups = oldGroups
                 , warning = ""
@@ -241,7 +241,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.identifiers)
+                                |> Maybe.map (withIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.resources allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]

@@ -109,7 +109,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , t.type_
                         |> H.find s.state.groupTypes
-                        |> Maybe.map (withIdentifiers s.state.identifiers)
+                        |> Maybe.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -117,7 +117,7 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , t
-                        |> withIdentifiers s.state.identifiers
+                        |> withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     ]

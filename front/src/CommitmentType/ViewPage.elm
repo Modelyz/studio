@@ -110,7 +110,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , h.parent
                         |> Maybe.andThen (H.find s.state.commitmentTypes)
-                        |> Maybe.map (withIdentifiers s.state.identifiers)
+                        |> Maybe.map (withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.commitments s.state.commitmentTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -118,13 +118,13 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , h
-                        |> withIdentifiers s.state.identifiers
+                        |> withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
                         |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")

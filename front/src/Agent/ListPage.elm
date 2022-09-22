@@ -107,7 +107,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.agents
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.identifiers)
+                        |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents s.state.agentTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
@@ -126,7 +126,7 @@ viewContent model s =
                         { data =
                             s.state.agents
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.identifiers)
+                                |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
@@ -148,7 +148,7 @@ groupsColumn s =
         withGroups s.state.grouped
             >> .groups
             >> Dict.values
-            >> List.map (withIdentifiers s.state.identifiers)
+            >> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
