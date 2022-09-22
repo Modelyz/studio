@@ -40,7 +40,7 @@ groupsColumn s =
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
-            >> String.join ", "
+            >> String.join "\n"
             >> text
             >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
     }

@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version ? --
+
+* Display new identifiers on existing entities
+
 ## version 4 -- 2022-09-20
 
 * Display groups with their identifiers
