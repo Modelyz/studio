@@ -1,5 +1,6 @@
 module Commitment.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Agent.Agent exposing (Agent)
 import Commitment.Commitment exposing (Commitment)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
@@ -23,17 +24,10 @@ import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
 import Typed.Typed as T
+import Value.Rational exposing (Rational(..))
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -49,6 +43,9 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , flatselect : Maybe CommitmentType
+    , provider : Maybe Agent
+    , receiver : Maybe Agent
+    , qty : Rational
     , identifiers : Dict String Identifier
     , oldGroups : Dict String Group
     , groups : Dict String Group
@@ -113,6 +110,9 @@ init s f =
                 in
                 { route = f.route
                 , flatselect = H.find s.state.commitmentTypes a.type_
+                , provider = Nothing
+                , receiver = Nothing
+                , qty = Rational 0 1
                 , uuid = a.uuid
                 , seed = newSeed
                 , identifiers =
@@ -128,6 +128,9 @@ init s f =
         |> Maybe.withDefault
             { route = f.route
             , flatselect = Nothing
+            , provider = Nothing
+            , receiver = Nothing
+            , qty = Rational 0 1
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes (Type.TType TType.Commitment) Nothing newUuid
@@ -201,7 +204,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Ok ()
+            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Commitment Type")
 
         Step StepIdentifiers ->
             Ok ()
@@ -212,13 +215,10 @@ checkStep model =
 
 validate : Model -> Result String Commitment
 validate m =
-    case m.flatselect of
-        Just at ->
-            -- TODO check that TType thing is useful
-            Ok <| Commitment (Type.TType TType.Commitment) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty
-
-        Nothing ->
-            Err "You must select a Commitment Type"
+    Result.map3 (\ct provider receiver -> Commitment (Type.TType TType.Commitment) m.uuid ct.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty m.qty provider.uuid receiver.uuid)
+        (checkMaybe m.flatselect "You must select a Commitment Type")
+        (checkMaybe m.provider "You must select a provider")
+        (checkMaybe m.receiver "You must select a receiver")
 
 
 buttonValidate : Model -> Result String field -> Element Msg

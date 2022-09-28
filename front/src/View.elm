@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, button, checkEmptyList, checkEmptyString, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -195,6 +195,26 @@ onEnter msg =
                     )
             )
         )
+
+
+checkNothing : Maybe a -> String -> Result String (Maybe a)
+checkNothing ma err =
+    case ma of
+        Nothing ->
+            Err err
+
+        Just x ->
+            Ok (Just x)
+
+
+checkMaybe : Maybe a -> String -> Result String a
+checkMaybe ma err =
+    case ma of
+        Nothing ->
+            Err err
+
+        Just x ->
+            Ok x
 
 
 checkEmptyString : String -> String -> Result String String
