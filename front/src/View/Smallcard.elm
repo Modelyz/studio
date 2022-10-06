@@ -22,6 +22,7 @@ import Zone.Zone exposing (Zone(..))
 
 viewSmallCard : msg -> Element msg -> Element msg -> Element msg
 viewSmallCard onDelete title description =
+    -- TODO rename to removableCard
     column [ Background.color color.item.background ]
         [ row [ spacing 10, width fill ]
             [ row [ Font.size size.text.main, padding 10 ] [ title ]

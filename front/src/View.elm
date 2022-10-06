@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -146,14 +146,16 @@ withDefaultContent e xs =
 button =
     { primary =
         \msg txt ->
-            Input.button
-                [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ]
-                { onPress = Just msg, label = text txt }
-    , secondary = \msg txt -> Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ] { onPress = Just msg, label = text txt }
+            Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ] { onPress = Just msg, label = text txt }
+    , secondary =
+        \msg txt ->
+            Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ] { onPress = Just msg, label = text txt }
+    , special =
+        \msg txt ->
+            Input.button [ mouseOver [ Background.color color.button.spec_hover ], Background.color color.button.special, padding 10 ] { onPress = Just msg, label = text txt }
     , disabled =
         \err txt ->
-            row [ htmlAttribute <| Attr.title err, spacing 20 ]
-                [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt } ]
+            row [ htmlAttribute <| Attr.title err, spacing 20 ] [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt } ]
     }
 
 
@@ -197,6 +199,10 @@ onEnter msg =
         )
 
 
+
+-- TODO ↓ move to Util
+
+
 checkNothing : Maybe a -> String -> Result String (Maybe a)
 checkNothing ma err =
     case ma of
@@ -235,17 +241,13 @@ checkEmptyList list err =
         Ok list
 
 
+checkListOne : List a -> String -> Result String a
+checkListOne list err =
+    if List.length list == 1 then
+        List.head list |> Result.fromMaybe ""
 
---clickableCard : msg -> Element msg -> Element msg -> Element msg
---clickableCard onInput title desc =
---    -- TODO remove?
---    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
---        [ row [ alignLeft, width <| minimum 150 shrink ]
---            [ button.primary onInput "+"
---            , el [ paddingXY 10 0 ] title
---            ]
---        , desc
---        ]
+    else
+        Err err
 
 
 headerCell : Color -> String -> Element msg

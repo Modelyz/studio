@@ -35,6 +35,7 @@ links s r =
     , menuitem s r Route.ContractTypeList "Contract Types"
     , menuitem s r Route.GroupTypeList "Group Types"
     , menuitem s r Route.IdentifierTypeList "Identifiers"
+    , menuitem s r Route.ValueTypeList "Values"
     , menuitem s r Route.ResourceList "Resources"
     , menuitem s r Route.EventList "Events"
     , menuitem s r Route.AgentList "Agents"

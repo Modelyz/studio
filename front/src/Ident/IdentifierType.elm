@@ -16,7 +16,7 @@ type alias IdentifierType =
     -- This is the definition of an identifier
     { name : String
     , fragments : List Fragment
-    , applyTo : Scope
+    , applyTo : Scope -- TODO rename to scope
     , unique : Bool
     , mandatory : Bool
     }

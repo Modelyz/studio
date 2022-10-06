@@ -11,6 +11,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
+import Util exposing (otherwise)
 
 
 type
@@ -321,16 +322,6 @@ toString scope =
 compare : Scope -> String
 compare =
     toString
-
-
-otherwise : Maybe a -> Maybe a -> Maybe a
-otherwise x y =
-    case x of
-        Just z ->
-            Just z
-
-        Nothing ->
-            y
 
 
 mainTType : Scope -> Maybe TType.Type

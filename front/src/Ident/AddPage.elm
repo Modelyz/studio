@@ -301,6 +301,7 @@ inputFragments model =
 
 inputFragment : List Fragment -> Int -> Fragment -> Element Msg
 inputFragment fragments index fragment =
+    -- TODO refactor to
     case fragment of
         Fixed value ->
             Input.text [ width (px 75) ]

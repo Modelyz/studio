@@ -22,6 +22,10 @@ type alias Config tt msg =
     }
 
 
+
+-- TODO remove?
+
+
 flatselect : Model m a -> Config a msg -> Element msg
 flatselect model c =
     column [ alignTop, spacing 10, width <| minimum 200 fill ]

@@ -24,6 +24,7 @@ import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Time exposing (millisToPosix, posixToMillis)
+import Value.ValueType as ValueType exposing (ValueType)
 
 
 
@@ -91,6 +92,8 @@ type Payload
     | IdentifierTypeAdded IdentifierType
     | IdentifierTypeRemoved IdentifierType
     | IdentifierAdded Identifier
+    | ValueTypeAdded ValueType
+    | ValueTypeRemoved ValueType
     | Configured Configuration
     | Unconfigured Configuration
     | AddedGroupType GroupType
@@ -112,6 +115,12 @@ toString p =
 
         IdentifierTypeRemoved _ ->
             "IdentifierTypeRemoved"
+
+        ValueTypeAdded _ ->
+            "ValueTypeAdded"
+
+        ValueTypeRemoved _ ->
+            "ValueTypeRemoved"
 
         AddedResourceType _ ->
             "AddedResourceType"
@@ -280,6 +289,12 @@ encode (Message b p) =
             IdentifierTypeRemoved it ->
                 ( "load", IdentifierType.encode it )
 
+            ValueTypeAdded vt ->
+                ( "load", ValueType.encode vt )
+
+            ValueTypeRemoved vt ->
+                ( "load", ValueType.encode vt )
+
             AddedResourceType e ->
                 ( "load", ResourceType.encode e )
 
@@ -418,6 +433,14 @@ decoder =
                         "IdentifierTypeRemoved" ->
                             Decode.map IdentifierTypeRemoved
                                 (Decode.field "load" IdentifierType.decoder)
+
+                        "ValueTypeAdded" ->
+                            Decode.map ValueTypeAdded
+                                (Decode.field "load" ValueType.decoder)
+
+                        "ValueTypeRemoved" ->
+                            Decode.map ValueTypeRemoved
+                                (Decode.field "load" ValueType.decoder)
 
                         "AddedResourceType" ->
                             Decode.map AddedResourceType

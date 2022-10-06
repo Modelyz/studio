@@ -75,6 +75,9 @@ type Route
       -- Ident
     | IdentifierTypeList
     | IdentifierTypeAdd
+      -- Value
+    | ValueTypeAdd
+    | ValueTypeList
       -- Config
     | ConfigurationAdd
     | ConfigurationList
@@ -129,6 +132,11 @@ routeParser =
         , map IdentifierTypeAdd (s "identifier-type" </> s "add")
         , map IdentifierTypeList (s "identifier-type")
 
+        -- Value
+        , map ValueTypeAdd (s "value-type" </> s "add")
+        , map ValueTypeList (s "value-type")
+
+        --, map IdentifierTypeList (s "identifier-type")
         -- Event
         , map EventTypeAdd (s "event-type" </> s "add")
         , map EventAdd (s "event" </> s "add")
@@ -374,6 +382,12 @@ toString r =
 
         IdentifierTypeAdd ->
             absolute [ "identifier-type", "add" ] []
+
+        ValueTypeList ->
+            absolute [ "value-type" ] []
+
+        ValueTypeAdd ->
+            absolute [ "value-type", "add" ] []
 
         ConfigurationList ->
             absolute [ "config" ] []

@@ -11,7 +11,7 @@ import Type exposing (Type)
 type alias Identifier =
     -- This is the value of an identifier
     { what : Type
-    , identifiable : Uuid
+    , identifiable : Uuid -- TODO rename to 'for'
     , name : String
     , fragments : List Fragment
     }

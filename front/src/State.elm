@@ -32,6 +32,8 @@ import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
 import Typed.Typed as T exposing (OnlyTyped)
+import Value.Value as Value exposing (Value)
+import Value.ValueType as ValueType exposing (ValueType)
 
 
 type alias State =
@@ -64,6 +66,10 @@ type alias State =
     -- ident
     , identifierTypes : Dict String IdentifierType
     , identifiers : Dict String Identifier
+
+    -- value
+    , valueTypes : Dict String ValueType
+    , values : Dict String Value
 
     -- config
     , configs : Dict String Configuration
@@ -101,6 +107,8 @@ empty =
     -- behaviours
     , identifierTypes = Dict.empty
     , identifiers = Dict.empty
+    , valueTypes = Dict.empty
+    , values = Dict.empty
 
     -- config
     , configs = Dict.empty
@@ -161,6 +169,43 @@ aggregate (Message b p) state =
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
                                                     |> Maybe.map (containsItem it.applyTo)
+                                         )
+                                            |> Maybe.withDefault False
+                                        )
+                            )
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
+            }
+
+        ValueTypeAdded it ->
+            { state
+                | valueTypes = Dict.insert (ValueType.compare it) it state.valueTypes
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
+            }
+
+        ValueTypeRemoved vt ->
+            { state
+                | valueTypes = Dict.remove (ValueType.compare vt) state.valueTypes
+                , values =
+                    -- keep the values whose name are different from the one removed,
+                    -- or if this is the same name, whose item is not in the scope of the value type
+                    state.values
+                        |> Dict.filter
+                            (\_ v ->
+                                v.name
+                                    /= vt.name
+                                    || not
+                                        ((case v.what of
+                                            Type.TType tt ->
+                                                T.find (allTyped state tt) v.for
+                                                    |> Maybe.map (containsItem vt.scope)
+
+                                            Type.HType ht ->
+                                                H.find (allHierarchic state ht) v.for
+                                                    |> Maybe.map (containsItem vt.scope)
                                          )
                                             |> Maybe.withDefault False
                                         )
