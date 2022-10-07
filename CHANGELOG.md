@@ -2,9 +2,10 @@
 
 [Back to app](../)
 
-## version ? --
+## version 5 -- 2022-10-07
 
 * Display new identifiers on existing entities
+* First Draft of a Value pattern with expressions
 
 ## version 4 -- 2022-09-20
 

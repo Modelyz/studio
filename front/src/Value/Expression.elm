@@ -167,7 +167,7 @@ decoder =
             (\s ->
                 case s of
                     "Leaf" ->
-                        Decode.map Leaf Observable.decoder
+                        Decode.map Leaf (Decode.field "obs" Observable.decoder)
 
                     "Unary" ->
                         Decode.map2 Unary (Decode.field "op" uDecoder) (Decode.field "expr" decoder)

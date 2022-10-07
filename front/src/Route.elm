@@ -157,7 +157,7 @@ routeParser =
         , map CommitmentEdit (s "commitment" </> s "edit" </> encodedString)
         , map CommitmentTypeEdit (s "commitment-type" </> s "edit" </> encodedString)
 
-        -- Agent -- TODO replace add with new
+        -- Agent
         , map AgentTypeAdd (s "agent-type" </> s "add")
         , map AgentTypeView (s "agent-type" </> encodedString)
         , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
