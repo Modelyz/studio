@@ -88,6 +88,7 @@ viewContent =
             , cell "Contracts" "contract"
             , cell "Groups" "group"
             , cell "IdentifierTypes" "identifier-type"
+            , cell "ValueTypes" "value-type"
             , cell "Configuration" "config"
             ]
         ]
