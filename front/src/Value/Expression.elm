@@ -25,6 +25,24 @@ type UOperator
     | Inv
 
 
+updateExpr : List Int -> List Int -> Expression Observable -> Expression Observable -> Expression Observable
+updateExpr targetPath currentPath subExpr expr =
+    -- we replace the expr at the given path
+    case expr of
+        Leaf obs ->
+            if currentPath == targetPath then
+                subExpr
+
+            else
+                expr
+
+        Unary o e ->
+            Unary o (updateExpr targetPath (1 :: currentPath) subExpr e)
+
+        Binary o e1 e2 ->
+            Binary o (updateExpr targetPath (2 :: currentPath) subExpr e1) (updateExpr targetPath (3 :: currentPath) subExpr e2)
+
+
 uToString : UOperator -> String
 uToString o =
     case o of

@@ -22,6 +22,11 @@ import Spa.Page
 import Type
 import Typed.Type as TType
 import Typed.Typed as T
+import Value.Expression exposing (Expression)
+import Value.Input exposing (inputValues)
+import Value.Observable exposing (Observable)
+import Value.Value as Value exposing (Value)
+import Value.ValueType exposing (initValues)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -38,6 +43,7 @@ type alias Model =
     , seed : Seed
     , flatselect : Maybe GroupType
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -47,11 +53,13 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepValues
 
 
 type Msg
     = InputType (Maybe GroupType)
     | InputIdentifier Identifier
+    | InputValue Value
     | Added
     | Button Step.Msg
 
@@ -96,9 +104,12 @@ init s f =
                 , identifiers =
                     initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing a.uuid
                         |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
+                , values =
+                    initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) Nothing a.uuid
+                        |> Dict.union (Value.fromUuid a.uuid s.state.values)
                 , warning = ""
                 , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
+                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues ]
                 }
             )
         |> Maybe.withDefault
@@ -107,6 +118,7 @@ init s f =
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing newUuid
+            , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) Nothing newUuid
             , warning = ""
             , step = Step.Step StepType
             , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
@@ -122,12 +134,16 @@ update s msg model =
             ( { model
                 | flatselect = mat
                 , identifiers = initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) mat model.uuid
+                , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) mat model.uuid
               }
             , Effect.none
             )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
+
+        InputValue v ->
+            ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
         Button stepmsg ->
             Step.update s stepmsg model
@@ -166,6 +182,9 @@ checkStep model =
             Ok ()
 
         Step StepIdentifiers ->
+            Ok ()
+
+        Step StepValues ->
             Ok ()
 
 
@@ -228,6 +247,19 @@ viewContent model s =
                             model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
                     in
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
+
+                Step.Step StepValues ->
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
+                    in
+                    inputValues
+                        { onEnter = Step.nextMsg model Button Step.NextPage Added
+                        , onInput = InputValue
+                        }
+                        s
+                        model
+                        scope
     in
     floatingContainer s
         "Adding a Group"

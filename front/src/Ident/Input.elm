@@ -22,17 +22,13 @@ type alias Config msg =
 inputIdentifiers : Config msg -> Model a -> Scope -> Element msg
 inputIdentifiers c model scope =
     -- display an input field for each relevant identifier
-    let
-        scopestr =
-            Scope.toString scope
-    in
     column [ spacing 10 ]
         (h2 "Input identifiers"
             :: (model.identifiers
                     |> Dict.values
                     |> List.map
                         (\i -> inputIdentifier c model i)
-                    |> withDefaultContent (p <| "Apparently there are no identifiers defined for " ++ scopestr ++ ". Please first create one.")
+                    |> withDefaultContent (p <| "Apparently there are no identifiers defined for " ++ Scope.toString scope ++ ". Please first create one.")
                 --TODO + link
                )
         )

@@ -16,7 +16,7 @@ import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
 import Type exposing (Type)
-import Value.Expression as Expression exposing (Expression(..))
+import Value.Expression as Expression exposing (Expression(..), updateExpr)
 import Value.Observable as Observable exposing (Observable(..))
 import Value.Rational exposing (Rational(..))
 import Value.ValueType exposing (ValueType)
@@ -146,24 +146,6 @@ init s f =
     , step = Step.Step StepName
     }
         |> Effect.with (closeMenu f s.menu)
-
-
-updateExpr : List Int -> List Int -> Expression Observable -> Expression Observable -> Expression Observable
-updateExpr targetPath currentPath subExpr expr =
-    -- we replace the expr at the given path
-    case expr of
-        Leaf obs ->
-            if currentPath == targetPath then
-                subExpr
-
-            else
-                expr
-
-        Unary o e ->
-            Unary o (updateExpr targetPath (1 :: currentPath) subExpr e)
-
-        Binary o e1 e2 ->
-            Binary o (updateExpr targetPath (2 :: currentPath) subExpr e1) (updateExpr targetPath (3 :: currentPath) subExpr e2)
 
 
 applyU : Expression.UOperator -> List (Expression Observable) -> List (Expression Observable)
@@ -379,25 +361,26 @@ displayLine s model stacknum expr =
         [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
             [ el [ alignLeft ] (button.primary (RemoveExpression stacknum) "×")
             ]
-        , displayExpression s model stacknum ( [], expr )
+        , editExpression s model stacknum ( [], expr )
         ]
 
 
-displayExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element (Msg GroupType.ListPage.Msg)
-displayExpression s model stacknum ( currentPath, expr ) =
+editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element (Msg GroupType.ListPage.Msg)
+editExpression s model stacknum ( currentPath, expr ) =
+    -- used to modify the expression and input default values
     case expr of
         Leaf obs ->
-            displayObservable s model ( stacknum, currentPath ) obs
+            editObservable s model ( stacknum, currentPath ) obs
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), displayExpression s model stacknum ( 1 :: currentPath, e ) ]
+            row [] [ text (Expression.uToShortString o), editExpression s model stacknum ( 1 :: currentPath, e ) ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", displayExpression s model stacknum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, displayExpression s model stacknum ( 3 :: currentPath, e2 ), text " )" ]
+            row [] [ text "( ", editExpression s model stacknum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stacknum ( 3 :: currentPath, e2 ), text " )" ]
 
 
-displayObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg GroupType.ListPage.Msg)
-displayObservable s model ( stacknum, exprPath ) obs =
+editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg GroupType.ListPage.Msg)
+editObservable s model ( stacknum, exprPath ) obs =
     case obs of
         Number n ->
             row []
