@@ -1,12 +1,12 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Event.Event exposing (Event)
-import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
+import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
@@ -22,17 +22,6 @@ import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -218,7 +207,7 @@ validate m =
     case m.flatselect of
         Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Event (Type.TType TType.Event) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty
+            Ok <| Event (Type.TType TType.Event) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select an Event Type"

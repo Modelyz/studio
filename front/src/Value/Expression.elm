@@ -1,16 +1,13 @@
 module Value.Expression exposing (..)
 
-import Commitment.Commitment exposing (Commitment)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Input as Input
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope)
 import Time exposing (Posix)
 import Type exposing (Type)
-import Value.Commitment as C
 import Value.Observable as Observable exposing (Observable)
 import Value.Rational as R exposing (Rational(..))
 
@@ -70,7 +67,7 @@ bToShortString o =
 
 allObs : List Observable
 allObs =
-    [ Observable.number "" "" ]
+    [ Observable.number "" "", Observable.Value Nothing ]
 
 
 allUnary : List UOperator

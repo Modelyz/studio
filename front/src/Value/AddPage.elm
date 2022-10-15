@@ -8,11 +8,13 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Message
+import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Scope.View exposing (inputScope)
 import Shared
 import Spa.Page
+import Type exposing (Type)
 import Value.Expression as Expression exposing (Expression(..))
 import Value.Observable as Observable exposing (Observable(..))
 import Value.Rational exposing (Rational(..))
@@ -33,6 +35,7 @@ type Msg
     | BinaryOperator Expression.BOperator
     | RemoveExpression Int
     | Undo
+    | Ask OverPage
     | Warning String
     | Added
     | Button Step.Msg
@@ -48,6 +51,7 @@ type alias Model =
     , mandatory : Bool
     , stack : List (Expression Observable)
     , scope : Scope
+    , overpage : OverPage
     , warning : String
     , steps : List (Step.Step Step)
     , step : Step.Step Step
@@ -59,6 +63,13 @@ type Step
     | StepScope
     | StepOptions
     | StepExpression
+
+
+type OverPage
+    = OverPageClosed
+    | OverPageType
+    | OverPageUuid
+    | OverPageName
 
 
 validate : Model -> Result String ValueType
@@ -125,6 +136,7 @@ init s f =
     , mandatory = False
     , stack = []
     , scope = Empty
+    , overpage = OverPageClosed
     , warning = ""
     , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
     , step = Step.Step StepName
@@ -219,6 +231,9 @@ update s msg model =
         Button stepmsg ->
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
+
+        Ask overpage ->
+            ( { model | overpage = overpage }, Effect.none )
 
         Added ->
             case validate model of
@@ -353,7 +368,7 @@ expressionEditor model =
 displayLine : Int -> Expression Observable -> Element Msg
 displayLine stacknum expr =
     row []
-        [ row [ width fill, alignTop ]
+        [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
             [ el [ alignLeft ] (button.primary (RemoveExpression stacknum) "×")
             ]
         , displayExpression stacknum ( [], expr )
@@ -376,7 +391,7 @@ displayExpression stacknum ( currentPath, expr ) =
 displayObservable : ( Int, List Int ) -> Observable -> Element Msg
 displayObservable ( stacknum, exprPath ) obs =
     case obs of
-        Number data ->
+        Number n ->
             row []
                 [ column [ Background.color color.item.background ]
                     [ row [ Background.color color.item.background ]
@@ -384,8 +399,8 @@ displayObservable ( stacknum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { data | val = String.toInt x |> Result.fromMaybe "invalid number" })
-                                , text = Result.map String.fromInt data.val |> Result.withDefault ""
+                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | val = String.toInt x |> Result.fromMaybe "invalid number" })
+                                , text = Result.map String.fromInt n.val |> Result.withDefault ""
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Default value"
                                 , label = Input.labelHidden <| "Default value"
@@ -395,8 +410,8 @@ displayObservable ( stacknum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { data | name = x })
-                                , text = data.name
+                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | name = x })
+                                , text = n.name
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Name"
                                 , label = Input.labelHidden <| "Name"
@@ -407,8 +422,8 @@ displayObservable ( stacknum, exprPath ) obs =
                         [ Input.text [ width (px 140) ]
                             { onChange =
                                 \x ->
-                                    InputExpression ( stacknum, exprPath ) (Leaf <| Number { data | desc = x })
-                            , text = data.desc
+                                    InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | desc = x })
+                            , text = n.desc
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Description"
                             , label = Input.labelHidden <| "Description"
@@ -417,12 +432,20 @@ displayObservable ( stacknum, exprPath ) obs =
                     ]
                 ]
 
+        Value mv ->
+            row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                [ button.primary (Ask OverPageName) (mv |> Maybe.map Uuid.toString |> Maybe.withDefault "Choose value...")
+                ]
+
 
 buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
-        Number data ->
-            button.primary (AddExpression <| Leaf (Number data)) (Observable.toString obs)
+        Number n ->
+            button.primary (AddExpression <| Leaf (Number n)) (Observable.toString obs)
+
+        Value v ->
+            button.primary (AddExpression <| Leaf (Value v)) (Observable.toString obs)
 
 
 buttonUnaryOperator : Maybe (Expression Observable) -> Expression.UOperator -> Element Msg

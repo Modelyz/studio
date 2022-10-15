@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -146,16 +146,16 @@ withDefaultContent e xs =
 button =
     { primary =
         \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10 ] { onPress = Just msg, label = text txt }
+            Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10, height fill ] { onPress = Just msg, label = text txt }
     , secondary =
         \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10 ] { onPress = Just msg, label = text txt }
+            Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10, height fill ] { onPress = Just msg, label = text txt }
     , special =
         \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.spec_hover ], Background.color color.button.special, padding 10 ] { onPress = Just msg, label = text txt }
+            Input.button [ mouseOver [ Background.color color.button.spec_hover ], Background.color color.button.special, padding 10, height fill ] { onPress = Just msg, label = text txt }
     , disabled =
         \err txt ->
-            row [ htmlAttribute <| Attr.title err, spacing 20 ] [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10 ] { onPress = Nothing, label = text txt } ]
+            row [ htmlAttribute <| Attr.title err, spacing 20 ] [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10, height fill ] { onPress = Nothing, label = text txt } ]
     }
 
 
@@ -273,3 +273,7 @@ viewSelector all selected change =
                     button.secondary (change t) (ViewType.toString t)
             )
             all
+
+
+edges =
+    { top = 0, right = 0, bottom = 0, left = 0 }

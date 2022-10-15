@@ -502,25 +502,25 @@ allTyped : State -> TType.Type -> Dict String OnlyTyped
 allTyped s t =
     case t of
         TType.Resource ->
-            s.resources |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.resources |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Event ->
-            s.events |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.events |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Agent ->
-            s.agents |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.agents |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Commitment ->
-            s.commitments |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.commitments |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Contract ->
-            s.contracts |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.contracts |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Process ->
-            s.processes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.processes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
         TType.Group ->
-            s.groups |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, display = Dict.empty })
+            s.groups |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
 
 

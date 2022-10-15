@@ -11,6 +11,11 @@ import Type exposing (Type)
 import Typed.Typed exposing (Typed)
 
 
+
+-- TODO move to somewhere else (see the same for Value) and remove this module
+-- TODO or restore a separated Identifiable type?
+
+
 withIdentifiers : Dict String (Typed t) -> Dict String (Hierarchic h) -> Dict String IdentifierType -> Dict String Identifier -> Item i -> Item i
 withIdentifiers allT allH allIdts allIds i =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers

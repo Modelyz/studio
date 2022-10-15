@@ -10,6 +10,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
 import Type exposing (Type)
 import Value.Rational as Rational exposing (Rational(..))
+import Value.Value exposing (Value)
 
 
 type alias Commitment =
@@ -18,6 +19,7 @@ type alias Commitment =
     , type_ : Uuid
     , when : Time.Posix
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , groups : Dict String Group
     , display : Dict String String
     , qty : Rational
@@ -42,7 +44,7 @@ decoder : Decode.Decoder Commitment
 decoder =
     Decode.map7
         (\what uuid type_ when qty provider receiver ->
-            Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty qty provider receiver
+            Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty Dict.empty qty provider receiver
         )
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)

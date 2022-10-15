@@ -215,7 +215,7 @@ checkStep model =
 
 validate : Model -> Result String Commitment
 validate m =
-    Result.map3 (\ct provider receiver -> Commitment (Type.TType TType.Commitment) m.uuid ct.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty m.qty provider.uuid receiver.uuid)
+    Result.map3 (\ct provider receiver -> Commitment (Type.TType TType.Commitment) m.uuid ct.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty m.qty provider.uuid receiver.uuid)
         (checkMaybe m.flatselect "You must select a Commitment Type")
         (checkMaybe m.provider "You must select a provider")
         (checkMaybe m.receiver "You must select a receiver")

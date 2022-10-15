@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Ident.Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
+import Value.Value exposing (Value)
 
 
 type alias Hierarchic a =
@@ -13,6 +14,7 @@ type alias Hierarchic a =
         , uuid : Uuid
         , parent : Maybe Uuid
         , identifiers : Dict String Identifier
+        , values : Dict String Value
         , display : Dict String String
     }
 

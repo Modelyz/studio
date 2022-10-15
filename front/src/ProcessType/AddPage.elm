@@ -1,6 +1,5 @@
 module ProcessType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -17,6 +16,7 @@ import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
@@ -201,7 +201,7 @@ checkStep model =
 
 validate : Model -> Result String ProcessType
 validate m =
-    Ok <| ProcessType (Type.HType HType.ProcessType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
+    Ok <| ProcessType (Type.HType HType.ProcessType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

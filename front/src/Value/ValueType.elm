@@ -1,4 +1,4 @@
-module Value.ValueType exposing (ValueType, compare, decoder, encode)
+module Value.ValueType exposing (ValueType, compare, decoder, encode, initValues)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic exposing (Hierarchic)

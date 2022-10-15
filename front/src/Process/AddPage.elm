@@ -1,7 +1,5 @@
 module Process.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -17,13 +15,13 @@ import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Time exposing (millisToPosix)
-import Time exposing (millisToPosix)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -209,7 +207,7 @@ validate m =
     case m.flatselect of
         Just at ->
             -- TODO check that TType thing is useful
-            Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty
+            Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Process Type"

@@ -5,6 +5,7 @@ import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Ident.Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
+import Value.Value exposing (Value)
 
 
 type alias Typed a =
@@ -13,6 +14,7 @@ type alias Typed a =
         , uuid : Uuid
         , type_ : Uuid
         , identifiers : Dict String Identifier
+        , values : Dict String Value
         , display : Dict String String
     }
 
@@ -23,6 +25,7 @@ type alias OnlyTyped =
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , display : Dict String String
     }
 

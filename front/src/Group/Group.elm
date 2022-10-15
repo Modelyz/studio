@@ -7,6 +7,7 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope)
 import Type exposing (Type)
+import Value.Value exposing (Value)
 
 
 type alias Group =
@@ -15,6 +16,7 @@ type alias Group =
     , type_ : Uuid
     , scope : Scope
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , display : Dict String String
     }
 
@@ -31,11 +33,12 @@ encode g =
 
 decoder : Decoder Group
 decoder =
-    Decode.map6 Group
+    Decode.map7 Group
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
 

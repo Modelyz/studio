@@ -1,4 +1,4 @@
-module GroupType.ListPage exposing (Flags, Model, Msg, match, page)
+module GroupType.ListPage exposing (Flags, Model, Msg, init, match, page, view, viewContent)
 
 import Dict
 import Effect exposing (Effect)

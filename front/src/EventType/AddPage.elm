@@ -1,11 +1,11 @@
 module EventType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
+import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
@@ -201,7 +201,7 @@ checkStep model =
 
 validate : Model -> Result String EventType
 validate m =
-    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
+    Ok <| EventType (Type.HType HType.EventType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

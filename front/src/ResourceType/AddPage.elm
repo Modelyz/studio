@@ -1,6 +1,5 @@
 module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -18,6 +17,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
+import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -201,7 +201,7 @@ checkStep model =
 
 validate : Model -> Result String ResourceType
 validate m =
-    Ok <| ResourceType (Type.HType HType.ResourceType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty
+    Ok <| ResourceType (Type.HType HType.ResourceType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg

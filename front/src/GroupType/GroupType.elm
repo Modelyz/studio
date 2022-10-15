@@ -8,6 +8,7 @@ import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
+import Value.Value exposing (Value)
 
 
 type alias GroupType =
@@ -15,6 +16,7 @@ type alias GroupType =
     , uuid : Uuid
     , parent : Maybe Uuid
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , groups : Dict String Group
     , display : Dict String String
     }
@@ -31,10 +33,11 @@ encode gt =
 
 decoder : Decode.Decoder GroupType
 decoder =
-    Decode.map6 GroupType
+    Decode.map7 GroupType
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
+        (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
         (Decode.succeed Dict.empty)
