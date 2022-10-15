@@ -123,7 +123,7 @@ neg e =
     Unary Neg e
 
 
-eval : Expression Observable -> Result String Int
+eval : Expression Observable -> Result String Float
 eval expr =
     case expr of
         Leaf obs ->
@@ -137,7 +137,7 @@ eval expr =
             bEval op (eval e) (eval f)
 
 
-map : (Observable -> Int) -> Expression Observable -> Expression Int
+map : (Observable -> Float) -> Expression Observable -> Expression Float
 map f expr =
     case expr of
         Leaf o ->
@@ -195,17 +195,17 @@ decoder =
             )
 
 
-uEval : UOperator -> Int -> Int
+uEval : UOperator -> Float -> Float
 uEval op n =
     case op of
         Neg ->
             -n
 
         Inv ->
-            -n
+            1 / n
 
 
-bEval : BOperator -> Result String Int -> Result String Int -> Result String Int
+bEval : BOperator -> Result String Float -> Result String Float -> Result String Float
 bEval operator res1 res2 =
     case operator of
         Add ->

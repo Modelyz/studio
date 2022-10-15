@@ -390,8 +390,8 @@ editObservable s model ( stacknum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | val = String.toInt x |> Result.fromMaybe "invalid number" })
-                                , text = Result.map String.fromInt n.val |> Result.withDefault ""
+                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | val = String.toFloat x |> Result.fromMaybe "invalid number" })
+                                , text = Result.map String.fromFloat n.val |> Result.withDefault ""
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Default value"
                                 , label = Input.labelHidden <| "Default value"

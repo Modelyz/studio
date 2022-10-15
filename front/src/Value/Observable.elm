@@ -9,7 +9,7 @@ import Type exposing (Type)
 type
     Observable
     -- a single number with a name and a value
-    = Number { name : String, desc : String, val : Result String Int }
+    = Number { name : String, desc : String, val : Result String Float }
       -- the value maybe existing for entity of gived type and uuid
     | Value (Maybe Uuid)
 
@@ -24,7 +24,7 @@ toString obs =
             "Value"
 
 
-eval : Observable -> Result String Int
+eval : Observable -> Result String Float
 eval obs =
     case obs of
         Number data ->
@@ -48,7 +48,7 @@ encode obs =
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
                 , ( "desc", Encode.string n.desc )
-                , ( "val", Result.map Encode.int n.val |> Result.withDefault Encode.null )
+                , ( "val", Result.map Encode.float n.val |> Result.withDefault Encode.null )
                 ]
 
         Value mu ->
@@ -68,7 +68,7 @@ decoder =
                         Decode.map3 (\n d v -> Number { name = n, desc = d, val = v })
                             (Decode.field "name" Decode.string)
                             (Decode.field "desc" Decode.string)
-                            (Decode.field "val" (Decode.nullable Decode.int |> Decode.andThen (Result.fromMaybe "f" >> Decode.succeed)))
+                            (Decode.field "val" (Decode.nullable Decode.float |> Decode.andThen (Result.fromMaybe "f" >> Decode.succeed)))
 
                     "Value" ->
                         Decode.map Value

@@ -44,7 +44,26 @@ inputValue : Config msg -> Shared.Model -> Model a -> Value -> Element msg
 inputValue c s model v =
     column []
         [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
-        , row [ spacing 5 ] [ inputExpression c s model ( [], v.expr ) v ]
+        , row [ spacing 5 ]
+            [ inputExpression c s model ( [], v.expr ) v
+
+            -- display the evaluated expression:
+            , case v.expr of
+                Leaf (Observable.Number _) ->
+                    -- don't repeat the single number...
+                    none
+
+                _ ->
+                    Expression.eval v.expr
+                        |> (\r ->
+                                case r of
+                                    Ok val ->
+                                        text <| "= " ++ String.fromFloat val
+
+                                    Err err ->
+                                        text <| "error: " ++ err
+                           )
+            ]
         ]
 
 
@@ -70,8 +89,8 @@ inputObservable c s model targetPath obs v =
                 [ Input.text [ width (px 70), htmlAttribute <| Attr.title n.desc ]
                     { onChange =
                         \x ->
-                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| Observable.Number { n | val = String.toInt x |> Result.fromMaybe "invalid number" }) v.expr }
-                    , text = Result.map String.fromInt n.val |> Result.withDefault ""
+                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| Observable.Number { n | val = String.toFloat x |> Result.fromMaybe "invalid number" }) v.expr }
+                    , text = Result.map String.fromFloat n.val |> Result.withDefault ""
                     , placeholder =
                         Just <| Input.placeholder [] <| text n.name
                     , label = Input.labelHidden n.name

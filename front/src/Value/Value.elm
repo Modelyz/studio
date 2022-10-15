@@ -27,7 +27,7 @@ compare v =
     Type.compare v.what ++ "/" ++ Uuid.toString v.for ++ "/" ++ v.name
 
 
-toValue : Value -> Result String Int
+toValue : Value -> Result String Float
 toValue val =
     -- TODO move to Rational
     Expression.eval val.expr
