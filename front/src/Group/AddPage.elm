@@ -157,6 +157,7 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.DefinedGroup a
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
+                                ++ List.map Message.ValueAdded (Dict.values model.values)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]

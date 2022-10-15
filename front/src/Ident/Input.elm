@@ -37,7 +37,7 @@ inputIdentifiers c model scope =
 inputIdentifier : Config msg -> Model a -> Identifier -> Element msg
 inputIdentifier c model id =
     column []
-        [ el [ paddingXY 0 10 ] <| text id.name
+        [ el [ paddingXY 0 10 ] <| text (id.name ++ " :")
         , row [ spacing 5 ] <|
             List.indexedMap (\i f -> inputFragment c model i f id) id.fragments
         ]

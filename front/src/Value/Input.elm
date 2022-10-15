@@ -5,6 +5,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
 import Value.Expression as Expression exposing (Expression(..), updateExpr)
@@ -41,7 +42,10 @@ inputValues c s model scope =
 
 inputValue : Config msg -> Shared.Model -> Model a -> Value -> Element msg
 inputValue c s model v =
-    inputExpression c s model ( [], v.expr ) v
+    column []
+        [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
+        , row [ spacing 5 ] [ inputExpression c s model ( [], v.expr ) v ]
+        ]
 
 
 inputExpression : Config msg -> Shared.Model -> Model a -> ( List Int, Expression Observable ) -> Value -> Element msg
@@ -62,20 +66,16 @@ inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observabl
 inputObservable c s model targetPath obs v =
     case obs of
         Observable.Number n ->
-            row []
-                [ column [ Background.color color.item.background ]
-                    [ row [ Font.size size.text.small ]
-                        [ Input.text [ width (px 70) ]
-                            { onChange =
-                                \x ->
-                                    c.onInput { v | expr = updateExpr targetPath [] (Leaf <| Observable.Number { n | val = String.toInt x |> Result.fromMaybe "invalid number" }) v.expr }
-                            , text = Result.map String.fromInt n.val |> Result.withDefault ""
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Value"
-                            , label = Input.labelHidden <| "Value"
-                            }
-                        ]
-                    ]
+            row [ Background.color color.item.background, Font.size size.text.small ]
+                [ Input.text [ width (px 70), htmlAttribute <| Attr.title n.desc ]
+                    { onChange =
+                        \x ->
+                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| Observable.Number { n | val = String.toInt x |> Result.fromMaybe "invalid number" }) v.expr }
+                    , text = Result.map String.fromInt n.val |> Result.withDefault ""
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text n.name
+                    , label = Input.labelHidden n.name
+                    }
                 ]
 
         Observable.Value mu ->

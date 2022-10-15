@@ -215,6 +215,14 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
+        ValueAdded v ->
+            { state
+                | values = Dict.insert (Value.compare v) v state.values
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = insertUuid b.uuid state.uuids
+            }
+
         AddedResourceType rt ->
             { state
                 | resourceTypes = insertItem rt state.resourceTypes
