@@ -12,7 +12,7 @@ import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope exposing (Scope(..))
-import Scope.View exposing (inputScope)
+import Scope.Select exposing (selectScope)
 import Shared
 import Spa.Page
 import State
@@ -163,7 +163,7 @@ viewContent model s =
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model
-        , inputScope s InputScope model
+        , selectScope s InputScope model
         , inputFragments s model
         ]
 

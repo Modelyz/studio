@@ -12,7 +12,7 @@ import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
-import Scope.View exposing (inputScope)
+import Scope.Select exposing (selectScope)
 import Shared
 import Spa.Page
 import View exposing (..)
@@ -182,7 +182,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    inputScope s InputScope model
+                    selectScope s InputScope model
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
