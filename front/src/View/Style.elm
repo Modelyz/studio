@@ -44,6 +44,7 @@ color =
         }
     , topbar =
         { background = rgb255 0xC5 0xE8 0xF7
+        , disabled = rgb255 0xD0 0xD0 0xD0
         , border = rgb255 0xFF 0xFF 0xFF
         }
     , item =

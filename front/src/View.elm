@@ -85,8 +85,8 @@ hamburger title s =
         ]
 
 
-topbar : Shared.Model -> String -> Element msg
-topbar s title =
+topbar : Shared.Model -> String -> Color -> Element msg
+topbar s title background =
     if s.menu == Style.Desktop then
         row
             [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }
@@ -95,7 +95,7 @@ topbar s title =
             , padding 10
             , height (px 42)
             , Font.size size.text.topbar
-            , Background.color color.topbar.background
+            , Background.color background
             ]
             [ text title
             ]
@@ -108,7 +108,7 @@ floatingContainer : Shared.Model -> String -> List (Element msg) -> List (Elemen
 floatingContainer s title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
-            [ topbar s title
+            [ topbar s title color.topbar.background
             , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
                 (column
                     [ width fill, alignTop ]
@@ -126,7 +126,14 @@ floatingContainer2 s title buttons children subpage =
     -- TODO merge with floatingContainer
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop, inFront (subpage |> Maybe.withDefault none) ]
-            [ topbar s title
+            [ topbar s
+                title
+                (if subpage == Nothing then
+                    color.topbar.background
+
+                 else
+                    color.topbar.disabled
+                )
             , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
                 (column
                     [ width fill, alignTop ]
@@ -143,7 +150,7 @@ flatContainer : Shared.Model -> String -> List (Element msg) -> Element msg -> E
 flatContainer s title buttons search viewselector children =
     -- container for main content
     column [ width fill, alignTop, padding 0 ]
-        [ topbar s title
+        [ topbar s title color.topbar.background
         , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
             [ column
                 [ width fill, alignTop, spacing 20, padding 20 ]
