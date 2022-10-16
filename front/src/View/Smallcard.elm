@@ -1,4 +1,4 @@
-module View.Smallcard exposing (clickableCard, hClickableCard, hClickableRemovableCard, hViewHalfCard, sClickableCard, tClickableRemovableCard, viewHalfCard, viewSmallCard)
+module View.Smallcard exposing (clickableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, hViewHalfCard, sClickableCard, tClickableRemovableCard, tItemClickableCard, viewHalfCard, viewSmallCard)
 
 import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
@@ -9,7 +9,7 @@ import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Scope.Scope exposing (Scope(..))
 import Type
-import Typed.Typed exposing (Typed)
+import Typed.Typed as T exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
 import Zone.View exposing (display)
@@ -17,7 +17,7 @@ import Zone.Zone exposing (Zone(..))
 
 
 
--- TODO merge all this
+-- TODO merge/refactor all this
 
 
 viewSmallCard : msg -> Element msg -> Element msg -> Element msg
@@ -63,80 +63,105 @@ viewHalfCard maybeOnDelete title =
 
 
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hViewHalfCard onDelete allT allH configs h =
-    -- smallcard for hierarchic items
+hViewHalfCard onDelete allT allH configs hierarchic =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType hierarchic.what hierarchic.uuid)
 
         title =
-            display mconfig h
+            display mconfig hierarchic
     in
     viewHalfCard (Just onDelete) (text title)
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
-sClickableCard onInput allT allH configs h t =
-    -- clickable card for typed items
+tItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Type.Type -> Element msg
+tItemClickableCard onInput allT allH configs typed type_ =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs SmallcardTitle (IsItem type_ typed.uuid)
 
         title =
-            display mconfig h
+            display mconfig typed
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
+            T.find allT typed.type_ |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
-    clickableCard (onInput (HasUserType t h.uuid)) (text title) (text description)
+    clickableCard (onInput (IsItem type_ typed.uuid)) (text title) (text description)
+
+
+hItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
+hItemClickableCard onInput allT allH configs hierarchic type_ =
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (IsItem type_ hierarchic.uuid)
+
+        title =
+            display mconfig hierarchic
+
+        description =
+            hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
+    in
+    clickableCard (onInput (IsItem type_ hierarchic.uuid)) (text title) (text description)
+
+
+sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
+sClickableCard onInput allT allH configs hierarchic type_ =
+    let
+        mconfig =
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType hierarchic.what hierarchic.uuid)
+
+        title =
+            display mconfig hierarchic
+
+        description =
+            hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
+    in
+    clickableCard (onInput (HasUserType type_ hierarchic.uuid)) (text title) (text description)
 
 
 hClickableCard : (Maybe (Hierarchic b) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableCard onInput allT allH configs h =
-    -- clickable card for typed items
+hClickableCard onInput allT allH configs hierarchic =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType hierarchic.what hierarchic.uuid)
 
         title =
-            display mconfig h
+            display mconfig hierarchic
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
+            hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
-    clickableCard (onInput (Just h)) (text title) (text description)
+    clickableCard (onInput (Just hierarchic)) (text title) (text description)
 
 
 tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tClickableRemovableCard onChoose onDelete allT allH configs t =
-    -- clickable card for typed items
+tClickableRemovableCard onChoose onDelete allT allH configs typed =
     let
         mtconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType t.what t.type_)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType typed.what typed.type_)
 
         mhconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic t.what) t.type_)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType (Type.toHierarchic typed.what) typed.type_)
 
         title =
-            display mtconfig t
+            display mtconfig typed
 
         description =
-            H.find allH t.type_ |> Maybe.map (display mhconfig) |> Maybe.withDefault ""
+            H.find allH typed.type_ |> Maybe.map (display mhconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)
 
 
 hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableRemovableCard onChoose onDelete allT allH configs h =
-    -- clickable card for typed items
+hClickableRemovableCard onChoose onDelete allT allH configs hierarchic =
     let
         mconfig =
-            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType h.what h.uuid)
+            Config.getMostSpecific allT allH configs SmallcardTitle (HasUserType hierarchic.what hierarchic.uuid)
 
         title =
-            display mconfig h
+            display mconfig hierarchic
 
         description =
-            h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
+            hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (display mconfig) |> Maybe.withDefault ""
     in
     clickableRemovableCard onChoose onDelete (text title) (text description)

@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -109,7 +109,25 @@ floatingContainer s title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
             [ topbar s title
-            , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
+            , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
+                (column
+                    [ width fill, alignTop ]
+                    [ wrappedRow [ width fill, spacing 20 ]
+                        buttons
+                    ]
+                    :: children
+                )
+            ]
+        ]
+
+
+floatingContainer2 : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Maybe (Element msg) -> Element msg
+floatingContainer2 s title buttons children subpage =
+    -- TODO merge with floatingContainer
+    column [ width fill, alignTop, padding 20 ]
+        [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop, inFront (subpage |> Maybe.withDefault none) ]
+            [ topbar s title
+            , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
                 (column
                     [ width fill, alignTop ]
                     [ wrappedRow [ width fill, spacing 20 ]
@@ -126,7 +144,7 @@ flatContainer s title buttons search viewselector children =
     -- container for main content
     column [ width fill, alignTop, padding 0 ]
         [ topbar s title
-        , column [ width fill, padding 20, centerX, alignTop, spacing 20 ]
+        , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
             [ column
                 [ width fill, alignTop, spacing 20, padding 20 ]
                 (wrappedRow [ spacing 20 ] (buttons ++ [ viewselector, search ]) :: children)
