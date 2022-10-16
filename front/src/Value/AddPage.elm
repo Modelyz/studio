@@ -7,12 +7,11 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
-import GroupType.ListPage
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
-import Scope.View exposing (inputScope)
+import Scope.Select exposing (selectScope)
 import Shared
 import Spa.Page
 import Type exposing (Type)
@@ -26,7 +25,7 @@ import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
 import View.Style exposing (..)
 
 
-type Msg submsg
+type Msg
     = InputName String
     | InputScope Scope
     | InputMandatory Bool
@@ -36,8 +35,8 @@ type Msg submsg
     | BinaryOperator Expression.BOperator
     | RemoveExpression Int
     | Undo
-    | Ask SubPage
-    | OverMsg submsg
+    | Open Popup
+    | ClosePopup
     | Warning String
     | Added
     | Button Step.Msg
@@ -53,8 +52,9 @@ type alias Model =
     , mandatory : Bool
     , stack : List (Expression Observable)
     , scope : Scope
-    , subpage : SubPage
-    , submodel : GroupType.ListPage.Model
+    , exprScope : Scope
+    , selectedValue : Maybe Uuid
+    , subpage : Maybe Popup
     , warning : String
     , steps : List (Step.Step Step)
     , step : Step.Step Step
@@ -68,11 +68,8 @@ type Step
     | StepExpression
 
 
-type SubPage
-    = SubPageClosed
-    | SubPageType GroupType.ListPage.Model
-    | SubPageUuid GroupType.ListPage.Model
-    | SubPageName GroupType.ListPage.Model
+type Popup
+    = PopupSelectValue (Maybe Uuid -> Msg)
 
 
 validate : Model -> Result String ValueType
@@ -111,7 +108,7 @@ checkStep model =
                 Ok ()
 
 
-page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View (Msg GroupType.ListPage.Msg)) Model (Msg GroupType.ListPage.Msg)
+page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
         { init = init s
@@ -132,15 +129,16 @@ match route =
             Nothing
 
 
-init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg (Msg GroupType.ListPage.Msg) )
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     { route = f.route
     , name = ""
     , mandatory = False
     , stack = []
     , scope = Empty
-    , subpage = SubPageClosed
-    , submodel = Tuple.first <| GroupType.ListPage.init s { route = f.route }
+    , exprScope = Empty
+    , selectedValue = Nothing --TODO maybe gather items regarding the popup
+    , subpage = Nothing
     , warning = ""
     , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
     , step = Step.Step StepName
@@ -158,7 +156,7 @@ applyB o stack =
     Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
 
-update : Shared.Model -> Msg GroupType.ListPage.Msg -> Model -> ( Model, Effect Shared.Msg (Msg GroupType.ListPage.Msg) )
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         InputName x ->
@@ -218,8 +216,11 @@ update s msg model =
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
-        Ask subpage ->
-            ( { model | subpage = subpage }, Effect.none )
+        Open subpage ->
+            ( { model | subpage = Just subpage }, Effect.none )
+
+        ClosePopup ->
+            ( { model | subpage = Nothing }, Effect.none )
 
         Added ->
             case validate model of
@@ -234,11 +235,8 @@ update s msg model =
                 Err err ->
                     ( { model | warning = err }, Effect.none )
 
-        OverMsg submsg ->
-            ( { model | submodel = Tuple.first <| GroupType.ListPage.update s submsg model.submodel }, Effect.none )
 
-
-view : Shared.Model -> Model -> View (Msg GroupType.ListPage.Msg)
+view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Adding a ValueType"
     , attributes = []
@@ -247,13 +245,13 @@ view s model =
     }
 
 
-viewContent : Model -> Shared.Model -> Element (Msg GroupType.ListPage.Msg)
+viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
         step =
             case model.step of
                 Step.Step StepScope ->
-                    inputScope s InputScope model
+                    selectScope s InputScope model.scope
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -286,17 +284,38 @@ viewContent model s =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new valueType"
                             }
     in
-    floatingContainer s
+    floatingContainer2 s
         "Adding an valueType"
         (List.map (Element.map Button) (buttons model (checkStep model))
             ++ [ buttonValidate model (checkStep model) ]
         )
         [ step
-        , Element.map OverMsg <| GroupType.ListPage.viewContent model.submodel s
         ]
+        (viewPopup s model)
 
 
-buttonValidate : Model -> Result String field -> Element (Msg GroupType.ListPage.Msg)
+viewPopup : Shared.Model -> Model -> Maybe (Element Msg)
+viewPopup s model =
+    Maybe.map
+        (\subpage ->
+            case subpage of
+                PopupSelectValue onSelect ->
+                    floatingContainer
+                        s
+                        "Select another value"
+                        [ button.secondary ClosePopup "Cancel"
+                        , button.primary (onSelect model.selectedValue) "Select"
+                        ]
+                        [ selectScope s InputScope model.exprScope
+
+                        --, selectValue
+                        , none
+                        ]
+        )
+        model.subpage
+
+
+buttonValidate : Model -> Result String field -> Element Msg
 buttonValidate m result =
     case result of
         Ok _ ->
@@ -310,7 +329,7 @@ buttonValidate m result =
             none
 
 
-buttonUndo : Model -> Element (Msg GroupType.ListPage.Msg)
+buttonUndo : Model -> Element Msg
 buttonUndo model =
     if List.length model.stack == 0 then
         button.disabled "" "Undo"
@@ -339,7 +358,7 @@ undo stack =
         ++ (List.tail stack |> Maybe.withDefault [])
 
 
-expressionEditor : Shared.Model -> Model -> Element (Msg GroupType.ListPage.Msg)
+expressionEditor : Shared.Model -> Model -> Element Msg
 expressionEditor s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ -- display buttons
@@ -355,7 +374,7 @@ expressionEditor s model =
         ]
 
 
-displayLine : Shared.Model -> Model -> Int -> Expression Observable -> Element (Msg GroupType.ListPage.Msg)
+displayLine : Shared.Model -> Model -> Int -> Expression Observable -> Element Msg
 displayLine s model stacknum expr =
     row []
         [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
@@ -365,7 +384,7 @@ displayLine s model stacknum expr =
         ]
 
 
-editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element (Msg GroupType.ListPage.Msg)
+editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element Msg
 editExpression s model stacknum ( currentPath, expr ) =
     -- used to modify the expression and input default values
     case expr of
@@ -379,7 +398,7 @@ editExpression s model stacknum ( currentPath, expr ) =
             row [] [ text "( ", editExpression s model stacknum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stacknum ( 3 :: currentPath, e2 ), text " )" ]
 
 
-editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg GroupType.ListPage.Msg)
+editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element Msg
 editObservable s model ( stacknum, exprPath ) obs =
     case obs of
         Number n ->
@@ -424,12 +443,16 @@ editObservable s model ( stacknum, exprPath ) obs =
                 ]
 
         Value mv ->
+            let
+                onSelect =
+                    InputExpression ( stacknum, exprPath ) << Leaf << Value
+            in
             row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                [ button.primary (Ask (SubPageName model.submodel)) (mv |> Maybe.map Uuid.toString |> Maybe.withDefault "Choose value...")
+                [ button.primary (Open (PopupSelectValue onSelect)) (mv |> Maybe.map Uuid.toString |> Maybe.withDefault "Choose value...")
                 ]
 
 
-buttonObservable : Observable -> Element (Msg GroupType.ListPage.Msg)
+buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
         Number n ->
@@ -439,13 +462,13 @@ buttonObservable obs =
             button.primary (AddExpression <| Leaf (Value v)) (Observable.toString obs)
 
 
-buttonUnaryOperator : Maybe (Expression Observable) -> Expression.UOperator -> Element (Msg GroupType.ListPage.Msg)
+buttonUnaryOperator : Maybe (Expression Observable) -> Expression.UOperator -> Element Msg
 buttonUnaryOperator me o =
     Maybe.map (\e -> button.primary (UnaryOperator o) (Expression.uToString o)) me
         |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (Expression.uToString o))
 
 
-buttonBinaryOperator : Maybe ( Expression Observable, Expression Observable ) -> Expression.BOperator -> Element (Msg GroupType.ListPage.Msg)
+buttonBinaryOperator : Maybe ( Expression Observable, Expression Observable ) -> Expression.BOperator -> Element Msg
 buttonBinaryOperator mt o =
     Maybe.map (\t -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
         |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (Expression.bToString o))

@@ -24,6 +24,7 @@ type alias Config tt msg =
 
 
 -- TODO remove?
+-- TODO : try to remove modules with a partial Model by passing the target (such as flatselect here)
 
 
 flatselect : Model m a -> Config a msg -> Element msg

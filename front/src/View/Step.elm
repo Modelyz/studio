@@ -29,10 +29,10 @@ type alias Model model step =
 
 
 buttonNext : Model model step -> Result String () -> Element Msg
-buttonNext m result =
+buttonNext model result =
     case result of
         Ok _ ->
-            if isLast m.step m.steps then
+            if isLast model.step model.steps then
                 none
 
             else
@@ -43,11 +43,11 @@ buttonNext m result =
 
 
 onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String () -> Attribute msg
-onEnter next validate warning m result =
+onEnter next validate warning model result =
     View.onEnter <|
         case result of
             Ok _ ->
-                if isLast m.step m.steps then
+                if isLast model.step model.steps then
                     validate
 
                 else
@@ -58,8 +58,8 @@ onEnter next validate warning m result =
 
 
 nextMsg : Model model step -> (Msg -> msg) -> Msg -> msg -> msg
-nextMsg m c next validate =
-    if isLast m.step m.steps then
+nextMsg model c next validate =
+    if isLast model.step model.steps then
         validate
 
     else
@@ -99,6 +99,7 @@ isFirst x xs =
 
 buttons : Model m s -> Result String () -> List (Element Msg)
 buttons model checkedStep =
+    -- standard buttons for a floatingContainer with steps (Previous, Cancel, Next)
     [ (if isFirst model.step model.steps then
         button.disabled "This is the first page"
 
