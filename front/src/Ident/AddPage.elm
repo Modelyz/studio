@@ -182,7 +182,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    selectScope s InputScope model
+                    selectScope s InputScope model.scope
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]

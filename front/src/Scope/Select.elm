@@ -1,4 +1,4 @@
-module Scope.Select exposing (Model, selectScope)
+module Scope.Select exposing (selectScope)
 
 import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
@@ -22,17 +22,13 @@ import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
-type alias Model a =
-    { a | scope : Scope }
-
-
-selectScope : Shared.Model -> (Scope -> msg) -> Model a -> Element msg
-selectScope s input model =
+selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Element msg
+selectScope s onInput scope =
     -- TODO replace s with allT allH?
     -- TODO refactor
     let
         allT =
-            case model.scope of
+            case scope of
                 HasType t ->
                     case t of
                         Type.TType tt ->
@@ -61,7 +57,7 @@ selectScope s input model =
                     Dict.empty
 
         allH =
-            case model.scope of
+            case scope of
                 HasType t ->
                     case t of
                         Type.TType tt ->
@@ -90,15 +86,15 @@ selectScope s input model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
-            , (if model.scope == Empty then
+            , (if scope == Empty then
                 viewHalfCard Nothing
 
                else
-                viewHalfCard (Just <| input Empty)
+                viewHalfCard (Just <| onInput Empty)
               )
-                (text <| toDisplay allT allH s.state.configs model.scope)
+                (text <| toDisplay allT allH s.state.configs scope)
             ]
-        , if model.scope == Empty then
+        , if scope == Empty then
             column [ spacing 10 ]
                 [ h2 <| "What should it apply to?"
 
@@ -107,14 +103,14 @@ selectScope s input model =
                     (TType.all
                         |> List.map
                             (\t ->
-                                clickableCard (input (HasType (Type.TType t))) (text <| TType.toPluralString t) none
+                                clickableCard (onInput (HasType (Type.TType t))) (text <| TType.toPluralString t) none
                             )
                     )
                 , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                     (HType.all
                         |> List.map
                             (\t ->
-                                clickableCard (input (HasType (Type.HType t))) (text <| HType.toPluralString t) none
+                                clickableCard (onInput (HasType (Type.HType t))) (text <| HType.toPluralString t) none
                             )
                     )
                 ]
@@ -124,7 +120,7 @@ selectScope s input model =
 
         -- then the choice of user type, depending on the previously selected concrete type
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            case model.scope of
+            case scope of
                 HasType (Type.TType tt) ->
                     let
                         -- all the typed items
@@ -136,7 +132,7 @@ selectScope s input model =
                     (h3 <| "of type:")
                         :: (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard input allT allHwithIdentifiers s.state.configs h (Type.TType tt))
+                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.TType tt))
                            )
 
                 HasType (Type.HType ht) ->
@@ -149,26 +145,26 @@ selectScope s input model =
                     (h3 <| "of type:")
                         :: (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard input allT allHwithIdentifiers s.state.configs h (Type.HType ht))
+                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.HType ht))
                            )
 
                 _ ->
                     []
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            case model.scope of
+            case scope of
                 HasUserType (Type.TType tt) uuid ->
                     let
                         allTwithIdentifiers =
                             State.allTyped s.state tt |> Dict.map (\_ t -> { t | identifiers = s.state.identifiers |> Dict.filter (\_ id -> t.uuid == id.identifiable) })
                     in
-                    (h3 <| "You can select a specific Typed one (otherwise click Next):") :: (allTwithIdentifiers |> Dict.values |> List.map (\t -> tItemClickableCard input allTwithIdentifiers allH s.state.configs t (Type.TType tt)))
+                    (h3 <| "You can select a specific Typed one (otherwise click Next):") :: (allTwithIdentifiers |> Dict.values |> List.map (\t -> tItemClickableCard onInput allTwithIdentifiers allH s.state.configs t (Type.TType tt)))
 
                 HasUserType (Type.HType ht) uuid ->
                     let
                         allHwithIdentifiers =
                             State.allHierarchic s.state ht |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
-                    (h3 <| "You can select a specific Hierarchic one (otherwise click Next):") :: (allHwithIdentifiers |> Dict.values |> List.map (\h -> hItemClickableCard input allT allHwithIdentifiers s.state.configs h (Type.HType ht)))
+                    (h3 <| "You can select a specific Hierarchic one (otherwise click Next):") :: (allHwithIdentifiers |> Dict.values |> List.map (\h -> hItemClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.HType ht)))
 
                 _ ->
                     []
