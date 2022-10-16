@@ -76,7 +76,7 @@ mobile title s r =
 desktop : Shared.Model -> Route -> Element Shared.Msg
 desktop s r =
     column
-        [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background ]
+        [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background, clip ]
     <|
         List.intersperse (separator color.navbar.separator) (links s r)
             ++ [ column [ width fill, spacing 5, alignBottom ]
