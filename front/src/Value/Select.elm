@@ -9,19 +9,23 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Scope.Select exposing (selectScope)
 import Shared
 import Type exposing (Type)
+import Value.Observable exposing (ValueSelection(..), createValue)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
 
 
-type Selection
+type SelectedValue
     = None
     | OnlyScope Scope
     | ScopeAndValue Scope String
 
 
 type alias Model =
-    { selection : Selection
+    { selection : SelectedValue
+    , onSelect : ValueSelection -> Msg
+    , stackNum : Int
+    , targetPath : List Int
     }
 
 
@@ -29,12 +33,12 @@ type Msg
     = InputScope Scope
     | InputValue Type Uuid String
     | Cancel
-    | Selected Type Uuid String
+    | Selected ValueSelection
 
 
 init : Shared.Model -> Model
 init s =
-    { selection = None }
+    { selection = None, onSelect = Selected, stackNum = 0, targetPath = [] }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
@@ -59,8 +63,13 @@ update s msg model =
         Cancel ->
             ( { model | selection = None }, Cmd.none )
 
-        Selected type_ uuid name ->
-            ( model, Cmd.none )
+        Selected vs ->
+            case vs of
+                UndefinedValue ->
+                    ( model, Cmd.none )
+
+                SelectedValue _ ->
+                    ( model, Cmd.none )
 
 
 view : Shared.Model -> Model -> Element Msg
@@ -71,7 +80,7 @@ view s model =
             [ button.secondary Cancel "Cancel"
             , case model.selection of
                 ScopeAndValue (IsItem type_ uuid) name ->
-                    button.primary (Selected type_ uuid name) "Choose"
+                    button.primary (model.onSelect <| createValue type_ uuid name) "Choose"
 
                 _ ->
                     button.disabled "Please select a value" "Choose"
@@ -102,7 +111,16 @@ selectValue : Shared.Model -> Model -> Scope -> (String -> Msg) -> Element Msg
 selectValue s model scope onInput =
     case scope of
         IsItem t uuid ->
-            column [ spacing 20 ] [ h2 "Select the value you want to choose:", wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] (s.state.values |> Dict.values |> List.filter (\v -> v.what == t && v.for == uuid) |> List.map (\v -> clickableCard (onInput v.name) (text v.name) none) |> withDefaultContent (text "(No values are defined for this entity. Choose another entity or create a value for this entity)")) ]
+            column [ spacing 20 ]
+                [ h2 "Select the value you want to choose:"
+                , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                    (s.state.values
+                        |> Dict.values
+                        |> List.filter (\v -> v.what == t && v.for == uuid)
+                        |> List.map (\v -> clickableCard (onInput v.name) (text v.name) none)
+                        |> withDefaultContent (text "(No values are defined for this entity. Choose another entity or create a value for this entity)")
+                    )
+                ]
 
         _ ->
             none

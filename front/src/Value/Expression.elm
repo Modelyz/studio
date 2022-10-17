@@ -8,7 +8,7 @@ import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Time exposing (Posix)
 import Type exposing (Type)
-import Value.Observable as Observable exposing (Observable)
+import Value.Observable as Observable exposing (Observable(..))
 import Value.Rational as R exposing (Rational(..))
 
 
@@ -85,7 +85,7 @@ bToShortString o =
 
 allObs : List Observable
 allObs =
-    [ Observable.number "" "", Observable.Value Nothing ]
+    [ Observable.number "" "", ObsValue Observable.UndefinedValue ]
 
 
 allUnary : List UOperator

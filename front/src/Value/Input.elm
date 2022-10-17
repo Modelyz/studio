@@ -9,7 +9,7 @@ import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
 import Value.Expression as Expression exposing (Expression(..), updateExpr)
-import Value.Observable as Observable exposing (Observable)
+import Value.Observable as Observable exposing (Observable(..))
 import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.Style exposing (..)
@@ -49,7 +49,7 @@ inputValue c s model v =
 
             -- display the evaluated expression:
             , case v.expr of
-                Leaf (Observable.Number _) ->
+                Leaf (ObsNumber _) ->
                     -- don't repeat the single number...
                     none
 
@@ -84,12 +84,12 @@ inputExpression c s model ( currentPath, expr ) v =
 inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observable -> Value -> Element msg
 inputObservable c s model targetPath obs v =
     case obs of
-        Observable.Number n ->
+        ObsNumber n ->
             row [ Background.color color.item.background, Font.size size.text.small ]
                 [ Input.text [ width (px 70), htmlAttribute <| Attr.title n.desc ]
                     { onChange =
                         \x ->
-                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| Observable.Number { n | val = String.toFloat x |> Result.fromMaybe "invalid number" }) v.expr }
+                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | val = String.toFloat x |> Result.fromMaybe "invalid number" }) v.expr }
                     , text = Result.map String.fromFloat n.val |> Result.withDefault ""
                     , placeholder =
                         Just <| Input.placeholder [] <| text n.name
@@ -97,7 +97,7 @@ inputObservable c s model targetPath obs v =
                     }
                 ]
 
-        Observable.Value mu ->
+        ObsValue mu ->
             row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                 [ text "TODO display value"
                 ]

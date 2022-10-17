@@ -14,9 +14,10 @@ import Scope.Scope exposing (Scope(..))
 import Scope.Select exposing (selectScope)
 import Shared
 import Spa.Page
+import Task
 import Type exposing (Type)
 import Value.Expression as Expression exposing (Expression(..), updateExpr)
-import Value.Observable as Observable exposing (Observable(..))
+import Value.Observable as Observable exposing (Observable(..), ValueSelection(..), createValue)
 import Value.Rational exposing (Rational(..))
 import Value.Select
 import Value.ValueType exposing (ValueType)
@@ -37,7 +38,7 @@ type Msg submsg
     | RemoveExpression Int
     | Undo
     | SubMsg submsg
-    | Open (Popup submsg)
+    | Open (Popup submsg) Int (List Int)
     | ClosePopup
     | Warning String
     | Added
@@ -70,7 +71,7 @@ type Step
 
 
 type Popup submsg
-    = PopupSelectValue (Maybe Uuid -> Msg submsg)
+    = PopupSelectValue (ValueSelection -> Msg submsg)
 
 
 validate : Model -> Result String ValueType
@@ -171,12 +172,12 @@ update s msg model =
         AddExpression expr ->
             ( { model | stack = expr :: model.stack }, Effect.none )
 
-        InputExpression ( stacknum, targetPath ) subExpr ->
+        InputExpression ( stackNum, targetPath ) subExpr ->
             ( { model
                 | stack =
                     List.indexedMap
                         (\i e ->
-                            if stacknum == i then
+                            if stackNum == i then
                                 -- update the expression with the subexpr at given path
                                 updateExpr targetPath [] subExpr e
 
@@ -194,12 +195,12 @@ update s msg model =
         BinaryOperator o ->
             ( { model | stack = applyB o model.stack }, Effect.none )
 
-        RemoveExpression stacknum ->
+        RemoveExpression stackNum ->
             ( { model
                 | stack =
                     model.stack
                         |> (List.indexedMap Tuple.pair
-                                >> List.filter (Tuple.first >> (/=) stacknum)
+                                >> List.filter (Tuple.first >> (/=) stackNum)
                                 >> List.map Tuple.second
                            )
               }
@@ -216,9 +217,17 @@ update s msg model =
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
-        Open subpage ->
+        Open subpage stackNum targetPath ->
             -- TODO try to pass the submodel along with the subpage (modify the Subpage Type to take the submodel)
-            ( { model | subpage = Just subpage }, Effect.none )
+            let
+                -- TODO improve
+                submodel =
+                    model.submodel
+
+                submodel2 =
+                    { submodel | stackNum = stackNum, targetPath = targetPath }
+            in
+            ( { model | subpage = Just subpage, submodel = submodel2 }, Effect.none )
 
         ClosePopup ->
             ( { model | subpage = Nothing }, Effect.none )
@@ -232,8 +241,35 @@ update s msg model =
                 Value.Select.Cancel ->
                     ( { model | subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
 
-                Value.Select.Selected type_ uuid name ->
-                    ( { model | submodel = submodel }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
+                Value.Select.Selected vs ->
+                    -- TODO try to merge with InputExpression
+                    case model.subpage of
+                        Just (PopupSelectValue onSelect) ->
+                            case vs of
+                                SelectedValue v ->
+                                    ( { model
+                                        | submodel = submodel
+                                        , subpage = Nothing
+                                        , stack =
+                                            List.indexedMap
+                                                (\i e ->
+                                                    if model.submodel.stackNum == i then
+                                                        -- update the expression with the subexpr at given path
+                                                        updateExpr model.submodel.targetPath [] (Leaf <| ObsValue vs) e
+
+                                                    else
+                                                        e
+                                                )
+                                                model.stack
+                                      }
+                                    , Effect.fromCmd (Cmd.map SubMsg subcmd)
+                                    )
+
+                                _ ->
+                                    ( model, Effect.none )
+
+                        _ ->
+                            ( { model | submodel = submodel, subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
 
                 _ ->
                     ( { model | submodel = submodel }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
@@ -381,33 +417,33 @@ expressionEditor s model =
 
 
 displayLine : Shared.Model -> Model -> Int -> Expression Observable -> Element (Msg submsg)
-displayLine s model stacknum expr =
+displayLine s model stackNum expr =
     row []
         [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
-            [ el [ alignLeft ] (button.primary (RemoveExpression stacknum) "×")
+            [ el [ alignLeft ] (button.primary (RemoveExpression stackNum) "×")
             ]
-        , editExpression s model stacknum ( [], expr )
+        , editExpression s model stackNum ( [], expr )
         ]
 
 
 editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element (Msg submsg)
-editExpression s model stacknum ( currentPath, expr ) =
+editExpression s model stackNum ( currentPath, expr ) =
     -- used to modify the expression and input default values
     case expr of
         Leaf obs ->
-            editObservable s model ( stacknum, currentPath ) obs
+            editObservable s model ( stackNum, currentPath ) obs
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), editExpression s model stacknum ( 1 :: currentPath, e ) ]
+            row [] [ text (Expression.uToShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", editExpression s model stacknum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stacknum ( 3 :: currentPath, e2 ), text " )" ]
+            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
 
 
 editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg submsg)
-editObservable s model ( stacknum, exprPath ) obs =
+editObservable s model ( stackNum, exprPath ) obs =
     case obs of
-        Number n ->
+        ObsNumber n ->
             row []
                 [ column [ Background.color color.item.background ]
                     [ row [ Background.color color.item.background ]
@@ -415,7 +451,7 @@ editObservable s model ( stacknum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | val = String.toFloat x |> Result.fromMaybe "invalid number" })
+                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | val = String.toFloat x |> Result.fromMaybe "invalid number" })
                                 , text = Result.map String.fromFloat n.val |> Result.withDefault ""
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Default value"
@@ -426,7 +462,7 @@ editObservable s model ( stacknum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | name = x })
+                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | name = x })
                                 , text = n.name
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Name"
@@ -438,7 +474,7 @@ editObservable s model ( stacknum, exprPath ) obs =
                         [ Input.text [ width (px 140) ]
                             { onChange =
                                 \x ->
-                                    InputExpression ( stacknum, exprPath ) (Leaf <| Number { n | desc = x })
+                                    InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | desc = x })
                             , text = n.desc
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Description"
@@ -448,24 +484,32 @@ editObservable s model ( stacknum, exprPath ) obs =
                     ]
                 ]
 
-        Value mv ->
+        ObsValue ov ->
             let
+                onSelect : ValueSelection -> Msg submsg
                 onSelect =
-                    InputExpression ( stacknum, exprPath ) << Leaf << Value
+                    InputExpression ( stackNum, exprPath ) << Leaf << ObsValue
             in
-            row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                [ button.primary (Open (PopupSelectValue onSelect)) (mv |> Maybe.map Uuid.toString |> Maybe.withDefault "Choose value...")
-                ]
+            case ov of
+                UndefinedValue ->
+                    row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) "Choose value..."
+                        ]
+
+                SelectedValue v ->
+                    row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) v.name
+                        ]
 
 
 buttonObservable : Observable -> Element (Msg submsg)
 buttonObservable obs =
     case obs of
-        Number n ->
-            button.primary (AddExpression <| Leaf (Number n)) (Observable.toString obs)
+        ObsNumber n ->
+            button.primary (AddExpression <| Leaf (ObsNumber n)) (Observable.toString obs)
 
-        Value v ->
-            button.primary (AddExpression <| Leaf (Value v)) (Observable.toString obs)
+        ObsValue v ->
+            button.primary (AddExpression <| Leaf (ObsValue v)) (Observable.toString obs)
 
 
 buttonUnaryOperator : Maybe (Expression Observable) -> Expression.UOperator -> Element (Msg submsg)

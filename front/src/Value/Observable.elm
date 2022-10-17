@@ -1,4 +1,4 @@
-module Value.Observable exposing (Observable(..), decoder, encode, eval, number, toString)
+module Value.Observable exposing (Observable(..), ValueSelection(..), createValue, decoder, encode, eval, number, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -9,41 +9,61 @@ import Type exposing (Type)
 type
     Observable
     -- a single number with a name and a value
-    = Number { name : String, desc : String, val : Result String Float }
+    = ObsNumber { name : String, desc : String, val : Result String Float }
       -- the value maybe existing for entity of gived type and uuid
-    | Value (Maybe Uuid)
+    | ObsValue ValueSelection
+
+
+type ValueSelection
+    = SelectedValue { what : Type, for : Uuid, name : String }
+    | UndefinedValue
+
+
+createValue : Type -> Uuid -> String -> ValueSelection
+createValue w f n =
+    SelectedValue { what = w, for = f, name = n }
+
+
+vToString : ValueSelection -> String
+vToString v =
+    case v of
+        SelectedValue _ ->
+            "SelectedValue"
+
+        UndefinedValue ->
+            "UndefinedValue"
 
 
 toString : Observable -> String
 toString obs =
     case obs of
-        Number _ ->
+        ObsNumber _ ->
             "Number"
 
-        Value _ ->
+        ObsValue _ ->
             "Value"
 
 
 eval : Observable -> Result String Float
 eval obs =
     case obs of
-        Number data ->
-            data.val
+        ObsNumber n ->
+            n.val
 
-        Value data ->
+        ObsValue v ->
             -- TODO lookup the value and evaluate the expression
             Ok 0
 
 
 number : String -> String -> Observable
 number name desc =
-    Number { name = name, desc = desc, val = Err (name ++ " is undefined") }
+    ObsNumber { name = name, desc = desc, val = Err (name ++ " is undefined") }
 
 
 encode : Observable -> Encode.Value
 encode obs =
     case obs of
-        Number n ->
+        ObsNumber n ->
             Encode.object
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
@@ -51,11 +71,23 @@ encode obs =
                 , ( "val", Result.map Encode.float n.val |> Result.withDefault Encode.null )
                 ]
 
-        Value mu ->
-            Encode.object
-                [ ( "type", Encode.string "Value" )
-                , ( "uuid", mu |> Maybe.map Uuid.encode |> Maybe.withDefault Encode.null )
-                ]
+        ObsValue v ->
+            case v of
+                SelectedValue value ->
+                    Encode.object
+                        [ ( "type", Encode.string <| vToString v )
+                        , ( "what", Type.encode value.what )
+                        , ( "for", Uuid.encode value.for )
+                        , ( "name", Encode.string value.name )
+                        ]
+
+                UndefinedValue ->
+                    Encode.object
+                        [ ( "type", Encode.string <| vToString v )
+                        , ( "what", Encode.null )
+                        , ( "for", Encode.null )
+                        , ( "name", Encode.null )
+                        ]
 
 
 decoder : Decoder Observable
@@ -65,14 +97,19 @@ decoder =
             (\t ->
                 case t of
                     "Number" ->
-                        Decode.map3 (\n d v -> Number { name = n, desc = d, val = v })
+                        Decode.map3 (\n d v -> ObsNumber { name = n, desc = d, val = v })
                             (Decode.field "name" Decode.string)
                             (Decode.field "desc" Decode.string)
                             (Decode.field "val" (Decode.nullable Decode.float |> Decode.andThen (Result.fromMaybe "f" >> Decode.succeed)))
 
-                    "Value" ->
-                        Decode.map Value
-                            (Decode.field "uuid" (Decode.nullable Uuid.decoder))
+                    "SelectedValue" ->
+                        Decode.map3 (\w f n -> ObsValue <| SelectedValue { what = w, for = f, name = n })
+                            (Decode.field "what" Type.decoder)
+                            (Decode.field "for" Uuid.decoder)
+                            (Decode.field "name" Decode.string)
+
+                    "UndefinedValue" ->
+                        Decode.succeed (ObsValue UndefinedValue)
 
                     _ ->
                         Decode.fail "Unknown Observable type"
