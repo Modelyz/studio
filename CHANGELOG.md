@@ -2,6 +2,11 @@
 
 [Back to app](../)
 
+## version 6 -- 2022-10-17
+
+* Improved UX of Scope selection
+* Allow to select another value to construct an expression
+
 ## version 5 -- 2022-10-07
 
 * Display new identifiers on existing entities
