@@ -97,7 +97,13 @@ inputObservable c s model targetPath obs v =
                     }
                 ]
 
-        ObsValue mu ->
+        ObsValue vs ->
             row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                [ text "TODO display value"
+                [ text <|
+                    case Observable.eval (ObsValue vs) of
+                        Err err ->
+                            err
+
+                        Ok r ->
+                            String.fromFloat r
                 ]

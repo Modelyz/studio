@@ -1,5 +1,6 @@
 module Value.Observable exposing (Observable(..), ValueSelection(..), createValue, decoder, encode, eval, number, toString)
 
+import Dict
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -50,9 +51,20 @@ eval obs =
         ObsNumber n ->
             n.val
 
-        ObsValue v ->
-            -- TODO lookup the value and evaluate the expression
-            Ok 0
+        ObsValue vs ->
+            case vs of
+                UndefinedValue ->
+                    Err "Undefined"
+
+                SelectedValue v ->
+                    {- allValues
+                       |> Dict.filter (\x -> x.what == v.what && x.for == v.for && x.name == v.name)
+                       |> Dict.values
+                       |> List.head
+                       |> Result.map
+                       |> Result.fromMaybe "Value not found"
+                    -}
+                    Err "TODO"
 
 
 number : String -> String -> Observable
