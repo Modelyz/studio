@@ -104,7 +104,7 @@ init s f =
                         |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
                 , values =
                     initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) Nothing a.uuid
-                        |> Dict.union (Value.fromUuid a.uuid s.state.values)
+                        |> Dict.union (Dict.filter (\_ i -> a.uuid == i.for) s.state.values)
                 , warning = ""
                 , step = Step.Step StepType
                 , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues ]

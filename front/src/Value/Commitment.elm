@@ -5,6 +5,10 @@ import Dict exposing (Dict)
 import Value.Rational as R exposing (Rational)
 
 
+
+-- TODO remove?
+
+
 type alias Contract =
     Dict String Commitment
 

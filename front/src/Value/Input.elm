@@ -52,7 +52,7 @@ inputValue c s model v =
                     none
 
                 _ ->
-                    eval v.expr
+                    eval s.state.values v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->
@@ -98,7 +98,7 @@ inputObservable c s model targetPath obs v =
         ObsValue vs ->
             row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                 [ text <|
-                    case oEval (ObsValue vs) of
+                    case oEval s.state.values (ObsValue vs) of
                         Err err ->
                             err
 

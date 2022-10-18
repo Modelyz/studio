@@ -1,8 +1,6 @@
 module Value.Value exposing (..)
 
 import Dict exposing (Dict)
-import Element exposing (..)
-import Element.Input as Input
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -48,21 +46,9 @@ type ValueSelection
     | UndefinedValue
 
 
-fromUuid : Uuid -> Dict String Value -> Dict String Value
-fromUuid uuid =
-    -- TODO remove
-    Dict.filter (\_ i -> uuid == i.for)
-
-
 compare : Value -> String
 compare v =
     Type.compare v.what ++ "/" ++ Uuid.toString v.for ++ "/" ++ v.name
-
-
-toValue : Value -> Result String Float
-toValue val =
-    -- TODO move to Rational
-    eval val.expr
 
 
 encode : Value -> Encode.Value
@@ -172,18 +158,18 @@ neg e =
     Unary Neg e
 
 
-eval : Expression -> Result String Float
-eval expr =
+eval : Dict String Value -> Expression -> Result String Float
+eval allVals expr =
     case expr of
         Leaf obs ->
-            oEval obs
+            oEval allVals obs
 
         Unary op e ->
-            Result.map (uEval op) (eval e)
+            Result.map (uEval op) (eval allVals e)
 
         Binary op e f ->
             -- the error is displayed only for the 1st eval even if both fail
-            bEval op (eval e) (eval f)
+            bEval op (eval allVals e) (eval allVals f)
 
 
 eEncode : Expression -> Encode.Value
@@ -339,8 +325,9 @@ toString obs =
             "Value"
 
 
-oEval : Observable -> Result String Float
-oEval obs =
+oEval : Dict String Value -> Observable -> Result String Float
+oEval allVals obs =
+    -- TODO move to Rational (or is a rational an expression??)
     case obs of
         ObsNumber n ->
             n.val
@@ -351,14 +338,12 @@ oEval obs =
                     Err "Undefined"
 
                 SelectedValue w f n ->
-                    {- allValues
-                       |> Dict.filter (\x -> x.what == v.what && x.for == v.for && x.name == v.name)
-                       |> Dict.values
-                       |> List.head
-                       |> Result.map
-                       |> Result.fromMaybe "Value not found"
-                    -}
-                    Err "TODO"
+                    allVals
+                        |> Dict.filter (\_ x -> x.what == w && x.for == f && x.name == n)
+                        |> Dict.values
+                        |> List.head
+                        |> Result.fromMaybe "The value does not exist anymore"
+                        |> Result.andThen (.expr >> eval allVals)
 
 
 number : String -> String -> Observable
