@@ -96,7 +96,7 @@ inputObservable c s model targetPath obs v =
                 ]
 
         ObsValue vs ->
-            row [ Background.color color.item.background, height fill ]
+            row [ height fill ]
                 [ text <|
                     case oEval s.state.values (ObsValue vs) of
                         Err err ->
