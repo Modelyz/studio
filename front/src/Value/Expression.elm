@@ -12,12 +12,10 @@ import Value.Observable as Observable exposing (Observable(..))
 import Value.Rational as R exposing (Rational(..))
 
 
-type
-    Expression a
-    -- a is commonly an Obs
-    = Leaf a
-    | Unary UOperator (Expression a)
-    | Binary BOperator (Expression a) (Expression a)
+type Expression
+    = Leaf Observable
+    | Unary UOperator Expression
+    | Binary BOperator Expression Expression
 
 
 type UOperator
@@ -25,7 +23,7 @@ type UOperator
     | Inv
 
 
-updateExpr : List Int -> List Int -> Expression Observable -> Expression Observable -> Expression Observable
+updateExpr : List Int -> List Int -> Expression -> Expression -> Expression
 updateExpr targetPath currentPath subExpr expr =
     -- we replace the expr at the given path
     case expr of
@@ -108,22 +106,22 @@ or n d c =
     Or { name = n, desc = d, choice = Result.fromMaybe "No choice made" c }
 
 
-number : Expression Observable
+number : Expression
 number =
     Leaf <| Observable.number "truc" "machin"
 
 
-add : Expression a -> Expression a -> Expression a
+add : Expression -> Expression -> Expression
 add e f =
     Binary Add e f
 
 
-neg : Expression a -> Expression a
+neg : Expression -> Expression
 neg e =
     Unary Neg e
 
 
-eval : Expression Observable -> Result String Float
+eval : Expression -> Result String Float
 eval expr =
     case expr of
         Leaf obs ->
@@ -137,20 +135,7 @@ eval expr =
             bEval op (eval e) (eval f)
 
 
-map : (Observable -> Float) -> Expression Observable -> Expression Float
-map f expr =
-    case expr of
-        Leaf o ->
-            Leaf (f o)
-
-        Unary op expr1 ->
-            Unary op (map f expr1)
-
-        Binary op expr1 expr2 ->
-            Binary op (map f expr1) (map f expr2)
-
-
-encode : Expression Observable -> Encode.Value
+encode : Expression -> Encode.Value
 encode e =
     case e of
         Leaf o ->
@@ -175,7 +160,7 @@ encode e =
                 ]
 
 
-decoder : Decoder (Expression Observable)
+decoder : Decoder Expression
 decoder =
     Decode.field "type" Decode.string
         |> Decode.andThen

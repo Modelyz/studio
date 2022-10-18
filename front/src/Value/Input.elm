@@ -67,7 +67,7 @@ inputValue c s model v =
         ]
 
 
-inputExpression : Config msg -> Shared.Model -> Model a -> ( List Int, Expression Observable ) -> Value -> Element msg
+inputExpression : Config msg -> Shared.Model -> Model a -> ( List Int, Expression ) -> Value -> Element msg
 inputExpression c s model ( currentPath, expr ) v =
     -- used to input values into an expression
     case expr of

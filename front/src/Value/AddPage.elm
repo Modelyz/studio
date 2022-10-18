@@ -31,8 +31,8 @@ type Msg submsg
     = InputName String
     | InputScope Scope
     | InputMandatory Bool
-    | AddExpression (Expression Observable)
-    | InputExpression ( Int, List Int ) (Expression Observable)
+    | AddExpression Expression
+    | InputExpression ( Int, List Int ) Expression
     | UnaryOperator Expression.UOperator
     | BinaryOperator Expression.BOperator
     | RemoveExpression Int
@@ -53,7 +53,7 @@ type alias Model =
     { route : Route
     , name : String
     , mandatory : Bool
-    , stack : List (Expression Observable)
+    , stack : List Expression
     , scope : Scope
     , subpage : Maybe (Popup Value.Select.Msg)
     , submodel : Value.Select.Model
@@ -147,12 +147,12 @@ init s f =
         |> Effect.with (closeMenu f s.menu)
 
 
-applyU : Expression.UOperator -> List (Expression Observable) -> List (Expression Observable)
+applyU : Expression.UOperator -> List Expression -> List Expression
 applyU o stack =
     Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
 
 
-applyB : Expression.BOperator -> List (Expression Observable) -> List (Expression Observable)
+applyB : Expression.BOperator -> List Expression -> List Expression
 applyB o stack =
     Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
@@ -380,7 +380,7 @@ buttonUndo model =
         button.special Undo "Undo"
 
 
-undo : List (Expression Observable) -> List (Expression Observable)
+undo : List Expression -> List Expression
 undo stack =
     (List.head stack
         |> Maybe.map
@@ -416,7 +416,7 @@ expressionEditor s model =
         ]
 
 
-displayLine : Shared.Model -> Model -> Int -> Expression Observable -> Element (Msg submsg)
+displayLine : Shared.Model -> Model -> Int -> Expression -> Element (Msg submsg)
 displayLine s model stackNum expr =
     row []
         [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
@@ -426,7 +426,7 @@ displayLine s model stackNum expr =
         ]
 
 
-editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression Observable ) -> Element (Msg submsg)
+editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression ) -> Element (Msg submsg)
 editExpression s model stackNum ( currentPath, expr ) =
     -- used to modify the expression and input default values
     case expr of
@@ -512,13 +512,13 @@ buttonObservable obs =
             button.primary (AddExpression <| Leaf (ObsValue v)) (Observable.toString obs)
 
 
-buttonUnaryOperator : Maybe (Expression Observable) -> Expression.UOperator -> Element (Msg submsg)
+buttonUnaryOperator : Maybe Expression -> Expression.UOperator -> Element (Msg submsg)
 buttonUnaryOperator me o =
     Maybe.map (\e -> button.primary (UnaryOperator o) (Expression.uToString o)) me
         |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (Expression.uToString o))
 
 
-buttonBinaryOperator : Maybe ( Expression Observable, Expression Observable ) -> Expression.BOperator -> Element (Msg submsg)
+buttonBinaryOperator : Maybe ( Expression, Expression ) -> Expression.BOperator -> Element (Msg submsg)
 buttonBinaryOperator mt o =
     Maybe.map (\t -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
         |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (Expression.bToString o))

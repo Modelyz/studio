@@ -6,14 +6,13 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 import Value.Expression as Expression exposing (Expression)
-import Value.Observable exposing (Observable)
 
 
 type alias Value =
     { what : Type
     , for : Uuid
     , name : String
-    , expr : Expression Observable
+    , expr : Expression
     }
 
 

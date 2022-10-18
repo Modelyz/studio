@@ -16,7 +16,7 @@ import Value.Value as Value exposing (Value)
 type alias ValueType =
     -- this is the definition of a value field
     { name : String
-    , expr : Expression Observable
+    , expr : Expression
     , scope : Scope
     , mandatory : Bool
     }
