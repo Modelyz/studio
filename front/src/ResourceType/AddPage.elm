@@ -23,6 +23,10 @@ import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import Type
+import Typed.Type as TType
+import Value.Input exposing (inputValues)
+import Value.Value as Value exposing (Value)
+import Value.ValueType exposing (initValues)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
@@ -39,6 +43,7 @@ type alias Model =
     , seed : Seed
     , flatselect : Maybe ResourceType
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , oldGroups : Dict String Group
     , groups : Dict String Group
     , warning : String
@@ -50,6 +55,7 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepValues
     | StepGroups
 
 
@@ -57,6 +63,7 @@ type Msg
     = InputType (Maybe ResourceType)
     | InputIdentifier Identifier
     | InputGroups (Dict String Group)
+    | InputValue Value
     | Added
     | Button Step.Msg
 
@@ -107,11 +114,14 @@ init s f =
                 , identifiers =
                     initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing at.uuid
                         |> Dict.union (Identifier.fromUuid at.uuid s.state.identifiers)
+                , values =
+                    initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.HType HType.ResourceType) Nothing at.uuid
+                        |> Dict.union (Dict.filter (\_ i -> at.uuid == i.for) s.state.values)
                 , oldGroups = oldGroups
                 , groups = oldGroups
                 , warning = ""
                 , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
                 }
             )
         |> Maybe.withDefault
@@ -120,6 +130,7 @@ init s f =
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing newUuid
+            , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.HType HType.ResourceType) Nothing newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -144,6 +155,9 @@ update s msg model =
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
+        InputValue v ->
+            ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
+
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
 
@@ -166,8 +180,8 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedResourceType at
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.AT at) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.AT at) g) (Dict.values removedGroups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.RT at) g) (Dict.values addedGroups)
+                                ++ List.map (\g -> Message.Ungrouped (Groupable.RT at) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -193,6 +207,9 @@ checkStep model =
             Ok ()
 
         Step StepIdentifiers ->
+            Ok ()
+
+        Step StepValues ->
             Ok ()
 
         Step StepGroups ->
@@ -255,6 +272,19 @@ viewContent model s =
                             model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.ResourceType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.ResourceType))
                     in
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
+
+                Step.Step StepValues ->
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
+                    in
+                    inputValues
+                        { onEnter = Step.nextMsg model Button Step.NextPage Added
+                        , onInput = InputValue
+                        }
+                        s
+                        model
+                        scope
     in
     floatingContainer s
         "Adding a ResourceType"

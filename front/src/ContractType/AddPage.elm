@@ -166,8 +166,8 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Message.AddedContractType at
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.AT at) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.AT at) g) (Dict.values removedGroups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.CnT at) g) (Dict.values addedGroups)
+                                ++ List.map (\g -> Message.Ungrouped (Groupable.CnT at) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]

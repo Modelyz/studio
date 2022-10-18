@@ -59,7 +59,7 @@ inputValue c s model v =
                                         text <| "= " ++ String.fromFloat val
 
                                     Err err ->
-                                        text <| "error: " ++ err
+                                        text <| "= error : " ++ err
                            )
             ]
         ]
@@ -95,13 +95,16 @@ inputObservable c s model targetPath obs v =
                     }
                 ]
 
-        ObsValue vs ->
-            row [ height fill ]
+        ObsValue (SelectedValue what for name) ->
+            row [ height fill, htmlAttribute <| Attr.title name ]
                 [ text <|
-                    case oEval s.state.values (ObsValue vs) of
+                    case oEval s.state.values (ObsValue (SelectedValue what for name)) of
                         Err err ->
                             err
 
                         Ok r ->
                             String.fromFloat r
                 ]
+
+        ObsValue UndefinedValue ->
+            row [ height fill ] [ text "Unselected value" ]
