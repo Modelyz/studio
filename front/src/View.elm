@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, adaptRF, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -302,3 +302,9 @@ viewSelector all selected change =
 
 edges =
     { top = 0, right = 0, bottom = 0, left = 0 }
+
+
+adaptRF : Result x Float -> Length
+adaptRF r =
+    -- adapt the input form width to the content
+    px <| 50 + (r |> Result.map (String.fromFloat >> String.length >> (*) 10) |> Result.withDefault 0)

@@ -83,8 +83,8 @@ inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observabl
 inputObservable c s model targetPath obs v =
     case obs of
         ObsNumber n ->
-            row [ Background.color color.item.background, Font.size size.text.small ]
-                [ Input.text [ width (px 70), htmlAttribute <| Attr.title n.desc ]
+            row [ Background.color color.item.background ]
+                [ Input.text [ width <| adaptRF n.val, htmlAttribute <| Attr.title n.desc ]
                     { onChange =
                         \x ->
                             c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | val = String.toFloat x |> Result.fromMaybe "invalid number" }) v.expr }
@@ -96,7 +96,7 @@ inputObservable c s model targetPath obs v =
                 ]
 
         ObsValue vs ->
-            row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+            row [ Background.color color.item.background, height fill ]
                 [ text <|
                     case oEval s.state.values (ObsValue vs) of
                         Err err ->
