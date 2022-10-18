@@ -8,9 +8,7 @@ import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Type exposing (Type)
 import Typed.Typed exposing (Typed)
-import Value.Expression as Expression exposing (Expression)
-import Value.Observable exposing (Observable)
-import Value.Value as Value exposing (Value)
+import Value.Value as Value exposing (..)
 
 
 type alias ValueType =
@@ -52,7 +50,7 @@ encode : ValueType -> Encode.Value
 encode vt =
     Encode.object
         [ ( "name", Encode.string vt.name )
-        , ( "expr", Expression.encode vt.expr )
+        , ( "expr", eEncode vt.expr )
         , ( "scope", Scope.encode vt.scope )
         , ( "mandatory", Encode.bool vt.mandatory )
         ]
@@ -62,6 +60,6 @@ decoder : Decoder ValueType
 decoder =
     Decode.map4 ValueType
         (Decode.field "name" Decode.string)
-        (Decode.field "expr" Expression.decoder)
+        (Decode.field "expr" eDecoder)
         (Decode.field "scope" Scope.decoder)
         (Decode.field "mandatory" Decode.bool)

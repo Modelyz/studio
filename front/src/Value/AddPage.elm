@@ -16,10 +16,9 @@ import Shared
 import Spa.Page
 import Task
 import Type exposing (Type)
-import Value.Expression as Expression exposing (Expression(..), updateExpr)
-import Value.Observable as Observable exposing (Observable(..), ValueSelection(..), createValue)
 import Value.Rational exposing (Rational(..))
 import Value.Select
+import Value.Value exposing (..)
 import Value.ValueType exposing (ValueType)
 import View exposing (..)
 import View.Smallcard exposing (viewSmallCard)
@@ -33,8 +32,8 @@ type Msg submsg
     | InputMandatory Bool
     | AddExpression Expression
     | InputExpression ( Int, List Int ) Expression
-    | UnaryOperator Expression.UOperator
-    | BinaryOperator Expression.BOperator
+    | UnaryOperator UOperator
+    | BinaryOperator BOperator
     | RemoveExpression Int
     | Undo
     | SubMsg submsg
@@ -147,12 +146,12 @@ init s f =
         |> Effect.with (closeMenu f s.menu)
 
 
-applyU : Expression.UOperator -> List Expression -> List Expression
+applyU : UOperator -> List Expression -> List Expression
 applyU o stack =
     Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
 
 
-applyB : Expression.BOperator -> List Expression -> List Expression
+applyB : BOperator -> List Expression -> List Expression
 applyB o stack =
     Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
@@ -246,7 +245,8 @@ update s msg model =
                     case model.subpage of
                         Just (PopupSelectValue onSelect) ->
                             case vs of
-                                SelectedValue v ->
+                                SelectedValue _ _ _ ->
+                                    -- TODO we don't use the selected value?
                                     ( { model
                                         | submodel = submodel
                                         , subpage = Nothing
@@ -406,9 +406,9 @@ expressionEditor s model =
         [ -- display buttons
           wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (buttonUndo model
-                :: List.map buttonObservable Expression.allObs
-                ++ List.map (buttonUnaryOperator (List.head model.stack)) Expression.allUnary
-                ++ List.map (buttonBinaryOperator (Maybe.map2 Tuple.pair (List.head model.stack) ((List.tail >> Maybe.andThen List.head) model.stack))) Expression.allBinary
+                :: List.map buttonObservable allObs
+                ++ List.map (buttonUnaryOperator (List.head model.stack)) allUnary
+                ++ List.map (buttonBinaryOperator (Maybe.map2 Tuple.pair (List.head model.stack) ((List.tail >> Maybe.andThen List.head) model.stack))) allBinary
             )
         , -- display the stack
           column [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
@@ -434,10 +434,10 @@ editExpression s model stackNum ( currentPath, expr ) =
             editObservable s model ( stackNum, currentPath ) obs
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
+            row [] [ text (uToShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
+            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| bToShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
 
 
 editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg submsg)
@@ -496,9 +496,9 @@ editObservable s model ( stackNum, exprPath ) obs =
                         [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) "Choose value..."
                         ]
 
-                SelectedValue v ->
+                SelectedValue _ _ name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) v.name
+                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) name
                         ]
 
 
@@ -506,19 +506,19 @@ buttonObservable : Observable -> Element (Msg submsg)
 buttonObservable obs =
     case obs of
         ObsNumber n ->
-            button.primary (AddExpression <| Leaf (ObsNumber n)) (Observable.toString obs)
+            button.primary (AddExpression <| Leaf (ObsNumber n)) (toString obs)
 
         ObsValue v ->
-            button.primary (AddExpression <| Leaf (ObsValue v)) (Observable.toString obs)
+            button.primary (AddExpression <| Leaf (ObsValue v)) (toString obs)
 
 
-buttonUnaryOperator : Maybe Expression -> Expression.UOperator -> Element (Msg submsg)
+buttonUnaryOperator : Maybe Expression -> UOperator -> Element (Msg submsg)
 buttonUnaryOperator me o =
-    Maybe.map (\e -> button.primary (UnaryOperator o) (Expression.uToString o)) me
-        |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (Expression.uToString o))
+    Maybe.map (\e -> button.primary (UnaryOperator o) (uToString o)) me
+        |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (uToString o))
 
 
-buttonBinaryOperator : Maybe ( Expression, Expression ) -> Expression.BOperator -> Element (Msg submsg)
+buttonBinaryOperator : Maybe ( Expression, Expression ) -> BOperator -> Element (Msg submsg)
 buttonBinaryOperator mt o =
-    Maybe.map (\t -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
-        |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (Expression.bToString o))
+    Maybe.map (\t -> button.primary (BinaryOperator o) (bToString o)) mt
+        |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (bToString o))

@@ -9,7 +9,7 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Scope.Select exposing (selectScope)
 import Shared
 import Type exposing (Type)
-import Value.Observable exposing (ValueSelection(..), createValue)
+import Value.Value exposing (ValueSelection(..))
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
@@ -68,7 +68,7 @@ update s msg model =
                 UndefinedValue ->
                     ( model, Cmd.none )
 
-                SelectedValue _ ->
+                SelectedValue _ _ _ ->
                     ( model, Cmd.none )
 
 
@@ -80,7 +80,7 @@ view s model =
             [ button.secondary Cancel "Cancel"
             , case model.selection of
                 ScopeAndValue (IsItem type_ uuid) name ->
-                    button.primary (model.onSelect <| createValue type_ uuid name) "Choose"
+                    button.primary (model.onSelect <| SelectedValue type_ uuid name) "Choose"
 
                 _ ->
                     button.disabled "Please select a value" "Choose"

@@ -8,9 +8,7 @@ import Element.Input as Input
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
-import Value.Expression as Expression exposing (Expression(..), updateExpr)
-import Value.Observable as Observable exposing (Observable(..))
-import Value.Value as Value exposing (Value)
+import Value.Value as Value exposing (..)
 import View exposing (..)
 import View.Style exposing (..)
 
@@ -54,7 +52,7 @@ inputValue c s model v =
                     none
 
                 _ ->
-                    Expression.eval v.expr
+                    eval v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->
@@ -75,10 +73,10 @@ inputExpression c s model ( currentPath, expr ) v =
             inputObservable c s model currentPath obs v
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), inputExpression c s model ( 1 :: currentPath, e ) v ]
+            row [] [ text (uToShortString o), inputExpression c s model ( 1 :: currentPath, e ) v ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s model ( 2 :: currentPath, e1 ) v, text <| Expression.bToShortString o, inputExpression c s model ( 3 :: currentPath, e2 ) v, text " )" ]
+            row [] [ text "( ", inputExpression c s model ( 2 :: currentPath, e1 ) v, text <| bToShortString o, inputExpression c s model ( 3 :: currentPath, e2 ) v, text " )" ]
 
 
 inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observable -> Value -> Element msg
@@ -100,7 +98,7 @@ inputObservable c s model targetPath obs v =
         ObsValue vs ->
             row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                 [ text <|
-                    case Observable.eval (ObsValue vs) of
+                    case oEval (ObsValue vs) of
                         Err err ->
                             err
 

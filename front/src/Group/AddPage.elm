@@ -22,9 +22,7 @@ import Spa.Page
 import Type
 import Typed.Type as TType
 import Typed.Typed as T
-import Value.Expression exposing (Expression)
 import Value.Input exposing (inputValues)
-import Value.Observable exposing (Observable)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
