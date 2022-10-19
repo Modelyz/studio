@@ -138,7 +138,7 @@ init s f =
             , flatselect = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes hereType Nothing newUuid
+            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid
             , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
@@ -161,7 +161,7 @@ init s f =
                         H.find (allH s) t.type_
                 in
                 { adding
-                    | flatselect = H.find s.state.processTypes t.type_
+                    | flatselect = H.find (allH s) t.type_
                     , uuid = t.uuid
                     , identifiers =
                         initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid
