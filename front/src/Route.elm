@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectAdd, redirectParent, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSub, toRoute, toString)
 
 import Browser.Navigation as Nav
 import Url exposing (Url, percentEncode)
@@ -399,7 +399,7 @@ redirectParent navkey route =
     ("/" ++ firstSegment route) |> Nav.pushUrl navkey
 
 
-redirectAdd : String -> Nav.Key -> Route -> Cmd msg
-redirectAdd path navkey route =
-    -- redirect to a subpath -- TODO rename to redirectSub
+redirectSub : String -> Nav.Key -> Route -> Cmd msg
+redirectSub path navkey route =
+    -- redirect to a subpath
     toString route ++ "/" ++ path |> Nav.pushUrl navkey
