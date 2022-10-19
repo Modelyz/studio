@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSub, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, toRoute, toString)
 
 import Browser.Navigation as Nav
 import Url exposing (Url, percentEncode)
@@ -162,10 +162,10 @@ routeParser =
         , map AgentAdd (s "agent" </> s "add")
         , map AgentTypeList (s "agent-type" </> s "list")
         , map AgentList (s "agent" </> s "list")
-        , map AgentTypeView (s "agent-type" </> encodedString)
-        , map AgentView (s "agent" </> encodedString)
         , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
         , map AgentEdit (s "agent" </> s "edit" </> encodedString)
+        , map AgentTypeView (s "agent-type" </> encodedString)
+        , map AgentView (s "agent" </> encodedString)
 
         -- configure display
         , map ConfigurationList (s "config" </> s "list")
@@ -387,6 +387,11 @@ firstSegment =
     toString >> String.split "/" >> List.drop 1 >> List.head >> Maybe.withDefault "#"
 
 
+upper : Route -> String
+upper =
+    toString >> String.split "/" >> List.reverse >> List.drop 1 >> List.reverse >> String.join "/"
+
+
 redirect : Nav.Key -> Route -> Cmd msg
 redirect navkey =
     -- redirect to the specified route
@@ -403,3 +408,9 @@ redirectSub : String -> Nav.Key -> Route -> Cmd msg
 redirectSub path navkey route =
     -- redirect to a subpath
     toString route ++ "/" ++ path |> Nav.pushUrl navkey
+
+
+redirectSibling : String -> Nav.Key -> Route -> Cmd msg
+redirectSibling path navkey route =
+    -- redirect to a path at the same level
+    upper route ++ "/" ++ path |> Nav.pushUrl navkey

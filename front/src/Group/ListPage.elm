@@ -10,7 +10,7 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSub)
+import Route exposing (Route, redirectSibling)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -71,10 +71,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedGroup uuid )
 
         Add ->
-            ( model, redirectSub "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectSub (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectSibling (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
