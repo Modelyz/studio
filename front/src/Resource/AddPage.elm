@@ -1,7 +1,5 @@
 module Resource.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -18,6 +16,8 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -170,7 +170,7 @@ init s f =
                     , groups = oldGroups
                     , warning = ""
                     , step = Step.Step StepType
-                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
                 }
             )
         |> Maybe.withDefault adding

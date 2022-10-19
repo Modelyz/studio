@@ -51,6 +51,11 @@ compare v =
     Type.compare v.what ++ "/" ++ Uuid.toString v.for ++ "/" ++ v.name
 
 
+fromUuid : Uuid -> Dict String Value -> Dict String Value
+fromUuid uuid =
+    Dict.filter (\_ v -> uuid == v.for)
+
+
 encode : Value -> Encode.Value
 encode v =
     Encode.object
