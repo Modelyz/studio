@@ -311,12 +311,12 @@ viewContent model s =
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Choose the type of the new Group:"
+                        , h2 "Choose the type of the new Event:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
                                 |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Group Types yet)")
+                                |> withDefaultContent (p "(There are no Event Types yet)")
                             )
                         ]
 

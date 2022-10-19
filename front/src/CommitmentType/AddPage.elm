@@ -111,10 +111,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ResourceTypeAdd ->
+        Route.CommitmentTypeAdd ->
             Just { route = route, uuid = Nothing }
 
-        Route.ResourceTypeEdit uuid ->
+        Route.CommitmentTypeEdit uuid ->
             Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->

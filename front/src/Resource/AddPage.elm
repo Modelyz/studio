@@ -1,5 +1,7 @@
 module Resource.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -16,8 +18,6 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
@@ -170,7 +170,7 @@ init s f =
                     , groups = oldGroups
                     , warning = ""
                     , step = Step.Step StepType
-                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
                 }
             )
         |> Maybe.withDefault adding
@@ -299,12 +299,12 @@ viewContent model s =
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Choose the type of the new Group:"
+                        , h2 "Choose the type of the new Resource:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
                                 |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Group Types yet)")
+                                |> withDefaultContent (p "(There are no Resource Types yet)")
                             )
                         ]
 

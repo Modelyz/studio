@@ -1,6 +1,7 @@
 module Event.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
 import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -15,9 +16,23 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Typed.Typed as T
+import Value.Input exposing (inputValues)
+import Value.Valuable exposing (withValues)
+import Value.Value as Value exposing (Value)
+import Value.ValueType exposing (initValues)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
+
+
+allT : Shared.Model -> Dict String Event
+allT =
+    .state >> .events
+
+
+allH : Shared.Model -> Dict String EventType
+allH =
+    .state >> .eventTypes
 
 
 type alias Flags =
@@ -60,13 +75,13 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
-        mevent =
-            f.uuid |> Maybe.andThen (T.find s.state.events)
+        mt =
+            f.uuid |> Maybe.andThen (T.find (allT s))
     in
     ( { route = f.route
-      , event = mevent
+      , event = mt
       , groups =
-            mevent
+            mt
                 |> Maybe.map
                     (\event ->
                         s.state.grouped
@@ -110,22 +125,27 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
                     , t.type_
-                        |> H.find s.state.eventTypes
-                        |> Maybe.map (withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                        |> Maybe.map (hWithDisplay s.state.events s.state.eventTypes s.state.configs SmallcardTitle)
+                        |> H.find (allH s)
+                        |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                        |> Maybe.map (hWithDisplay (allT s) (allH s) s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
                         |> Maybe.withDefault "(none)"
                         |> text
                     , h2 "Identifiers:"
                     , t
-                        |> withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers
+                        |> withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers
+                        |> .identifiers
+                        |> displayIdentifierDict "(none)"
+                    , h2 "Values:"
+                    , t
+                        |> withValues (allT s) (allH s) s.state.valueTypes s.state.values
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
+                        |> List.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
                         |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

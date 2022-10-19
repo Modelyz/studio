@@ -1,5 +1,6 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Process.Process exposing (Process)
 import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -14,9 +15,23 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Value.Input exposing (inputValues)
+import Value.Valuable exposing (withValues)
+import Value.Value as Value exposing (Value)
+import Value.ValueType exposing (initValues)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
+
+
+allT : Shared.Model -> Dict String Process
+allT =
+    .state >> .processes
+
+
+allH : Shared.Model -> Dict String ProcessType
+allH =
+    .state >> .processTypes
 
 
 type alias Flags =
@@ -119,6 +134,11 @@ viewContent model s =
                     , h2 "Identifiers:"
                     , h
                         |> withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers
+                        |> .identifiers
+                        |> displayIdentifierDict "(none)"
+                    , h2 "Values:"
+                    , h
+                        |> withValues (allT s) (allH s) s.state.valueTypes s.state.values
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Groups:"
