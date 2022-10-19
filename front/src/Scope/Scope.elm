@@ -159,104 +159,96 @@ getUpperList allT allH scope oldList =
 
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool
-containsScope allT allH ins out =
-    let
-        inscope =
-            Debug.log "inscope" ins
-
-        outscope =
-            Debug.log "outscope" out
-    in
+containsScope allT allH inscope outscope =
     -- definitely need review
-    Debug.log "RESULT" <|
-        case outscope of
-            Empty ->
-                False
+    case outscope of
+        Empty ->
+            False
 
-            IsItem outType outUuid ->
-                case outType of
-                    Type.TType _ ->
-                        case inscope of
-                            IsItem inType inUuid ->
-                                outType == inType && outUuid == inUuid
+        IsItem outType outUuid ->
+            case outType of
+                Type.TType _ ->
+                    case inscope of
+                        IsItem inType inUuid ->
+                            outType == inType && outUuid == inUuid
 
-                            And s1 s2 ->
-                                containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                        And s1 s2 ->
+                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                            Or s1 s2 ->
-                                containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                        Or s1 s2 ->
+                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                            _ ->
-                                False
+                        _ ->
+                            False
 
-                    Type.HType _ ->
-                        case inscope of
-                            IsItem inType inUuid ->
-                                outType == inType && outUuid == inUuid
+                Type.HType _ ->
+                    case inscope of
+                        IsItem inType inUuid ->
+                            outType == inType && outUuid == inUuid
 
-                            And s1 s2 ->
-                                containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                        And s1 s2 ->
+                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                            Or s1 s2 ->
-                                containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                        Or s1 s2 ->
+                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                            _ ->
-                                False
+                        _ ->
+                            False
 
-            HasType outType ->
-                case inscope of
-                    IsItem inType _ ->
-                        outType == inType
+        HasType outType ->
+            case inscope of
+                IsItem inType _ ->
+                    outType == inType
 
-                    HasType inType ->
-                        outType == inType
+                HasType inType ->
+                    outType == inType
 
-                    HasUserType inType _ ->
-                        inType == outType
+                HasUserType inType _ ->
+                    inType == outType
 
-                    And s1 s2 ->
-                        containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                And s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                    Or s1 s2 ->
-                        containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                Or s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                    _ ->
-                        False
+                _ ->
+                    False
 
-            HasUserType outType outUuid ->
-                case inscope of
-                    IsItem inType inUuid ->
-                        (inType == outType)
-                            && (Maybe.map3 T.isAscendantOf (T.find allT inUuid) (Just allH) (H.find allH outUuid)
-                                    |> Maybe.withDefault False
-                               )
+        HasUserType outType outUuid ->
+            case inscope of
+                IsItem inType inUuid ->
+                    (inType == outType)
+                        && (Maybe.map3 T.isAscendantOf (T.find allT inUuid) (Just allH) (H.find allH outUuid)
+                                |> Maybe.withDefault False
+                           )
 
-                    HasUserType inType inUuid ->
-                        (inType == outType)
-                            && (Maybe.map3 H.isAscendantOf (H.find allH inUuid) (Just allH) (H.find allH outUuid)
-                                    |> Maybe.withDefault False
-                               )
+                HasUserType inType inUuid ->
+                    (inType == outType)
+                        && (Maybe.map3 H.isAscendantOf (H.find allH inUuid) (Just allH) (H.find allH outUuid)
+                                |> Maybe.withDefault False
+                           )
 
-                    And s1 s2 ->
-                        containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                And s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                    Or s1 s2 ->
-                        containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+                Or s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
 
-                    _ ->
-                        False
+                _ ->
+                    False
 
-            And s1 s2 ->
-                containsScope allT allH inscope s1 && containsScope allT allH inscope s2
+        And s1 s2 ->
+            containsScope allT allH inscope s1 && containsScope allT allH inscope s2
 
-            Or s1 s2 ->
-                containsScope allT allH inscope s1 || containsScope allT allH inscope s2
+        Or s1 s2 ->
+            containsScope allT allH inscope s1 || containsScope allT allH inscope s2
 
-            Not s ->
-                not (containsScope allT allH inscope s)
+        Not s ->
+            not (containsScope allT allH inscope s)
 
-            _ ->
-                False
+        _ ->
+            False
 
 
 containsItem : Scope -> Item a -> Bool

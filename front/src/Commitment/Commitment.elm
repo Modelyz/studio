@@ -22,11 +22,11 @@ type alias Commitment =
     , values : Dict String Value
     , groups : Dict String Group
     , display : Dict String String
-    , qty : Rational
 
+    --, qty : Rational
     --        , rtype: ResourceType
-    , provider : Uuid
-    , receiver : Uuid
+    --, provider : Uuid
+    --, receiver : Uuid
     }
 
 
@@ -42,17 +42,22 @@ encode c =
 
 decoder : Decode.Decoder Commitment
 decoder =
-    Decode.map7
-        (\what uuid type_ when qty provider receiver ->
-            Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty Dict.empty qty provider receiver
+    Decode.map4
+        (\what uuid type_ when ->
+            {- qty provider receiver -}
+            Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty Dict.empty
+         --qty provider receiver
         )
         (Decode.field "what" Type.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.field "qty" Rational.decoder)
-        (Decode.field "provider" Uuid.decoder)
-        (Decode.field "receiver" Uuid.decoder)
+
+
+
+--(Decode.field "qty" Rational.decoder)
+--(Decode.field "provider" Uuid.decoder)
+--(Decode.field "receiver" Uuid.decoder)
 
 
 compare : Commitment -> String

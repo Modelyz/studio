@@ -1,5 +1,7 @@
 module Process.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -15,21 +17,56 @@ import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
+import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
 import Typed.Typed as T
+import Value.Input exposing (inputValues)
+import Value.Value as Value exposing (Value)
+import Value.ValueType exposing (initValues)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
+
+
+type alias TypedType =
+    Process
+
+
+type alias HierarchicType =
+    ProcessType
+
+
+tType =
+    Process
+
+
+hereType : Type.Type
+hereType =
+    Type.TType TType.Process
+
+
+mkMessage : TypedType -> Message.Payload
+mkMessage =
+    Message.AddedProcess
+
+
+allT : Shared.Model -> Dict String Process
+allT =
+    .state >> .processes
+
+
+allH : Shared.Model -> Dict String ProcessType
+allH =
+    .state >> .processTypes
 
 
 type alias Flags =
@@ -40,8 +77,9 @@ type alias Model =
     { route : Route
     , uuid : Uuid
     , seed : Seed
-    , flatselect : Maybe ProcessType
+    , flatselect : Maybe HierarchicType
     , identifiers : Dict String Identifier
+    , values : Dict String Value
     , oldGroups : Dict String Group
     , groups : Dict String Group
     , warning : String
@@ -53,12 +91,14 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepValues
     | StepGroups
 
 
 type Msg
-    = InputType (Maybe ProcessType)
+    = InputType (Maybe HierarchicType)
     | InputIdentifier Identifier
+    | InputValue Value
     | InputGroups (Dict String Group)
     | Added
     | Button Step.Msg
@@ -92,43 +132,51 @@ init s f =
     let
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
-    in
-    ( f.uuid
-        |> Maybe.andThen (T.find s.state.processes)
-        |> Maybe.map
-            (\a ->
-                let
-                    oldGroups =
-                        s.state.grouped
-                            |> Dict.filter (\_ v -> a.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-                in
-                { route = f.route
-                , flatselect = H.find s.state.processTypes a.type_
-                , uuid = a.uuid
-                , seed = newSeed
-                , identifiers =
-                    initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.TType TType.Process) Nothing a.uuid
-                        |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
-                , oldGroups = oldGroups
-                , groups = oldGroups
-                , warning = ""
-                , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
-                }
-            )
-        |> Maybe.withDefault
+
+        adding =
             { route = f.route
             , flatselect = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.TType TType.Process) Nothing newUuid
+            , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes hereType Nothing newUuid
+            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
+    in
+    ( f.uuid
+        |> Maybe.andThen (T.find (allT s))
+        |> Maybe.map
+            (\t ->
+                let
+                    oldGroups =
+                        s.state.grouped
+                            |> Dict.filter (\_ v -> t.uuid == Groupable.uuid v.groupable)
+                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+
+                    parent =
+                        H.find (allH s) t.type_
+                in
+                { adding
+                    | flatselect = H.find s.state.processTypes t.type_
+                    , uuid = t.uuid
+                    , identifiers =
+                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid
+                            |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
+                    , values =
+                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
+                            |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
+                    , oldGroups = oldGroups
+                    , groups = oldGroups
+                    , warning = ""
+                    , step = Step.Step StepType
+                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+                }
+            )
+        |> Maybe.withDefault adding
     , closeMenu f s.menu
     )
 
@@ -136,16 +184,20 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mat ->
+        InputType mh ->
             ( { model
-                | flatselect = mat
-                , identifiers = initIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes (Type.TType TType.Process) mat model.uuid
+                | flatselect = mh
+                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
               }
             , Effect.none
             )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
+
+        InputValue v ->
+            ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
@@ -156,7 +208,7 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok a ->
+                Ok t ->
                     let
                         addedGroups =
                             Dict.diff model.groups model.oldGroups
@@ -167,10 +219,11 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedProcess a
+                            (Message.AddedProcess t
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.P a) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.P a) g) (Dict.values removedGroups)
+                                ++ List.map Message.ValueAdded (Dict.values model.values)
+                                ++ List.map (\g -> Message.Grouped (Groupable.P t) g) (Dict.values addedGroups)
+                                ++ List.map (\g -> Message.Ungrouped (Groupable.P t) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -198,6 +251,9 @@ checkStep model =
         Step StepIdentifiers ->
             Ok ()
 
+        Step StepValues ->
+            Ok ()
+
         Step StepGroups ->
             Ok ()
 
@@ -205,9 +261,9 @@ checkStep model =
 validate : Model -> Result String Process
 validate m =
     case m.flatselect of
-        Just at ->
+        Just h ->
             -- TODO check that TType thing is useful
-            Ok <| Process (Type.TType TType.Process) m.uuid at.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
+            Ok <| tType hereType m.uuid h.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Process Type"
@@ -236,22 +292,22 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            s.state.processTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
+                            allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.processes allHwithIdentifiers s.state.configs)
+                                |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
-                        , h2 "Choose the type of the new Process:"
+                        , h2 "Choose the type of the new Group:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (hClickableCard InputType s.state.processes allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Process Types yet)")
+                                |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
+                                |> withDefaultContent (p "(There are no Group Types yet)")
                             )
                         ]
 
@@ -261,9 +317,22 @@ viewContent model s =
                 Step.Step StepIdentifiers ->
                     let
                         scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Process) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Process))
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
+
+                Step.Step StepValues ->
+                    let
+                        scope =
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
+                    in
+                    inputValues
+                        { onEnter = Step.nextMsg model Button Step.NextPage Added
+                        , onInput = InputValue
+                        }
+                        s
+                        model
+                        scope
     in
     floatingContainer s
         "Adding a Process"

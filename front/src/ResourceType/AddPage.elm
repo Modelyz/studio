@@ -1,5 +1,7 @@
 module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -17,8 +19,6 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
