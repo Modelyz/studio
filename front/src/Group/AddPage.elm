@@ -213,7 +213,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Ok ()
+            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Group Type")
 
         Step StepIdentifiers ->
             Ok ()
