@@ -17,11 +17,13 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
+import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectParent)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
+import State exposing (State)
 import Type
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
@@ -33,6 +35,34 @@ import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
 
+hereType : Type.Type
+hereType =
+    Type.HType HType.ResourceType
+
+
+type alias HierarchicType =
+    ResourceType
+
+
+tType =
+    ResourceType
+
+
+mkMessage : HierarchicType -> Message.Payload
+mkMessage =
+    Message.AddedResourceType
+
+
+allT : Shared.Model -> Dict String Resource
+allT =
+    .state >> .resources
+
+
+allH : Shared.Model -> Dict String ResourceType
+allH =
+    .state >> .resourceTypes
+
+
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -41,7 +71,7 @@ type alias Model =
     { route : Route
     , uuid : Uuid
     , seed : Seed
-    , flatselect : Maybe ResourceType
+    , flatselect : Maybe HierarchicType
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Group
@@ -60,7 +90,7 @@ type Step
 
 
 type Msg
-    = InputType (Maybe ResourceType)
+    = InputType (Maybe HierarchicType)
     | InputIdentifier Identifier
     | InputGroups (Dict String Group)
     | InputValue Value
@@ -96,47 +126,48 @@ init s f =
     let
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
-    in
-    ( f.uuid
-        |> Maybe.andThen (H.find s.state.resourceTypes)
-        |> Maybe.map
-            (\at ->
-                let
-                    oldGroups =
-                        s.state.grouped
-                            |> Dict.filter (\_ v -> at.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-                in
-                { route = f.route
-                , flatselect = at.parent |> Maybe.andThen (H.find s.state.resourceTypes)
-                , uuid = at.uuid
-                , seed = newSeed
-                , identifiers =
-                    initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing at.uuid
-                        |> Dict.union (Identifier.fromUuid at.uuid s.state.identifiers)
-                , values =
-                    initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.HType HType.ResourceType) Nothing at.uuid
-                        |> Dict.union (Dict.filter (\_ i -> at.uuid == i.for) s.state.values)
-                , oldGroups = oldGroups
-                , groups = oldGroups
-                , warning = ""
-                , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
-                }
-            )
-        |> Maybe.withDefault
+
+        adding =
             { route = f.route
             , flatselect = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) Nothing newUuid
-            , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.HType HType.ResourceType) Nothing newUuid
+            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid
+            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
+    in
+    ( f.uuid
+        |> Maybe.andThen (H.find (allH s))
+        |> Maybe.map
+            (\h ->
+                let
+                    oldGroups =
+                        s.state.grouped
+                            |> Dict.filter (\_ v -> h.uuid == Groupable.uuid v.groupable)
+                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+
+                    mp =
+                        h.parent |> Maybe.andThen (H.find (allH s))
+                in
+                { adding
+                    | flatselect = mp
+                    , uuid = h.uuid
+                    , identifiers =
+                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mp h.uuid
+                            |> Dict.union (Identifier.fromUuid h.uuid s.state.identifiers)
+                    , values =
+                        initValues (allT s) (allH s) s.state.valueTypes hereType mp h.uuid
+                            |> Dict.union (Dict.filter (\_ i -> h.uuid == i.for) s.state.values)
+                    , oldGroups = oldGroups
+                    , groups = oldGroups
+                }
+            )
+        |> Maybe.withDefault adding
     , closeMenu f s.menu
     )
 
@@ -144,10 +175,11 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mat ->
+        InputType mh ->
             ( { model
-                | flatselect = mat
-                , identifiers = initIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes (Type.HType HType.ResourceType) mat model.uuid
+                | flatselect = mh
+                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
               }
             , Effect.none
             )
@@ -167,7 +199,7 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok at ->
+                Ok h ->
                     let
                         addedGroups =
                             Dict.diff model.groups model.oldGroups
@@ -178,10 +210,10 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedResourceType at
+                            (mkMessage h
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.RT at) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.RT at) g) (Dict.values removedGroups)
+                                ++ List.map (\g -> Message.Grouped (Groupable.RT h) g) (Dict.values addedGroups)
+                                ++ List.map (\g -> Message.Ungrouped (Groupable.RT h) g) (Dict.values removedGroups)
                             )
                         , redirectParent s.navkey model.route |> Effect.fromCmd
                         ]
@@ -216,9 +248,9 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String ResourceType
+validate : Model -> Result String HierarchicType
 validate m =
-    Ok <| ResourceType (Type.HType HType.ResourceType) m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| tType hereType m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 buttonValidate : Model -> Result String field -> Element Msg
@@ -244,21 +276,21 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            s.state.resourceTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
+                            allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
-                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.resources allHwithIdentifiers s.state.configs)
+                                |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Optional parent type for the new Resource Type (it can be hierarchical)"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (hClickableCard InputType s.state.resources allHwithIdentifiers s.state.configs)
+                                |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
                                 |> withDefaultContent (p "(There are no Resource Types yet)")
                             )
                         ]
@@ -269,14 +301,14 @@ viewContent model s =
                 Step.Step StepIdentifiers ->
                     let
                         scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.HType HType.ResourceType) h.uuid) |> Maybe.withDefault (HasType (Type.HType HType.ResourceType))
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
 
                 Step.Step StepValues ->
                     let
                         scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputValues
                         { onEnter = Step.nextMsg model Button Step.NextPage Added

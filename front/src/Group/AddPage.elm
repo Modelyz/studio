@@ -31,6 +31,38 @@ import View.Step as Step exposing (Step(..), buttons, isLast)
 import View.Style exposing (..)
 
 
+type alias TypedType =
+    Group
+
+
+type alias HierarchicType =
+    GroupType
+
+
+tType =
+    Group
+
+
+hereType : Type.Type
+hereType =
+    Type.TType TType.Group
+
+
+mkMessage : TypedType -> Message.Payload
+mkMessage =
+    Message.DefinedGroup
+
+
+allT : Shared.Model -> Dict String Group
+allT =
+    .state >> .groups
+
+
+allH : Shared.Model -> Dict String GroupType
+allH =
+    .state >> .groupTypes
+
+
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -39,7 +71,7 @@ type alias Model =
     { route : Route
     , uuid : Uuid
     , seed : Seed
-    , flatselect : Maybe GroupType
+    , flatselect : Maybe HierarchicType
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , warning : String
@@ -55,7 +87,7 @@ type Step
 
 
 type Msg
-    = InputType (Maybe GroupType)
+    = InputType (Maybe HierarchicType)
     | InputIdentifier Identifier
     | InputValue Value
     | Added
@@ -90,37 +122,40 @@ init s f =
     let
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
-    in
-    ( f.uuid
-        |> Maybe.andThen (T.find s.state.groups)
-        |> Maybe.map
-            (\a ->
-                { route = f.route
-                , flatselect = H.find s.state.groupTypes a.type_
-                , uuid = a.uuid
-                , seed = newSeed
-                , identifiers =
-                    initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing a.uuid
-                        |> Dict.union (Identifier.fromUuid a.uuid s.state.identifiers)
-                , values =
-                    initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) Nothing a.uuid
-                        |> Dict.union (Dict.filter (\_ i -> a.uuid == i.for) s.state.values)
-                , warning = ""
-                , step = Step.Step StepType
-                , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues ]
-                }
-            )
-        |> Maybe.withDefault
+
+        adding =
             { route = f.route
             , flatselect = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) Nothing newUuid
-            , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) Nothing newUuid
+            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid
+            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues ]
             }
+    in
+    ( f.uuid
+        |> Maybe.andThen (T.find (allT s))
+        |> Maybe.map
+            (\t ->
+                let
+                    parent =
+                        H.find (allH s) t.type_
+                in
+                { adding
+                    | flatselect = parent
+                    , uuid = t.uuid
+                    , identifiers =
+                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid
+                            |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
+                    , values =
+                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
+                            |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
+                    , warning = ""
+                }
+            )
+        |> Maybe.withDefault adding
     , closeMenu f s.menu
     )
 
@@ -128,11 +163,11 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mat ->
+        InputType mh ->
             ( { model
-                | flatselect = mat
-                , identifiers = initIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes (Type.TType TType.Group) mat model.uuid
-                , values = initValues s.state.groups s.state.groupTypes s.state.valueTypes (Type.TType TType.Group) mat model.uuid
+                | flatselect = mh
+                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
               }
             , Effect.none
             )
@@ -149,11 +184,11 @@ update s msg model =
 
         Added ->
             case validate model of
-                Ok a ->
+                Ok t ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.DefinedGroup a
+                            (mkMessage t
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
                                 ++ List.map Message.ValueAdded (Dict.values model.values)
                             )
@@ -187,12 +222,12 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String Group
+validate : Model -> Result String TypedType
 validate m =
     case m.flatselect of
-        Just at ->
+        Just h ->
             -- TODO check that TType thing is useful
-            Ok <| Group (Type.TType TType.Group) m.uuid at.uuid Empty Dict.empty Dict.empty Dict.empty
+            Ok <| tType hereType m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Group Type"
@@ -221,21 +256,21 @@ viewContent model s =
                 Step.Step StepType ->
                     let
                         allHwithIdentifiers =
-                            s.state.groupTypes |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
+                            allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
                     column [ alignTop, spacing 10, width <| minimum 200 fill ]
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                                |> Maybe.map (hViewHalfCard (InputType Nothing) s.state.groups allHwithIdentifiers s.state.configs)
+                                |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                                |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
                         , h2 "Choose the type of the new Group:"
                         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
                             (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (hClickableCard InputType s.state.groups allHwithIdentifiers s.state.configs)
+                                |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
                                 |> withDefaultContent (p "(There are no Group Types yet)")
                             )
                         ]
@@ -243,14 +278,14 @@ viewContent model s =
                 Step.Step StepIdentifiers ->
                     let
                         scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
 
                 Step.Step StepValues ->
                     let
                         scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType (Type.TType TType.Group) h.uuid) |> Maybe.withDefault (HasType (Type.TType TType.Group))
+                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputValues
                         { onEnter = Step.nextMsg model Button Step.NextPage Added

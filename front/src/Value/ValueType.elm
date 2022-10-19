@@ -21,14 +21,15 @@ type alias ValueType =
 
 
 initValues : Dict String (Typed t) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Value
-initValues allT allH its t mh newUuid =
+initValues allT allH vts t mh newUuid =
     -- build the empty values corresponding to the chosen type and possible user type
     let
-        scope =
+        hscope =
+            -- scope corresponding to the hierarchic entity we're dealing with
             Maybe.map (\h -> HasUserType t h.uuid) mh |> Maybe.withDefault (HasType t)
     in
-    its
-        |> Dict.filter (\_ vt -> Scope.containsScope allT allH vt.scope scope)
+    vts
+        |> Dict.filter (\_ vt -> Scope.containsScope allT allH hscope vt.scope)
         |> Dict.values
         |> List.map
             (\vt ->
