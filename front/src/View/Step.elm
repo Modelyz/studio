@@ -3,7 +3,7 @@ module View.Step exposing (Model, Msg(..), Step(..), buttons, isLast, nextMsg, o
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Font as Font
-import Route exposing (Route, redirectParent)
+import Route exposing (Route, redirectToView)
 import Shared
 import View exposing (..)
 import View.Style exposing (color)
@@ -126,7 +126,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
+                    ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -134,7 +134,7 @@ update s msg model =
                     ( { model | step = step }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
+                    ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
 
         Cancel ->
-            ( model, redirectParent s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )

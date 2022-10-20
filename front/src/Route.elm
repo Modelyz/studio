@@ -1,6 +1,7 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, redirectToView, redirectViewUuid, toRoute, toString)
 
 import Browser.Navigation as Nav
+import Prng.Uuid as Uuid exposing (Uuid)
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
@@ -88,88 +89,89 @@ routeParser =
     oneOf
         [ map Home top
 
-        -- Resource
-        , map ResourceTypeList (s "resource-type" </> s "list")
-        , map ResourceList (s "resource" </> s "list")
-        , map ResourceTypeAdd (s "resource-type" </> s "add")
-        , map ResourceAdd (s "resource" </> s "add")
-        , map ResourceTypeView (s "resource-type" </> encodedString)
-        , map ResourceView (s "resource" </> encodedString)
-        , map ResourceEdit (s "resource" </> s "edit" </> encodedString)
-        , map ResourceTypeEdit (s "resource-type" </> s "edit" </> encodedString)
+        -- Agent
+        , map AgentAdd (s "agent" </> s "add")
+        , map AgentEdit (s "agent" </> s "edit" </> encodedString)
+        , map AgentList (s "agent" </> s "list")
+        , map AgentTypeAdd (s "agent-type" </> s "add")
+        , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
+        , map AgentTypeList (s "agent-type" </> s "list")
+        , map AgentTypeView (s "agent-type" </> s "view" </> encodedString)
+        , map AgentView (s "agent" </> s "view" </> encodedString)
+
+        -- Commitment
+        , map CommitmentAdd (s "commitment" </> s "add")
+        , map CommitmentEdit (s "commitment" </> s "edit" </> encodedString)
+        , map CommitmentList (s "commitment" </> s "list")
+        , map CommitmentTypeAdd (s "commitment-type" </> s "add")
+        , map CommitmentTypeEdit (s "commitment-type" </> s "edit" </> encodedString)
+        , map CommitmentTypeList (s "commitment-type" </> s "list")
+        , map CommitmentTypeView (s "commitment-type" </> s "view" </> encodedString)
+        , map CommitmentView (s "commitment" </> s "view" </> encodedString)
+
+        -- configure display
+        , map ConfigurationAdd (s "config" </> s "add")
+        , map ConfigurationList (s "config" </> s "list")
 
         -- Contract
-        , map ContractTypeList (s "contract-type" </> s "list")
+        , map ContractAdd (s "contract" </> s "add")
+        , map ContractEdit (s "contract" </> s "edit" </> encodedString)
         , map ContractList (s "contract" </> s "list")
         , map ContractTypeAdd (s "contract-type" </> s "add")
-        , map ContractAdd (s "contract" </> s "add")
-        , map ContractTypeView (s "contract-type" </> encodedString)
-        , map ContractView (s "contract" </> encodedString)
-        , map ContractEdit (s "contract" </> s "edit" </> encodedString)
         , map ContractTypeEdit (s "contract-type" </> s "edit" </> encodedString)
+        , map ContractTypeList (s "contract-type" </> s "list")
+        , map ContractTypeView (s "contract-type" </> s "view" </> encodedString)
+        , map ContractView (s "contract" </> s "view" </> encodedString)
 
-        -- Process
-        , map ProcessTypeList (s "process-type" </> s "list")
-        , map ProcessTypeAdd (s "process-type" </> s "add")
-        , map ProcessAdd (s "process" </> s "add")
-        , map ProcessList (s "process" </> s "list" <?> Query.string "type")
-        , map ProcessTypeView (s "process-type" </> encodedString)
-        , map ProcessView (s "process" </> encodedString)
-        , map ProcessEdit (s "process" </> s "edit" </> encodedString)
-        , map ProcessTypeEdit (s "process-type" </> s "edit" </> encodedString)
+        -- Event
+        , map EventAdd (s "event" </> s "add")
+        , map EventEdit (s "event" </> s "edit" </> encodedString)
+        , map EventList (s "event" </> s "list")
+        , map EventTypeAdd (s "event-type" </> s "add")
+        , map EventTypeEdit (s "event-type" </> s "edit" </> encodedString)
+        , map EventTypeList (s "event-type" </> s "list")
+        , map EventTypeView (s "event-type" </> s "view" </> encodedString)
+        , map EventView (s "event" </> s "view" </> encodedString)
 
         -- Group
-        , map GroupTypeList (s "group-type" </> s "list")
-        , map GroupTypeAdd (s "group-type" </> s "add")
-        , map GroupList (s "group" </> s "list")
         , map GroupAdd (s "group" </> s "add")
-        , map GroupTypeView (s "group-type" </> encodedString)
-        , map GroupView (s "group" </> encodedString)
         , map GroupEdit (s "group" </> s "edit" </> encodedString)
+        , map GroupList (s "group" </> s "list")
+        , map GroupTypeAdd (s "group-type" </> s "add")
         , map GroupTypeEdit (s "group-type" </> s "edit" </> encodedString)
+        , map GroupTypeList (s "group-type" </> s "list")
+        , map GroupTypeView (s "group-type" </> s "view" </> encodedString)
+        , map GroupView (s "group" </> s "view" </> encodedString)
 
         -- Ident
         , map IdentifierTypeAdd (s "identifier-type" </> s "add")
         , map IdentifierTypeList (s "identifier-type" </> s "list")
+
+        -- Process
+        , map ProcessAdd (s "process" </> s "add")
+        , map ProcessEdit (s "process" </> s "edit" </> encodedString)
+        , map ProcessList (s "process" </> s "list" <?> Query.string "type")
+        , map ProcessTypeAdd (s "process-type" </> s "add")
+        , map ProcessTypeEdit (s "process-type" </> s "edit" </> encodedString)
+        , map ProcessTypeList (s "process-type" </> s "list")
+        , map ProcessTypeView (s "process-type" </> s "view" </> encodedString)
+        , map ProcessView (s "process" </> s "view" </> encodedString)
+
+        -- Resource
+        , map ResourceAdd (s "resource" </> s "add")
+        , map ResourceEdit (s "resource" </> s "edit" </> encodedString)
+        , map ResourceList (s "resource" </> s "list")
+        , map ResourceTypeAdd (s "resource-type" </> s "add")
+        , map ResourceTypeEdit (s "resource-type" </> s "edit" </> encodedString)
+        , map ResourceTypeList (s "resource-type" </> s "list")
+        , map ResourceTypeView (s "resource-type" </> s "view" </> encodedString)
+        , map ResourceView (s "resource" </> s "view" </> encodedString)
 
         -- Value
         , map ValueTypeAdd (s "value-type" </> s "add")
         , map ValueTypeList (s "value-type" </> s "list")
 
         --, map IdentifierTypeList (s "identifier-type" </> s "list")
-        -- Event
-        , map EventTypeAdd (s "event-type" </> s "add")
-        , map EventAdd (s "event" </> s "add")
-        , map EventTypeList (s "event-type" </> s "list")
-        , map EventList (s "event" </> s "list")
-        , map EventTypeView (s "event-type" </> encodedString)
-        , map EventView (s "event" </> encodedString)
-        , map EventEdit (s "event" </> s "edit" </> encodedString)
-        , map EventTypeEdit (s "event-type" </> s "edit" </> encodedString)
-
-        -- Commitment
-        , map CommitmentTypeAdd (s "commitment-type" </> s "add")
-        , map CommitmentAdd (s "commitment" </> s "add")
-        , map CommitmentTypeList (s "commitment-type" </> s "list")
-        , map CommitmentList (s "commitment" </> s "list")
-        , map CommitmentTypeView (s "commitment-type" </> encodedString)
-        , map CommitmentView (s "commitment" </> encodedString)
-        , map CommitmentEdit (s "commitment" </> s "edit" </> encodedString)
-        , map CommitmentTypeEdit (s "commitment-type" </> s "edit" </> encodedString)
-
-        -- Agent
-        , map AgentTypeAdd (s "agent-type" </> s "add")
-        , map AgentAdd (s "agent" </> s "add")
-        , map AgentTypeList (s "agent-type" </> s "list")
-        , map AgentList (s "agent" </> s "list")
-        , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
-        , map AgentEdit (s "agent" </> s "edit" </> encodedString)
-        , map AgentTypeView (s "agent-type" </> encodedString)
-        , map AgentView (s "agent" </> encodedString)
-
-        -- configure display
-        , map ConfigurationList (s "config" </> s "list")
-        , map ConfigurationAdd (s "config" </> s "add")
         ]
 
 
@@ -194,7 +196,7 @@ toString r =
             absolute [ "process-type", "list" ] []
 
         ProcessTypeView ptype ->
-            absolute [ "process-type", percentEncode ptype ] []
+            absolute [ "process-type", "view", percentEncode ptype ] []
 
         ProcessTypeEdit uuid ->
             absolute [ "process-type", "edit", percentEncode uuid ] []
@@ -206,7 +208,7 @@ toString r =
             absolute [ "process", "add" ] []
 
         ProcessView p ->
-            absolute [ "process", percentEncode p ] []
+            absolute [ "process", "view", percentEncode p ] []
 
         ProcessList ps ->
             case ps of
@@ -223,7 +225,7 @@ toString r =
             absolute [ "resource", "list" ] []
 
         ResourceView uuid ->
-            absolute [ "resource", percentEncode uuid ] []
+            absolute [ "resource", "view", percentEncode uuid ] []
 
         ResourceAdd ->
             absolute [ "resource", "add" ] []
@@ -232,7 +234,7 @@ toString r =
             absolute [ "resource", "edit", percentEncode uuid ] []
 
         ResourceTypeView uuid ->
-            absolute [ "resource-type", percentEncode uuid ] []
+            absolute [ "resource-type", "view", percentEncode uuid ] []
 
         ResourceTypeEdit uuid ->
             absolute [ "resource-type", "edit", percentEncode uuid ] []
@@ -247,7 +249,7 @@ toString r =
             absolute [ "event", "list" ] []
 
         EventView uuid ->
-            absolute [ "event", percentEncode uuid ] []
+            absolute [ "event", "view", percentEncode uuid ] []
 
         EventAdd ->
             absolute [ "event", "add" ] []
@@ -256,7 +258,7 @@ toString r =
             absolute [ "event", "edit", percentEncode uuid ] []
 
         EventTypeView uuid ->
-            absolute [ "event-type", percentEncode uuid ] []
+            absolute [ "event-type", "view", percentEncode uuid ] []
 
         EventTypeEdit uuid ->
             absolute [ "event-type", "edit", percentEncode uuid ] []
@@ -280,7 +282,7 @@ toString r =
             absolute [ "agent", "edit", percentEncode uuid ] []
 
         AgentTypeView uuid ->
-            absolute [ "agent-type", percentEncode uuid ] []
+            absolute [ "agent-type", "view", percentEncode uuid ] []
 
         AgentTypeEdit uuid ->
             absolute [ "agent-type", "edit", percentEncode uuid ] []
@@ -304,7 +306,7 @@ toString r =
             absolute [ "commitment", "edit", percentEncode uuid ] []
 
         CommitmentTypeView uuid ->
-            absolute [ "commitment-type", percentEncode uuid ] []
+            absolute [ "commitment-type", "view", percentEncode uuid ] []
 
         CommitmentTypeEdit uuid ->
             absolute [ "commitment-type", "edit", percentEncode uuid ] []
@@ -319,7 +321,7 @@ toString r =
             absolute [ "contract", "list" ] []
 
         ContractView uuid ->
-            absolute [ "contract", percentEncode uuid ] []
+            absolute [ "contract", "view", percentEncode uuid ] []
 
         ContractAdd ->
             absolute [ "contract", "add" ] []
@@ -328,7 +330,7 @@ toString r =
             absolute [ "contract", "edit", percentEncode uuid ] []
 
         ContractTypeView uuid ->
-            absolute [ "contract-type", percentEncode uuid ] []
+            absolute [ "contract-type", "view", percentEncode uuid ] []
 
         ContractTypeEdit uuid ->
             absolute [ "contract-type", "edit", percentEncode uuid ] []
@@ -343,7 +345,7 @@ toString r =
             absolute [ "group", "list" ] []
 
         GroupView uuid ->
-            absolute [ "group", percentEncode uuid ] []
+            absolute [ "group", "view", percentEncode uuid ] []
 
         GroupAdd ->
             absolute [ "group", "add" ] []
@@ -352,7 +354,7 @@ toString r =
             absolute [ "group", "edit", percentEncode uuid ] []
 
         GroupTypeView uuid ->
-            absolute [ "group-type", percentEncode uuid ] []
+            absolute [ "group-type", "view", percentEncode uuid ] []
 
         GroupTypeEdit uuid ->
             absolute [ "group-type", "edit", percentEncode uuid ] []
@@ -414,3 +416,13 @@ redirectSibling : String -> Nav.Key -> Route -> Cmd msg
 redirectSibling path navkey route =
     -- redirect to a path at the same level
     upper route ++ "/" ++ path |> Nav.pushUrl navkey
+
+
+redirectToView : String -> Nav.Key -> Route -> Cmd msg
+redirectToView view navkey route =
+    ("/" ++ firstSegment route ++ "/" ++ view) |> Nav.pushUrl navkey
+
+
+redirectViewUuid : String -> Uuid -> Nav.Key -> Route -> Cmd msg
+redirectViewUuid view uuid navkey route =
+    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ Uuid.toString uuid |> Nav.pushUrl navkey

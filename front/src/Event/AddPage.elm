@@ -18,7 +18,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirectParent)
+import Route exposing (Route, redirectToView)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -234,7 +234,7 @@ update s msg model =
                                 ++ List.map (\g -> Message.Grouped (Groupable.E t) g) (Dict.values addedGroups)
                                 ++ List.map (\g -> Message.Ungrouped (Groupable.E t) g) (Dict.values removedGroups)
                             )
-                        , redirectParent s.navkey model.route |> Effect.fromCmd
+                        , redirectToView "list" s.navkey model.route |> Effect.fromCmd
                         ]
                     )
 
