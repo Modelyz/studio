@@ -16,7 +16,7 @@ import Shared
 import Spa.Page
 import Task
 import Type exposing (Type)
-import Value.Rational exposing (Rational(..))
+import Value.Rational as R exposing (Rational(..))
 import Value.Select
 import Value.Value exposing (..)
 import Value.ValueType exposing (ValueType)
@@ -451,8 +451,14 @@ editObservable s model ( stackNum, exprPath ) obs =
                             [ Input.text [ width (px 70) ]
                                 { onChange =
                                     \x ->
-                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | val = String.toFloat x |> Result.fromMaybe "invalid number" })
-                                , text = Result.map String.fromFloat n.val |> Result.withDefault ""
+                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | val = R.fromString x })
+                                , text =
+                                    case n.val of
+                                        Ok r ->
+                                            R.toString r
+
+                                        Err err ->
+                                            err
                                 , placeholder =
                                     Just <| Input.placeholder [] <| text "Default value"
                                 , label = Input.labelHidden <| "Default value"

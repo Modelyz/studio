@@ -8,6 +8,7 @@ import Element.Input as Input
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
+import Value.Rational as R
 import Value.Value as Value exposing (..)
 import View exposing (..)
 import View.Style exposing (..)
@@ -56,7 +57,7 @@ inputValue c s model v =
                         |> (\r ->
                                 case r of
                                     Ok val ->
-                                        text <| "= " ++ String.fromFloat val
+                                        text <| "= " ++ R.toString val
 
                                     Err err ->
                                         text <| "= error : " ++ err
@@ -84,11 +85,31 @@ inputObservable c s model targetPath obs v =
     case obs of
         ObsNumber n ->
             row [ Background.color color.item.background ]
-                [ Input.text [ width <| adaptRF n.val, htmlAttribute <| Attr.title n.desc ]
+                [ Input.text
+                    [ width <| px <| R.adaptRF n.val
+                    , htmlAttribute <| Attr.title n.desc
+                    , Background.color
+                        (case n.val of
+                            Ok r ->
+                                color.item.background
+
+                            Err "" ->
+                                color.item.background
+
+                            Err _ ->
+                                color.item.warning
+                        )
+                    ]
                     { onChange =
                         \x ->
-                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | val = String.toFloat x |> Result.fromMaybe "invalid number" }) v.expr }
-                    , text = Result.map String.fromFloat n.val |> Result.withDefault ""
+                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | val = R.fromString x }) v.expr }
+                    , text =
+                        case n.val of
+                            Ok r ->
+                                R.toString r
+
+                            Err err ->
+                                err
                     , placeholder =
                         Just <| Input.placeholder [] <| text n.name
                     , label = Input.labelHidden n.name
@@ -103,7 +124,7 @@ inputObservable c s model targetPath obs v =
                             err
 
                         Ok r ->
-                            String.fromFloat r
+                            R.toString r
                 ]
 
         ObsValue UndefinedValue ->

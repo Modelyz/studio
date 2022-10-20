@@ -36,7 +36,7 @@ type UOperator
 type
     Observable
     -- a single number with a name and a value
-    = ObsNumber { name : String, desc : String, val : Result String Float }
+    = ObsNumber { name : String, desc : String, val : Result String Rational }
       -- the value maybe existing for entity of gived type and uuid
     | ObsValue ValueSelection
 
@@ -163,7 +163,7 @@ neg e =
     Unary Neg e
 
 
-eval : Dict String Value -> Expression -> Result String Float
+eval : Dict String Value -> Expression -> Result String Rational
 eval allVals expr =
     case expr of
         Leaf obs ->
@@ -222,21 +222,21 @@ eDecoder =
             )
 
 
-uEval : UOperator -> Float -> Float
+uEval : UOperator -> Rational -> Rational
 uEval op n =
     case op of
         Neg ->
-            -n
+            R.neg n
 
         Inv ->
-            1 / n
+            R.inv n
 
 
-bEval : BOperator -> Result String Float -> Result String Float -> Result String Float
+bEval : BOperator -> Result String Rational -> Result String Rational -> Result String Rational
 bEval operator res1 res2 =
     case operator of
         Add ->
-            Result.map2 (+) res1 res2
+            Result.map2 R.add res1 res2
 
         Or data ->
             -- one can choose either even if one fails
@@ -330,7 +330,7 @@ toString obs =
             "Value"
 
 
-oEval : Dict String Value -> Observable -> Result String Float
+oEval : Dict String Value -> Observable -> Result String Rational
 oEval allVals obs =
     -- TODO move to Rational (or is a rational an expression??)
     case obs of
@@ -353,7 +353,7 @@ oEval allVals obs =
 
 number : String -> String -> Observable
 number name desc =
-    ObsNumber { name = name, desc = desc, val = Err (name ++ " is undefined") }
+    ObsNumber { name = name, desc = desc, val = Err "" }
 
 
 oEncode : Observable -> Encode.Value
@@ -364,7 +364,7 @@ oEncode obs =
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
                 , ( "desc", Encode.string n.desc )
-                , ( "val", Result.map Encode.float n.val |> Result.withDefault Encode.null )
+                , ( "val", Result.map R.encode n.val |> Result.withDefault (Encode.string "") )
                 ]
 
         ObsValue v ->
@@ -396,7 +396,7 @@ oDecoder =
                         Decode.map3 (\n d v -> ObsNumber { name = n, desc = d, val = v })
                             (Decode.field "name" Decode.string)
                             (Decode.field "desc" Decode.string)
-                            (Decode.field "val" (Decode.nullable Decode.float |> Decode.andThen (Result.fromMaybe "f" >> Decode.succeed)))
+                            (Decode.field "val" R.decoder)
 
                     "SelectedValue" ->
                         Decode.map3 SelectedValue

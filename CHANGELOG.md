@@ -2,6 +2,11 @@
 
 [Back to app](../)
 
+## version 7 -- unreleased
+
+* Use Values for all entities
+* Use Rational number for the Values
+
 ## version 6 -- 2022-10-17
 
 * Improved UX of Scope selection

@@ -1,4 +1,4 @@
-module Value.Rational exposing (Rational(..), add, decoder, encode, inv, mul, neg, pow)
+module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromString, inv, mul, neg, pow, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -61,28 +61,52 @@ lcm x y =
         abs (toFloat x / toFloat (gcd x y * y) |> truncate)
 
 
-decoder : Decoder Rational
+fromString : String -> Result String Rational
+fromString =
+    -- the error string is the unconverted string
+    String.split "/"
+        >> (\l ->
+                List.head l
+                    |> Maybe.andThen String.toInt
+                    >> Maybe.map
+                        (\n ->
+                            List.tail l
+                                |> Maybe.map (String.join "/")
+                                >> Maybe.andThen String.toInt
+                                >> (\md ->
+                                        case md of
+                                            Just d ->
+                                                Ok <| Rational n d
+
+                                            Nothing ->
+                                                Err (String.join "/" l)
+                                   )
+                        )
+                    >> Maybe.withDefault (Err (String.join "/" l))
+           )
+
+
+
+--plop = String.split "/" >>
+
+
+toString : Rational -> String
+toString (Rational n d) =
+    String.fromInt n ++ "/" ++ String.fromInt d
+
+
+decoder : Decoder (Result String Rational)
 decoder =
     Decode.string
-        |> Decode.andThen
-            (String.split "/"
-                >> (\l ->
-                        List.head l
-                            |> Maybe.andThen String.toInt
-                            >> Maybe.map
-                                (\n ->
-                                    List.tail l
-                                        |> Maybe.map (String.join "/")
-                                        >> Maybe.andThen String.toInt
-                                        >> Maybe.map
-                                            (Rational n >> Decode.succeed)
-                                        >> Maybe.withDefault (Decode.fail "The denominator is not an integer")
-                                )
-                            >> Maybe.withDefault (Decode.fail "The numerator is not an integer")
-                   )
-            )
+        |> Decode.map fromString
 
 
 encode : Rational -> Encode.Value
 encode (Rational n d) =
     Encode.string (String.fromInt n ++ "/" ++ String.fromInt d)
+
+
+adaptRF : Result String Rational -> Int
+adaptRF r =
+    -- adapt the input form width to the content
+    50 + (r |> Result.map (\(Rational n d) -> ((String.fromInt n |> String.length) + (String.fromInt d |> String.length)) |> (*) 10) |> Result.withDefault 0)
