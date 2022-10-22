@@ -8,6 +8,22 @@ import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
 
 
+
+{- TODO : try to refactor the route with:
+
+   type Route =
+       Home
+       Entity ViewType
+
+   type ViewType
+       = View Uuid
+       | Edit Uuid
+       | List
+       | Add
+
+-}
+
+
 type Route
     = Home
       -- Process
