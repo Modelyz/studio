@@ -1,4 +1,4 @@
-module View.Step exposing (Model, Msg(..), Step(..), buttons, isLast, nextMsg, onEnter, update)
+module View.Step exposing (Model, Msg(..), Step(..), buttonNextOrValidate, buttons, isLast, nextMsg, onEnter, update)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -16,6 +16,7 @@ type Step step
 type Msg
     = PreviousPage
     | NextPage
+    | Added
     | Cancel
 
 
@@ -42,6 +43,21 @@ buttonNext model result =
             button.disabled err "Next →"
 
 
+buttonNextOrValidate : msg -> Model model step -> Result String field -> Element Msg
+buttonNextOrValidate added model result =
+    -- TODO try to suppress using at View.Step.nextMsg
+    case result of
+        Ok _ ->
+            if isLast model.step model.steps then
+                button.primary Added "Validate and finish"
+
+            else
+                button.primary NextPage "Next →"
+
+        Err err ->
+            button.disabled err "Next →"
+
+
 onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String () -> Attribute msg
 onEnter next validate warning model result =
     View.onEnter <|
@@ -57,10 +73,10 @@ onEnter next validate warning model result =
                 warning err
 
 
-nextMsg : Model model step -> (Msg -> msg) -> Msg -> msg -> msg
-nextMsg model c next validate =
+nextMsg : Model model step -> (Msg -> msg) -> Msg -> Msg -> msg
+nextMsg model c next added =
     if isLast model.step model.steps then
-        validate
+        c added
 
     else
         c next
@@ -108,7 +124,7 @@ buttons model checkedStep =
       )
         "← Previous"
     , button.secondary Cancel "Cancel"
-    , buttonNext model checkedStep
+    , buttonNextOrValidate Added model checkedStep
     , if model.warning /= "" then
         paragraph [ Font.color color.text.warning ] [ text model.warning ]
 
@@ -135,6 +151,9 @@ update s msg model =
 
                 Nothing ->
                     ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
+
+        Added ->
+            ( model, Effect.none )
 
         Cancel ->
             ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
