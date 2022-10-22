@@ -1,10 +1,10 @@
 module EventType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Event.Event exposing (Event)
-import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)

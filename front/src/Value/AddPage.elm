@@ -20,7 +20,7 @@ import Type exposing (Type)
 import Value.Rational as R exposing (Rational(..))
 import Value.Select
 import Value.Value exposing (..)
-import Value.ValueType exposing (ValueType)
+import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
 import View.Smallcard exposing (viewSmallCard)
 import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
@@ -41,7 +41,6 @@ type Msg submsg
     | Open (Popup submsg) Int (List Int)
     | ClosePopup
     | Warning String
-    | Added
     | Button Step.Msg
 
 
@@ -156,7 +155,15 @@ init s f =
         |> Dict.filter (\k v -> k == f.vtid)
         |> Dict.values
         |> List.head
-        |> Maybe.map (\vt -> { adding | name = vt.name, mandatory = vt.mandatory, stack = [ vt.expr ], scope = vt.scope })
+        |> Maybe.map
+            (\vt ->
+                { adding
+                    | name = vt.name
+                    , mandatory = vt.mandatory
+                    , stack = [ vt.expr ]
+                    , scope = vt.scope
+                }
+            )
         |> Maybe.withDefault adding
         |> Effect.with (closeMenu f s.menu)
 
@@ -227,10 +234,6 @@ update s msg model =
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
         Open subpage stackNum targetPath ->
             -- TODO try to pass the submodel along with the subpage (modify the Subpage Type to take the submodel)
             let
@@ -289,18 +292,22 @@ update s msg model =
                 _ ->
                     ( { model | submodel = submodel }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
 
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok i ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Message.ValueTypeAdded i
-                        , redirect s.navkey Route.ValueTypeList |> Effect.fromCmd
+                        , redirect s.navkey (Route.ValueTypeView (VT.compare i)) |> Effect.fromCmd
                         ]
                     )
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View (Msg Value.Select.Msg)
@@ -342,7 +349,7 @@ viewContent model s =
                         Input.text
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
-                            , Step.onEnter (Button NextPage) Added Warning model (checkEmptyString model.name "Please enter a name" |> Result.map (\_ -> ()))
+                            , Step.onEnter (Button NextPage) (Button Added) Warning model (checkEmptyString model.name "Please enter a name" |> Result.map (\_ -> ()))
                             ]
                             { onChange = InputName
                             , text = model.name
@@ -353,9 +360,7 @@ viewContent model s =
     in
     floatingContainer2 s
         "Adding an valueType"
-        (List.map (Element.map Button) (buttons model (checkStep model))
-            ++ [ buttonValidate model (checkStep model) ]
-        )
+        (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]
         (viewPopup s model)
@@ -370,20 +375,6 @@ viewPopup s model =
                     Element.map SubMsg <| Value.Select.view s model.submodel
         )
         model.subpage
-
-
-buttonValidate : Model -> Result String field -> Element (Msg submsg)
-buttonValidate m result =
-    case result of
-        Ok _ ->
-            if isLast m.step m.steps then
-                button.primary Added "Validate and finish"
-
-            else
-                none
-
-        Err _ ->
-            none
 
 
 buttonUndo : Model -> Element (Msg submsg)

@@ -92,6 +92,8 @@ type Route
       -- Ident
     | IdentifierTypeList
     | IdentifierTypeAdd
+    | IdentifierTypeEdit String
+    | IdentifierTypeView String
       -- Value
     | ValueTypeAdd
     | ValueTypeList
@@ -163,7 +165,9 @@ routeParser =
 
         -- Ident
         , map IdentifierTypeAdd (s "identifier-type" </> s "add")
+        , map IdentifierTypeEdit (s "identifier-type" </> s "edit" </> encodedString)
         , map IdentifierTypeList (s "identifier-type" </> s "list")
+        , map IdentifierTypeView (s "identifier-type" </> s "view" </> encodedString)
 
         -- Process
         , map ProcessAdd (s "process" </> s "add")
@@ -190,8 +194,6 @@ routeParser =
         , map ValueTypeEdit (s "value-type" </> s "edit" </> encodedString)
         , map ValueTypeList (s "value-type" </> s "list")
         , map ValueTypeView (s "value-type" </> s "view" </> encodedString)
-
-        --, map IdentifierTypeList (s "identifier-type" </> s "list")
         ]
 
 
@@ -390,6 +392,12 @@ toString r =
 
         IdentifierTypeAdd ->
             absolute [ "identifier-type", "add" ] []
+
+        IdentifierTypeView vtid ->
+            absolute [ "identifier-type", "view", percentEncode vtid ] []
+
+        IdentifierTypeEdit vtid ->
+            absolute [ "identifier-type", "edit", percentEncode vtid ] []
 
         ValueTypeList ->
             absolute [ "value-type", "list" ] []

@@ -18,7 +18,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirectToView)
+import Route exposing (Route, redirect, redirectToView)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -31,7 +31,7 @@ import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
-import View.Step as Step exposing (Step(..), buttons, isLast)
+import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
 
 
@@ -98,7 +98,6 @@ type Msg
     | InputIdentifier Identifier
     | InputValue Value
     | InputGroups (Dict String Group)
-    | Added
     | Button Step.Msg
 
 
@@ -200,11 +199,7 @@ update s msg model =
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok t ->
                     let
@@ -223,12 +218,16 @@ update s msg model =
                                 ++ List.map (\g -> Message.Grouped (Groupable.E t) g) (Dict.values addedGroups)
                                 ++ List.map (\g -> Message.Ungrouped (Groupable.E t) g) (Dict.values removedGroups)
                             )
-                        , redirectToView "list" s.navkey model.route |> Effect.fromCmd
+                        , redirect s.navkey (Route.EventView (Uuid.toString model.uuid)) |> Effect.fromCmd
                         ]
                     )
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
@@ -267,21 +266,6 @@ validate m =
             Err "You must select an Event Type"
 
 
-buttonValidate : Model -> Result String field -> Element Msg
-buttonValidate m result =
-    -- TODO try to suppress using at View.Step.nextMsg
-    case result of
-        Ok _ ->
-            if isLast m.step m.steps then
-                button.primary Added "Validate and finish"
-
-            else
-                none
-
-        Err _ ->
-            none
-
-
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
@@ -296,6 +280,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
+                                |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
@@ -316,7 +301,7 @@ viewContent model s =
                         scope =
                             model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
 
                 Step.Step StepValues ->
                     let
@@ -324,7 +309,7 @@ viewContent model s =
                             model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
                     in
                     inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Added
+                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
                         , onInput = InputValue
                         }
                         s
@@ -333,8 +318,6 @@ viewContent model s =
     in
     floatingContainer s
         "Adding an Event"
-        (List.map (Element.map Button) (buttons model (checkStep model))
-            ++ [ buttonValidate model (checkStep model) ]
-        )
+        (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

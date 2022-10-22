@@ -1,5 +1,7 @@
 module Resource.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -10,8 +12,6 @@ import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page

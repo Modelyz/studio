@@ -3,14 +3,14 @@ module Ident.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.IdentifierType exposing (IdentifierType)
+import Ident.IdentifierType as IT exposing (IdentifierType)
 import Message
-import Route exposing (Route, redirect)
+import Route exposing (Route, redirect, redirectViewItem)
 import Scope.Scope as Scope
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
 
 
 type alias Model =
@@ -20,6 +20,7 @@ type alias Model =
 type Msg
     = Removed IdentifierType
     | Add
+    | View String
 
 
 type alias Flags =
@@ -62,6 +63,9 @@ update s msg model =
         Add ->
             ( model, redirect s.navkey Route.IdentifierTypeAdd |> Effect.fromCmd )
 
+        View vtid ->
+            ( model, redirectViewItem "view" vtid s.navkey model.route |> Effect.fromCmd )
+
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -87,7 +91,8 @@ viewContent model s =
                 |> List.sortBy .name
                 |> List.map
                     (\it ->
-                        viewSmallCard (Removed it)
+                        clickableRemovableCard (View <| IT.compare it)
+                            (Removed it)
                             (text it.name)
                             (row [] [ text <| "for ", text <| Scope.toString it.applyTo ])
                     )

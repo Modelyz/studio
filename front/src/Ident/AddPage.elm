@@ -1,5 +1,6 @@
 module Ident.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -16,7 +17,7 @@ import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
+import View.Step as Step exposing (Msg(..), Step(..), buttons)
 import View.Style exposing (..)
 
 
@@ -27,12 +28,11 @@ type Msg
     | InputMandatory Bool
     | InputFragments (List Fragment)
     | Warning String
-    | Added
     | Button Step.Msg
 
 
 type alias Flags =
-    { route : Route }
+    { route : Route, itid : String }
 
 
 type alias Model =
@@ -107,7 +107,10 @@ match route =
     -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
         Route.IdentifierTypeAdd ->
-            Just { route = route }
+            Just { route = route, itid = "" }
+
+        Route.IdentifierTypeEdit itid ->
+            Just { route = route, itid = itid }
 
         _ ->
             Nothing
@@ -115,16 +118,34 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    { route = f.route
-    , name = ""
-    , scope = Empty
-    , unique = False
-    , mandatory = False
-    , fragments = []
-    , warning = ""
-    , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
-    , step = Step.Step StepName
-    }
+    let
+        adding =
+            { route = f.route
+            , name = ""
+            , scope = Empty
+            , unique = False
+            , mandatory = False
+            , fragments = []
+            , warning = ""
+            , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
+            , step = Step.Step StepName
+            }
+    in
+    s.state.identifierTypes
+        |> Dict.filter (\k v -> k == f.itid)
+        |> Dict.values
+        |> List.head
+        |> Maybe.map
+            (\it ->
+                { adding
+                    | name = it.name
+                    , unique = it.unique
+                    , mandatory = it.mandatory
+                    , fragments = it.fragments
+                    , scope = it.applyTo
+                }
+            )
+        |> Maybe.withDefault adding
         |> Effect.with (closeMenu f s.menu)
 
 
@@ -149,11 +170,7 @@ update s msg model =
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok i ->
                     ( model
@@ -165,6 +182,10 @@ update s msg model =
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
@@ -215,7 +236,7 @@ viewContent model s =
                         Input.text
                             [ width <| minimum 200 fill
                             , Input.focusedOnLoad
-                            , Step.onEnter (Button NextPage) Added Warning model (checkEmptyString model.name "Please enter a name" |> Result.map (\_ -> ()))
+                            , Step.onEnter (Button NextPage) (Button Added) Warning model (checkEmptyString model.name "Please enter a name" |> Result.map (\_ -> ()))
                             ]
                             { onChange = InputName
                             , text = model.name
@@ -226,25 +247,9 @@ viewContent model s =
     in
     floatingContainer s
         "Adding an identifierType"
-        (List.map (Element.map Button) (buttons model (checkStep model))
-            ++ [ buttonValidate model (checkStep model) ]
-        )
+        (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]
-
-
-buttonValidate : Model -> Result String field -> Element Msg
-buttonValidate m result =
-    case result of
-        Ok _ ->
-            if isLast m.step m.steps then
-                button.primary Added "Validate and finish"
-
-            else
-                none
-
-        Err _ ->
-            none
 
 
 inputFragments : Model -> Element Msg

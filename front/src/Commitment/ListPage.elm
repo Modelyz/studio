@@ -13,7 +13,7 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectViewUuid)
+import Route exposing (Route, redirectSibling, redirectSibling, redirectViewUuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page

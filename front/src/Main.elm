@@ -36,6 +36,7 @@ import GroupType.ViewPage
 import HomePage
 import Ident.AddPage
 import Ident.ListPage
+import Ident.ViewPage
 import Json.Encode as Encode
 import Process.AddPage
 import Process.ListPage
@@ -194,6 +195,7 @@ main =
         -- Ident
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
+        |> Spa.addPublicPage mappers Ident.ViewPage.match Ident.ViewPage.page
         |> Spa.addPublicPage mappers Zone.ListPage.match Zone.ListPage.page
         |> Spa.addPublicPage mappers Zone.AddPage.match Zone.AddPage.page
         -- Value

@@ -1,5 +1,7 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -10,8 +12,6 @@ import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
