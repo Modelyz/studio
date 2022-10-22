@@ -1,5 +1,7 @@
-module Value.ViewPage exposing (Flags, Model, Msg(..), match, page)
+module Zone.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Configuration exposing (Configuration)
+import Configuration.View
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,20 +11,18 @@ import Scope.View
 import Shared
 import Spa.Page
 import State exposing (allHfromScope, allTfromScope)
-import Value.Value as Value exposing (Value)
-import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
 
 
 type alias Flags =
     { route : Route
-    , vtid : String
+    , zid : String
     }
 
 
 type alias Model =
     { route : Route
-    , valueType : Maybe ValueType
+    , config : Maybe Configuration
     }
 
 
@@ -43,8 +43,8 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ValueTypeView vtid ->
-            Just { route = route, vtid = vtid }
+        Route.ConfigurationView zid ->
+            Just { route = route, zid = zid }
 
         _ ->
             Nothing
@@ -53,7 +53,7 @@ match route =
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     ( { route = f.route
-      , valueType = s.state.valueTypes |> Dict.filter (\k _ -> k == f.vtid) |> Dict.values |> List.head
+      , config = s.state.configs |> Dict.filter (\k _ -> k == f.zid) |> Dict.values |> List.head
       }
     , closeMenu f s.menu
     )
@@ -63,17 +63,17 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Edit ->
-            model.valueType
+            model.config
                 |> Maybe.map
-                    (\vt ->
-                        ( model, Effect.fromCmd <| redirect s.navkey (Route.ValueTypeEdit (VT.compare vt)) )
+                    (\c ->
+                        ( model, Effect.fromCmd <| redirect s.navkey (Route.ConfigurationEdit (Configuration.compare c)) )
                     )
                 |> Maybe.withDefault ( model, Effect.none )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Value Type"
+    { title = "Adding a Configuration"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -82,19 +82,18 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    model.valueType
+    model.config
         |> Maybe.map
-            (\vt ->
+            (\c ->
                 floatingContainer s
-                    "ValueType"
+                    "Configuration"
                     [ button.primary Edit "Edit" ]
-                    [ h2 <| vt.name
-                    , text <| "Scope: " ++ Scope.View.toDisplay (allTfromScope s.state vt.scope |> withIdentifiers s.state) (allHfromScope s.state vt.scope |> withIdentifiers s.state) s.state.configs vt.scope
+                    [ Configuration.View.display s c
                     ]
             )
         |> Maybe.withDefault
             (floatingContainer s
-                "ValueType"
+                "Configuration"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]
             )

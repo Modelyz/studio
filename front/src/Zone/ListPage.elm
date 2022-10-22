@@ -6,11 +6,11 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Message
-import Route exposing (Route, redirect)
+import Route exposing (Route, redirect, redirectViewItem)
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
 
 
 type alias Model =
@@ -19,6 +19,7 @@ type alias Model =
 
 type Msg
     = Removed Configuration
+    | View String
     | Add
 
 
@@ -62,6 +63,9 @@ update s msg model =
         Add ->
             ( model, redirect s.navkey Route.ConfigurationAdd |> Effect.fromCmd )
 
+        View zid ->
+            ( model, redirectViewItem "view" zid s.navkey model.route |> Effect.fromCmd )
+
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -86,7 +90,8 @@ viewContent model s =
                 |> Dict.values
                 |> List.map
                     (\c ->
-                        viewSmallCard (Removed c)
+                        clickableRemovableCard (View <| Configuration.compare c)
+                            (Removed c)
                             (Configuration.View.display s c)
                             none
                     )

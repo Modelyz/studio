@@ -102,6 +102,8 @@ type Route
       -- Config
     | ConfigurationAdd
     | ConfigurationList
+    | ConfigurationEdit String
+    | ConfigurationView String
 
 
 routeParser : Parser (Route -> a) a
@@ -131,7 +133,9 @@ routeParser =
 
         -- configure display
         , map ConfigurationAdd (s "config" </> s "add")
+        , map ConfigurationEdit (s "config" </> s "edit" </> encodedString)
         , map ConfigurationList (s "config" </> s "list")
+        , map ConfigurationView (s "config" </> s "view" </> encodedString)
 
         -- Contract
         , map ContractAdd (s "contract" </> s "add")
@@ -393,11 +397,11 @@ toString r =
         IdentifierTypeAdd ->
             absolute [ "identifier-type", "add" ] []
 
-        IdentifierTypeView vtid ->
-            absolute [ "identifier-type", "view", percentEncode vtid ] []
+        IdentifierTypeView itid ->
+            absolute [ "identifier-type", "view", percentEncode itid ] []
 
-        IdentifierTypeEdit vtid ->
-            absolute [ "identifier-type", "edit", percentEncode vtid ] []
+        IdentifierTypeEdit itid ->
+            absolute [ "identifier-type", "edit", percentEncode itid ] []
 
         ValueTypeList ->
             absolute [ "value-type", "list" ] []
@@ -416,6 +420,12 @@ toString r =
 
         ConfigurationAdd ->
             absolute [ "config", "add" ] []
+
+        ConfigurationView zid ->
+            absolute [ "config", "view", percentEncode zid ] []
+
+        ConfigurationEdit zid ->
+            absolute [ "config", "edit", percentEncode zid ] []
 
 
 firstSegment : Route -> String

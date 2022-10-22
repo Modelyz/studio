@@ -28,10 +28,10 @@ toDesc : Zone -> String
 toDesc zone =
     case zone of
         SmallcardTitle ->
-            "Title of the Smallcard Items"
+            "Smallcard Title"
 
         SmallcardDescription ->
-            "Description of the Smallcard Items"
+            "Smallcard Description"
 
 
 compare : Zone -> String

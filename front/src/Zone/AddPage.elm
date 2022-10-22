@@ -31,7 +31,7 @@ type Msg
 
 
 type alias Flags =
-    { route : Route }
+    { route : Route, zid : String }
 
 
 type alias Model =
@@ -57,7 +57,10 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.ConfigurationAdd ->
-            Just { route = route }
+            Just { route = route, zid = "" }
+
+        Route.ConfigurationEdit zid ->
+            Just { route = route, zid = zid }
 
         _ ->
             Nothing
