@@ -5,10 +5,13 @@ import Configuration.View
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
+import Ident.Identifiable exposing (withIdentifiers)
 import Message
 import Route exposing (Route, redirect, redirectViewItem)
+import Scope.View
 import Shared
 import Spa.Page
+import State exposing (allHfromScope, allTfromScope)
 import View exposing (..)
 import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
 
@@ -92,8 +95,8 @@ viewContent model s =
                     (\c ->
                         clickableRemovableCard (View <| Configuration.compare c)
                             (Removed c)
-                            (Configuration.View.display s c)
-                            none
+                            (text <| Configuration.View.view s c)
+                            (text <| Configuration.View.description s c)
                     )
                 |> withDefaultContent (p "There are no Configurations yet. Create your first one!")
             )

@@ -88,7 +88,7 @@ viewContent model s =
                 floatingContainer s
                     "Configuration"
                     [ button.primary Edit "Edit" ]
-                    [ Configuration.View.display s c
+                    [ text <| Configuration.View.view s c
                     ]
             )
         |> Maybe.withDefault

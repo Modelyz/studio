@@ -1,4 +1,4 @@
-module Configuration.View exposing (display)
+module Configuration.View exposing (description, view)
 
 import Configuration exposing (Configuration(..))
 import Element exposing (..)
@@ -11,23 +11,24 @@ import Zone.Fragment as Fragment exposing (display)
 import Zone.Zone as Zone
 
 
-display : Shared.Model -> Configuration -> Element msg
-display s c =
+view : Shared.Model -> Configuration -> String
+view s c =
     -- TODO convert to a separate title and description to feed in to a smallcard
     case c of
         ZoneConfig zone fragments scope ->
-            column [ spacing 10 ]
-                [ text <|
-                    Zone.toDesc zone
-                        ++ " : "
-                        ++ (String.join "" <| List.map Fragment.toString (Debug.log "fragments" fragments))
-                , text <|
-                    " for "
-                        ++ Scope.View.toDisplay
-                            (allTfromScope s.state scope
-                                |> withIdentifiers s.state
-                            )
-                            (allHfromScope s.state scope |> withIdentifiers s.state)
-                            s.state.configs
-                            scope
-                ]
+            Zone.toDesc zone
+                ++ " : "
+                ++ (String.join "" <| List.map Fragment.toString (Debug.log "fragments" fragments))
+
+
+description : Shared.Model -> Configuration -> String
+description s c =
+    case c of
+        ZoneConfig zone fragments scope ->
+            Scope.View.toDisplay
+                (allTfromScope s.state scope
+                    |> withIdentifiers s.state
+                )
+                (allHfromScope s.state scope |> withIdentifiers s.state)
+                s.state.configs
+                scope
