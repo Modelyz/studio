@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, allHierarchic, allTyped, empty)
+module State exposing (State, aggregate, allHfromScope, allHierarchic, allTfromScope, allTyped, empty)
 
 import Agent.Agent exposing (Agent)
 import AgentType.AgentType exposing (AgentType)
@@ -12,8 +12,9 @@ import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
 import Group.Group exposing (Group)
 import Group.Link as GroupLink
+import Group.WithGroups exposing (WithGroups)
 import GroupType.GroupType exposing (GroupType)
-import Hierarchy.Hierarchic as H
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
@@ -27,11 +28,11 @@ import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
-import Scope.Scope exposing (containsItem)
+import Scope.Scope exposing (Scope(..), containsItem)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Typed.Typed as T exposing (OnlyTyped)
+import Typed.Typed as T exposing (OnlyTyped, Typed)
 import Value.Value as Value exposing (Value)
 import Value.ValueType as ValueType exposing (ValueType)
 
@@ -457,7 +458,7 @@ aggregate (Message b p) state =
 
         DefinedGroup group ->
             { state
-                | groups = insertItem group state.groups
+                | groups = Dict.insert (Uuid.toString group.uuid) group state.groups
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -531,12 +532,7 @@ allTyped s t =
             s.groups |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
 
 
-
---allHierarchic : State -> HType.Type -> Dict String ((Hierarchic a))
--- TODO annotation?
--- TODO this function fails to compile if all the entity types are not homomorphic. If one field is added in one, it must be added in all
-
-
+allHierarchic : State -> HType.Type -> Dict String (WithGroups (Hierarchic {}))
 allHierarchic s t =
     case t of
         HType.ResourceType ->
@@ -559,3 +555,83 @@ allHierarchic s t =
 
         HType.GroupType ->
             s.groupTypes
+
+
+allTfromScope : State -> Scope -> Dict String OnlyTyped
+allTfromScope s scope =
+    case scope of
+        Empty ->
+            Dict.empty
+
+        IsItem (Type.TType tt) uuid ->
+            allTyped s tt
+
+        IsItem (Type.HType ht) uuid ->
+            allTyped s (TType.fromHierarchic ht)
+
+        HasType (Type.TType tt) ->
+            allTyped s tt
+
+        HasType (Type.HType ht) ->
+            allTyped s (TType.fromHierarchic ht)
+
+        HasUserType (Type.TType tt) uuid ->
+            allTyped s tt
+
+        HasUserType (Type.HType ht) uuid ->
+            allTyped s (TType.fromHierarchic ht)
+
+        Identified _ ->
+            Dict.empty
+
+        -- TODO
+        And s1 s2 ->
+            Dict.empty
+
+        -- FIXME
+        Or s1 s2 ->
+            Dict.empty
+
+        -- FIXME
+        Not _ ->
+            Dict.empty
+
+
+allHfromScope : State -> Scope -> Dict String (Hierarchic (WithGroups {}))
+allHfromScope s scope =
+    case scope of
+        Empty ->
+            Dict.empty
+
+        IsItem (Type.HType ht) uuid ->
+            allHierarchic s ht
+
+        IsItem (Type.TType tt) uuid ->
+            allHierarchic s (TType.toHierarchic tt)
+
+        HasType (Type.TType tt) ->
+            allHierarchic s (TType.toHierarchic tt)
+
+        HasType (Type.HType ht) ->
+            allHierarchic s ht
+
+        HasUserType (Type.TType tt) uuid ->
+            allHierarchic s (TType.toHierarchic tt)
+
+        HasUserType (Type.HType ht) uuid ->
+            allHierarchic s ht
+
+        Identified _ ->
+            Dict.empty
+
+        -- TODO
+        And s1 s2 ->
+            Dict.empty
+
+        -- FIXME
+        Or s1 s2 ->
+            Dict.empty
+
+        -- FIXME
+        Not _ ->
+            Dict.empty

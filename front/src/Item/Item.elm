@@ -15,6 +15,7 @@ type alias Item a =
         , uuid : Uuid
         , identifiers : Dict String Identifier
         , values : Dict String Value
+        , display : Dict String String
     }
 
 

@@ -8,7 +8,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
@@ -108,7 +108,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.processes
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
+                        |> List.map (tWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes s.state.processTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
@@ -127,7 +127,7 @@ viewContent model s =
                         { data =
                             s.state.processes
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
+                                |> List.map (tWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes

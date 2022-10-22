@@ -1,6 +1,7 @@
 module Ident.IdentifierType exposing (IdentifierType, compare, decoder, encode, initIdentifiers)
 
 import Dict exposing (Dict)
+import Group.Group exposing (Group)
 import Hierarchy.Hierarchic exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -22,7 +23,30 @@ type alias IdentifierType =
     }
 
 
-initIdentifiers : Dict String (Typed t) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
+
+--gInitIdentifiers : Dict String Group -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
+--gInitIdentifiers allT allH its t mh newUuid =
+--    -- build the empty identifiers corresponding to the chosen type and possible user type
+--    let
+--        hscope =
+--            -- scope corresponding to the hierarchic entity we're dealing with
+--            Maybe.map (\h -> HasUserType t h.uuid) mh |> Maybe.withDefault (HasType t)
+--    in
+--    its
+--        |> Dict.filter (\_ it -> Scope.containsScope allT allH hscope it.applyTo)
+--        |> Dict.values
+--        |> List.map
+--            (\it ->
+--                let
+--                    i =
+--                        Identifier t newUuid it.name it.fragments
+--                in
+--                ( Identifier.compare i, i )
+--            )
+--        |> Dict.fromList
+
+
+initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
 initIdentifiers allT allH its t mh newUuid =
     -- build the empty identifiers corresponding to the chosen type and possible user type
     let

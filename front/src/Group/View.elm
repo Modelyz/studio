@@ -5,9 +5,10 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Group.WithGroups exposing (WithGroups, withGroups)
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (gWithIdentifiers)
 import Item.Item exposing (Item)
 import Shared
+import Typed.Typed exposing (Typed)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
 import Zone.View exposing (tWithDisplay)
@@ -28,7 +29,7 @@ displayGroupTable default groups =
         text default
 
 
-groupsColumn : Shared.Model -> Column (WithGroups (Item i)) msg
+groupsColumn : Shared.Model -> Column (WithGroups (Item a)) msg
 groupsColumn s =
     { header = headerCell color.table.header.background2 "Groups"
     , width = fill
@@ -36,7 +37,7 @@ groupsColumn s =
         withGroups s.state.grouped
             >> .groups
             >> Dict.values
-            >> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+            >> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
             >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
             >> List.map .display
             >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

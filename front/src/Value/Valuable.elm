@@ -8,7 +8,7 @@ import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (ValueType, initValues)
 
 
-withValues : Dict String (Typed t) -> Dict String (Hierarchic h) -> Dict String ValueType -> Dict String Value -> Item i -> Item i
+withValues : Dict String (Typed a) -> Dict String (Hierarchic h) -> Dict String ValueType -> Dict String Value -> Item i -> Item i
 withValues allT allH allVts allVs v =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { v

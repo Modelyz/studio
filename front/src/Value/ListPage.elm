@@ -4,13 +4,13 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Message
-import Route exposing (Route, redirect)
+import Route exposing (Route, redirect, redirectViewItem)
 import Scope.Scope as Scope
 import Shared
 import Spa.Page
-import Value.ValueType exposing (ValueType)
+import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard)
 
 
 type alias Model =
@@ -20,6 +20,7 @@ type alias Model =
 type Msg
     = Removed ValueType
     | Add
+    | View String
 
 
 type alias Flags =
@@ -62,6 +63,9 @@ update s msg model =
         Add ->
             ( model, redirect s.navkey Route.ValueTypeAdd |> Effect.fromCmd )
 
+        View vtid ->
+            ( model, redirectViewItem "view" vtid s.navkey model.route |> Effect.fromCmd )
+
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -87,7 +91,8 @@ viewContent model s =
                 |> List.sortBy .name
                 |> List.map
                     (\vt ->
-                        viewSmallCard (Removed vt)
+                        clickableRemovableCard (View <| VT.compare vt)
+                            (Removed vt)
                             (text vt.name)
                             (row [] [ text <| "for ", text <| Scope.toString vt.scope ])
                     )

@@ -25,7 +25,7 @@ toValue : Dict String Identifier -> Fragment -> String
 toValue identifiers f =
     case f of
         IdentifierName name ->
-            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault ""
+            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault "(no identifiers)"
 
         Fixed string ->
             string
@@ -34,7 +34,7 @@ toValue identifiers f =
 display : Dict String Identifier -> List Fragment -> String
 display identifiers fragments =
     -- display the fragments corresponding to identifiers to construct the zone
-    fragments |> List.map (toValue identifiers) |> String.concat
+    Debug.log "fragments" (fragments |> List.map (toValue identifiers) |> String.concat)
 
 
 toDesc : Fragment -> String

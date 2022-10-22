@@ -1,5 +1,6 @@
 module Value.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -11,7 +12,7 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
-import Scope.Select exposing (selectScope)
+import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Task
@@ -45,7 +46,9 @@ type Msg submsg
 
 
 type alias Flags =
-    { route : Route }
+    { route : Route
+    , vtid : String
+    }
 
 
 type alias Model =
@@ -124,7 +127,10 @@ match route =
     -- TODO give the entity to create through the flags? /add/valueType?step=2
     case route of
         Route.ValueTypeAdd ->
-            Just { route = route }
+            Just { route = route, vtid = "" }
+
+        Route.ValueTypeEdit vtid ->
+            Just { route = route, vtid = vtid }
 
         _ ->
             Nothing
@@ -132,17 +138,26 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg (Msg submsg) )
 init s f =
-    { route = f.route
-    , name = ""
-    , mandatory = False
-    , stack = []
-    , scope = Empty
-    , subpage = Nothing
-    , submodel = Value.Select.init s
-    , warning = ""
-    , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
-    , step = Step.Step StepName
-    }
+    let
+        adding =
+            { route = f.route
+            , name = ""
+            , mandatory = False
+            , stack = []
+            , scope = Empty
+            , subpage = Nothing
+            , submodel = Value.Select.init s
+            , warning = ""
+            , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
+            , step = Step.Step StepName
+            }
+    in
+    s.state.valueTypes
+        |> Dict.filter (\k v -> k == f.vtid)
+        |> Dict.values
+        |> List.head
+        |> Maybe.map (\vt -> { adding | name = vt.name, mandatory = vt.mandatory, stack = [ vt.expr ], scope = vt.scope })
+        |> Maybe.withDefault adding
         |> Effect.with (closeMenu f s.menu)
 
 

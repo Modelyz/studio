@@ -5,7 +5,7 @@ import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Group.Group exposing (Group)
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (gWithIdentifiers)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
 import View exposing (..)
@@ -32,7 +32,7 @@ inputGroups c s model =
             (el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Belongs to: ")
                 :: (model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+                        |> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map
                             (\t ->
@@ -43,7 +43,7 @@ inputGroups c s model =
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
             (s.state.groups
                 |> Dict.values
-                |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+                |> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                 |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                 |> List.map
                     (\t ->

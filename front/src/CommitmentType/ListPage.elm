@@ -9,7 +9,7 @@ import Element.Border as Border
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
@@ -112,7 +112,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.commitmentTypes
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
+                        |> List.map (hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.commitments s.state.commitmentTypes s.state.configs h)
                         |> withDefaultContent (p "There are no Commitment Types yet. Add your first one!")
                     )
@@ -131,7 +131,7 @@ viewContent model s =
                         { data =
                             s.state.commitmentTypes
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
+                                |> List.map (hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (withGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes

@@ -1,7 +1,5 @@
 module Resource.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Resource.Resource exposing (Resource)
-import ResourceType.ResourceType exposing (ResourceType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,9 +7,11 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Resource.Resource exposing (Resource)
+import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -126,7 +126,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , t.type_
                         |> H.find (allH s)
-                        |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                        |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay (allT s) (allH s) s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -134,7 +134,7 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , t
-                        |> withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers
+                        |> tWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
@@ -145,7 +145,7 @@ viewContent model s =
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
+                        |> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> List.map .display
                         |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")

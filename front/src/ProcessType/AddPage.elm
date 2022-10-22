@@ -1,7 +1,5 @@
 module ProcessType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -12,12 +10,14 @@ import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirectToView)
 import Scope.Scope exposing (Scope(..))
@@ -282,7 +282,6 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
-                                |> Maybe.map (withIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]

@@ -5,7 +5,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Group.Group exposing (Group)
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
@@ -103,7 +103,7 @@ viewContent model s =
                     [ spacing 10 ]
                     (s.state.groups
                         |> Dict.values
-                        |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+                        |> List.map (tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups s.state.groupTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )
@@ -122,7 +122,7 @@ viewContent model s =
                         { data =
                             s.state.groups
                                 |> Dict.values
-                                |> List.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+                                |> List.map (tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         , columns =
                             s.state.identifierTypes
                                 |> Dict.values

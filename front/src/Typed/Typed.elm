@@ -8,6 +8,10 @@ import Type exposing (Type)
 import Value.Value exposing (Value)
 
 
+
+--TODO : turn this into a non parametric type, and turn all types into an extension of Typed (same for Hierarchic)
+
+
 type alias Typed a =
     { a
         | what : Type

@@ -6,7 +6,7 @@ import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (withIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
@@ -109,7 +109,7 @@ viewContent model s =
                     [ h2 "Parent type:"
                     , t.type_
                         |> H.find s.state.groupTypes
-                        |> Maybe.map (withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
+                        |> Maybe.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
                         |> Maybe.andThen (Dict.get "SmallcardTitle")
@@ -117,7 +117,7 @@ viewContent model s =
                         |> text
                     , h2 "Identifiers:"
                     , t
-                        |> withIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers
+                        |> tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
                     ]

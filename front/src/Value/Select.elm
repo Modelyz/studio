@@ -6,7 +6,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
-import Scope.Select exposing (selectScope)
+import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
 import Value.Value exposing (ValueSelection(..))

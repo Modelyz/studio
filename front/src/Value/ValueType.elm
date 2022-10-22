@@ -20,7 +20,7 @@ type alias ValueType =
     }
 
 
-initValues : Dict String (Typed t) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Value
+initValues : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Value
 initValues allT allH vts t mh newUuid =
     -- build the empty values corresponding to the chosen type and possible user type
     let
@@ -44,7 +44,7 @@ initValues allT allH vts t mh newUuid =
 
 compare : ValueType -> String
 compare vt =
-    Scope.compare vt.scope ++ "/" ++ vt.name
+    Scope.compare vt.scope ++ "|" ++ vt.name
 
 
 encode : ValueType -> Encode.Value

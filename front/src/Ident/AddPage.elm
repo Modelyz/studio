@@ -12,7 +12,7 @@ import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
-import Scope.Select exposing (selectScope)
+import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import View exposing (..)

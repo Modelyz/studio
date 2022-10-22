@@ -21,13 +21,14 @@ type
     = Empty
       -- A set with a single item
     | IsItem Type Uuid
-      -- The set of items with a specific concrete typz
+      -- The set of items with a specific concrete type
     | HasType Type
       -- the set of items of type Type whose type or parent is child of a user type uuid
     | HasUserType Type Uuid
+      -- TODO : need to rethink what is below. Seems not relevant for Ident and Value. Can an entity be of several type?? Or is it useful for search? Maybe we need to implement a search expression like the one in Value and which is different from the scope?
       -- The union of two sets
     | And Scope Scope -- entities of both groups
-      -- An alternative between two sets
+      -- An alternative between two sets.
     | Or Scope Scope -- entities of either group
       -- Everything but the set
     | Not Scope -- entities not in the group
@@ -284,7 +285,8 @@ containsItem scope item =
 
 toString : Scope -> String
 toString scope =
-    -- for technical use (compare)
+    -- for technical use (like compare)
+    -- Avoid putting "/" in the String because it will break the ValueType URL
     case scope of
         Empty ->
             "Empty"

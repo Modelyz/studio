@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, redirectToView, redirectViewUuid, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, redirectToView, redirectViewItem, redirectViewUuid, toRoute, toString)
 
 import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -79,6 +79,8 @@ type Route
       -- Value
     | ValueTypeAdd
     | ValueTypeList
+    | ValueTypeEdit String
+    | ValueTypeView String
       -- Config
     | ConfigurationAdd
     | ConfigurationList
@@ -169,7 +171,9 @@ routeParser =
 
         -- Value
         , map ValueTypeAdd (s "value-type" </> s "add")
+        , map ValueTypeEdit (s "value-type" </> s "edit" </> encodedString)
         , map ValueTypeList (s "value-type" </> s "list")
+        , map ValueTypeView (s "value-type" </> s "view" </> encodedString)
 
         --, map IdentifierTypeList (s "identifier-type" </> s "list")
         ]
@@ -377,6 +381,12 @@ toString r =
         ValueTypeAdd ->
             absolute [ "value-type", "add" ] []
 
+        ValueTypeView vtid ->
+            absolute [ "value-type", "view", percentEncode vtid ] []
+
+        ValueTypeEdit vtid ->
+            absolute [ "value-type", "edit", percentEncode vtid ] []
+
         ConfigurationList ->
             absolute [ "config", "list" ] []
 
@@ -426,3 +436,8 @@ redirectToView view navkey route =
 redirectViewUuid : String -> Uuid -> Nav.Key -> Route -> Cmd msg
 redirectViewUuid view uuid navkey route =
     "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ Uuid.toString uuid |> Nav.pushUrl navkey
+
+
+redirectViewItem : String -> String -> Nav.Key -> Route -> Cmd msg
+redirectViewItem view item navkey route =
+    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ item |> Nav.pushUrl navkey
