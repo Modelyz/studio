@@ -7,6 +7,7 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Hierarchic as H
+import Ident.Identifiable exposing (withIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
@@ -109,7 +110,7 @@ viewContent model s =
                     "ValueType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| vt.name
-                    , text <| "Scope: " ++ Scope.View.toDisplay (allTfromScope s.state vt.scope) (allHfromScope s.state vt.scope) s.state.configs vt.scope
+                    , text <| "Scope: " ++ Scope.View.toDisplay (allTfromScope s.state vt.scope |> withIdentifiers s.state) (allHfromScope s.state vt.scope |> withIdentifiers s.state) s.state.configs vt.scope
                     ]
             )
         |> Maybe.withDefault

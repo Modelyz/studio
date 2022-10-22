@@ -37,19 +37,19 @@ toDisplay allT allH configs scope =
 
         IsItem (Type.TType tt) uuid ->
             Item.find allT uuid
-                |> Maybe.map (tDisplay allT allH configs SmallcardTitle)
+                |> Maybe.map (\t -> (Type.toString (Type.TType tt) ++ ": ") ++ tDisplay allT allH configs SmallcardTitle t)
                 |> Maybe.withDefault "(missing)"
 
         IsItem (Type.HType ht) uuid ->
             Item.find allH uuid
-                |> Maybe.map (hDisplay allT allH configs SmallcardTitle)
+                |> Maybe.map (\h -> (Type.toString (Type.HType ht) ++ ": ") ++ hDisplay allT allH configs SmallcardTitle h)
                 |> Maybe.withDefault "(missing)"
 
         HasType t ->
-            Type.toPluralString t
+            "All " ++ Type.toPluralString t
 
         HasUserType t tuid ->
-            Type.toPluralString t ++ " of type " ++ (H.find allH tuid |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "(missing)")
+            "All " ++ Type.toPluralString t ++ " of type " ++ (H.find allH tuid |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "(missing)")
 
         Identified _ ->
             "Identified"
@@ -153,6 +153,7 @@ selectScope s onInput scope =
                         -- all the typed items
                         -- all the hierarchic items corresponding to the typed ones
                         allHwithIdentifiers =
+                            -- TODO try to replace with allT from above
                             State.allHierarchic s.state (TType.toHierarchic tt)
                                 |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
