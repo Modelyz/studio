@@ -95,21 +95,21 @@ routeParser =
         , map AgentAdd (s "agent" </> s "add")
         , map AgentEdit (s "agent" </> s "edit" </> encodedString)
         , map AgentList (s "agent" </> s "list")
+        , map AgentView (s "agent" </> s "view" </> encodedString)
         , map AgentTypeAdd (s "agent-type" </> s "add")
         , map AgentTypeEdit (s "agent-type" </> s "edit" </> encodedString)
         , map AgentTypeList (s "agent-type" </> s "list")
         , map AgentTypeView (s "agent-type" </> s "view" </> encodedString)
-        , map AgentView (s "agent" </> s "view" </> encodedString)
 
         -- Commitment
         , map CommitmentAdd (s "commitment" </> s "add")
         , map CommitmentEdit (s "commitment" </> s "edit" </> encodedString)
         , map CommitmentList (s "commitment" </> s "list")
+        , map CommitmentView (s "commitment" </> s "view" </> encodedString)
         , map CommitmentTypeAdd (s "commitment-type" </> s "add")
         , map CommitmentTypeEdit (s "commitment-type" </> s "edit" </> encodedString)
         , map CommitmentTypeList (s "commitment-type" </> s "list")
         , map CommitmentTypeView (s "commitment-type" </> s "view" </> encodedString)
-        , map CommitmentView (s "commitment" </> s "view" </> encodedString)
 
         -- configure display
         , map ConfigurationAdd (s "config" </> s "add")
@@ -119,31 +119,31 @@ routeParser =
         , map ContractAdd (s "contract" </> s "add")
         , map ContractEdit (s "contract" </> s "edit" </> encodedString)
         , map ContractList (s "contract" </> s "list")
+        , map ContractView (s "contract" </> s "view" </> encodedString)
         , map ContractTypeAdd (s "contract-type" </> s "add")
         , map ContractTypeEdit (s "contract-type" </> s "edit" </> encodedString)
         , map ContractTypeList (s "contract-type" </> s "list")
         , map ContractTypeView (s "contract-type" </> s "view" </> encodedString)
-        , map ContractView (s "contract" </> s "view" </> encodedString)
 
         -- Event
         , map EventAdd (s "event" </> s "add")
         , map EventEdit (s "event" </> s "edit" </> encodedString)
         , map EventList (s "event" </> s "list")
+        , map EventView (s "event" </> s "view" </> encodedString)
         , map EventTypeAdd (s "event-type" </> s "add")
         , map EventTypeEdit (s "event-type" </> s "edit" </> encodedString)
         , map EventTypeList (s "event-type" </> s "list")
         , map EventTypeView (s "event-type" </> s "view" </> encodedString)
-        , map EventView (s "event" </> s "view" </> encodedString)
 
         -- Group
         , map GroupAdd (s "group" </> s "add")
         , map GroupEdit (s "group" </> s "edit" </> encodedString)
         , map GroupList (s "group" </> s "list")
+        , map GroupView (s "group" </> s "view" </> encodedString)
         , map GroupTypeAdd (s "group-type" </> s "add")
         , map GroupTypeEdit (s "group-type" </> s "edit" </> encodedString)
         , map GroupTypeList (s "group-type" </> s "list")
         , map GroupTypeView (s "group-type" </> s "view" </> encodedString)
-        , map GroupView (s "group" </> s "view" </> encodedString)
 
         -- Ident
         , map IdentifierTypeAdd (s "identifier-type" </> s "add")
@@ -153,21 +153,21 @@ routeParser =
         , map ProcessAdd (s "process" </> s "add")
         , map ProcessEdit (s "process" </> s "edit" </> encodedString)
         , map ProcessList (s "process" </> s "list" <?> Query.string "type")
+        , map ProcessView (s "process" </> s "view" </> encodedString)
         , map ProcessTypeAdd (s "process-type" </> s "add")
         , map ProcessTypeEdit (s "process-type" </> s "edit" </> encodedString)
         , map ProcessTypeList (s "process-type" </> s "list")
         , map ProcessTypeView (s "process-type" </> s "view" </> encodedString)
-        , map ProcessView (s "process" </> s "view" </> encodedString)
 
         -- Resource
         , map ResourceAdd (s "resource" </> s "add")
         , map ResourceEdit (s "resource" </> s "edit" </> encodedString)
         , map ResourceList (s "resource" </> s "list")
+        , map ResourceView (s "resource" </> s "view" </> encodedString)
         , map ResourceTypeAdd (s "resource-type" </> s "add")
         , map ResourceTypeEdit (s "resource-type" </> s "edit" </> encodedString)
         , map ResourceTypeList (s "resource-type" </> s "list")
         , map ResourceTypeView (s "resource-type" </> s "view" </> encodedString)
-        , map ResourceView (s "resource" </> s "view" </> encodedString)
 
         -- Value
         , map ValueTypeAdd (s "value-type" </> s "add")
@@ -277,7 +277,7 @@ toString r =
             absolute [ "agent", "list" ] []
 
         AgentView uuid ->
-            absolute [ "agent", percentEncode uuid ] []
+            absolute [ "agent", "view", percentEncode uuid ] []
 
         AgentAdd ->
             absolute [ "agent", "add" ] []
@@ -301,7 +301,7 @@ toString r =
             absolute [ "commitment", "list" ] []
 
         CommitmentView uuid ->
-            absolute [ "commitment", percentEncode uuid ] []
+            absolute [ "commitment", "view", percentEncode uuid ] []
 
         CommitmentAdd ->
             absolute [ "commitment", "add" ] []
@@ -414,6 +414,10 @@ redirectParent : Nav.Key -> Route -> Cmd msg
 redirectParent navkey route =
     -- redirect to the parent route of the specified (one level up the path)
     ("/" ++ firstSegment route) |> Nav.pushUrl navkey
+
+
+
+-- TODO avoid using String
 
 
 redirectSub : String -> Nav.Key -> Route -> Cmd msg
