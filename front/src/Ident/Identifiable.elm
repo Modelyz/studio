@@ -1,4 +1,4 @@
-module Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
+module Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers, withIdentifiers)
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
@@ -8,6 +8,7 @@ import Ident.IdentifierType exposing (IdentifierType, initIdentifiers)
 import Item.Item exposing (Item)
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
+import State exposing (State)
 import Type exposing (Type)
 import Typed.Typed exposing (Typed)
 
@@ -45,3 +46,8 @@ hWithIdentifiers allT allH allIdts allIds i =
             initIdentifiers allT allH allIdts i.what Nothing i.uuid
                 |> Dict.union (Identifier.fromUuid i.uuid allIds)
     }
+
+
+withIdentifiers : State -> Dict String { a | uuid : Uuid, identifiers : Dict String Identifier } -> Dict String { a | uuid : Uuid, identifiers : Dict String Identifier }
+withIdentifiers state =
+    Dict.map (\_ x -> { x | identifiers = state.identifiers |> Dict.filter (\_ id -> x.uuid == id.identifiable) })
