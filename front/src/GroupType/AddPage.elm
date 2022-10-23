@@ -93,7 +93,6 @@ type Msg
     | InputIdentifier Identifier
     | InputGroups (Dict String Group)
     | InputValue Value
-    | Added
     | Button Step.Msg
 
 
@@ -192,11 +191,7 @@ update s msg model =
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok h ->
                     let
@@ -220,6 +215,10 @@ update s msg model =
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
@@ -301,7 +300,8 @@ viewContent model s =
                         model
                         scope
     in
-    floatingContainer s (Just <| Button Step.Cancel)  
+    floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a GroupType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

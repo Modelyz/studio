@@ -90,7 +90,6 @@ type Msg
     = InputType (Maybe HierarchicType)
     | InputIdentifier Identifier
     | InputValue Value
-    | Added
     | Button Step.Msg
 
 
@@ -177,11 +176,7 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok t ->
                     ( model
@@ -197,6 +192,10 @@ update s msg model =
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
