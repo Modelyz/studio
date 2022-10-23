@@ -152,7 +152,6 @@ init s f =
                     , values =
                         initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
                             |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
-                    , warning = ""
                 }
             )
         |> Maybe.withDefault adding
@@ -279,7 +278,8 @@ viewContent model s =
                         model
                         scope
     in
-    floatingContainer s (Just <| Button Step.Cancel)  
+    floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a Group"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

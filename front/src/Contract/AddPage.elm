@@ -167,9 +167,6 @@ init s f =
                             |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
                     , oldGroups = oldGroups
                     , groups = oldGroups
-                    , warning = ""
-                    , step = Step.Step StepType
-                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
                 }
             )
         |> Maybe.withDefault adding
@@ -315,7 +312,8 @@ viewContent model s =
                         model
                         scope
     in
-    floatingContainer s (Just <| Button Step.Cancel)  
+    floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a Contract"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
