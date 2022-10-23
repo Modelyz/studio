@@ -4,24 +4,8 @@ import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (absolute)
-import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
+import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
 import Url.Parser.Query as Query
-
-
-
-{- TODO : try to refactor the route with:
-
-   type Route =
-       Home
-       Entity ViewType
-
-   type ViewType
-       = View Uuid
-       | Edit Uuid
-       | List
-       | Add
-
--}
 
 
 type Route
