@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, edges, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent)
+module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -90,16 +90,15 @@ topbar : Shared.Model -> Maybe msg -> String -> Color -> Element msg
 topbar s goBack title background =
     if s.menu == Style.Desktop then
         row
-            [ Border.widthEach { bottom = 0, left = 0, right = 0, top = 0 }
+            [ Border.widthEach { zero | left = 1 }
             , Border.color color.topbar.border
             , width fill
             , height (px 42)
-            , spacing 10
             , Font.size size.text.topbar
             , Background.color background
             ]
             [ Maybe.map (\m -> button.primary m " < ") goBack |> Maybe.withDefault none
-            , text title
+            , el [ padding 10 ] <| text title
             ]
 
     else
@@ -128,15 +127,7 @@ floatingContainer2 s goBack title buttons children subpage =
     -- TODO merge with floatingContainer
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop, inFront (subpage |> Maybe.withDefault none) ]
-            [ topbar s
-                goBack
-                title
-                (if subpage == Nothing then
-                    color.topbar.background
-
-                 else
-                    color.topbar.disabled
-                )
+            [ topbar s goBack title (subpage |> Maybe.map (\_ -> color.topbar.disabled) |> Maybe.withDefault color.topbar.background)
             , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
                 (column
                     [ width fill, alignTop ]
@@ -303,5 +294,5 @@ viewSelector all selected change =
             all
 
 
-edges =
+zero =
     { top = 0, right = 0, bottom = 0, left = 0 }

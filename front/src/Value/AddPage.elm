@@ -426,7 +426,7 @@ expressionEditor s model =
 displayLine : Shared.Model -> Model -> Int -> Expression -> Element (Msg submsg)
 displayLine s model stackNum expr =
     row []
-        [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
+        [ row [ height fill, width fill, alignTop, paddingEach { zero | right = 5 } ]
             [ el [ alignLeft ] (button.primary (RemoveExpression stackNum) "×")
             ]
         , editExpression s model stackNum ( [], expr )
