@@ -28,6 +28,7 @@ type alias Model =
 
 type Msg
     = Edit
+    | Close
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -62,6 +63,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
+        Close ->
+            ( model, Effect.fromCmd <| redirect s.navkey Route.ConfigurationList )
+
         Edit ->
             model.config
                 |> Maybe.map
@@ -86,6 +90,7 @@ viewContent model s =
         |> Maybe.map
             (\c ->
                 floatingContainer s
+                    (Just Close)
                     "Configuration"
                     [ button.primary Edit "Edit" ]
                     [ text <| Configuration.View.view s c
@@ -93,6 +98,7 @@ viewContent model s =
             )
         |> Maybe.withDefault
             (floatingContainer s
+                (Just Close)
                 "Configuration"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]

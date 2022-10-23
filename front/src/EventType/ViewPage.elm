@@ -1,10 +1,10 @@
 module EventType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Event.Event exposing (Event)
-import EventType.EventType exposing (EventType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
@@ -49,6 +49,7 @@ type alias Model =
 
 type Msg
     = Edit
+    | Close
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -96,6 +97,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
+        Close ->
+            ( model, Effect.fromCmd <| redirect s.navkey Route.EventTypeList )
+
         Edit ->
             model.eventType
                 |> Maybe.map
@@ -120,6 +124,7 @@ viewContent model s =
         |> Maybe.map
             (\h ->
                 floatingContainer s
+                    (Just Close)
                     "EventType"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
@@ -153,6 +158,7 @@ viewContent model s =
             )
         |> Maybe.withDefault
             (floatingContainer s
+                (Just Close)
                 "EventType"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]

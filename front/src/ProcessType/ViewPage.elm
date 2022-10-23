@@ -1,7 +1,5 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -12,6 +10,8 @@ import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process exposing (Process)
+import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -49,6 +49,7 @@ type alias Model =
 
 type Msg
     = Edit
+    | Close
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -96,6 +97,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
+        Close ->
+            ( model, Effect.fromCmd <| redirect s.navkey Route.ProcessTypeList )
+
         Edit ->
             model.processType
                 |> Maybe.map
@@ -120,6 +124,7 @@ viewContent model s =
         |> Maybe.map
             (\h ->
                 floatingContainer s
+                    (Just Close)
                     "ProcessType"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
@@ -153,6 +158,7 @@ viewContent model s =
             )
         |> Maybe.withDefault
             (floatingContainer s
+                (Just Close)
                 "ProcessType"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]

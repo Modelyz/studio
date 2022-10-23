@@ -86,30 +86,31 @@ hamburger title s =
         ]
 
 
-topbar : Shared.Model -> String -> Color -> Element msg
-topbar s title background =
+topbar : Shared.Model -> Maybe msg -> String -> Color -> Element msg
+topbar s goBack title background =
     if s.menu == Style.Desktop then
         row
-            [ Border.widthEach { bottom = 0, left = 1, right = 0, top = 0 }
+            [ Border.widthEach { bottom = 0, left = 0, right = 0, top = 0 }
             , Border.color color.topbar.border
             , width fill
-            , padding 10
             , height (px 42)
+            , spacing 10
             , Font.size size.text.topbar
             , Background.color background
             ]
-            [ text title
+            [ Maybe.map (\m -> button.primary m " < ") goBack |> Maybe.withDefault none
+            , text title
             ]
 
     else
         none
 
 
-floatingContainer : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Element msg
-floatingContainer s title buttons children =
+floatingContainer : Shared.Model -> Maybe msg -> String -> List (Element msg) -> List (Element msg) -> Element msg
+floatingContainer s goBack title buttons children =
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop ]
-            [ topbar s title color.topbar.background
+            [ topbar s goBack title color.topbar.background
             , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
                 (column
                     [ width fill, alignTop ]
@@ -122,12 +123,13 @@ floatingContainer s title buttons children =
         ]
 
 
-floatingContainer2 : Shared.Model -> String -> List (Element msg) -> List (Element msg) -> Maybe (Element msg) -> Element msg
-floatingContainer2 s title buttons children subpage =
+floatingContainer2 : Shared.Model -> Maybe msg -> String -> List (Element msg) -> List (Element msg) -> Maybe (Element msg) -> Element msg
+floatingContainer2 s goBack title buttons children subpage =
     -- TODO merge with floatingContainer
     column [ width fill, alignTop, padding 20 ]
         [ column [ width fill, Border.shadow shadowStyle, padding 0, centerX, alignTop, inFront (subpage |> Maybe.withDefault none) ]
             [ topbar s
+                goBack
                 title
                 (if subpage == Nothing then
                     color.topbar.background
@@ -147,11 +149,11 @@ floatingContainer2 s title buttons children subpage =
         ]
 
 
-flatContainer : Shared.Model -> String -> List (Element msg) -> Element msg -> Element msg -> List (Element msg) -> Element msg
-flatContainer s title buttons search viewselector children =
+flatContainer : Shared.Model -> Maybe msg -> String -> List (Element msg) -> Element msg -> Element msg -> List (Element msg) -> Element msg
+flatContainer s goBack title buttons search viewselector children =
     -- container for main content
     column [ width fill, alignTop, padding 0 ]
-        [ topbar s title color.topbar.background
+        [ topbar s goBack title color.topbar.background
         , column [ width fill, padding 20, centerX, alignTop, spacing 20, Background.color color.content.background ]
             [ column
                 [ width fill, alignTop, spacing 20, padding 20 ]

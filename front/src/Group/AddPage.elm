@@ -279,7 +279,7 @@ viewContent model s =
                         model
                         scope
     in
-    floatingContainer s
+    floatingContainer s (Just <| Button Step.Cancel)  
         "Adding a Group"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

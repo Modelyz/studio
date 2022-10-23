@@ -93,7 +93,7 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s
+            flatContainer s Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
@@ -110,7 +110,7 @@ viewContent model s =
                 ]
 
         Table ->
-            flatContainer s
+            flatContainer s Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]

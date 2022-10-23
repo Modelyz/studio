@@ -102,7 +102,7 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s
+            flatContainer s Nothing
                 "Agent Types"
                 [ button.primary Add "Add..."
                 ]
@@ -119,7 +119,7 @@ viewContent model s =
                 ]
 
         Table ->
-            flatContainer s
+            flatContainer s Nothing
                 "Agent Types"
                 [ button.primary Add "Add..."
                 ]

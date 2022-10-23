@@ -164,6 +164,7 @@ viewContent model s =
             ]
     in
     floatingContainer s
+        (Just <| Cancel)
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model

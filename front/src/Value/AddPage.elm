@@ -359,6 +359,7 @@ viewContent model s =
                             }
     in
     floatingContainer2 s
+        (Just ClosePopup)
         "Adding an valueType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
