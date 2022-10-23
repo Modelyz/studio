@@ -1,6 +1,5 @@
 module Process.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Process.Process exposing (Process)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -8,11 +7,12 @@ import Element.Background as Background
 import Element.Border as Border
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process exposing (Process)
 import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ProcessList _->
+        Route.ProcessList _ ->
             Just { route = route }
 
         _ ->
@@ -98,7 +98,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Processes"
                 [ button.primary Add "Add..."
                 ]
@@ -107,15 +108,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.processes
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.processes Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes (Dict.map (\_ v -> hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers v) s.state.processTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes s.state.processTypes s.state.configs t)
-                        |> withDefaultContent (p "There are no Processes yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Processes"
                 [ button.primary Add "Add..."
                 ]

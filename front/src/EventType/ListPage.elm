@@ -1,11 +1,11 @@
 module EventType.ListPage exposing (Flags, Model, Msg, match, page)
 
-import EventType.EventType exposing (EventType)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import EventType.EventType exposing (EventType)
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
 import Hierarchy.Type as HType
@@ -102,7 +102,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Event Types"
                 [ button.primary Add "Add..."
                 ]
@@ -111,15 +112,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.eventTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.events Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events (Dict.map (\_ v -> hWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers v) s.state.eventTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.events s.state.eventTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Event Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Event Types"
                 [ button.primary Add "Add..."
                 ]

@@ -1,14 +1,14 @@
 module Event.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Event.Event exposing (Event)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Event.Event exposing (Event)
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
@@ -98,7 +98,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Events"
                 [ button.primary Add "Add..."
                 ]
@@ -107,15 +108,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.events
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.events Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events (Dict.map (\_ v -> hWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers v) s.state.eventTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events s.state.eventTypes s.state.configs t)
-                        |> withDefaultContent (p "There are no Events yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Events"
                 [ button.primary Add "Add..."
                 ]

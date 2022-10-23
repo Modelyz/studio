@@ -1,6 +1,5 @@
 module Resource.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Resource.Resource exposing (Resource)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -8,11 +7,12 @@ import Element.Background as Background
 import Element.Border as Border
 import Group.View exposing (groupsColumn)
 import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Resource.Resource exposing (Resource)
 import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
@@ -98,7 +98,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Resources"
                 [ button.primary Add "Add..."
                 ]
@@ -107,15 +108,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.resources
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.resources Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources (Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v) s.state.resourceTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources s.state.resourceTypes s.state.configs t)
-                        |> withDefaultContent (p "There are no Resources yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Resources"
                 [ button.primary Add "Add..."
                 ]

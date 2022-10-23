@@ -1,6 +1,5 @@
 module ProcessType.ListPage exposing (Flags, Model, Msg, match, page)
 
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -14,6 +13,7 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
@@ -102,7 +102,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]
@@ -111,15 +112,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.processTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.processes Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes (Dict.map (\_ v -> hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers v) s.state.processTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes s.state.processTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]

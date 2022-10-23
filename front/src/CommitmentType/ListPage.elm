@@ -102,7 +102,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Commitment Types"
                 [ button.primary Add "Add..."
                 ]
@@ -111,15 +112,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.commitmentTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.commitments Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.commitments (Dict.map (\_ v -> hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers v) s.state.commitmentTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.commitments s.state.commitmentTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Commitment Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Commitment Types"
                 [ button.primary Add "Add..."
                 ]

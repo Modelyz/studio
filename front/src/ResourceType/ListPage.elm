@@ -112,10 +112,10 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.resourceTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.resources Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources (Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v) s.state.resourceTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.resources s.state.resourceTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Resource Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 

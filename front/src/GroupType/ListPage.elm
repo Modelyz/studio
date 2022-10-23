@@ -102,7 +102,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Group Types"
                 [ button.primary Add "Add..."
                 ]
@@ -111,15 +112,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groupTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.groups Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.groups s.state.groupTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Group Types"
                 [ button.primary Add "Add..."
                 ]

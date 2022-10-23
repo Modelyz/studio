@@ -64,7 +64,9 @@ viewHalfCard maybeOnDelete title =
 
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hViewHalfCard onDelete allT allH configs hierarchic =
-    viewHalfCard (Just onDelete) (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
+    viewHalfCard
+        (Just onDelete)
+        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
 
 
 tItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Type.Type -> Element msg
@@ -99,7 +101,10 @@ hClickableCard onInput allT allH configs hierarchic =
 
 tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
 tClickableRemovableCard onChoose onDelete allT allH configs typed =
-    clickableRemovableCard onChoose onDelete (text <| tDisplay allT allH configs SmallcardTitle typed) (H.find allH typed.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+    clickableRemovableCard onChoose
+        onDelete
+        (text <| tDisplay allT allH configs SmallcardTitle typed)
+        (Debug.log "H.find" (H.find allH typed.type_) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg

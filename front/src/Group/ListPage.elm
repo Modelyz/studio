@@ -5,7 +5,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Group.Group exposing (Group)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
@@ -93,7 +93,8 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
         Smallcard ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
@@ -102,15 +103,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.groups Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups s.state.groupTypes s.state.configs t)
-                        |> withDefaultContent (p "There are no Groups yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
-            flatContainer s Nothing
+            flatContainer s
+                Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
