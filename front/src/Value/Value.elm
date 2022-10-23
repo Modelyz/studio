@@ -324,15 +324,14 @@ toString : Observable -> String
 toString obs =
     case obs of
         ObsNumber _ ->
-            "Number"
+            "Free Number"
 
         ObsValue _ ->
-            "Value"
+            "Other Value"
 
 
 oEval : Dict String Value -> Observable -> Result String Rational
 oEval allVals obs =
-    -- TODO move to Rational (or is a rational an expression??)
     case obs of
         ObsNumber n ->
             n.val
