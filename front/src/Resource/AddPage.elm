@@ -18,7 +18,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page

@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, redirectToView, redirectViewItem, redirectViewUuid, toRoute, toString)
+module Route exposing (Route(..), firstSegment, redirect, redirectView, redirectViewItem, toRoute, toString)
 
 import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -428,38 +428,28 @@ redirect navkey =
     toString >> Nav.pushUrl navkey
 
 
-redirectParent : Nav.Key -> Route -> Cmd msg
-redirectParent navkey route =
-    -- redirect to the parent route of the specified (one level up the path)
-    ("/" ++ firstSegment route) |> Nav.pushUrl navkey
-
-
 
 -- TODO avoid using String
 
 
-redirectSub : String -> Nav.Key -> Route -> Cmd msg
-redirectSub path navkey route =
-    -- redirect to a subpath
-    toString route ++ "/" ++ path |> Nav.pushUrl navkey
-
-
-redirectSibling : String -> Nav.Key -> Route -> Cmd msg
-redirectSibling path navkey route =
-    -- redirect to a path at the same level
-    upper route ++ "/" ++ path |> Nav.pushUrl navkey
-
-
-redirectToView : String -> Nav.Key -> Route -> Cmd msg
-redirectToView view navkey route =
-    ("/" ++ firstSegment route ++ "/" ++ view) |> Nav.pushUrl navkey
-
-
-redirectViewUuid : String -> Uuid -> Nav.Key -> Route -> Cmd msg
-redirectViewUuid view uuid navkey route =
-    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ Uuid.toString uuid |> Nav.pushUrl navkey
-
-
 redirectViewItem : String -> String -> Nav.Key -> Route -> Cmd msg
 redirectViewItem view item navkey route =
+    -- redirect to /<view>/<item>/
     "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ item |> Nav.pushUrl navkey
+
+
+redirectView : String -> Nav.Key -> Route -> Cmd msg
+redirectView view navkey =
+    -- replaces /*/<item> with /<view>/<item>
+    toString
+        >> String.split "/"
+        >> List.indexedMap
+            (\i segment ->
+                if i == 2 then
+                    view
+
+                else
+                    segment
+            )
+        >> String.join "/"
+        >> Nav.pushUrl navkey

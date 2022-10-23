@@ -3,7 +3,7 @@ module View.Step exposing (Model, Msg(..), Step(..), buttonNextOrValidate, butto
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Font as Font
-import Route exposing (Route, redirectToView)
+import Route exposing (Route, redirectView)
 import Shared
 import View exposing (..)
 import View.Style exposing (color)
@@ -142,7 +142,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
+                    ( model, redirectView "list" s.navkey model.route |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -150,10 +150,10 @@ update s msg model =
                     ( { model | step = step }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
+                    ( model, redirectView "list" s.navkey model.route |> Effect.fromCmd )
 
         Added ->
             ( model, Effect.none )
 
         Cancel ->
-            ( model, redirectToView "list" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "view" s.navkey model.route |> Effect.fromCmd )

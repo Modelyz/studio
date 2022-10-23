@@ -18,7 +18,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
 import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
