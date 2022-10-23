@@ -435,7 +435,7 @@ redirect navkey =
 redirectViewItem : String -> String -> Nav.Key -> Route -> Cmd msg
 redirectViewItem view item navkey route =
     -- redirect to /<view>/<item>/
-    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ item |> Nav.pushUrl navkey
+    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ percentEncode item |> Nav.pushUrl navkey
 
 
 redirectView : String -> Nav.Key -> Route -> Cmd msg
