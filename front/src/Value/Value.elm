@@ -36,7 +36,7 @@ type UOperator
 type
     Observable
     -- a single number with a name and a value
-    = ObsNumber { name : String, desc : String, val : Result String Rational }
+    = ObsNumber { name : String, input : String, val : Result String Rational }
       -- the value maybe existing for entity of gived type and uuid
     | ObsValue ValueSelection
 
@@ -352,8 +352,8 @@ oEval allVals obs =
 
 
 number : String -> String -> Observable
-number name desc =
-    ObsNumber { name = name, desc = desc, val = Err "" }
+number name input =
+    ObsNumber { name = name, input = input, val = Err "" }
 
 
 oEncode : Observable -> Encode.Value
@@ -363,7 +363,7 @@ oEncode obs =
             Encode.object
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
-                , ( "desc", Encode.string n.desc )
+                , ( "input", Encode.string n.input )
                 , ( "val", Result.map R.encode n.val |> Result.withDefault (Encode.string "") )
                 ]
 
@@ -393,9 +393,9 @@ oDecoder =
             (\t ->
                 case t of
                     "Number" ->
-                        Decode.map3 (\n d v -> ObsNumber { name = n, desc = d, val = v })
+                        Decode.map3 (\n i v -> ObsNumber { name = n, input = i, val = v })
                             (Decode.field "name" Decode.string)
-                            (Decode.field "desc" Decode.string)
+                            (Decode.field "input" Decode.string)
                             (Decode.field "val" R.decoder)
 
                     "SelectedValue" ->
