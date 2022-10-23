@@ -41,10 +41,10 @@ toDesc : Fragment -> String
 toDesc f =
     case f of
         IdentifierName _ ->
-            "(Identifier)"
+            "Identifier"
 
         Fixed _ ->
-            "(Fixed string)"
+            "Fixed string"
 
 
 encode : Fragment -> Encode.Value

@@ -17,6 +17,7 @@ import Shared
 import Spa.Page
 import State
 import View exposing (..)
+import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -232,18 +233,10 @@ inputFragments s model =
           wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
                 (\f ->
-                    column
-                        [ Background.color color.item.background
-                        , mouseOver itemHoverstyle
-                        , onClick (InputFragments <| model.fragments ++ [ f ])
-                        , pointer
-                        , padding 10
-                        , spacing 10
-                        , height (px 75)
-                        ]
-                        [ el [ width <| minimum 100 fill ] (text <| Fragment.toString f)
-                        , paragraph [ Font.size size.text.main ] [ text <| Fragment.toDesc f ]
-                        ]
+                    clickableCard
+                        (InputFragments <| model.fragments ++ [ f ])
+                        (text <| Fragment.toDesc f)
+                        (text <| Fragment.toString f)
                 )
                 (Fixed ""
                     :: (s.state.identifierTypes
