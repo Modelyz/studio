@@ -8,6 +8,83 @@ import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string,
 import Url.Parser.Query as Query
 
 
+type EntitySegment
+    = Resource
+    | Event
+    | Agent
+    | Commitment
+    | Contract
+    | Process
+    | Group
+    | ResourceType
+    | EventType
+    | AgentType
+    | CommitmentType
+    | ContractType
+    | ProcessType
+    | GroupType
+    | ValueType
+    | IdentifierType
+    | Configuration
+
+
+type ViewSegment
+    = View String
+    | Edit String
+    | List
+    | Add
+
+
+entityParser : Parser (EntitySegment -> a) a
+entityParser =
+    oneOf
+        [ map Resource (s "resource")
+        , map Event (s "event")
+        , map Agent (s "agent")
+        , map Commitment (s "commitment")
+        , map Contract (s "contract")
+        , map Process (s "process")
+        , map Group (s "group")
+        , map ResourceType (s "resource-type")
+        , map EventType (s "event-type")
+        , map AgentType (s "agent-type")
+        , map CommitmentType (s "commitment-type")
+        , map ContractType (s "contract-type")
+        , map ProcessType (s "process-type")
+        , map GroupType (s "group-type")
+        , map ValueType (s "value-type")
+        , map IdentifierType (s "identifier-type")
+        , map Configuration (s "identifier-type")
+        ]
+
+
+viewParser : Parser (ViewSegment -> a) a
+viewParser =
+    oneOf
+        [ map View (s "view" </> string)
+        , map Add (s "add")
+        , map Edit (s "edit" </> string)
+        , map List (s "list")
+        ]
+
+
+type ConfigPath
+    = Zone
+
+
+routeParser2 : Parser (Route2 -> a) a
+routeParser2 =
+    oneOf
+        [ map HomeRoute top
+        , map EntityRoute (entityParser </> viewParser)
+        ]
+
+
+type Route2
+    = HomeRoute
+    | EntityRoute EntitySegment ViewSegment
+
+
 type Route
     = Home
       -- Process
