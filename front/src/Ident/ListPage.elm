@@ -81,7 +81,8 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    flatContainer s Nothing
+    flatContainer s
+        Nothing
         "IdentifierTypes"
         [ button.primary Add "Add..."
         ]

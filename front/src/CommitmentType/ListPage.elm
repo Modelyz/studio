@@ -115,7 +115,7 @@ viewContent model s =
                         |> Dict.map (\_ t -> hWithIdentifiers s.state.commitments Dict.empty s.state.identifierTypes s.state.identifiers t)
                         |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.commitments (Dict.map (\_ v -> hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers v) s.state.commitmentTypes) s.state.configs t)
                         |> Dict.values
-                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Commitments yet. Add your first one!")
                     )
                 ]
 

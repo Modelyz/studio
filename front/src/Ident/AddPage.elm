@@ -245,7 +245,8 @@ viewContent model s =
                             , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifierType"
                             }
     in
-    floatingContainer s (Just <| Button Step.Cancel)  
+    floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding an identifierType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

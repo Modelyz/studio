@@ -115,7 +115,7 @@ viewContent model s =
                         |> Dict.map (\_ t -> hWithIdentifiers s.state.resources Dict.empty s.state.identifierTypes s.state.identifiers t)
                         |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources (Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v) s.state.resourceTypes) s.state.configs t)
                         |> Dict.values
-                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Resources yet. Add your first one!")
                     )
                 ]
 

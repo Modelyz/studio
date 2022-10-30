@@ -144,7 +144,7 @@ viewContent model s =
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
                     , h
-                        |> withValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
+                        |> withValues s.state.agents s.state.agentTypes s.state.valueTypes s.state.values
                         |> .values
                         |> displayValueDict "(none)" s.state.values
                     , h2 "Groups:"

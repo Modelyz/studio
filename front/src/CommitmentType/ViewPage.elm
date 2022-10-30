@@ -19,6 +19,7 @@ import Value.Input exposing (inputValues)
 import Value.Valuable exposing (withValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
+import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
@@ -143,9 +144,9 @@ viewContent model s =
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
                     , h
-                        |> withValues (allT s) (allH s) s.state.valueTypes s.state.values
-                        |> .identifiers
-                        |> displayIdentifierDict "(none)"
+                        |> withValues s.state.commitments s.state.commitmentTypes s.state.valueTypes s.state.values
+                        |> .values
+                        |> displayValueDict "(none)" s.state.values
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values

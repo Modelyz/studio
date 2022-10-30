@@ -302,7 +302,8 @@ viewContent model s =
                         model
                         scope
     in
-    floatingContainer s (Just <| Button Step.Cancel)  
+    floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a ContractType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
