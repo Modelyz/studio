@@ -129,7 +129,7 @@ viewContent model s =
                     (Just Close)
                     "Commitment"
                     [ button.primary Edit "Edit" ]
-                    [ h2 "Parent type:"
+                    [ h2 "Type:"
                     , t.type_
                         |> H.find (allH s)
                         |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)

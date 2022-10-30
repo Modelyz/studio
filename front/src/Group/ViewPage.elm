@@ -113,7 +113,7 @@ viewContent model s =
                     (Just Close)
                     "Group"
                     [ button.primary Edit "Edit" ]
-                    [ h2 "Parent type:"
+                    [ h2 "Type:"
                     , t.type_
                         |> H.find s.state.groupTypes
                         |> Maybe.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
