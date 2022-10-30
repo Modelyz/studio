@@ -12,7 +12,7 @@
 * Ability to define a Value or Identifier on a single entity
 * Normalized URL structure
 * ListPage and ViewPage for Identifier
-* Display the Values on the View Page
+* Display the Values on the View Pages
 * Remove uuid from anywhere by defining a Zone Config
 * Many internal changes
 

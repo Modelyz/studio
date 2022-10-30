@@ -2,7 +2,7 @@ module Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIde
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
-import Hierarchy.Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType, initIdentifiers)
 import Item.Item exposing (Item)
@@ -33,7 +33,7 @@ tWithIdentifiers allT allH allIdts allIds i =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { i
         | identifiers =
-            initIdentifiers allT allH allIdts i.what Nothing i.uuid
+            initIdentifiers allT allH allIdts i.what (H.find allH i.type_) i.uuid
                 |> Dict.union (Identifier.fromUuid i.uuid allIds)
     }
 

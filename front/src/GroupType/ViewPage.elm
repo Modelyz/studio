@@ -14,7 +14,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Value.Valuable exposing (withValues)
+import Value.Valuable exposing (hWithValues, withValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay, tWithDisplay)
@@ -130,7 +130,7 @@ viewContent model s =
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
                     , h
-                        |> withValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
+                        |> hWithValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
                         |> .values
                         |> displayValueDict "(none)" s.state.values
                     , h2 "Groups:"

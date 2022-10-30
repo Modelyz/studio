@@ -13,7 +13,7 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Typed.Typed as T
-import Value.Valuable exposing (withValues)
+import Value.Valuable exposing (tWithValues, withValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay)
@@ -129,7 +129,7 @@ viewContent model s =
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
                     , t
-                        |> withValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
+                        |> tWithValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
                         |> .values
                         |> displayValueDict "(none)" s.state.values
                     ]
