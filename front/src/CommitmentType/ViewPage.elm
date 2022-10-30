@@ -16,7 +16,7 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Value.Input exposing (inputValues)
-import Value.Valuable exposing (withValues)
+import Value.Valuable exposing (hWithValues, withValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import Value.View exposing (displayValueDict)
@@ -144,7 +144,7 @@ viewContent model s =
                         |> displayIdentifierDict "(none)"
                     , h2 "Values:"
                     , h
-                        |> withValues s.state.commitments s.state.commitmentTypes s.state.valueTypes s.state.values
+                        |> hWithValues s.state.commitments s.state.commitmentTypes s.state.valueTypes s.state.values
                         |> .values
                         |> displayValueDict "(none)" s.state.values
                     , h2 "Groups:"
