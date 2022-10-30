@@ -2,10 +2,17 @@
 
 [Back to app](../)
 
-## version 7 -- unreleased
+## version 7 -- 2022-10-30
 
-* Use Values for all entities
+* Define Values for any entities
 * Use Rational number for the Values
+* Allow to input a Rational like an Int, Float or Division
+* Dynamically display values and expressions
+* Several UI fixes and improvements
+* Normalized URL structure
+* ListPage and ViewPage for Identifier
+* Remove uuid from anywhere by defining a Zone Config
+* Many internal changes
 
 ## version 6 -- 2022-10-17
 
