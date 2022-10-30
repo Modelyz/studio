@@ -151,7 +151,13 @@ oneOf ds s =
 
 toString : Rational -> String
 toString (Rational n d) =
-    String.fromInt n ++ "/" ++ String.fromInt d
+    String.fromInt n
+        ++ (if d == 1 then
+                ""
+
+            else
+                "/" ++ String.fromInt d
+           )
 
 
 decoder : Decoder (Result String Rational)
