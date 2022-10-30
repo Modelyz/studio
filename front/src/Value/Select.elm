@@ -96,7 +96,9 @@ view s model =
                     scope =
                         IsItem type_ uuid
                 in
-                [ selectScope s InputScope scope, selectValue s model scope (InputValue type_ uuid) ]
+                [ selectScope s InputScope scope
+                , selectValue s model scope (InputValue type_ uuid)
+                ]
 
             OnlyScope scope ->
                 [ selectScope s InputScope scope ]

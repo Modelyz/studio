@@ -21,10 +21,10 @@ type
     = Empty
       -- A set with a single item
     | IsItem Type Uuid
-      -- The set of items with a specific concrete type
-    | HasType Type
       -- the set of items of type Type whose type or parent is child of a user type uuid
     | HasUserType Type Uuid
+      -- The set of items with a specific concrete type
+    | HasType Type
       -- TODO : need to rethink what is below. Seems not relevant for Ident and Value. Can an entity be of several type?? Or is it useful for search? Maybe we need to implement a search expression like the one in Value and which is different from the scope?
       -- The union of two sets
     | And Scope Scope -- entities of both groups
