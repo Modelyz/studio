@@ -29,7 +29,7 @@ initIdentifiers allT allH its t mh newUuid =
     let
         hscope =
             -- scope corresponding to the hierarchic entity we're dealing with
-            Maybe.map (\h -> HasUserType t h.uuid) mh |> Maybe.withDefault (HasType t)
+            Maybe.map (\h -> IsItem t newUuid) mh |> Maybe.withDefault (HasType t)
     in
     its
         |> Dict.filter (\_ it -> Scope.containsScope allT allH hscope it.applyTo)

@@ -9,6 +9,7 @@
 * Allow to input a Rational like an Int, Float or Division
 * Dynamically display values and expressions
 * Several UI fixes and improvements
+* Ability to define a Value or Identifier on a single entity
 * Normalized URL structure
 * ListPage and ViewPage for Identifier
 * Remove uuid from anywhere by defining a Zone Config
