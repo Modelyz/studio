@@ -22,9 +22,13 @@ type alias Config msg =
 inputIdentifiers : Config msg -> Model a -> Scope -> Element msg
 inputIdentifiers c model scope =
     -- display an input field for each relevant identifier
+    let
+        m =
+            Debug.log "Duplicated field in model →" model
+    in
     column [ spacing 10 ]
         (h2 "Input identifiers"
-            :: (model.identifiers
+            :: (Debug.log "model.identifiers is empty → " model.identifiers
                     |> Dict.values
                     |> List.map
                         (\i -> inputIdentifier c model i)
