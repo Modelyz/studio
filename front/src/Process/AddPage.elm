@@ -181,8 +181,14 @@ update s msg model =
         InputType mh ->
             ( { model
                 | flatselect = mh
-                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
-                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                , identifiers =
+                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                        -- TODO not union here: if we change the type in Edit mode, we loose the values
+                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
+                , values =
+                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                        -- TODO not union here: if we change the type in Edit mode, we loose the values
+                        |> Dict.union (Dict.filter (\_ i -> model.uuid == i.for) s.state.values)
               }
             , Effect.none
             )
