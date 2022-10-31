@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectView, redirectViewItem, toRoute, toString)
+module Route exposing (Route(..), ViewType(..), firstSegment, redirect, redirectView, redirectViewItem, toRoute, toString, viewType)
 
 import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -88,6 +88,13 @@ type Route
     | ConfigurationList
     | ConfigurationEdit String
     | ConfigurationView String
+
+
+type ViewType
+    = List
+    | Edit
+    | Add
+    | View
 
 
 routeParser : Parser (Route -> a) a
@@ -441,7 +448,7 @@ redirectViewItem view item navkey route =
 redirectView : String -> Nav.Key -> Route -> Cmd msg
 redirectView view navkey =
     -- replaces /*/<item> with /<view>/<item>
-    toString
+    (toString
         >> String.split "/"
         >> List.indexedMap
             (\i segment ->
@@ -451,5 +458,42 @@ redirectView view navkey =
                 else
                     segment
             )
+        >> (\l ->
+                -- remove the final uuid for list view
+                if view == "list" then
+                    List.take 3 l
+
+                else
+                    l
+           )
         >> String.join "/"
+    )
         >> Nav.pushUrl navkey
+
+
+viewType : Route -> ViewType
+viewType =
+    -- TODO remove this function once the route has been refactored with a ViewType
+    toString
+        >> String.split "/"
+        >> List.drop 1
+        >> List.head
+        >> Maybe.map
+            (\v ->
+                case v of
+                    "list" ->
+                        List
+
+                    "add" ->
+                        Add
+
+                    "edit" ->
+                        Edit
+
+                    "view" ->
+                        View
+
+                    _ ->
+                        List
+            )
+        >> Maybe.withDefault List

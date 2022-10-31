@@ -156,4 +156,15 @@ update s msg model =
             ( model, Effect.none )
 
         Cancel ->
-            ( model, redirectView "view" s.navkey model.route |> Effect.fromCmd )
+            ( model
+            , redirectView
+                (if Route.viewType model.route == Route.Edit then
+                    "view"
+
+                 else
+                    "list"
+                )
+                s.navkey
+                model.route
+                |> Effect.fromCmd
+            )
