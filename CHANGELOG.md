@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 8 -- unreleased
+
+* Several UI fixes and improvements
+
 ## version 7 -- 2022-10-30
 
 * Define Values for any entities

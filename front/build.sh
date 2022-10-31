@@ -2,7 +2,7 @@
 
 set -e
 
-export APPVERSION=7 # don't forget the CHANGELOG
+export APPVERSION=8 # don't forget the CHANGELOG
 export IDBVERSION=33 ### IndexedDB version. Upgrade when a json format change occurs ###
 
 if [[ -z "${WSS}" ]]; then
