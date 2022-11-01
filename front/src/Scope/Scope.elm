@@ -21,7 +21,7 @@ type
     = Empty
       -- A set with a single item of type Type:
     | IsItem Type Uuid
-      -- the set of items whose type_ or parent is child of a user type of type Type and uuid Uuid:
+      -- the set of items of type Type whose type_ or parent is child of a user type of type Type and uuid Uuid:
     | HasUserType HType.Type Uuid
       -- The set of items with a specific concrete type:
     | HasType Type

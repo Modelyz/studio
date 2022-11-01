@@ -24,7 +24,7 @@ gDisplay allT allH configs zone g =
 
 tDisplay : Dict String (Typed a) -> Dict String (Hierarchic h) -> Dict String Configuration -> Zone -> Typed a -> String
 tDisplay allT allH configs zone t =
-    Config.getMostSpecific allT allH configs zone (IsItem (Type.TType t.what) t.uuid)
+    Debug.log "tDisplay Config.getMostSpecific" (Config.getMostSpecific allT allH configs zone (IsItem (Type.TType t.what) t.uuid))
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display t.identifiers fragments)
         |> Maybe.withDefault (Uuid.toString t.uuid)
 
@@ -32,7 +32,7 @@ tDisplay allT allH configs zone t =
 hDisplay : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Zone -> Hierarchic b -> String
 hDisplay allT allH configs zone h =
     -- return the display string of the hierarchic item
-    Config.getMostSpecific allT allH configs zone (IsItem (Type.HType h.what) h.uuid)
+    Debug.log "hDisplay Config.getMostSpecific" (Config.getMostSpecific allT allH configs zone (IsItem (Type.HType h.what) h.uuid))
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display h.identifiers fragments)
         |> Maybe.withDefault (Uuid.toString h.uuid)
 

@@ -160,6 +160,48 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
+        IdentifierTypeChanged new old ->
+            { state
+                | identifierTypes =
+                    Dict.insert (IdentifierType.compare new) new <|
+                        Dict.remove (IdentifierType.compare old) state.identifierTypes
+                , identifiers =
+                    -- keep the identifiers whose name are different from the one removed,
+                    -- or if this is the same name, whose item is not in the scope of the identifier type
+                    state.identifiers
+                        |> Dict.values
+                        |> List.filter
+                            (\i ->
+                                i.name
+                                    /= new.name
+                                    || not
+                                        ((case i.what of
+                                            Type.TType tt ->
+                                                T.find (allTyped state tt) i.identifiable
+                                                    |> Maybe.map (containsTyped new.applyTo)
+
+                                            Type.HType ht ->
+                                                H.find (allHierarchic state ht) i.identifiable
+                                                    |> Maybe.map (containsHierarchic new.applyTo)
+                                         )
+                                            |> Maybe.withDefault False
+                                        )
+                            )
+                        |> List.map
+                            (\i ->
+                                if i.name == old.name then
+                                    let
+                                        newi =
+                                            { i | name = new.name }
+                                    in
+                                    ( Identifier.compare newi, newi )
+
+                                else
+                                    ( Identifier.compare i, i )
+                            )
+                        |> Dict.fromList
+            }
+
         IdentifierTypeRemoved it ->
             { state
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes

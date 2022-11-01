@@ -91,6 +91,7 @@ type Payload
     | AddedProcess Process
     | RemovedProcess Uuid
     | IdentifierTypeAdded IdentifierType
+    | IdentifierTypeChanged IdentifierType IdentifierType
     | IdentifierTypeRemoved IdentifierType
     | IdentifierAdded Identifier
     | ValueTypeAdded ValueType
@@ -114,6 +115,9 @@ toString p =
 
         IdentifierTypeAdded _ ->
             "IdentifierTypeAdded"
+
+        IdentifierTypeChanged _ _ ->
+            "IdentifierTypeChanged"
 
         IdentifierTypeRemoved _ ->
             "IdentifierTypeRemoved"
@@ -288,6 +292,14 @@ encode (Message b p) =
                     ]
                 )
 
+            IdentifierTypeChanged new old ->
+                ( "load"
+                , Encode.object
+                    [ ( "new", IdentifierType.encode new )
+                    , ( "old", IdentifierType.encode old )
+                    ]
+                )
+
             IdentifierTypeAdded it ->
                 ( "load", IdentifierType.encode it )
 
@@ -437,6 +449,11 @@ decoder =
                         "IdentifierTypeAdded" ->
                             Decode.map IdentifierTypeAdded
                                 (Decode.field "load" IdentifierType.decoder)
+
+                        "IdentifierTypeChanged" ->
+                            Decode.map2 IdentifierTypeChanged
+                                (Decode.at [ "load", "new" ] IdentifierType.decoder)
+                                (Decode.at [ "load", "old" ] IdentifierType.decoder)
 
                         "IdentifierTypeRemoved" ->
                             Decode.map IdentifierTypeRemoved
