@@ -6,8 +6,8 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (tGroupsColumn)
+import Group.WithGroups exposing (tWithGroups)
 import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
@@ -96,6 +96,13 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        allT =
+            s.state.agents |> Dict.map (\_ t -> tWithIdentifiers s.state.agents Dict.empty s.state.identifierTypes s.state.identifiers t)
+
+        allH =
+            s.state.agentTypes |> Dict.map (\_ v -> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers v)
+    in
     case model.viewtype of
         Smallcard ->
             flatContainer s
@@ -107,9 +114,8 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.agents
-                        |> Dict.map (\_ t -> tWithIdentifiers s.state.agents Dict.empty s.state.identifierTypes s.state.identifiers t)
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents (Dict.map (\_ v -> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers v) s.state.agentTypes) s.state.configs t)
+                    (allT
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents allH s.state.configs t)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
@@ -127,17 +133,16 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.agents
+                            allT
                                 |> Dict.values
-                                |> List.map (tWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.TType TType.Agent)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ tGroupsColumn s ]
                         }
                     ]
                 ]

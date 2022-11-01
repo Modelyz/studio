@@ -5,8 +5,8 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (hGroupsColumn)
+import Group.WithGroups exposing (hWithGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier
@@ -134,14 +134,14 @@ viewContent model s =
                             s.state.processTypes
                                 |> Dict.values
                                 |> List.map (hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (hWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ hGroupsColumn s ]
                         }
                     ]
                 ]

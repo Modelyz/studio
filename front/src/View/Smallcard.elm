@@ -7,6 +7,7 @@ import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
+import Hierarchy.Type as HType
 import Scope.Scope exposing (Scope(..))
 import Type
 import Typed.Typed as T exposing (Typed)
@@ -63,53 +64,57 @@ viewHalfCard maybeOnDelete title =
 
 
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hViewHalfCard onDelete allT allH configs hierarchic =
+hViewHalfCard onDelete allT allH configs h =
     viewHalfCard
         (Just onDelete)
-        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
+        (text <| hDisplay allT allH configs SmallcardTitle h)
 
 
 tItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Type.Type -> Element msg
-tItemClickableCard onInput allT allH configs typed type_ =
+tItemClickableCard onInput allT allH configs t type_ =
     clickableCard
-        (onInput (IsItem type_ typed.uuid))
-        (text <| tDisplay allT allH configs SmallcardTitle typed)
-        (T.find allT typed.type_ |> Maybe.map (tDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (onInput (IsItem type_ t.uuid))
+        (text <| tDisplay allT allH configs SmallcardTitle t)
+        (T.find allT t.type_ |> Maybe.map (tDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 hItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
-hItemClickableCard onInput allT allH configs hierarchic type_ =
+hItemClickableCard onInput allT allH configs h type_ =
     clickableCard
-        (onInput (IsItem type_ hierarchic.uuid))
-        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
-        (hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (onInput (IsItem type_ h.uuid))
+        (text <| hDisplay allT allH configs SmallcardTitle h)
+        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
-sClickableCard onInput allT allH configs hierarchic type_ =
-    clickableCard (onInput (HasUserType type_ hierarchic.uuid))
-        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
-        (hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> HType.Type -> Element msg
+sClickableCard onInput allT allH configs h type_ =
+    clickableCard
+        (onInput (HasUserType type_ h.uuid))
+        (text <| hDisplay allT allH configs SmallcardTitle h)
+        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 hClickableCard : (Maybe (Hierarchic b) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableCard onInput allT allH configs hierarchic =
-    clickableCard (onInput (Just hierarchic))
-        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
-        (hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+hClickableCard onInput allT allH configs h =
+    clickableCard
+        (onInput (Just h))
+        (text <| hDisplay allT allH configs SmallcardTitle h)
+        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tClickableRemovableCard onChoose onDelete allT allH configs typed =
-    clickableRemovableCard onChoose
+tClickableRemovableCard onChoose onDelete allT allH configs t =
+    clickableRemovableCard
+        onChoose
         onDelete
-        (text <| tDisplay allT allH configs SmallcardTitle typed)
-        (H.find allH typed.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (text <| tDisplay allT allH configs SmallcardTitle t)
+        (H.find allH t.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableRemovableCard onChoose onDelete allT allH configs hierarchic =
-    clickableRemovableCard onChoose
+hClickableRemovableCard onChoose onDelete allT allH configs h =
+    clickableRemovableCard
+        onChoose
         onDelete
-        (text <| hDisplay allT allH configs SmallcardTitle hierarchic)
-        (hierarchic.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (text <| hDisplay allT allH configs SmallcardTitle h)
+        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)

@@ -5,8 +5,8 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (tGroupsColumn)
+import Group.WithGroups exposing (tWithGroups)
 import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
@@ -130,14 +130,14 @@ viewContent model s =
                             s.state.resources
                                 |> Dict.values
                                 |> List.map (tWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.resources s.state.resourceTypes it.applyTo (HasType (Type.TType TType.Resource)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ tGroupsColumn s ]
                         }
                     ]
                 ]

@@ -8,11 +8,12 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
 type alias Event =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
@@ -31,7 +32,7 @@ type alias Event =
 encode : Event -> Encode.Value
 encode e =
     Encode.object <|
-        [ ( "what", Type.encode e.what )
+        [ ( "what", TType.encode e.what )
         , ( "uuid", Uuid.encode e.uuid )
         , ( "type", Uuid.encode e.type_ )
         , ( "when", Encode.int <| posixToMillis e.when )
@@ -41,7 +42,7 @@ encode e =
 decoder : Decoder Event
 decoder =
     Decode.map8 Event
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))

@@ -44,8 +44,12 @@ type alias HierarchicType =
     ContractType
 
 
-tType =
+constructor =
     ContractType
+
+
+hierarchicConstructor =
+    HType.ContractType
 
 
 mkMessage : HierarchicType -> Message.Payload
@@ -253,7 +257,7 @@ checkStep model =
 
 validate : Model -> Result String HierarchicType
 validate m =
-    Ok <| tType hereType m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -287,24 +291,10 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

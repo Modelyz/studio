@@ -24,8 +24,8 @@ type alias Config msg =
     }
 
 
-inputValues : Config msg -> Shared.Model -> Model a -> Scope -> Element msg
-inputValues c s model scope =
+inputValues : Config msg -> Shared.Model -> Model a -> Element msg
+inputValues c s model =
     -- display the expression with input fields for each relevant valueType
     column [ spacing 10 ]
         (h2 "Input values"
@@ -33,7 +33,7 @@ inputValues c s model scope =
                     |> Dict.values
                     |> List.map
                         (inputValue c s model)
-                    |> withDefaultContent (p <| "Apparently there are no values defined for " ++ Scope.toString scope ++ ". Please first create one.")
+                    |> withDefaultContent (p <| "Apparently there are no values defined for this entity. Please first create one.")
                 --TODO + link
                )
         )

@@ -39,8 +39,13 @@ type alias HierarchicType =
     GroupType
 
 
-tType =
+constructor =
     Group
+
+
+typedConstructor : TType.Type
+typedConstructor =
+    TType.Group
 
 
 hereType : Type.Type
@@ -225,7 +230,7 @@ validate m =
     case m.flatselect of
         Just h ->
             -- TODO check that TType thing is useful
-            Ok <| tType hereType m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
+            Ok <| constructor typedConstructor m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Group Type"
@@ -259,24 +264,10 @@ viewContent model s =
                         ]
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

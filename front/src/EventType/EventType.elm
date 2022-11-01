@@ -2,6 +2,7 @@ module EventType.EventType exposing (EventType, compare, decoder, encode)
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
+import Hierarchy.Type as HType
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -12,7 +13,7 @@ import Value.Value exposing (Value)
 
 
 type alias EventType =
-    { what : Type
+    { what : HType.Type
     , uuid : Uuid
     , parent : Maybe Uuid
     , identifiers : Dict String Identifier
@@ -25,7 +26,7 @@ type alias EventType =
 encode : EventType -> Encode.Value
 encode et =
     Encode.object <|
-        [ ( "what", Type.encode et.what )
+        [ ( "what", HType.encode et.what )
         , ( "uuid", Uuid.encode et.uuid )
         , ( "parent", Maybe.map Uuid.encode et.parent |> Maybe.withDefault Encode.null )
         ]
@@ -34,7 +35,7 @@ encode et =
 decoder : Decode.Decoder EventType
 decoder =
     Decode.map7 EventType
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.succeed Dict.empty)

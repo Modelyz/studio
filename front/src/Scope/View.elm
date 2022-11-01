@@ -18,7 +18,7 @@ import Shared
 import State exposing (State)
 import Type
 import Typed.Type as TType
-import Typed.Typed exposing (OnlyTyped, Typed)
+import Typed.Typed as T exposing (OnlyTyped, Typed)
 import Value.Value exposing (Value)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, hItemClickableCard, sClickableCard, tItemClickableCard, viewHalfCard)
@@ -36,20 +36,20 @@ toDisplay allT allH configs scope =
             "Nothing"
 
         IsItem (Type.TType tt) uuid ->
-            Item.find allT uuid
+            T.find allT uuid
                 |> Maybe.map (\t -> (Type.toString (Type.TType tt) ++ ": ") ++ tDisplay allT allH configs SmallcardTitle t)
                 |> Maybe.withDefault "(missing)"
 
         IsItem (Type.HType ht) uuid ->
-            Item.find allH uuid
+            H.find allH uuid
                 |> Maybe.map (\h -> (Type.toString (Type.HType ht) ++ ": ") ++ hDisplay allT allH configs SmallcardTitle h)
                 |> Maybe.withDefault "(missing)"
 
         HasType t ->
             "All " ++ Type.toPluralString t
 
-        HasUserType t tuid ->
-            "All " ++ Type.toPluralString t ++ " of type " ++ (H.find allH tuid |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "(missing)")
+        HasUserType ht tuid ->
+            "All " ++ HType.toPluralString ht ++ " of type " ++ (H.find allH tuid |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "(missing)")
 
         Identified _ ->
             "Identified"
@@ -78,10 +78,7 @@ selectScope s onInput scope =
                 HasType (Type.HType ht) ->
                     State.allTyped s.state (TType.fromHierarchic ht) |> withIdentifiers s.state
 
-                HasUserType (Type.TType tt) _ ->
-                    State.allTyped s.state tt |> withIdentifiers s.state
-
-                HasUserType (Type.HType ht) _ ->
+                HasUserType ht _ ->
                     State.allTyped s.state (TType.fromHierarchic ht) |> withIdentifiers s.state
 
                 IsItem (Type.TType tt) uuid ->
@@ -98,10 +95,7 @@ selectScope s onInput scope =
                 HasType (Type.HType ht) ->
                     State.allHierarchic s.state ht |> withIdentifiers s.state
 
-                HasUserType (Type.TType tt) _ ->
-                    State.allHierarchic s.state (TType.toHierarchic tt) |> withIdentifiers s.state
-
-                HasUserType (Type.HType ht) _ ->
+                HasUserType ht _ ->
                     State.allHierarchic s.state ht |> withIdentifiers s.state
 
                 IsItem (Type.HType ht) uuid ->
@@ -160,7 +154,7 @@ selectScope s onInput scope =
                     (h3 <| "of type:")
                         :: (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.TType tt))
+                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (TType.toHierarchic tt))
                            )
 
                 HasType (Type.HType ht) ->
@@ -173,21 +167,14 @@ selectScope s onInput scope =
                     (h3 <| "of type:")
                         :: (allHwithIdentifiers
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.HType ht))
+                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h ht)
                            )
 
                 _ ->
                     []
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
-                HasUserType (Type.TType tt) uuid ->
-                    let
-                        allTwithIdentifiers =
-                            State.allTyped s.state tt |> Dict.map (\_ t -> { t | identifiers = s.state.identifiers |> Dict.filter (\_ id -> t.uuid == id.identifiable) })
-                    in
-                    (h3 <| "You can select a specific Typed one (otherwise click Next):") :: (allTwithIdentifiers |> Dict.values |> List.map (\t -> tItemClickableCard onInput allTwithIdentifiers allH s.state.configs t (Type.TType tt)))
-
-                HasUserType (Type.HType ht) uuid ->
+                HasUserType ht uuid ->
                     let
                         allHwithIdentifiers =
                             State.allHierarchic s.state ht |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })

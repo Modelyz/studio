@@ -1,4 +1,7 @@
-module Hierarchy.Type exposing (Type(..), all, fromString, toPluralString, toString)
+module Hierarchy.Type exposing (Type(..), all, decoder, encode, fromString, toPluralString, toString)
+
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 
 
 type
@@ -41,6 +44,16 @@ toString t =
 
         GroupType ->
             "GroupType"
+
+
+encode : Type -> Encode.Value
+encode =
+    toString >> Encode.string
+
+
+decoder : Decoder Type
+decoder =
+    Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))
 
 
 toPluralString : Type -> String

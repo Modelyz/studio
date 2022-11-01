@@ -3,6 +3,7 @@ module Value.Valuable exposing (hWithValues, tWithValues, withValues)
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Item.Item exposing (Item)
+import Type
 import Typed.Typed exposing (Typed)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (ValueType, initValues)
@@ -23,7 +24,7 @@ tWithValues allT allH allVts allVs t =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { t
         | values =
-            initValues allT allH allVts t.what (H.find allH t.type_) t.uuid
+            initValues allT allH allVts (Type.TType t.what) (H.find allH t.type_) t.uuid
                 |> Dict.union (Value.fromUuid t.uuid allVs)
     }
 
@@ -33,6 +34,6 @@ hWithValues allT allH allVts allVs t =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { t
         | values =
-            initValues allT allH allVts t.what (Maybe.andThen (H.find allH) t.parent) t.uuid
+            initValues allT allH allVts (Type.HType t.what) (Maybe.andThen (H.find allH) t.parent) t.uuid
                 |> Dict.union (Value.fromUuid t.uuid allVs)
     }

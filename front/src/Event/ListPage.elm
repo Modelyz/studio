@@ -6,8 +6,8 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Event.Event exposing (Event)
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (tGroupsColumn)
+import Group.WithGroups exposing (tWithGroups)
 import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
@@ -130,14 +130,14 @@ viewContent model s =
                             s.state.events
                                 |> Dict.values
                                 |> List.map (tWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.applyTo (HasType (Type.TType TType.Event)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ tGroupsColumn s ]
                         }
                     ]
                 ]

@@ -9,12 +9,13 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Rational as Rational exposing (Rational(..))
 import Value.Value exposing (Value)
 
 
 type alias Commitment =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
@@ -33,7 +34,7 @@ type alias Commitment =
 encode : Commitment -> Encode.Value
 encode c =
     Encode.object <|
-        [ ( "what", Type.encode c.what )
+        [ ( "what", TType.encode c.what )
         , ( "uuid", Uuid.encode c.uuid )
         , ( "type", Uuid.encode c.type_ )
         , ( "when", Encode.int <| posixToMillis c.when )
@@ -48,7 +49,7 @@ decoder =
             Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty Dict.empty
          --qty provider receiver
         )
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))

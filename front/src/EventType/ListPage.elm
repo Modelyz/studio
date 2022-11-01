@@ -6,8 +6,8 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import EventType.EventType exposing (EventType)
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (hGroupsColumn)
+import Group.WithGroups exposing (hWithGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier
@@ -134,14 +134,14 @@ viewContent model s =
                             s.state.eventTypes
                                 |> Dict.values
                                 |> List.map (hWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (hWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.applyTo (HasType (Type.HType HType.EventType)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ hGroupsColumn s ]
                         }
                     ]
                 ]

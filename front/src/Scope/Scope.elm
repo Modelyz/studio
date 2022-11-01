@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, containsItem, containsScope, decoder, encode, getUpperList, mainHType, mainTType, toString)
+module Scope.Scope exposing (Scope(..), compare, containsHierarchic, containsScope, containsTyped, decoder, encode, getUpperList, mainHType, mainTType, toString)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
@@ -17,13 +17,13 @@ import Util exposing (otherwise)
 type
     Scope
     -- a scope is the definition of a set of items:
-    -- Either an empty set
+    -- Either an empty set:
     = Empty
-      -- A set with a single item
+      -- A set with a single item of type Type:
     | IsItem Type Uuid
-      -- the set of items of type Type whose type or parent is child of a user type uuid
-    | HasUserType Type Uuid
-      -- The set of items with a specific concrete type
+      -- the set of items whose type_ or parent is child of a user type of type Type and uuid Uuid:
+    | HasUserType HType.Type Uuid
+      -- The set of items with a specific concrete type:
     | HasType Type
       -- TODO : need to rethink what is below. Seems not relevant for Ident and Value. Can an entity be of several type?? Or is it useful for search? Maybe we need to implement a search expression like the one in Value and which is different from the scope?
       -- The union of two sets
@@ -42,8 +42,8 @@ encode scope =
         HasType t ->
             Encode.object [ ( "IsType", Type.encode t ) ]
 
-        HasUserType t uuid ->
-            Encode.object [ ( "HasUserType", Encode.object [ ( "type", Type.encode t ), ( "uuid", Uuid.encode uuid ) ] ) ]
+        HasUserType ht uuid ->
+            Encode.object [ ( "HasUserType", Encode.object [ ( "type", HType.encode ht ), ( "uuid", Uuid.encode uuid ) ] ) ]
 
         IsItem t uuid ->
             Encode.object [ ( "IsItem", Encode.object [ ( "type", Type.encode t ), ( "uuid", Uuid.encode uuid ) ] ) ]
@@ -84,7 +84,7 @@ decoder =
     Decode.oneOf
         [ Decode.map HasType (Decode.field "IsType" Type.decoder)
         , Decode.map2 IsItem (Decode.at [ "IsItem", "type" ] Type.decoder) (Decode.at [ "IsItem", "uuid" ] Uuid.decoder)
-        , Decode.map2 HasUserType (Decode.at [ "HasUserType", "type" ] Type.decoder) (Decode.at [ "HasUserType", "uuid" ] Uuid.decoder)
+        , Decode.map2 HasUserType (Decode.at [ "HasUserType", "type" ] HType.decoder) (Decode.at [ "HasUserType", "uuid" ] Uuid.decoder)
         , Decode.field "And" (Decode.lazy (\_ -> pairDecoder And "And"))
         , Decode.field "Or" (Decode.lazy (\_ -> pairDecoder Or "Or"))
         , Decode.map Not (Decode.field "Not" (Decode.lazy (\_ -> decoder)))
@@ -105,25 +105,46 @@ decoder =
 getUpper : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Maybe Scope
 getUpper allT allH scope =
     case scope of
-        IsItem t uuid ->
-            T.find allT uuid |> Maybe.map .type_ |> Maybe.map (HasUserType t)
+        IsItem (Type.HType ht) uuid ->
+            H.find allH uuid
+                |> Maybe.andThen .parent
+                |> (\mpuuid ->
+                        case mpuuid of
+                            Just puuid ->
+                                Just <| HasUserType ht puuid
+
+                            Nothing ->
+                                Just <| HasUserType ht uuid
+                   )
+
+        IsItem (Type.TType tt) uuid ->
+            T.find allT uuid
+                |> Maybe.map .type_
+                |> (\mpuuid ->
+                        case mpuuid of
+                            Just puuid ->
+                                Just <| HasUserType (TType.toHierarchic tt) puuid
+
+                            Nothing ->
+                                Just <| HasType (Type.TType tt)
+                   )
 
         HasType _ ->
             Nothing
 
-        HasUserType t uuid ->
+        HasUserType ht uuid ->
             -- uuid here is always a hierarchic type
             H.find allH uuid
                 |> Maybe.map
                     (\h ->
                         case h.parent of
                             Nothing ->
-                                Just (HasType t)
+                                Just (HasType (Type.HType ht))
 
                             Just x ->
-                                Just (HasUserType t x)
+                                Just (HasUserType ht x)
                     )
-                |> Maybe.withDefault (Just (HasType t))
+                |> Maybe.withDefault (Just (HasType (Type.HType ht)))
 
         And s1 s2 ->
             let
@@ -161,51 +182,15 @@ getUpperList allT allH scope oldList =
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool
 containsScope allT allH inscope outscope =
-    -- definitely need review
+    -- definitely needs review
     case outscope of
         Empty ->
             False
 
-        IsItem outType outUuid ->
-            case outType of
-                Type.TType _ ->
-                    case inscope of
-                        IsItem inType inUuid ->
-                            outType == inType && outUuid == inUuid
-
-                        And s1 s2 ->
-                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
-
-                        Or s1 s2 ->
-                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
-
-                        _ ->
-                            False
-
-                Type.HType _ ->
-                    case inscope of
-                        IsItem inType inUuid ->
-                            outType == inType && outUuid == inUuid
-
-                        And s1 s2 ->
-                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
-
-                        Or s1 s2 ->
-                            containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
-
-                        _ ->
-                            False
-
-        HasType outType ->
+        IsItem (Type.TType outTType) outUuid ->
             case inscope of
-                IsItem inType _ ->
-                    outType == inType
-
-                HasType inType ->
-                    outType == inType
-
-                HasUserType inType _ ->
-                    inType == outType
+                IsItem (Type.TType inTType) inUuid ->
+                    outTType == inTType && outUuid == inUuid
 
                 And s1 s2 ->
                     containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
@@ -216,19 +201,73 @@ containsScope allT allH inscope outscope =
                 _ ->
                     False
 
-        HasUserType outType outUuid ->
+        IsItem (Type.HType outHType) outUuid ->
             case inscope of
-                IsItem inType inUuid ->
-                    (inType == outType)
+                IsItem (Type.HType inType) inUuid ->
+                    outHType == inType && outUuid == inUuid
+
+                And s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                Or s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                _ ->
+                    False
+
+        HasUserType outHType outUuid ->
+            case inscope of
+                IsItem (Type.TType inTType) inUuid ->
+                    (outHType == TType.toHierarchic inTType)
                         && (Maybe.map3 T.isAscendantOf (T.find allT inUuid) (Just allH) (H.find allH outUuid)
                                 |> Maybe.withDefault False
                            )
 
-                HasUserType inType inUuid ->
-                    (inType == outType)
+                IsItem (Type.HType inHType) inUuid ->
+                    (outHType == inHType)
+                        && (Maybe.map3 T.isAscendantOf (T.find allT inUuid) (Just allH) (H.find allH outUuid)
+                                |> Maybe.withDefault False
+                           )
+
+                HasUserType inHType inUuid ->
+                    (outHType == inHType)
                         && (Maybe.map3 H.isAscendantOf (H.find allH inUuid) (Just allH) (H.find allH outUuid)
                                 |> Maybe.withDefault False
                            )
+
+                And s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                Or s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                _ ->
+                    False
+
+        HasType (Type.HType outHType) ->
+            case inscope of
+                IsItem (Type.HType inHType) _ ->
+                    outHType == inHType
+
+                HasType (Type.HType inHType) ->
+                    outHType == inHType
+
+                HasUserType inHType _ ->
+                    inHType == outHType
+
+                And s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                Or s1 s2 ->
+                    containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
+
+                _ ->
+                    False
+
+        HasType (Type.TType outTType) ->
+            case inscope of
+                HasType (Type.TType inTType) ->
+                    outTType == inTType
 
                 And s1 s2 ->
                     containsScope allT allH s1 outscope && containsScope allT allH s2 outscope
@@ -252,18 +291,22 @@ containsScope allT allH inscope outscope =
             False
 
 
-containsItem : Scope -> Item a -> Bool
-containsItem scope item =
+containsTyped : Scope -> Typed a -> Bool
+containsTyped scope t =
     case scope of
         Empty ->
             False
 
         IsItem _ uuid ->
-            item.uuid == uuid
+            t.uuid == uuid
 
-        HasType t ->
+        HasType (Type.HType ht) ->
             -- TODO a non-alias type would allow to get rid of "what"
-            item.what == t
+            t.what == TType.fromHierarchic ht
+
+        HasType (Type.TType tt) ->
+            -- TODO a non-alias type would allow to get rid of "what"
+            t.what == tt
 
         HasUserType _ _ ->
             -- ancestor search is in functions below
@@ -274,13 +317,48 @@ containsItem scope item =
             False
 
         And s1 s2 ->
-            containsItem s1 item && containsItem s2 item
+            containsTyped s1 t && containsTyped s2 t
 
         Or s1 s2 ->
-            containsItem s1 item || containsItem s2 item
+            containsTyped s1 t || containsTyped s2 t
 
         Not s ->
-            not <| containsItem s item
+            not <| containsTyped s t
+
+
+containsHierarchic : Scope -> Hierarchic a -> Bool
+containsHierarchic scope h =
+    case scope of
+        Empty ->
+            False
+
+        IsItem _ uuid ->
+            h.uuid == uuid
+
+        HasType (Type.TType tt) ->
+            -- TODO a non-alias type would allow to get rid of "what"
+            h.what == TType.toHierarchic tt
+
+        HasType (Type.HType ht) ->
+            -- TODO a non-alias type would allow to get rid of "what"
+            h.what == ht
+
+        HasUserType _ _ ->
+            -- ancestor search is in functions below
+            False
+
+        Identified _ ->
+            -- TODO
+            False
+
+        And s1 s2 ->
+            containsHierarchic s1 h && containsHierarchic s2 h
+
+        Or s1 s2 ->
+            containsHierarchic s1 h || containsHierarchic s2 h
+
+        Not s ->
+            not <| containsHierarchic s h
 
 
 toString : Scope -> String
@@ -297,8 +375,8 @@ toString scope =
         HasType t ->
             Type.toString t
 
-        HasUserType t tuid ->
-            Type.toString t ++ "(parent=" ++ Uuid.toString tuid ++ ")"
+        HasUserType ht tuid ->
+            HType.toString ht ++ "(parent=" ++ Uuid.toString tuid ++ ")"
 
         Identified _ ->
             "Identified"
@@ -329,13 +407,8 @@ mainTType scope =
                 Type.HType ht ->
                     Just (TType.fromHierarchic ht)
 
-        HasUserType t _ ->
-            case t of
-                Type.TType tt ->
-                    Just tt
-
-                Type.HType ht ->
-                    Just (TType.fromHierarchic ht)
+        HasUserType ht _ ->
+            Just (TType.fromHierarchic ht)
 
         And s1 s2 ->
             otherwise (mainTType s1) (mainTType s2)
@@ -358,13 +431,8 @@ mainHType scope =
                 Type.HType ht ->
                     Just ht
 
-        HasUserType t _ ->
-            case t of
-                Type.TType tt ->
-                    Just (TType.toHierarchic tt)
-
-                Type.HType ht ->
-                    Just ht
+        HasUserType ht _ ->
+            Just ht
 
         And s1 s2 ->
             otherwise (mainHType s1) (mainHType s2)

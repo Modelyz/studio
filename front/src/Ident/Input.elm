@@ -19,20 +19,16 @@ type alias Config msg =
     }
 
 
-inputIdentifiers : Config msg -> Model a -> Scope -> Element msg
-inputIdentifiers c model scope =
+inputIdentifiers : Config msg -> Model a -> Element msg
+inputIdentifiers c model =
     -- display an input field for each relevant identifier
-    let
-        m =
-            Debug.log "Duplicated field in model →" model
-    in
     column [ spacing 10 ]
         (h2 "Input identifiers"
-            :: (Debug.log "model.identifiers is empty → " model.identifiers
+            :: (model.identifiers
                     |> Dict.values
                     |> List.map
                         (\i -> inputIdentifier c model i)
-                    |> withDefaultContent (p <| "Apparently there are no identifiers defined for " ++ Scope.toString scope ++ ". Please first create one.")
+                    |> withDefaultContent (p <| "Apparently there are no identifiers defined for this entity. Please first create one.")
                 --TODO + link
                )
         )

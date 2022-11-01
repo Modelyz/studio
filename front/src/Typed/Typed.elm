@@ -5,6 +5,7 @@ import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
 import Ident.Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
@@ -14,7 +15,7 @@ import Value.Value exposing (Value)
 
 type alias Typed a =
     { a
-        | what : Type
+        | what : TType.Type
         , uuid : Uuid
         , type_ : Uuid
         , identifiers : Dict String Identifier
@@ -25,7 +26,7 @@ type alias Typed a =
 
 type alias OnlyTyped =
     -- this seems necessary because all the Typed types have not the same fields (see the end of State.elm)
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String Identifier
