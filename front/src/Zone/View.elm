@@ -17,14 +17,14 @@ import Zone.Zone as Zone exposing (Zone)
 
 gDisplay : Dict String (Typed a) -> Dict String (Hierarchic h) -> Dict String Configuration -> Zone -> Group -> String
 gDisplay allT allH configs zone g =
-    Config.getMostSpecific allT allH configs zone (HasUserType HType.GroupType g.uuid)
+    Config.getMostSpecific allT allH configs zone (HasUserType (Type.TType g.what) HType.GroupType g.uuid)
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display g.identifiers fragments)
         |> Maybe.withDefault (Uuid.toString g.uuid)
 
 
 tDisplay : Dict String (Typed a) -> Dict String (Hierarchic h) -> Dict String Configuration -> Zone -> Typed a -> String
 tDisplay allT allH configs zone t =
-    Debug.log "tDisplay Config.getMostSpecific" (Config.getMostSpecific allT allH configs zone (IsItem (Type.TType t.what) t.uuid))
+    Config.getMostSpecific allT allH configs zone (IsItem (Type.TType t.what) t.uuid)
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display t.identifiers fragments)
         |> Maybe.withDefault (Uuid.toString t.uuid)
 
@@ -32,7 +32,7 @@ tDisplay allT allH configs zone t =
 hDisplay : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Zone -> Hierarchic b -> String
 hDisplay allT allH configs zone h =
     -- return the display string of the hierarchic item
-    Debug.log "hDisplay Config.getMostSpecific" (Config.getMostSpecific allT allH configs zone (IsItem (Type.HType h.what) h.uuid))
+    Config.getMostSpecific allT allH configs zone (IsItem (Type.HType h.what) h.uuid)
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display h.identifiers fragments)
         |> Maybe.withDefault (Uuid.toString h.uuid)
 

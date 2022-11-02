@@ -160,6 +160,6 @@ identifierColumn it =
             >> List.filter (\id -> id.name == it.name)
             >> List.map Identifier.toValue
             >> List.head
-            >> Maybe.withDefault ""
+            >> Maybe.withDefault "(no identifier)"
             >> innerCell
     }

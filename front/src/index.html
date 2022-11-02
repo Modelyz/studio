@@ -47,6 +47,7 @@ const getRandomInts = (n) => {
 /**** run Elm ****/
 const randInts = getRandomInts(5);
 const flags = { version: ${APPVERSION},
+                esversion: ${IDBVERSION},
                 seed: randInts[0],
                 seedExtension : randInts.slice(1),
                 url: window.location.href,

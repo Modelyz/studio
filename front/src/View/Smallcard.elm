@@ -86,10 +86,10 @@ hItemClickableCard onInput allT allH configs h type_ =
         (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> HType.Type -> Element msg
-sClickableCard onInput allT allH configs h type_ =
+sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Scope -> Element msg
+sClickableCard onInput allT allH configs h scope =
     clickableCard
-        (onInput (HasUserType type_ h.uuid))
+        (onInput scope)
         (text <| hDisplay allT allH configs SmallcardTitle h)
         (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 

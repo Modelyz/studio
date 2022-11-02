@@ -28,7 +28,7 @@ import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
-import Scope.Scope exposing (Scope(..), containsHierarchic, containsTyped)
+import Scope.Scope exposing (Scope(..), containsScope)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -178,11 +178,11 @@ aggregate (Message b p) state =
                                         ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (containsTyped new.applyTo)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.applyTo)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (containsHierarchic new.applyTo)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.applyTo)
                                          )
                                             |> Maybe.withDefault False
                                         )
@@ -217,11 +217,11 @@ aggregate (Message b p) state =
                                         ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (containsTyped it.applyTo)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) it.applyTo)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (containsHierarchic it.applyTo)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) it.applyTo)
                                          )
                                             |> Maybe.withDefault False
                                         )
@@ -248,17 +248,16 @@ aggregate (Message b p) state =
                     state.values
                         |> Dict.filter
                             (\_ v ->
-                                v.name
-                                    /= vt.name
+                                (v.name /= vt.name)
                                     || not
                                         ((case v.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) v.for
-                                                    |> Maybe.map (containsTyped vt.scope)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) v.for) vt.scope)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) v.for
-                                                    |> Maybe.map (containsHierarchic vt.scope)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) v.for) vt.scope)
                                          )
                                             |> Maybe.withDefault False
                                         )
@@ -627,7 +626,7 @@ allTfromScope s scope =
         HasType (Type.HType ht) ->
             allTyped s (TType.fromHierarchic ht)
 
-        HasUserType ht uuid ->
+        HasUserType _ ht uuid ->
             allTyped s (TType.fromHierarchic ht)
 
         Identified _ ->
@@ -664,7 +663,7 @@ allHfromScope s scope =
         HasType (Type.HType ht) ->
             allHierarchic s ht
 
-        HasUserType ht uuid ->
+        HasUserType _ ht uuid ->
             allHierarchic s ht
 
         Identified _ ->

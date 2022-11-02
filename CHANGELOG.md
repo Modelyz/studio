@@ -5,6 +5,7 @@
 ## version 8 -- unreleased
 
 * Several UI fixes and improvements
+* Clear BSOD in case of JSON decode error
 
 ## version 7 -- 2022-10-30
 

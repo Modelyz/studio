@@ -23,6 +23,7 @@ import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 type alias Model =
     -- ui model related
     { version : Int
+    , esversion : Int
     , currentSeed : Seed
     , route : Route
     , navkey : Nav.Key
@@ -61,6 +62,7 @@ type Msg
 
 type alias Flags =
     { version : Int
+    , esversion : Int
     , seed : Int
     , seedExtension : List Int
     , url : Maybe Url
@@ -70,8 +72,9 @@ type alias Flags =
 
 flagsDecoder : Decode.Decoder Flags
 flagsDecoder =
-    Decode.map5 Flags
+    Decode.map6 Flags
         (Decode.field "version" Decode.int)
+        (Decode.field "esversion" Decode.int)
         (Decode.field "seed" Decode.int)
         (Decode.field "seedExtension" (Decode.list Decode.int))
         (Decode.field "url" Decode.string |> Decode.andThen (Url.fromString >> Decode.succeed))
@@ -85,6 +88,7 @@ init value navkey =
     case Decode.decodeValue flagsDecoder value of
         Ok f ->
             ( { version = f.version
+              , esversion = f.esversion
               , currentSeed = initialSeed f.seed f.seedExtension
               , route = Maybe.map Route.toRoute f.url |> Maybe.withDefault Home
               , navkey = navkey
@@ -106,6 +110,7 @@ init value navkey =
 
         Err err ->
             ( { version = 0
+              , esversion = 0
               , currentSeed = initialSeed 0 [ 0, 0 ]
               , route = Route.Home
               , navkey = navkey

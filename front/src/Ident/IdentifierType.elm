@@ -28,8 +28,9 @@ initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict St
 initIdentifiers allT allH its t mh uuid =
     -- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
     (its
-        |> Dict.filter (\_ it -> Scope.containsScope allT allH (mh |> Maybe.map (\p -> HasUserType p.what p.uuid) |> Maybe.withDefault (HasType t)) it.applyTo)
+        |> Dict.filter (\_ it -> Scope.containsScope allT allH (IsItem t uuid) it.applyTo)
         |> Dict.values
+    )
         |> List.map
             (\it ->
                 let
@@ -38,7 +39,6 @@ initIdentifiers allT allH its t mh uuid =
                 in
                 ( Identifier.compare i, i )
             )
-    )
         |> Dict.fromList
 
 

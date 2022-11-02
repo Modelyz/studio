@@ -22,7 +22,6 @@ type alias Hierarchic a =
 
 isAscendantOf : Hierarchic a -> Dict String (Hierarchic a) -> Hierarchic a -> Bool
 isAscendantOf child allH parent =
-    -- equality is considered parent TODO reconsider
     if child == parent then
         True
 
