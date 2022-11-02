@@ -17,8 +17,8 @@ toString f =
         IdentifierName name ->
             name
 
-        Fixed _ ->
-            ""
+        Fixed s ->
+            s
 
 
 toValue : Dict String Identifier -> Fragment -> String
