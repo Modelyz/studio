@@ -5,12 +5,12 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Group.Group exposing (Group)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectViewUuid)
+import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -71,10 +71,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedGroup uuid )
 
         Add ->
-            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewUuid "view" uuid s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -94,6 +94,7 @@ viewContent model s =
     case model.viewtype of
         Smallcard ->
             flatContainer s
+                Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
@@ -102,15 +103,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.groups Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups s.state.groupTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )
                 ]
 
         Table ->
             flatContainer s
+                Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]

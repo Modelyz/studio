@@ -18,7 +18,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -43,8 +43,12 @@ type alias HierarchicType =
     GroupType
 
 
-tType =
+constructor =
     GroupType
+
+
+hierarchicConstructor =
+    HType.GroupType
 
 
 mkMessage : HierarchicType -> Message.Payload
@@ -93,7 +97,6 @@ type Msg
     | InputIdentifier Identifier
     | InputGroups (Dict String Group)
     | InputValue Value
-    | Added
     | Button Step.Msg
 
 
@@ -192,11 +195,7 @@ update s msg model =
         InputGroups gs ->
             ( { model | groups = gs }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok h ->
                     let
@@ -220,6 +219,10 @@ update s msg model =
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
@@ -249,7 +252,7 @@ checkStep model =
 
 validate : Model -> Result String HierarchicType
 validate m =
-    Ok <| tType hereType m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -266,6 +269,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
+                                |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
@@ -282,26 +286,13 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a GroupType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

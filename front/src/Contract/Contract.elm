@@ -7,11 +7,12 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
 type alias Contract =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String Identifier
@@ -28,7 +29,7 @@ type alias Contract =
 encode : Contract -> Encode.Value
 encode c =
     Encode.object
-        [ ( "what", Type.encode c.what )
+        [ ( "what", TType.encode c.what )
         , ( "uuid", Uuid.encode c.uuid )
         , ( "type", Uuid.encode c.type_ )
 
@@ -39,7 +40,7 @@ encode c =
 decoder : Decode.Decoder Contract
 decoder =
     Decode.map7 Contract
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.succeed Dict.empty)

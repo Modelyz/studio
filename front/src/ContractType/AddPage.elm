@@ -19,7 +19,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -44,8 +44,12 @@ type alias HierarchicType =
     ContractType
 
 
-tType =
+constructor =
     ContractType
+
+
+hierarchicConstructor =
+    HType.ContractType
 
 
 mkMessage : HierarchicType -> Message.Payload
@@ -177,8 +181,12 @@ update s msg model =
         InputType mh ->
             ( { model
                 | flatselect = mh
-                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
-                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                , identifiers =
+                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
+                , values =
+                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                        |> Dict.union (Dict.filter (\_ i -> model.uuid == i.for) s.state.values)
               }
             , Effect.none
             )
@@ -249,7 +257,7 @@ checkStep model =
 
 validate : Model -> Result String HierarchicType
 validate m =
-    Ok <| tType hereType m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -283,26 +291,13 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a ContractType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

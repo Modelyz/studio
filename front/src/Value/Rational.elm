@@ -1,4 +1,4 @@
-module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromString, inv, mul, neg, pow, toString)
+module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, neg, pow, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -61,44 +61,109 @@ lcm x y =
         abs (toFloat x / toFloat (gcd x y * y) |> truncate)
 
 
-fromString : String -> Result String Rational
-fromString =
+fromSlashString : String -> Result String Rational
+fromSlashString =
+    -- Try to parse a "n/d" string
     -- the error string is the unconverted string
     String.split "/"
-        >> (\l ->
-                List.head l
+        >> (\split ->
+                List.head split
                     |> Maybe.andThen String.toInt
                     >> Maybe.map
-                        (\n ->
-                            List.tail l
+                        (\left ->
+                            List.tail split
                                 |> Maybe.map (String.join "/")
                                 >> Maybe.andThen String.toInt
-                                >> (\md ->
-                                        case md of
-                                            Just d ->
-                                                Ok <| Rational n d
+                                >> (\maybeRight ->
+                                        case maybeRight of
+                                            Just right ->
+                                                Ok <| Rational left right
 
                                             Nothing ->
-                                                Err (String.join "/" l)
+                                                Err (String.join "/" split)
                                    )
                         )
-                    >> Maybe.withDefault (Err (String.join "/" l))
+                    >> Maybe.withDefault (Err (String.join "/" split))
            )
 
 
+sign : Int -> Int
+sign n =
+    abs n // n
 
---plop = String.split "/" >>
+
+fromFloatString : String -> String -> Result String Rational
+fromFloatString sep =
+    -- Parse a Float String to a Rational (with custom separator)
+    String.split sep
+        >> (\split ->
+                List.head split
+                    |> Maybe.andThen String.toInt
+                    >> Maybe.map
+                        (\left ->
+                            List.tail split
+                                |> Maybe.map (String.join sep)
+                                >> Maybe.andThen String.toInt
+                                >> (\maybeRight ->
+                                        case maybeRight of
+                                            Just right ->
+                                                let
+                                                    ll =
+                                                        String.length (String.fromInt left)
+
+                                                    lr =
+                                                        String.length (String.fromInt right)
+                                                in
+                                                Ok <| Rational (sign left * (abs left * 10 ^ lr + right)) (10 ^ lr)
+
+                                            Nothing ->
+                                                if List.length split == 1 then
+                                                    Ok <| Rational left 1
+
+                                                else
+                                                    Err (String.join sep split)
+                                   )
+                        )
+                    >> Maybe.withDefault (Err (String.join sep split))
+           )
+
+
+fromString : String -> Result String ( Rational, String )
+fromString s =
+    oneOf [ fromSlashString, fromFloatString ".", fromFloatString "," ] s |> Result.map (\r -> ( r, s ))
+
+
+oneOf : List (String -> Result String Rational) -> String -> Result String Rational
+oneOf ds s =
+    -- return the first successful result using a list of rational decoders
+    case ds of
+        [] ->
+            Err s
+
+        first :: rest ->
+            case first s of
+                Ok rat ->
+                    Ok rat
+
+                Err err ->
+                    oneOf rest s
 
 
 toString : Rational -> String
 toString (Rational n d) =
-    String.fromInt n ++ "/" ++ String.fromInt d
+    String.fromInt n
+        ++ (if d == 1 then
+                ""
+
+            else
+                "/" ++ String.fromInt d
+           )
 
 
 decoder : Decoder (Result String Rational)
 decoder =
     Decode.string
-        |> Decode.map fromString
+        |> Decode.map (fromString >> Result.map Tuple.first)
 
 
 encode : Rational -> Encode.Value
@@ -109,4 +174,11 @@ encode (Rational n d) =
 adaptRF : Result String Rational -> Int
 adaptRF r =
     -- adapt the input form width to the content
-    50 + (r |> Result.map (\(Rational n d) -> ((String.fromInt n |> String.length) + (String.fromInt d |> String.length)) |> (*) 10) |> Result.withDefault 0)
+    50
+        + (case r of
+            Ok (Rational n d) ->
+                ((String.fromInt n |> String.length) + (String.fromInt d |> String.length)) |> (*) 10
+
+            Err err ->
+                9 * String.length err
+          )

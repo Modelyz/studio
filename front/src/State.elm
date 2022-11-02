@@ -28,7 +28,7 @@ import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
-import Scope.Scope exposing (Scope(..), containsItem)
+import Scope.Scope exposing (Scope(..), containsScope)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -116,13 +116,23 @@ empty =
     }
 
 
-insertItem : Item a -> Dict String (Item a) -> Dict String (Item a)
-insertItem i d =
+insertT : Typed a -> Dict String (Typed a) -> Dict String (Typed a)
+insertT i d =
     Dict.insert (Uuid.toString i.uuid) i d
 
 
-removeUuid : Uuid -> Dict String (Item a) -> Dict String (Item a)
-removeUuid uuid d =
+insertH : Hierarchic a -> Dict String (Hierarchic a) -> Dict String (Hierarchic a)
+insertH i d =
+    Dict.insert (Uuid.toString i.uuid) i d
+
+
+removeHUuid : Uuid -> Dict String (Hierarchic a) -> Dict String (Hierarchic a)
+removeHUuid uuid d =
+    Dict.remove (Uuid.toString uuid) d
+
+
+removeTUuid : Uuid -> Dict String (Typed a) -> Dict String (Typed a)
+removeTUuid uuid d =
     Dict.remove (Uuid.toString uuid) d
 
 
@@ -150,6 +160,48 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
+        IdentifierTypeChanged new old ->
+            { state
+                | identifierTypes =
+                    Dict.insert (IdentifierType.compare new) new <|
+                        Dict.remove (IdentifierType.compare old) state.identifierTypes
+                , identifiers =
+                    -- keep the identifiers whose name are different from the one removed,
+                    -- or if this is the same name, whose item is not in the scope of the identifier type
+                    state.identifiers
+                        |> Dict.values
+                        |> List.filter
+                            (\i ->
+                                i.name
+                                    /= new.name
+                                    || not
+                                        ((case i.what of
+                                            Type.TType tt ->
+                                                T.find (allTyped state tt) i.identifiable
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.applyTo)
+
+                                            Type.HType ht ->
+                                                H.find (allHierarchic state ht) i.identifiable
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.applyTo)
+                                         )
+                                            |> Maybe.withDefault False
+                                        )
+                            )
+                        |> List.map
+                            (\i ->
+                                if i.name == old.name then
+                                    let
+                                        newi =
+                                            { i | name = new.name }
+                                    in
+                                    ( Identifier.compare newi, newi )
+
+                                else
+                                    ( Identifier.compare i, i )
+                            )
+                        |> Dict.fromList
+            }
+
         IdentifierTypeRemoved it ->
             { state
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
@@ -165,11 +217,11 @@ aggregate (Message b p) state =
                                         ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (containsItem it.applyTo)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) it.applyTo)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (containsItem it.applyTo)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) it.applyTo)
                                          )
                                             |> Maybe.withDefault False
                                         )
@@ -196,17 +248,16 @@ aggregate (Message b p) state =
                     state.values
                         |> Dict.filter
                             (\_ v ->
-                                v.name
-                                    /= vt.name
+                                (v.name /= vt.name)
                                     || not
                                         ((case v.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) v.for
-                                                    |> Maybe.map (containsItem vt.scope)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) v.for) vt.scope)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) v.for
-                                                    |> Maybe.map (containsItem vt.scope)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) v.for) vt.scope)
                                          )
                                             |> Maybe.withDefault False
                                         )
@@ -226,7 +277,7 @@ aggregate (Message b p) state =
 
         AddedResourceType rt ->
             { state
-                | resourceTypes = insertItem rt state.resourceTypes
+                | resourceTypes = insertH rt state.resourceTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -234,7 +285,7 @@ aggregate (Message b p) state =
 
         RemovedResourceType uuid ->
             { state
-                | resourceTypes = removeUuid uuid state.resourceTypes
+                | resourceTypes = removeHUuid uuid state.resourceTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -242,7 +293,7 @@ aggregate (Message b p) state =
 
         AddedEventType et ->
             { state
-                | eventTypes = insertItem et state.eventTypes
+                | eventTypes = insertH et state.eventTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -250,7 +301,7 @@ aggregate (Message b p) state =
 
         RemovedEventType uuid ->
             { state
-                | eventTypes = removeUuid uuid state.eventTypes
+                | eventTypes = removeHUuid uuid state.eventTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -258,7 +309,7 @@ aggregate (Message b p) state =
 
         AddedAgentType at ->
             { state
-                | agentTypes = insertItem at state.agentTypes
+                | agentTypes = insertH at state.agentTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -266,7 +317,7 @@ aggregate (Message b p) state =
 
         RemovedAgentType uuid ->
             { state
-                | agentTypes = removeUuid uuid state.agentTypes
+                | agentTypes = removeHUuid uuid state.agentTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -274,7 +325,7 @@ aggregate (Message b p) state =
 
         AddedCommitmentType cmt ->
             { state
-                | commitmentTypes = insertItem cmt state.commitmentTypes
+                | commitmentTypes = insertH cmt state.commitmentTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -282,7 +333,7 @@ aggregate (Message b p) state =
 
         RemovedCommitmentType uuid ->
             { state
-                | commitmentTypes = removeUuid uuid state.commitmentTypes
+                | commitmentTypes = removeHUuid uuid state.commitmentTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -290,7 +341,7 @@ aggregate (Message b p) state =
 
         AddedContractType cnt ->
             { state
-                | contractTypes = insertItem cnt state.contractTypes
+                | contractTypes = insertH cnt state.contractTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -298,7 +349,7 @@ aggregate (Message b p) state =
 
         RemovedContractType uuid ->
             { state
-                | contractTypes = removeUuid uuid state.contractTypes
+                | contractTypes = removeHUuid uuid state.contractTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -306,7 +357,7 @@ aggregate (Message b p) state =
 
         AddedProcessType pt ->
             { state
-                | processTypes = insertItem pt state.processTypes
+                | processTypes = insertH pt state.processTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -314,7 +365,7 @@ aggregate (Message b p) state =
 
         RemovedProcessType uuid ->
             { state
-                | processTypes = removeUuid uuid state.processTypes
+                | processTypes = removeHUuid uuid state.processTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -322,7 +373,7 @@ aggregate (Message b p) state =
 
         AddedResource rt ->
             { state
-                | resources = insertItem rt state.resources
+                | resources = insertT rt state.resources
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -330,7 +381,7 @@ aggregate (Message b p) state =
 
         RemovedResource uuid ->
             { state
-                | resources = removeUuid uuid state.resources
+                | resources = removeTUuid uuid state.resources
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -338,7 +389,7 @@ aggregate (Message b p) state =
 
         AddedEvent et ->
             { state
-                | events = insertItem et state.events
+                | events = insertT et state.events
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -346,7 +397,7 @@ aggregate (Message b p) state =
 
         RemovedEvent uuid ->
             { state
-                | events = removeUuid uuid state.events
+                | events = removeTUuid uuid state.events
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -354,7 +405,7 @@ aggregate (Message b p) state =
 
         AddedAgent at ->
             { state
-                | agents = insertItem at state.agents
+                | agents = insertT at state.agents
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -362,7 +413,7 @@ aggregate (Message b p) state =
 
         RemovedAgent uuid ->
             { state
-                | agents = removeUuid uuid state.agents
+                | agents = removeTUuid uuid state.agents
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -370,7 +421,7 @@ aggregate (Message b p) state =
 
         AddedCommitment cmt ->
             { state
-                | commitments = insertItem cmt state.commitments
+                | commitments = insertT cmt state.commitments
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -378,7 +429,7 @@ aggregate (Message b p) state =
 
         RemovedCommitment uuid ->
             { state
-                | commitments = removeUuid uuid state.commitments
+                | commitments = removeTUuid uuid state.commitments
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -386,7 +437,7 @@ aggregate (Message b p) state =
 
         AddedContract cnt ->
             { state
-                | contracts = insertItem cnt state.contracts
+                | contracts = insertT cnt state.contracts
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -394,7 +445,7 @@ aggregate (Message b p) state =
 
         RemovedContract uuid ->
             { state
-                | contracts = removeUuid uuid state.contracts
+                | contracts = removeTUuid uuid state.contracts
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -402,7 +453,7 @@ aggregate (Message b p) state =
 
         AddedProcess pt ->
             { state
-                | processes = insertItem pt state.processes
+                | processes = insertT pt state.processes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -410,7 +461,7 @@ aggregate (Message b p) state =
 
         RemovedProcess uuid ->
             { state
-                | processes = removeUuid uuid state.processes
+                | processes = removeTUuid uuid state.processes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -442,7 +493,7 @@ aggregate (Message b p) state =
 
         AddedGroupType gt ->
             { state
-                | groupTypes = insertItem gt state.groupTypes
+                | groupTypes = insertH gt state.groupTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -450,7 +501,7 @@ aggregate (Message b p) state =
 
         RemovedGroupType uuid ->
             { state
-                | groupTypes = removeUuid uuid state.groupTypes
+                | groupTypes = removeHUuid uuid state.groupTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -466,7 +517,7 @@ aggregate (Message b p) state =
 
         RemovedGroup uuid ->
             { state
-                | groups = removeUuid uuid state.groups
+                | groups = removeTUuid uuid state.groups
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = insertUuid b.uuid state.uuids
@@ -575,10 +626,7 @@ allTfromScope s scope =
         HasType (Type.HType ht) ->
             allTyped s (TType.fromHierarchic ht)
 
-        HasUserType (Type.TType tt) uuid ->
-            allTyped s tt
-
-        HasUserType (Type.HType ht) uuid ->
+        HasUserType _ ht uuid ->
             allTyped s (TType.fromHierarchic ht)
 
         Identified _ ->
@@ -615,10 +663,7 @@ allHfromScope s scope =
         HasType (Type.HType ht) ->
             allHierarchic s ht
 
-        HasUserType (Type.TType tt) uuid ->
-            allHierarchic s (TType.toHierarchic tt)
-
-        HasUserType (Type.HType ht) uuid ->
+        HasUserType _ ht uuid ->
             allHierarchic s ht
 
         Identified _ ->

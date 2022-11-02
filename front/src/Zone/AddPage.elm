@@ -164,6 +164,7 @@ viewContent model s =
             ]
     in
     floatingContainer s
+        (Just <| Cancel)
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model
@@ -239,12 +240,13 @@ inputFragments s model =
                         (text <| Fragment.toString f)
                 )
                 (Fixed ""
-                    :: (s.state.identifierTypes
+                    :: ((s.state.identifierTypes
                             |> Dict.values
                             |> List.filter
                                 (\it ->
                                     Scope.containsScope allT allH model.scope it.applyTo
                                 )
+                        )
                             |> List.map (.name >> IdentifierName)
                        )
                 )

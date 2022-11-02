@@ -45,6 +45,7 @@ type alias Model =
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
+    , old : Maybe IdentifierType
     }
 
 
@@ -129,6 +130,7 @@ init s f =
             , warning = ""
             , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
             , step = Step.Step StepName
+            , old = Nothing
             }
     in
     s.state.identifierTypes
@@ -143,6 +145,7 @@ init s f =
                     , mandatory = it.mandatory
                     , fragments = it.fragments
                     , scope = it.applyTo
+                    , old = Just it
                 }
             )
         |> Maybe.withDefault adding
@@ -175,7 +178,9 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Message.IdentifierTypeAdded i
+                        [ Shared.dispatch s <|
+                            Maybe.withDefault (Message.IdentifierTypeAdded i) <|
+                                Maybe.map (Message.IdentifierTypeChanged i) model.old
                         , redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd
                         ]
                     )
@@ -246,6 +251,7 @@ viewContent model s =
                             }
     in
     floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding an identifierType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

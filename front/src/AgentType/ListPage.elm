@@ -6,15 +6,15 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (hGroupsColumn)
+import Group.WithGroups exposing (hWithGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectViewUuid)
+import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -80,10 +80,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedAgentType uuid )
 
         Add ->
-            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewUuid "view" uuid s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -100,9 +100,15 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        allH =
+            s.state.agentTypes
+                |> Dict.map (\_ v -> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers v)
+    in
     case model.viewtype of
         Smallcard ->
             flatContainer s
+                Nothing
                 "Agent Types"
                 [ button.primary Add "Add..."
                 ]
@@ -110,16 +116,16 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.agentTypes
+                    (allH
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.agents s.state.agentTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Agent Types yet. Add your first one!")
+                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.agents allH s.state.configs h)
+                        |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
             flatContainer s
+                Nothing
                 "Agent Types"
                 [ button.primary Add "Add..."
                 ]
@@ -129,17 +135,16 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.agentTypes
+                            allH
                                 |> Dict.values
-                                |> List.map (hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (hWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.HType HType.AgentType)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ hGroupsColumn s ]
                         }
                     ]
                 ]
@@ -155,6 +160,6 @@ identifierColumn it =
             >> List.filter (\id -> id.name == it.name)
             >> List.map Identifier.toValue
             >> List.head
-            >> Maybe.withDefault ""
+            >> Maybe.withDefault "(no identifier)"
             >> innerCell
     }

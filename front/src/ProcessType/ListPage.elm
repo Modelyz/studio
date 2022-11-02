@@ -1,20 +1,20 @@
 module ProcessType.ListPage exposing (Flags, Model, Msg, match, page)
 
-import ProcessType.ProcessType exposing (ProcessType)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
+import Group.View exposing (hGroupsColumn)
+import Group.WithGroups exposing (hWithGroups)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (hWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectViewUuid)
+import ProcessType.ProcessType exposing (ProcessType)
+import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -80,10 +80,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedProcessType uuid )
 
         Add ->
-            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewUuid "view" uuid s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -103,6 +103,7 @@ viewContent model s =
     case model.viewtype of
         Smallcard ->
             flatContainer s
+                Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]
@@ -111,15 +112,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.processTypes
+                        |> Dict.map (\_ t -> hWithIdentifiers s.state.processes Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.processes (Dict.map (\_ v -> hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers v) s.state.processTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes s.state.processTypes s.state.configs h)
-                        |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
                 ]
 
         Table ->
             flatContainer s
+                Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]
@@ -132,14 +134,14 @@ viewContent model s =
                             s.state.processTypes
                                 |> Dict.values
                                 |> List.map (hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (hWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ hGroupsColumn s ]
                         }
                     ]
                 ]

@@ -7,11 +7,12 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
 type alias Group =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , scope : Scope
@@ -24,7 +25,7 @@ type alias Group =
 encode : Group -> Encode.Value
 encode g =
     Encode.object
-        [ ( "what", Type.encode g.what )
+        [ ( "what", TType.encode g.what )
         , ( "uuid", Uuid.encode g.uuid )
         , ( "type", Uuid.encode g.type_ )
         , ( "scope", Scope.encode g.scope )
@@ -34,7 +35,7 @@ encode g =
 decoder : Decoder Group
 decoder =
     Decode.map7 Group
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)

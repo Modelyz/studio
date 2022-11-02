@@ -6,14 +6,14 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Group.View exposing (tGroupsColumn)
+import Group.WithGroups exposing (tWithGroups)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectSibling, redirectViewUuid)
+import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -76,10 +76,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedAgent uuid )
 
         Add ->
-            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewUuid "view" uuid s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -96,9 +96,17 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        allT =
+            s.state.agents |> Dict.map (\_ t -> tWithIdentifiers s.state.agents Dict.empty s.state.identifierTypes s.state.identifiers t)
+
+        allH =
+            s.state.agentTypes |> Dict.map (\_ v -> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers v)
+    in
     case model.viewtype of
         Smallcard ->
             flatContainer s
+                Nothing
                 "Agents"
                 [ button.primary Add "Add..."
                 ]
@@ -106,16 +114,16 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.agents
+                    (allT
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents allH s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents s.state.agentTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
         Table ->
             flatContainer s
+                Nothing
                 "Agents"
                 [ button.primary Add "Add..."
                 ]
@@ -125,17 +133,16 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.agents
+                            allT
                                 |> Dict.values
-                                |> List.map (tWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.TType TType.Agent)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ tGroupsColumn s ]
                         }
                     ]
                 ]

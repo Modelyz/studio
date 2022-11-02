@@ -2,10 +2,24 @@
 
 [Back to app](../)
 
-## version 7 -- unreleased
+## version 8 -- unreleased
 
-* Use Values for all entities
+* Several UI fixes and improvements
+* Clear BSOD in case of JSON decode error
+
+## version 7 -- 2022-10-30
+
+* Define Values for any entities
 * Use Rational number for the Values
+* Allow to input a Rational like an Int, Float or Division
+* Dynamically display values and expressions
+* Several UI fixes and improvements
+* Ability to define a Value or Identifier on a single entity
+* Normalized URL structure
+* ListPage and ViewPage for Identifier
+* Display the Values on the View Pages
+* Remove uuid from anywhere by defining a Zone Config
+* Many internal changes
 
 ## version 6 -- 2022-10-17
 

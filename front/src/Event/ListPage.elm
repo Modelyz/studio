@@ -1,19 +1,19 @@
 module Event.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Event.Event exposing (Event)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.View exposing (groupsColumn)
-import Group.WithGroups exposing (withGroups)
-import Ident.Identifiable exposing (tWithIdentifiers)
+import Event.Event exposing (Event)
+import Group.View exposing (tGroupsColumn)
+import Group.WithGroups exposing (tWithGroups)
+import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectSibling, redirectSibling, redirectViewUuid)
+import Route exposing (Route, redirectView, redirectViewItem)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -76,10 +76,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedEvent uuid )
 
         Add ->
-            ( model, redirectSibling "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewUuid "view" uuid s.navkey model.route |> Effect.fromCmd )
+            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -99,6 +99,7 @@ viewContent model s =
     case model.viewtype of
         Smallcard ->
             flatContainer s
+                Nothing
                 "Events"
                 [ button.primary Add "Add..."
                 ]
@@ -107,15 +108,16 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.events
+                        |> Dict.map (\_ t -> tWithIdentifiers s.state.events Dict.empty s.state.identifierTypes s.state.identifiers t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events (Dict.map (\_ v -> hWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers v) s.state.eventTypes) s.state.configs t)
                         |> Dict.values
-                        |> List.map (tWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.events s.state.eventTypes s.state.configs t)
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
                     )
                 ]
 
         Table ->
             flatContainer s
+                Nothing
                 "Events"
                 [ button.primary Add "Add..."
                 ]
@@ -128,14 +130,14 @@ viewContent model s =
                             s.state.events
                                 |> Dict.values
                                 |> List.map (tWithIdentifiers s.state.events s.state.eventTypes s.state.identifierTypes s.state.identifiers)
-                                |> List.map (withGroups s.state.grouped)
+                                |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
                                 |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.applyTo (HasType (Type.TType TType.Event)))
                                 |> List.map identifierColumn
                             )
-                                ++ [ groupsColumn s ]
+                                ++ [ tGroupsColumn s ]
                         }
                     ]
                 ]

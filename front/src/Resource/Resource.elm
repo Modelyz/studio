@@ -7,11 +7,12 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
 type alias Resource =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String Identifier
@@ -29,7 +30,7 @@ compare =
 encode : Resource -> Encode.Value
 encode r =
     Encode.object <|
-        [ ( "what", Type.encode r.what )
+        [ ( "what", TType.encode r.what )
         , ( "uuid", Uuid.encode r.uuid )
         , ( "type", Uuid.encode r.type_ )
         ]
@@ -38,7 +39,7 @@ encode r =
 decoder : Decoder Resource
 decoder =
     Decode.map7 Resource
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.succeed Dict.empty)

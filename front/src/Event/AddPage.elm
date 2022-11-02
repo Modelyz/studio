@@ -18,7 +18,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -43,8 +43,13 @@ type alias HierarchicType =
     EventType
 
 
-tType =
+constructor =
     Event
+
+
+typedConstructor : TType.Type
+typedConstructor =
+    TType.Event
 
 
 hereType : Type.Type
@@ -158,7 +163,7 @@ init s f =
                         H.find (allH s) t.type_
                 in
                 { adding
-                    | flatselect = H.find (allH s) t.type_
+                    | flatselect = parent
                     , uuid = t.uuid
                     , identifiers =
                         initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid
@@ -168,9 +173,6 @@ init s f =
                             |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
                     , oldGroups = oldGroups
                     , groups = oldGroups
-                    , warning = ""
-                    , step = Step.Step StepType
-                    , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepGroups ]
                 }
             )
         |> Maybe.withDefault adding
@@ -184,8 +186,14 @@ update s msg model =
         InputType mh ->
             ( { model
                 | flatselect = mh
-                , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
-                , values = initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                , identifiers =
+                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                        -- TODO not union here: if we change the type in Edit mode, we loose the values
+                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
+                , values =
+                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                        -- TODO not union here: if we change the type in Edit mode, we loose the values
+                        |> Dict.union (Dict.filter (\_ i -> model.uuid == i.for) s.state.values)
               }
             , Effect.none
             )
@@ -260,7 +268,7 @@ validate m =
     case m.flatselect of
         Just h ->
             -- TODO check that TType thing is useful
-            Ok <| tType hereType m.uuid h.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
+            Ok <| constructor typedConstructor m.uuid h.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select an Event Type"
@@ -297,26 +305,13 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding an Event"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step

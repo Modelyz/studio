@@ -18,7 +18,7 @@ view s c =
         ZoneConfig zone fragments scope ->
             Zone.toDesc zone
                 ++ " : "
-                ++ (String.join "" <| List.map Fragment.toString (Debug.log "fragments" fragments))
+                ++ (String.join "" <| List.map Fragment.toString fragments)
 
 
 description : Shared.Model -> Configuration -> String

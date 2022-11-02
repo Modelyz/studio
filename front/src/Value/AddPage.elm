@@ -359,6 +359,7 @@ viewContent model s =
                             }
     in
     floatingContainer2 s
+        (Just <| Button Step.Cancel)
         "Adding an valueType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
@@ -425,7 +426,7 @@ expressionEditor s model =
 displayLine : Shared.Model -> Model -> Int -> Expression -> Element (Msg submsg)
 displayLine s model stackNum expr =
     row []
-        [ row [ height fill, width fill, alignTop, paddingEach { edges | right = 5 } ]
+        [ row [ height fill, width fill, alignTop, paddingEach { zero | right = 5 } ]
             [ el [ alignLeft ] (button.primary (RemoveExpression stackNum) "×")
             ]
         , editExpression s model stackNum ( [], expr )
@@ -450,49 +451,28 @@ editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Ele
 editObservable s model ( stackNum, exprPath ) obs =
     case obs of
         ObsNumber n ->
-            row []
-                [ column [ Background.color color.item.background ]
-                    [ row [ Background.color color.item.background ]
-                        [ row [ Font.size size.text.small ]
-                            [ Input.text [ width (px 70) ]
-                                { onChange =
-                                    \x ->
-                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | val = R.fromString x })
-                                , text =
-                                    case n.val of
-                                        Ok r ->
-                                            R.toString r
-
-                                        Err err ->
-                                            err
-                                , placeholder =
-                                    Just <| Input.placeholder [] <| text "Default value"
-                                , label = Input.labelHidden <| "Default value"
-                                }
-                            ]
-                        , row [ Font.size size.text.small ]
-                            [ Input.text [ width (px 70) ]
-                                { onChange =
-                                    \x ->
-                                        InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | name = x })
-                                , text = n.name
-                                , placeholder =
-                                    Just <| Input.placeholder [] <| text "Name"
-                                , label = Input.labelHidden <| "Name"
-                                }
-                            ]
-                        ]
-                    , row [ Background.color color.item.background ]
-                        [ Input.text [ width (px 140) ]
-                            { onChange =
-                                \x ->
-                                    InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | desc = x })
-                            , text = n.desc
-                            , placeholder =
-                                Just <| Input.placeholder [] <| text "Description"
-                            , label = Input.labelHidden <| "Description"
-                            }
-                        ]
+            row [ Background.color color.item.background ]
+                [ row [ Font.size size.text.small ]
+                    [ Input.text [ width (px 70) ]
+                        { onChange =
+                            \x ->
+                                InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | name = x })
+                        , text = n.name
+                        , placeholder =
+                            Just <| Input.placeholder [] <| text "Name"
+                        , label = Input.labelHidden <| "Name"
+                        }
+                    ]
+                , row [ Font.size size.text.small ]
+                    [ Input.text [ width (px 70) ]
+                        { onChange =
+                            \x ->
+                                InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x, val = Result.map Tuple.first <| R.fromString x })
+                        , text = n.input
+                        , placeholder =
+                            Just <| Input.placeholder [] <| text "Default value"
+                        , label = Input.labelHidden <| "Default value"
+                        }
                     ]
                 ]
 

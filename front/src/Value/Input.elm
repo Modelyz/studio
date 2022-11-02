@@ -24,8 +24,8 @@ type alias Config msg =
     }
 
 
-inputValues : Config msg -> Shared.Model -> Model a -> Scope -> Element msg
-inputValues c s model scope =
+inputValues : Config msg -> Shared.Model -> Model a -> Element msg
+inputValues c s model =
     -- display the expression with input fields for each relevant valueType
     column [ spacing 10 ]
         (h2 "Input values"
@@ -33,7 +33,7 @@ inputValues c s model scope =
                     |> Dict.values
                     |> List.map
                         (inputValue c s model)
-                    |> withDefaultContent (p <| "Apparently there are no values defined for " ++ Scope.toString scope ++ ". Please first create one.")
+                    |> withDefaultContent (p <| "Apparently there are no values defined for this entity. Please first create one.")
                 --TODO + link
                )
         )
@@ -84,37 +84,43 @@ inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observabl
 inputObservable c s model targetPath obs v =
     case obs of
         ObsNumber n ->
-            row [ Background.color color.item.background ]
-                [ Input.text
-                    [ width <| px <| R.adaptRF n.val
-                    , htmlAttribute <| Attr.title n.desc
-                    , Background.color
-                        (case n.val of
-                            Ok r ->
-                                color.item.background
+            Input.text
+                [ width <| px <| R.adaptRF n.val
+                , htmlAttribute <| Attr.title n.input
+                , Background.color
+                    (case n.val of
+                        Ok r ->
+                            color.content.background
 
-                            Err "" ->
-                                color.item.background
+                        Err "" ->
+                            color.content.background
 
-                            Err _ ->
-                                color.item.warning
-                        )
-                    ]
-                    { onChange =
-                        \x ->
-                            c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | val = R.fromString x }) v.expr }
-                    , text =
-                        case n.val of
-                            Ok r ->
-                                R.toString r
-
-                            Err err ->
-                                err
-                    , placeholder =
-                        Just <| Input.placeholder [] <| text n.name
-                    , label = Input.labelHidden n.name
-                    }
+                        Err _ ->
+                            color.item.warning
+                    )
                 ]
+                { onChange =
+                    \x ->
+                        c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = R.fromString x |> Result.map Tuple.first }) v.expr }
+                , text =
+                    n.input
+                , placeholder =
+                    Just <| Input.placeholder [] <| text n.name
+                , label =
+                    Input.labelRight [ padding 10, Background.color color.content.background ]
+                        (text
+                            (case n.val of
+                                Ok r ->
+                                    "= " ++ R.toString r
+
+                                Err "" ->
+                                    ""
+
+                                Err _ ->
+                                    "(invalid number)"
+                            )
+                        )
+                }
 
         ObsValue (SelectedValue what for name) ->
             row [ height fill, htmlAttribute <| Attr.title name ]

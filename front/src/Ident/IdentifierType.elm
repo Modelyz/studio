@@ -2,7 +2,7 @@ module Ident.IdentifierType exposing (IdentifierType, compare, decoder, encode, 
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
-import Hierarchy.Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
@@ -10,6 +10,7 @@ import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Type exposing (Type)
+import Typed.Type as TType
 import Typed.Typed exposing (Typed)
 
 
@@ -24,21 +25,17 @@ type alias IdentifierType =
 
 
 initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
-initIdentifiers allT allH its t mh newUuid =
-    -- build the empty identifiers corresponding to the chosen type and possible user type
-    let
-        hscope =
-            -- scope corresponding to the hierarchic entity we're dealing with
-            Maybe.map (\h -> HasUserType t h.uuid) mh |> Maybe.withDefault (HasType t)
-    in
-    its
-        |> Dict.filter (\_ it -> Scope.containsScope allT allH hscope it.applyTo)
+initIdentifiers allT allH its t mh uuid =
+    -- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
+    (its
+        |> Dict.filter (\_ it -> Scope.containsScope allT allH (IsItem t uuid) it.applyTo)
         |> Dict.values
+    )
         |> List.map
             (\it ->
                 let
                     i =
-                        Identifier t newUuid it.name it.fragments
+                        Identifier t uuid it.name it.fragments
                 in
                 ( Identifier.compare i, i )
             )

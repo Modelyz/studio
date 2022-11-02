@@ -47,6 +47,7 @@ const getRandomInts = (n) => {
 /**** run Elm ****/
 const randInts = getRandomInts(5);
 const flags = { version: ${APPVERSION},
+                esversion: ${IDBVERSION},
                 seed: randInts[0],
                 seedExtension : randInts.slice(1),
                 url: window.location.href,
@@ -76,10 +77,10 @@ const store = function(send) {
                 const addrequest = transaction.objectStore('messages').add(message)
                 addrequest.onsuccess = (e) => {
                     if (send) {
-                        console.log("->ELM port messagesStoredToSend")
+                        console.log("-> ELM port messagesStoredToSend")
                         app.ports.messagesStoredToSend.send([message]);
                     } else {
-                        console.log("->ELM port messagesStored")
+                        console.log("-> ELM port messagesStored")
                         app.ports.messagesStored.send([message]);
                     }
                 }
@@ -126,30 +127,32 @@ reconnect = function() {
     console.log("<- ELM port wsConnect")
     console.log("JS WS new WebSocket");
     if (window.socket) { window.socket.close(); }
-        window.socket = new WebSocket('${WSS}');
+    window.socket = new WebSocket('${WSS}');
     // Notify Elm the WS has closed
     window.socket.onopen = function(e) {
-        console.log("JS WS socket.onopen")
-        console.log("-> ELM port wsOpened.send(readyState)")
-        app.ports.wsOpened.send(window.socket.readyState);
+        if (window.socket) {
+            console.log("JS WS socket.onopen -> ELM port wsOpened.send(readyState)")
+            app.ports.wsOpened.send(window.socket.readyState);
+        } else console.log("no websocket to retrieve an open state");
     };
     // Notify Elm the WS has closed
     window.socket.onclose = function(e) {
-        console.log("JS WS socket.onclose")
-        console.log("-> ELM port wsClose.send(readyState)")
-        app.ports.wsClose.send(window.socket.readyState);
-        delete window.socket;
+        if (window.socket) {
+            console.log("JS WS socket.onclose -> ELM port wsClose.send(readyState)")
+            app.ports.wsClose.send(window.socket.readyState);
+            delete window.socket;
+        } else console.log("no websocket to close");
     };
     // Notify Elm the WS had error
     window.socket.onerror = function(e) {
-        console.log("JS WS socket.onerror")
-        console.log("-> ELM port wsError.send(readyState)")
-        app.ports.wsError.send(window.socket.readyState);
+        if (window.socket) {
+            console.log("JS WS socket.onerror -> ELM port wsError.send(readyState)")
+            app.ports.wsError.send(window.socket.readyState);
+        } else console.log("no websocket from which to retrieve an error");
     };
     // Notify Elm we received messages from WS
     window.socket.onmessage = function(e) {
-        console.log("JS WS socket.onmessage: " + e.data)
-        console.log("-> ELM port messagesReceiver.send(e.data)")
+        console.log("JS WS socket.onmessage -> ELM port messagesReceiver.send(e.data): " + e.data)
         app.ports.messagesReceiver.send(e.data);
     };
 }
@@ -160,11 +163,13 @@ app.ports.wsConnect.subscribe(reconnect);
 // Elm asks to send messages to WS
 console.log("JS WS app.ports.wsSend.subscribe")
 app.ports.wsSend.subscribe(function(message) {
+    if (window.socket) {
         console.log("ELM port wsSend")
         console.log("JS WS window.socket.send(message)")
         window.socket.send(message);
         console.log("ELM wsSendStatus.send('OK')")
         app.ports.wsSendStatus.send("OK");
+    } else console.log("no websocket to send messages");
 });
 
 

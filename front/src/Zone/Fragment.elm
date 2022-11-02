@@ -17,15 +17,15 @@ toString f =
         IdentifierName name ->
             name
 
-        Fixed _ ->
-            ""
+        Fixed s ->
+            s
 
 
 toValue : Dict String Identifier -> Fragment -> String
 toValue identifiers f =
     case f of
         IdentifierName name ->
-            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault ""
+            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault "(no identifier name)"
 
         Fixed string ->
             string

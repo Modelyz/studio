@@ -14,6 +14,8 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Value.Valuable exposing (hWithValues, withValues)
+import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
@@ -34,6 +36,7 @@ type alias Model =
 
 type Msg
     = Edit
+    | Close
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -81,6 +84,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
+        Close ->
+            ( model, Effect.fromCmd <| redirect s.navkey Route.GroupTypeList )
+
         Edit ->
             model.groupType
                 |> Maybe.map
@@ -105,6 +111,7 @@ viewContent model s =
         |> Maybe.map
             (\h ->
                 floatingContainer s
+                    (Just Close)
                     "GroupType"
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
@@ -121,6 +128,11 @@ viewContent model s =
                         |> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
+                    , h2 "Values:"
+                    , h
+                        |> hWithValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
+                        |> .values
+                        |> displayValueDict "(none)" s.state.values
                     , h2 "Groups:"
                     , model.groups
                         |> Dict.values
@@ -133,6 +145,7 @@ viewContent model s =
             )
         |> Maybe.withDefault
             (floatingContainer s
+                (Just Close)
                 "GroupType"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]

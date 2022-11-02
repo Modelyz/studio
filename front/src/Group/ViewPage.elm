@@ -13,6 +13,8 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Typed.Typed as T
+import Value.Valuable exposing (tWithValues, withValues)
+import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (hWithDisplay)
 import Zone.Zone exposing (Zone(..))
@@ -33,6 +35,7 @@ type alias Model =
 
 type Msg
     = Edit
+    | Close
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -80,6 +83,9 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
+        Close ->
+            ( model, Effect.fromCmd <| redirect s.navkey Route.GroupList )
+
         Edit ->
             model.group
                 |> Maybe.map
@@ -104,9 +110,10 @@ viewContent model s =
         |> Maybe.map
             (\t ->
                 floatingContainer s
+                    (Just Close)
                     "Group"
                     [ button.primary Edit "Edit" ]
-                    [ h2 "Parent type:"
+                    [ h2 "Type:"
                     , t.type_
                         |> H.find s.state.groupTypes
                         |> Maybe.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
@@ -120,10 +127,16 @@ viewContent model s =
                         |> tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers
                         |> .identifiers
                         |> displayIdentifierDict "(none)"
+                    , h2 "Values:"
+                    , t
+                        |> tWithValues s.state.groups s.state.groupTypes s.state.valueTypes s.state.values
+                        |> .values
+                        |> displayValueDict "(none)" s.state.values
                     ]
             )
         |> Maybe.withDefault
             (floatingContainer s
+                (Just Close)
                 "Group"
                 []
                 [ h1 "Not found", text "The current URL does not correspond to anything" ]

@@ -1,4 +1,4 @@
-module Route exposing (Route(..), firstSegment, redirect, redirectParent, redirectSibling, redirectSub, redirectToView, redirectViewItem, redirectViewUuid, toRoute, toString)
+module Route exposing (Route(..), ViewType(..), firstSegment, redirect, redirectView, redirectViewItem, toRoute, toString, viewType)
 
 import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -165,6 +165,13 @@ type Route
     | ConfigurationList
     | ConfigurationEdit String
     | ConfigurationView String
+
+
+type ViewType
+    = List
+    | Edit
+    | Add
+    | View
 
 
 routeParser : Parser (Route -> a) a
@@ -505,38 +512,65 @@ redirect navkey =
     toString >> Nav.pushUrl navkey
 
 
-redirectParent : Nav.Key -> Route -> Cmd msg
-redirectParent navkey route =
-    -- redirect to the parent route of the specified (one level up the path)
-    ("/" ++ firstSegment route) |> Nav.pushUrl navkey
-
-
 
 -- TODO avoid using String
 
 
-redirectSub : String -> Nav.Key -> Route -> Cmd msg
-redirectSub path navkey route =
-    -- redirect to a subpath
-    toString route ++ "/" ++ path |> Nav.pushUrl navkey
-
-
-redirectSibling : String -> Nav.Key -> Route -> Cmd msg
-redirectSibling path navkey route =
-    -- redirect to a path at the same level
-    upper route ++ "/" ++ path |> Nav.pushUrl navkey
-
-
-redirectToView : String -> Nav.Key -> Route -> Cmd msg
-redirectToView view navkey route =
-    ("/" ++ firstSegment route ++ "/" ++ view) |> Nav.pushUrl navkey
-
-
-redirectViewUuid : String -> Uuid -> Nav.Key -> Route -> Cmd msg
-redirectViewUuid view uuid navkey route =
-    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ Uuid.toString uuid |> Nav.pushUrl navkey
-
-
 redirectViewItem : String -> String -> Nav.Key -> Route -> Cmd msg
 redirectViewItem view item navkey route =
-    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ item |> Nav.pushUrl navkey
+    -- redirect to /<view>/<item>/
+    "/" ++ firstSegment route ++ "/" ++ view ++ "/" ++ percentEncode item |> Nav.pushUrl navkey
+
+
+redirectView : String -> Nav.Key -> Route -> Cmd msg
+redirectView view navkey =
+    -- replaces /*/<item> with /<view>/<item>
+    (toString
+        >> String.split "/"
+        >> List.indexedMap
+            (\i segment ->
+                if i == 2 then
+                    view
+
+                else
+                    segment
+            )
+        >> (\l ->
+                -- remove the final uuid for list view
+                if view == "list" then
+                    List.take 3 l
+
+                else
+                    l
+           )
+        >> String.join "/"
+    )
+        >> Nav.pushUrl navkey
+
+
+viewType : Route -> ViewType
+viewType =
+    -- TODO remove this function once the route has been refactored with a ViewType
+    toString
+        >> String.split "/"
+        >> List.drop 1
+        >> List.head
+        >> Maybe.map
+            (\v ->
+                case v of
+                    "list" ->
+                        List
+
+                    "add" ->
+                        Add
+
+                    "edit" ->
+                        Edit
+
+                    "view" ->
+                        View
+
+                    _ ->
+                        List
+            )
+        >> Maybe.withDefault List

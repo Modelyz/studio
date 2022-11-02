@@ -7,11 +7,12 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value exposing (Value)
 
 
 type alias Agent =
-    { what : Type
+    { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
     , identifiers : Dict String Identifier
@@ -24,7 +25,7 @@ type alias Agent =
 encode : Agent -> Encode.Value
 encode a =
     Encode.object <|
-        [ ( "what", Type.encode a.what )
+        [ ( "what", TType.encode a.what )
         , ( "uuid", Uuid.encode a.uuid )
         , ( "type", Uuid.encode a.type_ )
         ]
@@ -33,7 +34,7 @@ encode a =
 decoder : Decoder Agent
 decoder =
     Decode.map7 Agent
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.succeed Dict.empty)

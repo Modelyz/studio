@@ -2,6 +2,7 @@ module ContractType.ContractType exposing (ContractType, compare, decoder, encod
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
+import Hierarchy.Type as HType
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -12,7 +13,7 @@ import Value.Value exposing (Value)
 
 
 type alias ContractType =
-    { what : Type
+    { what : HType.Type
     , uuid : Uuid
     , parent : Maybe Uuid
     , identifiers : Dict String Identifier
@@ -25,7 +26,7 @@ type alias ContractType =
 encode : ContractType -> Encode.Value
 encode ct =
     Encode.object
-        [ ( "what", Type.encode ct.what )
+        [ ( "what", HType.encode ct.what )
         , ( "uuid", Uuid.encode ct.uuid )
         , ( "parent", Maybe.map Uuid.encode ct.parent |> Maybe.withDefault Encode.null )
         ]
@@ -34,7 +35,7 @@ encode ct =
 decoder : Decode.Decoder ContractType
 decoder =
     Decode.map7 ContractType
-        (Decode.field "what" Type.decoder)
+        (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.succeed Dict.empty)

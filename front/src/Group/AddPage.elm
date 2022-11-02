@@ -15,7 +15,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
-import Route exposing (Route, redirect, redirectToView)
+import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -39,8 +39,13 @@ type alias HierarchicType =
     GroupType
 
 
-tType =
+constructor =
     Group
+
+
+typedConstructor : TType.Type
+typedConstructor =
+    TType.Group
 
 
 hereType : Type.Type
@@ -90,7 +95,6 @@ type Msg
     = InputType (Maybe HierarchicType)
     | InputIdentifier Identifier
     | InputValue Value
-    | Added
     | Button Step.Msg
 
 
@@ -152,7 +156,6 @@ init s f =
                     , values =
                         initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
                             |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
-                    , warning = ""
                 }
             )
         |> Maybe.withDefault adding
@@ -178,11 +181,7 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        Button stepmsg ->
-            Step.update s stepmsg model
-                |> (\( x, y ) -> ( x, Effect.map Button y ))
-
-        Added ->
+        Button Step.Added ->
             case validate model of
                 Ok t ->
                     ( model
@@ -198,6 +197,10 @@ update s msg model =
 
                 Err err ->
                     ( { model | warning = err }, Effect.none )
+
+        Button stepmsg ->
+            Step.update s stepmsg model
+                |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
 view : Shared.Model -> Model -> View Msg
@@ -227,7 +230,7 @@ validate m =
     case m.flatselect of
         Just h ->
             -- TODO check that TType thing is useful
-            Ok <| tType hereType m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
+            Ok <| constructor typedConstructor m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
 
         Nothing ->
             Err "You must select a Group Type"
@@ -247,6 +250,7 @@ viewContent model s =
                         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                             [ h2 "Type"
                             , model.flatselect
+                                |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                                 |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
                                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
                             ]
@@ -260,26 +264,13 @@ viewContent model s =
                         ]
 
                 Step.Step StepIdentifiers ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model scope
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    let
-                        scope =
-                            model.flatselect |> Maybe.map (\h -> HasUserType hereType h.uuid) |> Maybe.withDefault (HasType hereType)
-                    in
-                    inputValues
-                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                        , onInput = InputValue
-                        }
-                        s
-                        model
-                        scope
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
     in
     floatingContainer s
+        (Just <| Button Step.Cancel)
         "Adding a Group"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
