@@ -13,7 +13,7 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectView, redirectViewItem)
+import Route exposing (Route, redirectView)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ContractList ->
+        Route.Entity Route.Contract _ ->
             Just { route = route }
 
         _ ->
@@ -76,10 +76,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedContract uuid )
 
         Add ->
-            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirectAdd s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Contract (Route.View (Uuid.toString uuid))) |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -96,6 +96,13 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        allT =
+            s.state.contracts |> Dict.map (\_ t -> tWithIdentifiers s.state.contracts Dict.empty s.state.identifierTypes s.state.identifiers t)
+
+        allH =
+            s.state.contractTypes |> Dict.map (\_ v -> hWithIdentifiers s.state.contracts s.state.contractTypes s.state.identifierTypes s.state.identifiers v)
+    in
     case model.viewtype of
         Smallcard ->
             flatContainer s
@@ -107,9 +114,8 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.contracts
-                        |> Dict.map (\_ t -> tWithIdentifiers s.state.contracts Dict.empty s.state.identifierTypes s.state.identifiers t)
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.contracts (Dict.map (\_ v -> hWithIdentifiers s.state.contracts s.state.contractTypes s.state.identifierTypes s.state.identifiers v) s.state.contractTypes) s.state.configs t)
+                    (allT
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.contracts allH s.state.configs t)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Contracts yet. Add your first one!")
                     )
@@ -127,9 +133,8 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.contracts
+                            allT
                                 |> Dict.values
-                                |> List.map (tWithIdentifiers s.state.contracts s.state.contractTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (tWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes

@@ -125,10 +125,10 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/valueType?step=2
     case route of
-        Route.ValueTypeAdd ->
+        Route.Entity Route.ValueType Route.Add ->
             Just { route = route, vtid = "" }
 
-        Route.ValueTypeEdit vtid ->
+        Route.Entity Route.ValueType (Route.Edit vtid) ->
             Just { route = route, vtid = vtid }
 
         _ ->
@@ -298,7 +298,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Message.ValueTypeAdded i
-                        , redirect s.navkey (Route.ValueTypeView (VT.compare i)) |> Effect.fromCmd
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType <| Route.View (VT.compare i)
                         ]
                     )
 

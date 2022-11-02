@@ -118,10 +118,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ContractAdd ->
+        Route.Entity Route.Contract Route.Add ->
             Just { route = route, uuid = Nothing }
 
-        Route.ContractEdit uuid ->
+        Route.Entity Route.Contract (Route.Edit uuid) ->
             Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
@@ -225,7 +225,7 @@ update s msg model =
                                 ++ List.map (\g -> Message.Grouped (Groupable.Cn t) g) (Dict.values addedGroups)
                                 ++ List.map (\g -> Message.Ungrouped (Groupable.Cn t) g) (Dict.values removedGroups)
                             )
-                        , redirect s.navkey (Route.ContractView (Uuid.toString model.uuid)) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Contract (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
                         ]
                     )
 

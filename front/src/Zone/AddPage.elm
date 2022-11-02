@@ -57,10 +57,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ConfigurationAdd ->
+        Route.Entity Route.Configuration Route.Add ->
             Just { route = route, zid = "" }
 
-        Route.ConfigurationEdit zid ->
+        Route.Entity Route.Configuration (Route.Edit zid) ->
             Just { route = route, zid = zid }
 
         _ ->
@@ -118,7 +118,7 @@ update s msg model =
             { model | fragments = fragments } |> Effect.withNone
 
         Cancel ->
-            ( model, redirect s.navkey Route.ConfigurationList |> Effect.fromCmd )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.List Nothing) )
 
         Added ->
             case validate model of
@@ -126,7 +126,7 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <| Message.Configured c
-                        , redirect s.navkey Route.ConfigurationList |> Effect.fromCmd
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.List Nothing)
                         ]
                     )
 

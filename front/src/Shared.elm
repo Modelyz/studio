@@ -11,7 +11,7 @@ import MessageFlow as Flow
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
 import Random.Pcg.Extended as Random exposing (Seed, initialSeed)
-import Route exposing (Route(..))
+import Route exposing (Route)
 import State exposing (State)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
@@ -90,7 +90,7 @@ init value navkey =
             ( { version = f.version
               , esversion = f.esversion
               , currentSeed = initialSeed f.seed f.seedExtension
-              , route = Maybe.map Route.toRoute f.url |> Maybe.withDefault Home
+              , route = Maybe.map Route.toRoute f.url |> Maybe.withDefault Route.Home
               , navkey = navkey
               , windowSize = f.windowSize
               , menu =

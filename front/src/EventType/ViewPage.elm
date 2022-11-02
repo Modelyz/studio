@@ -66,7 +66,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.EventTypeView uuid ->
+        Route.Entity Route.EventType (Route.View uuid) ->
             Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
@@ -99,13 +99,13 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey Route.EventTypeList )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.List Nothing )
 
         Edit ->
             model.eventType
                 |> Maybe.map
                     (\h ->
-                        ( model, Effect.fromCmd <| redirect s.navkey (Route.EventTypeEdit (Uuid.toString h.uuid)) )
+                        ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.Edit (Uuid.toString h.uuid) )
                     )
                 |> Maybe.withDefault ( model, Effect.none )
 

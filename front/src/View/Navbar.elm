@@ -7,7 +7,7 @@ import Element.Font as Font
 import Html.Attributes as Attr
 import IOStatus as IO
 import Prng.Uuid as Uuid
-import Route exposing (Route, firstSegment, toString)
+import Route exposing (Route, toString)
 import Shared
 import Time exposing (posixToMillis)
 import View exposing (hamburger, separator)
@@ -26,25 +26,7 @@ view title s =
 
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
-    [ menuitem s r Route.Home "Home"
-    , menuitem s r Route.ProcessTypeList "Process Types"
-    , menuitem s r Route.ResourceTypeList "Resource Types"
-    , menuitem s r Route.EventTypeList "Event Types"
-    , menuitem s r Route.AgentTypeList "Agent Types"
-    , menuitem s r Route.CommitmentTypeList "Commitment Types"
-    , menuitem s r Route.ContractTypeList "Contract Types"
-    , menuitem s r Route.GroupTypeList "Group Types"
-    , menuitem s r Route.IdentifierTypeList "Identifiers"
-    , menuitem s r Route.ValueTypeList "Values"
-    , menuitem s r Route.ResourceList "Resources"
-    , menuitem s r Route.EventList "Events"
-    , menuitem s r Route.AgentList "Agents"
-    , menuitem s r Route.CommitmentList "Commitments"
-    , menuitem s r Route.ContractList "Contracts"
-    , menuitem s r Route.GroupList "Groups"
-    , menuitem s r (Route.ProcessList Nothing) "Processes"
-    , menuitem s r Route.ConfigurationList "Configuration"
-    ]
+    List.map (\e -> menuitem s r (Route.Entity e (Route.List Nothing)) (Route.entityToString e)) Route.all
         ++ (s.state.processTypes
                 |> Dict.values
                 |> List.map
@@ -53,7 +35,7 @@ links s r =
                             name =
                                 Uuid.toString pt.uuid
                         in
-                        menuitem s r (Route.ProcessTypeView name) name
+                        menuitem s r (Route.Entity Route.ProcessType (Route.View name)) name
                     )
            )
 
@@ -100,7 +82,17 @@ menuitem : Shared.Model -> Route -> Route -> String -> Element msg
 menuitem s currentRoute linkRoute label =
     let
         active =
-            firstSegment currentRoute == firstSegment linkRoute
+            case currentRoute of
+                Route.Entity e1 _ ->
+                    case linkRoute of
+                        Route.Entity e2 _ ->
+                            e1 == e2
+
+                        _ ->
+                            False
+
+                _ ->
+                    False
     in
     link
         ([ Font.size 15

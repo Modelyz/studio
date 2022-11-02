@@ -14,7 +14,7 @@ import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import ResourceType.ResourceType exposing (ResourceType)
-import Route exposing (Route, redirectView, redirectViewItem)
+import Route exposing (Route, redirectView)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ResourceTypeList ->
+        Route.Entity Route.ResourceType _ ->
             Just { route = route }
 
         _ ->
@@ -80,10 +80,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedResourceType uuid )
 
         Add ->
-            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirectAdd s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.ResourceType (Route.View (Uuid.toString uuid))) |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )
@@ -100,6 +100,11 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        allH =
+            s.state.resourceTypes
+                |> Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v)
+    in
     case model.viewtype of
         Smallcard ->
             flatContainer s
@@ -111,10 +116,9 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.resourceTypes
-                        |> Dict.map (\_ t -> hWithIdentifiers s.state.resources Dict.empty s.state.identifierTypes s.state.identifiers t)
-                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources (Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v) s.state.resourceTypes) s.state.configs t)
+                    (allH
                         |> Dict.values
+                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.resources allH s.state.configs h)
                         |> withDefaultContent (p "There are no Resources yet. Add your first one!")
                     )
                 ]
@@ -131,9 +135,8 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.resourceTypes
+                            allH
                                 |> Dict.values
-                                |> List.map (hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers)
                                 |> List.map (hWithGroups s.state.grouped)
                         , columns =
                             (s.state.identifierTypes
@@ -157,6 +160,6 @@ identifierColumn it =
             >> List.filter (\id -> id.name == it.name)
             >> List.map Identifier.toValue
             >> List.head
-            >> Maybe.withDefault ""
+            >> Maybe.withDefault "(no identifier)"
             >> innerCell
     }

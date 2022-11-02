@@ -142,7 +142,7 @@ update s msg model =
                     ( { model | step = x }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectView "list" s.navkey model.route |> Effect.fromCmd )
+                    ( model, Route.goBack s.navkey model.route |> Effect.fromCmd )
 
         NextPage ->
             case nextStep model.step model.steps of
@@ -150,21 +150,13 @@ update s msg model =
                     ( { model | step = step }, Effect.none )
 
                 Nothing ->
-                    ( model, redirectView "list" s.navkey model.route |> Effect.fromCmd )
+                    ( model, Route.goBack s.navkey model.route |> Effect.fromCmd )
 
         Added ->
             ( model, Effect.none )
 
         Cancel ->
             ( model
-            , redirectView
-                (if Route.viewType model.route == Route.Edit then
-                    "view"
-
-                 else
-                    "list"
-                )
-                s.navkey
-                model.route
+            , Route.goBack s.navkey model.route
                 |> Effect.fromCmd
             )

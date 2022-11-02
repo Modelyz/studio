@@ -111,10 +111,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.GroupAdd ->
+        Route.Entity Route.Group Route.Add ->
             Just { route = route, uuid = Nothing }
 
-        Route.GroupEdit uuid ->
+        Route.Entity Route.Group (Route.Edit uuid) ->
             Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
@@ -191,7 +191,7 @@ update s msg model =
                                 :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
                                 ++ List.map Message.ValueAdded (Dict.values model.values)
                             )
-                        , redirect s.navkey (Route.GroupView (Uuid.toString model.uuid)) |> Effect.fromCmd
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.View (Uuid.toString model.uuid)
                         ]
                     )
 

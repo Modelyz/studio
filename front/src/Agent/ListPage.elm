@@ -13,7 +13,7 @@ import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectView, redirectViewItem)
+import Route exposing (Route, redirectView)
 import Scope.Scope as Scope exposing (Scope(..))
 import Shared
 import Spa.Page
@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.AgentList ->
+        Route.Entity Route.Agent (Route.List _) ->
             Just { route = route }
 
         _ ->
@@ -76,10 +76,10 @@ update s msg model =
             ( model, Shared.dispatch s <| RemovedAgent uuid )
 
         Add ->
-            ( model, redirectView "add" s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirectAdd s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, redirectViewItem "view" (Uuid.toString uuid) s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Agent (Route.View (Uuid.toString uuid))) |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )

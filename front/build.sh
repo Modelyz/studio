@@ -14,7 +14,7 @@ pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # don't build if the changelog is not up to date
 grep "## version ${APPVERSION} --" ../CHANGELOG.md \
-    || { echo "Please first feed the changelog for version ${APPVERSION}"; exit 1; }
+    || { echo "Please first feed the changelog for version ${APPVERSION}"; if [ "$1" != "dontstop" ]; then exit 1; fi }
 
 # update the static dir
 rsync -r --delete src/static/ ../build/static/

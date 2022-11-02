@@ -107,10 +107,10 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
-        Route.IdentifierTypeAdd ->
+        Route.Entity Route.IdentifierType Route.Add ->
             Just { route = route, itid = "" }
 
-        Route.IdentifierTypeEdit itid ->
+        Route.Entity Route.IdentifierType (Route.Edit itid) ->
             Just { route = route, itid = itid }
 
         _ ->
@@ -181,7 +181,7 @@ update s msg model =
                         [ Shared.dispatch s <|
                             Maybe.withDefault (Message.IdentifierTypeAdded i) <|
                                 Maybe.map (Message.IdentifierTypeChanged i) model.old
-                        , redirect s.navkey Route.IdentifierTypeList |> Effect.fromCmd
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.List Nothing)
                         ]
                     )
 

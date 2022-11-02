@@ -6,7 +6,7 @@ import Element exposing (..)
 import Ident.Identifiable exposing (withIdentifiers)
 import Ident.IdentifierType as IT exposing (IdentifierType)
 import Message
-import Route exposing (Route, redirect, redirectViewItem)
+import Route exposing (Route, redirect)
 import Scope.Scope as Scope
 import Scope.View
 import Shared
@@ -43,7 +43,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.IdentifierTypeList ->
+        Route.Entity Route.IdentifierType (Route.List _) ->
             Just { route = route }
 
         _ ->
@@ -64,10 +64,10 @@ update s msg model =
             )
 
         Add ->
-            ( model, redirect s.navkey Route.IdentifierTypeAdd |> Effect.fromCmd )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType Route.Add )
 
         View vtid ->
-            ( model, redirectViewItem "view" vtid s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.IdentifierType (Route.View vtid)) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -75,7 +75,7 @@ view s model =
     { title = "IdentifierTypes"
     , attributes = []
     , element = viewContent model
-    , route = Route.IdentifierTypeList
+    , route = Route.Entity Route.IdentifierType (Route.List Nothing)
     }
 
 

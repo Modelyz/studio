@@ -7,7 +7,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Ident.Identifiable exposing (withIdentifiers)
 import Message
-import Route exposing (Route, redirect, redirectViewItem)
+import Route exposing (Route, redirect)
 import Scope.View
 import Shared
 import Spa.Page
@@ -43,7 +43,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.ConfigurationList ->
+        Route.Entity Route.Configuration (Route.List _) ->
             Just { route = route }
 
         _ ->
@@ -64,10 +64,10 @@ update s msg model =
             )
 
         Add ->
-            ( model, redirect s.navkey Route.ConfigurationAdd |> Effect.fromCmd )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration Route.Add )
 
         View zid ->
-            ( model, redirectViewItem "view" zid s.navkey model.route |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Configuration (Route.View zid)) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -75,7 +75,7 @@ view s model =
     { title = "Configurations"
     , attributes = []
     , element = viewContent model
-    , route = Route.ConfigurationList
+    , route = model.route
     }
 
 
