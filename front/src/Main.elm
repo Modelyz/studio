@@ -21,6 +21,8 @@ import ContractType.AddPage
 import ContractType.ListPage
 import ContractType.ViewPage
 import Element exposing (..)
+import Element.Background as Background
+import Element.Font as Font
 import Event.AddPage
 import Event.ListPage
 import Event.ViewPage
@@ -34,6 +36,7 @@ import GroupType.AddPage
 import GroupType.ListPage
 import GroupType.ViewPage
 import HomePage
+import IOStatus as IO
 import Ident.AddPage
 import Ident.ListPage
 import Ident.ViewPage
@@ -56,7 +59,7 @@ import Spa exposing (mapSharedMsg)
 import Value.AddPage
 import Value.ListPage
 import Value.ViewPage
-import View exposing (View)
+import View exposing (View, h1)
 import View.Navbar as Navbar
 import View.Style as Style exposing (WindowSize)
 import Zone.AddPage
@@ -123,17 +126,26 @@ toDocument :
 toDocument s view =
     { title = view.title
     , body =
-        [ layout [ width fill, height fill ] <|
-            (if s.menu == Style.Desktop then
-                row
+        [ case s.iostatus of
+            IO.IOError err ->
+                layout [ width fill, height fill ] <|
+                    row [ width fill ]
+                        [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
+                        , column [ Background.color (rgb 0 0 0), Font.color (rgb 0.9 0.9 0.9), padding 20, spacing 20, width fill ] [ h1 "The following critical error occured:", row [ Font.size 15, Font.family [ Font.monospace ], Background.color (rgb 0 0 0) ] [ text err ] ]
+                        ]
 
-             else
-                column
-            )
-                [ width fill, height fill ]
-                [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
-                , view.element s
-                ]
+            _ ->
+                layout [ width fill, height fill ] <|
+                    (if s.menu == Style.Desktop then
+                        row
+
+                     else
+                        column
+                    )
+                        [ width fill, height fill ]
+                        [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
+                        , view.element s
+                        ]
         ]
     }
 
