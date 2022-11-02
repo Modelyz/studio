@@ -130,8 +130,7 @@ toDocument s view =
             IO.IOError err ->
                 layout [ width fill, height fill ] <|
                     row [ width fill, height fill ]
-                        [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
-                        , column [ Background.color (rgb 0 0 0), Font.color (rgb 0.9 0.9 0.9), padding 20, spacing 20, width fill, height fill, Font.size 15 ]
+                        [ column [ Background.color (rgb 0 0 0), Font.color (rgb 0.9 0.9 0.9), padding 20, spacing 20, width fill, height fill, Font.size 15 ]
                             [ h1 "The following critical error occured:"
                             , row [ Font.size 20 ] [ text <| "version: " ++ String.fromInt s.version ++ "\nES version: " ++ String.fromInt s.esversion ]
                             , row [ Font.family [ Font.monospace ] ] [ text err ]
