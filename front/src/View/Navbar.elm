@@ -26,7 +26,10 @@ view title s =
 
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
-    List.map (\e -> menuitem s r (Route.Entity e (Route.List Nothing)) (Route.entityToString e)) Route.all
+    menuitem s r Route.Home "/"
+        :: List.map
+            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)) (Route.entityToString e))
+            Route.all
         ++ (s.state.processTypes
                 |> Dict.values
                 |> List.map
