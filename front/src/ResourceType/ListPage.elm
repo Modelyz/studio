@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ResourceType _ ->
+        Route.Entity Route.ResourceType (Route.List _) ->
             Just { route = route }
 
         _ ->

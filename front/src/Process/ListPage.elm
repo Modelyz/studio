@@ -57,7 +57,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Process _ ->
+        Route.Entity Route.Process (Route.List _) ->
             Just { route = route }
 
         _ ->
