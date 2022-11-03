@@ -61,6 +61,7 @@ type alias Model =
     , warning : String
     , steps : List (Step.Step Step)
     , step : Step.Step Step
+    , old : Maybe ValueType
     }
 
 
@@ -149,6 +150,7 @@ init s f =
             , warning = ""
             , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
             , step = Step.Step StepName
+            , old = Nothing
             }
     in
     s.state.valueTypes
@@ -162,6 +164,7 @@ init s f =
                     , mandatory = vt.mandatory
                     , stack = [ vt.expr ]
                     , scope = vt.scope
+                    , old = Just vt
                 }
             )
         |> Maybe.withDefault adding
@@ -297,8 +300,10 @@ update s msg model =
                 Ok i ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Message.ValueTypeAdded i
-                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType <| Route.View (VT.compare i)
+                        [ Shared.dispatch s <|
+                            Maybe.withDefault (Message.ValueTypeAdded i) <|
+                                Maybe.map (Message.ValueTypeChanged i) model.old
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List Nothing)
                         ]
                     )
 

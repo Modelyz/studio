@@ -239,6 +239,48 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
+        ValueTypeChanged new old ->
+            { state
+                | valueTypes =
+                    Dict.insert (ValueType.compare new) new <|
+                        Dict.remove (ValueType.compare old) state.valueTypes
+                , values =
+                    -- keep the values whose name are different from the one removed,
+                    -- or if this is the same name, whose item is not in the scope of the value type
+                    state.values
+                        |> Dict.values
+                        |> List.filter
+                            (\i ->
+                                i.name
+                                    /= new.name
+                                    || not
+                                        ((case i.what of
+                                            Type.TType tt ->
+                                                T.find (allTyped state tt) i.for
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.scope)
+
+                                            Type.HType ht ->
+                                                H.find (allHierarchic state ht) i.for
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.scope)
+                                         )
+                                            |> Maybe.withDefault False
+                                        )
+                            )
+                        |> List.map
+                            (\i ->
+                                if i.name == old.name then
+                                    let
+                                        newi =
+                                            { i | name = new.name }
+                                    in
+                                    ( Value.compare newi, newi )
+
+                                else
+                                    ( Value.compare i, i )
+                            )
+                        |> Dict.fromList
+            }
+
         ValueTypeRemoved vt ->
             { state
                 | valueTypes = Dict.remove (ValueType.compare vt) state.valueTypes

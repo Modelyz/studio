@@ -95,6 +95,7 @@ type Payload
     | IdentifierTypeRemoved IdentifierType
     | IdentifierAdded Identifier
     | ValueTypeAdded ValueType
+    | ValueTypeChanged ValueType ValueType
     | ValueTypeRemoved ValueType
     | ValueAdded Value
     | Configured Configuration
@@ -124,6 +125,9 @@ toString p =
 
         ValueTypeAdded _ ->
             "ValueTypeAdded"
+
+        ValueTypeChanged _ _ ->
+            "ValueTypeChanged"
 
         ValueTypeRemoved _ ->
             "ValueTypeRemoved"
@@ -309,6 +313,14 @@ encode (Message b p) =
             ValueTypeAdded vt ->
                 ( "load", ValueType.encode vt )
 
+            ValueTypeChanged new old ->
+                ( "load"
+                , Encode.object
+                    [ ( "new", ValueType.encode new )
+                    , ( "old", ValueType.encode old )
+                    ]
+                )
+
             ValueTypeRemoved vt ->
                 ( "load", ValueType.encode vt )
 
@@ -462,6 +474,11 @@ decoder =
                         "ValueTypeAdded" ->
                             Decode.map ValueTypeAdded
                                 (Decode.field "load" ValueType.decoder)
+
+                        "ValueTypeChanged" ->
+                            Decode.map2 ValueTypeChanged
+                                (Decode.at [ "load", "new" ] ValueType.decoder)
+                                (Decode.at [ "load", "old" ] ValueType.decoder)
 
                         "ValueTypeRemoved" ->
                             Decode.map ValueTypeRemoved
