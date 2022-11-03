@@ -27,10 +27,9 @@ type alias IdentifierType =
 initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
 initIdentifiers allT allH its t mh uuid =
     -- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
-    (its
+    its
         |> Dict.filter (\_ it -> Scope.containsScope allT allH (IsItem t uuid) it.applyTo)
         |> Dict.values
-    )
         |> List.map
             (\it ->
                 let

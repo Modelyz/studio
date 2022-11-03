@@ -25,7 +25,7 @@ toValue : Dict String Identifier -> Fragment -> String
 toValue identifiers f =
     case f of
         IdentifierName name ->
-            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault "(no identifier name)"
+            Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault ("<" ++ name ++ ">")
 
         Fixed string ->
             string

@@ -18,7 +18,7 @@ displayValueDict default allV data =
             { data = Dict.values data
             , columns =
                 [ { header = headerCell color.table.header.background "Name", width = fill, view = .name >> innerCell }
-                , { header = headerCell color.table.header.background "Value", width = fill, view = .expr >> eval allV >> Result.map Rational.toString >> Result.withDefault "(broken)" >> innerCell }
+                , { header = headerCell color.table.header.background "Value", width = fill, view = .expr >> eval allV >> Result.map Rational.toString >> Result.withDefault "(undefined)" >> innerCell }
                 ]
             }
 

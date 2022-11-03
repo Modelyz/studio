@@ -6,6 +6,7 @@
 
 * Several UI fixes and improvements
 * Clear BSOD in case of JSON decode error
+* Ability to change a Value Type or Identifier Type
 
 ## version 7 -- 2022-10-30
 
