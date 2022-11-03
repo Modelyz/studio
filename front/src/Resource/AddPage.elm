@@ -169,7 +169,7 @@ init s f =
                             |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
                     , values =
                         initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
-                            |> Dict.union (Dict.filter (\_ i -> t.uuid == i.for) s.state.values)
+                            |> Dict.union (Value.fromUuid t.uuid s.state.values)
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -192,7 +192,7 @@ update s msg model =
                 , values =
                     initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
                         -- TODO not union here: if we change the type in Edit mode, we loose the values
-                        |> Dict.union (Dict.filter (\_ i -> model.uuid == i.for) s.state.values)
+                        |> Dict.union (Value.fromUuid model.uuid s.state.values)
               }
             , Effect.none
             )
