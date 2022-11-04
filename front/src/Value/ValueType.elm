@@ -29,7 +29,16 @@ initValues allT allH vts t mh uuid isNew =
         |> Dict.filter
             (\_ vt ->
                 if isNew then
-                    Maybe.map (\h -> Scope.containsScope allT allH (HasUserType t h.what h.uuid) vt.scope) mh |> Maybe.withDefault False
+                    Scope.containsScope allT
+                        allH
+                        (case mh of
+                            Just h ->
+                                HasUserType t h.what h.uuid
+
+                            Nothing ->
+                                HasType t
+                        )
+                        vt.scope
 
                 else
                     Scope.containsScope allT allH (IsItem t uuid) vt.scope

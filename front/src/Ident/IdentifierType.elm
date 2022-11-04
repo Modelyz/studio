@@ -26,15 +26,24 @@ type alias IdentifierType =
 
 initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Bool -> Dict String Identifier
 initIdentifiers allT allH its t mh uuid isNew =
-    -- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
-    -- if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
-    -- So we must find all the it whose scope is ascendent of (HasUserType t h.what h.uuid).
+    {- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
+       if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
+       So we must find all the it whose scope is ascendent of (HasUserType t h.what h.uuid).
+    -}
     its
         |> Dict.filter
             (\_ it ->
                 if isNew then
-                    Maybe.map (\h -> Scope.containsScope allT allH (HasUserType t h.what h.uuid) it.applyTo) mh
-                        |> Maybe.withDefault False
+                    Scope.containsScope allT
+                        allH
+                        (case mh of
+                            Just h ->
+                                HasUserType t h.what h.uuid
+
+                            Nothing ->
+                                HasType t
+                        )
+                        it.applyTo
 
                 else
                     Scope.containsScope allT allH (IsItem t uuid) it.applyTo
