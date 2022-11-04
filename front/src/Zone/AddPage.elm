@@ -37,6 +37,7 @@ type alias Flags =
 
 type alias Model =
     { route : Route
+    , isNew : Bool
     , zone : Zone
     , scope : Scope
     , fragments : List Fragment
@@ -78,12 +79,35 @@ view s model =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    { route = f.route
-    , zone = SmallcardTitle
-    , scope = Empty
-    , fragments = []
-    , warning = ""
-    }
+    let
+        isNew =
+            f.zid == ""
+
+        adding =
+            { route = f.route
+            , isNew = isNew
+            , zone = SmallcardTitle
+            , scope = Empty
+            , fragments = []
+            , warning = ""
+            }
+    in
+    (if isNew then
+        adding
+
+     else
+        Dict.get f.zid s.state.configs
+            |> Maybe.map
+                (\(ZoneConfig zone fragments scope) ->
+                    { adding
+                        | zone = zone
+                        , scope = scope
+                        , fragments = fragments
+                        , warning = ""
+                    }
+                )
+            |> Maybe.withDefault adding
+    )
         |> Effect.with (closeMenu f s.menu)
 
 
