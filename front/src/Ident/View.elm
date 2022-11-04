@@ -1,7 +1,5 @@
 module Ident.View exposing (displayIdentifierDict)
 
--- TODO file seems unused
-
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -12,6 +10,7 @@ import View.Style exposing (..)
 
 displayIdentifierDict : String -> Dict String Identifier -> Element msg
 displayIdentifierDict default data =
+    -- TODO move closer from where it's used?
     if Dict.size data > 0 then
         table [ width shrink, Background.color color.item.background ]
             { data = Dict.values data

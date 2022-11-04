@@ -272,6 +272,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
+                    -- TODO try to turn into a 1-liner like below
                     let
                         allHwithIdentifiers =
                             allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
