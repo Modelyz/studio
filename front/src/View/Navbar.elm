@@ -26,9 +26,9 @@ view title s =
 
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
-    menuitem s r Route.Home "Home"
+    menuitem s r Route.Home
         :: List.map
-            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)) (Route.entityToString e))
+            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
             Route.all
         ++ (s.state.processTypes
                 |> Dict.values
@@ -38,7 +38,7 @@ links s r =
                             name =
                                 Uuid.toString pt.uuid
                         in
-                        menuitem s r (Route.Entity Route.ProcessType (Route.View name)) name
+                        menuitem s r (Route.Entity Route.ProcessType (Route.View name))
                     )
            )
 
@@ -81,13 +81,13 @@ desktop s r =
                ]
 
 
-menuitem : Shared.Model -> Route -> Route -> String -> Element msg
-menuitem s currentRoute linkRoute label =
+menuitem : Shared.Model -> Route -> Route -> Element msg
+menuitem s currentRoute route =
     let
         active =
             case currentRoute of
                 Route.Entity e1 _ ->
-                    case linkRoute of
+                    case route of
                         Route.Entity e2 _ ->
                             e1 == e2
 
@@ -110,4 +110,4 @@ menuitem s currentRoute linkRoute label =
                     []
                )
         )
-        { url = toString linkRoute, label = text label }
+        { url = toString route, label = text <| Route.toDesc route }

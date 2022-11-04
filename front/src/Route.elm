@@ -1,4 +1,4 @@
-module Route exposing (EntitySegment(..), Route(..), View(..), all, entityToString, goBack, redirect, redirectAdd, redirectView, toRoute, toString)
+module Route exposing (EntitySegment(..), Route(..), View(..), all, entityToString, goBack, redirect, redirectAdd, redirectView, toDesc, toRoute, toString)
 
 import Browser.Navigation as Nav
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -298,6 +298,16 @@ toString r =
 
         Entity e v ->
             customToString (viewToCustomUrl v |> and (CustomUrl [ entityToUrl e ] []))
+
+
+toDesc : Route -> String
+toDesc r =
+    case r of
+        Home ->
+            "Home"
+
+        Entity e v ->
+            entityToDesc e
 
 
 upper : Route -> String
