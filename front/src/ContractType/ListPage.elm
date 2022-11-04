@@ -23,7 +23,6 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
