@@ -89,7 +89,11 @@ fromSlashString =
 
 sign : Int -> Int
 sign n =
-    abs n // n
+    if n >= 0 then
+        1
+
+    else
+        -1
 
 
 fromFloatString : String -> String -> Result String Rational
@@ -98,39 +102,36 @@ fromFloatString sep =
     String.split sep
         >> (\split ->
                 List.head split
-                    |> Maybe.andThen String.toInt
-                    >> Maybe.map
+                    |> Maybe.andThen
                         (\left ->
                             List.tail split
-                                |> Maybe.map (String.join sep)
-                                >> Maybe.andThen String.toInt
-                                >> (\maybeRight ->
-                                        case maybeRight of
-                                            Just right ->
-                                                let
-                                                    ll =
-                                                        String.length (String.fromInt left)
+                                |> Maybe.andThen
+                                    (\tails ->
+                                        let
+                                            right =
+                                                String.join "" tails
 
-                                                    lr =
-                                                        String.length (String.fromInt right)
-                                                in
-                                                Ok <| Rational (sign left * (abs left * 10 ^ lr + right)) (10 ^ lr)
+                                            ll =
+                                                String.length left
 
-                                            Nothing ->
-                                                if List.length split == 1 then
-                                                    Ok <| Rational left 1
-
-                                                else
-                                                    Err (String.join sep split)
-                                   )
+                                            lr =
+                                                String.length right
+                                        in
+                                        Maybe.map2 Rational (String.toInt (left ++ right)) (Just ((*) 1 (10 ^ lr)))
+                                    )
                         )
-                    >> Maybe.withDefault (Err (String.join sep split))
            )
+        >> Result.fromMaybe "Invalid number"
+
+
+fromInt : String -> Result String Rational
+fromInt s =
+    String.toInt s |> Maybe.map (\n -> Rational n 1) |> Result.fromMaybe s
 
 
 fromString : String -> Result String ( Rational, String )
 fromString s =
-    oneOf [ fromSlashString, fromFloatString ".", fromFloatString "," ] s |> Result.map (\r -> ( r, s ))
+    oneOf [ fromInt, fromSlashString, fromFloatString ".", fromFloatString "," ] s |> Result.map (\r -> ( r, s ))
 
 
 oneOf : List (String -> Result String Rational) -> String -> Result String Rational
