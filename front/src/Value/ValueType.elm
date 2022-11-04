@@ -20,11 +20,20 @@ type alias ValueType =
     }
 
 
-initValues : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Value
-initValues allT allH vts t mh uuid =
+initValues : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Bool -> Dict String Value
+initValues allT allH vts t mh uuid isNew =
     -- build the empty values corresponding to the chosen type, possible user type, and uuid of the added/edited entity
+    -- if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
+    -- So we must find all the vt whose scope is ascendent of (HasUserType t h.what h.uuid).
     vts
-        |> Dict.filter (\_ vt -> Scope.containsScope allT allH (IsItem t uuid) vt.scope)
+        |> Dict.filter
+            (\_ vt ->
+                if isNew then
+                    Maybe.map (\h -> Scope.containsScope allT allH (HasUserType t h.what h.uuid) vt.scope) mh |> Maybe.withDefault False
+
+                else
+                    Scope.containsScope allT allH (IsItem t uuid) vt.scope
+            )
         |> Dict.values
         |> List.map
             (\vt ->
@@ -39,6 +48,7 @@ initValues allT allH vts t mh uuid =
 
 compare : ValueType -> String
 compare vt =
+    -- TODO replace "|" with "/" since its percentEncoded in the URL?
     Scope.compare vt.scope ++ "|" ++ vt.name
 
 

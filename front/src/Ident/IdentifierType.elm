@@ -24,11 +24,21 @@ type alias IdentifierType =
     }
 
 
-initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Dict String Identifier
-initIdentifiers allT allH its t mh uuid =
+initIdentifiers : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String IdentifierType -> Type -> Maybe (Hierarchic h) -> Uuid -> Bool -> Dict String Identifier
+initIdentifiers allT allH its t mh uuid isNew =
     -- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
+    -- if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
+    -- So we must find all the it whose scope is ascendent of (HasUserType t h.what h.uuid).
     its
-        |> Dict.filter (\_ it -> Scope.containsScope allT allH (IsItem t uuid) it.applyTo)
+        |> Dict.filter
+            (\_ it ->
+                if isNew then
+                    Maybe.map (\h -> Scope.containsScope allT allH (HasUserType t h.what h.uuid) it.applyTo) mh
+                        |> Maybe.withDefault False
+
+                else
+                    Scope.containsScope allT allH (IsItem t uuid) it.applyTo
+            )
         |> Dict.values
         |> List.map
             (\it ->
@@ -43,6 +53,7 @@ initIdentifiers allT allH its t mh uuid =
 
 compare : IdentifierType -> String
 compare it =
+    -- TODO replace "|" with "/" since its percentEncoded in the URL?
     Scope.compare it.applyTo ++ "|" ++ it.name
 
 

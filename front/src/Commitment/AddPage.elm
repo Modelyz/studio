@@ -78,6 +78,7 @@ type alias Flags =
 
 type alias Model =
     { route : Route
+    , isNew : Bool
     , uuid : Uuid
     , seed : Seed
     , flatselect : Maybe HierarchicType
@@ -135,13 +136,17 @@ init s f =
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
 
+        isNew =
+            f.uuid == Nothing
+
         adding =
             { route = f.route
+            , isNew = isNew
             , flatselect = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid
-            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid
+            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
+            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid isNew
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -166,10 +171,10 @@ init s f =
                     | flatselect = parent
                     , uuid = t.uuid
                     , identifiers =
-                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid
+                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid adding.isNew
                             |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
                     , values =
-                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid
+                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid adding.isNew
                             |> Dict.union (Value.fromUuid t.uuid s.state.values)
                     , oldGroups = oldGroups
                     , groups = oldGroups
@@ -187,11 +192,11 @@ update s msg model =
             ( { model
                 | flatselect = mh
                 , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid
+                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
                         -- TODO not union here: if we change the type in Edit mode, we loose the values
                         |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
                 , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid
+                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid model.isNew
                         -- TODO not union here: if we change the type in Edit mode, we loose the values
                         |> Dict.union (Value.fromUuid model.uuid s.state.values)
               }

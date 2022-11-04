@@ -1,7 +1,7 @@
 module Typed.Typed exposing (OnlyTyped, Typed, find, isAscendantOf)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic as Hierarchic exposing (Hierarchic)
+import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
@@ -36,8 +36,8 @@ type alias OnlyTyped =
 
 
 isAscendantOf : Typed a -> Dict String (Hierarchic b) -> Hierarchic b -> Bool
-isAscendantOf childT allItems parentH =
-    Maybe.map (\t -> Hierarchic.isAscendantOf t allItems parentH) (Hierarchic.find allItems childT.type_)
+isAscendantOf childT allH parentH =
+    Maybe.map (\t -> H.isAscendantOf t allH parentH) (H.find allH childT.type_)
         |> Maybe.withDefault False
 
 

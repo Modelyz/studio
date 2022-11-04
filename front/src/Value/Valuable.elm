@@ -14,7 +14,7 @@ withValues allT allH allVts allVs v =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { v
         | values =
-            initValues allT allH allVts v.what Nothing v.uuid
+            initValues allT allH allVts v.what Nothing v.uuid False
                 |> Dict.union (Value.fromUuid v.uuid allVs)
     }
 
@@ -24,7 +24,7 @@ tWithValues allT allH allVts allVs t =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { t
         | values =
-            initValues allT allH allVts (Type.TType t.what) (H.find allH t.type_) t.uuid
+            initValues allT allH allVts (Type.TType t.what) (H.find allH t.type_) t.uuid False
                 |> Dict.union (Value.fromUuid t.uuid allVs)
     }
 
@@ -34,6 +34,6 @@ hWithValues allT allH allVts allVs t =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { t
         | values =
-            initValues allT allH allVts (Type.HType t.what) (Maybe.andThen (H.find allH) t.parent) t.uuid
+            initValues allT allH allVts (Type.HType t.what) (Maybe.andThen (H.find allH) t.parent) t.uuid False
                 |> Dict.union (Value.fromUuid t.uuid allVs)
     }

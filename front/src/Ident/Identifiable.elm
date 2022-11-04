@@ -23,7 +23,7 @@ gWithIdentifiers allT allH allIdts allIds i =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { i
         | identifiers =
-            initIdentifiers allT allH allIdts (Type.TType i.what) Nothing i.uuid
+            initIdentifiers allT allH allIdts (Type.TType i.what) Nothing i.uuid False
                 |> Dict.union (Identifier.fromUuid i.uuid allIds)
     }
 
@@ -33,7 +33,7 @@ tWithIdentifiers allT allH allIdts allIds i =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { i
         | identifiers =
-            initIdentifiers allT allH allIdts (Type.TType i.what) (H.find allH i.type_) i.uuid
+            initIdentifiers allT allH allIdts (Type.TType i.what) (H.find allH i.type_) i.uuid False
                 |> Dict.union (Identifier.fromUuid i.uuid allIds)
     }
 
@@ -43,7 +43,7 @@ hWithIdentifiers allT allH allIdts allIds i =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { i
         | identifiers =
-            initIdentifiers allT allH allIdts (Type.HType i.what) Nothing i.uuid
+            initIdentifiers allT allH allIdts (Type.HType i.what) Nothing i.uuid False
                 |> Dict.union (Identifier.fromUuid i.uuid allIds)
     }
 
