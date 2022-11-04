@@ -119,7 +119,7 @@ getUpper allT allH scope =
                                 Just <| HasUserType (Type.HType ht) ht puuid
 
                             Nothing ->
-                                Just <| HasType (Type.HType ht)
+                                Just <| HasUserType (Type.HType ht) ht uuid
                    )
 
         IsItem (Type.TType tt) uuid ->

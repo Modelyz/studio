@@ -23,7 +23,6 @@ import View exposing (..)
 import View.Smallcard exposing (hClickableRemovableCard)
 import View.Style exposing (..)
 import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -111,9 +110,10 @@ viewContent model s =
                 (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.groupTypes
-                        |> Dict.map (\_ t -> hWithIdentifiers s.state.groups Dict.empty s.state.identifierTypes s.state.identifiers t)
-                        |> Dict.map (\_ t -> hClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs t)
+                    ((s.state.groupTypes
+                        |> Dict.map (\_ h -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers h)
+                     )
+                        |> Dict.map (\_ h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs h)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Group Types yet. Add your first one!")
                     )

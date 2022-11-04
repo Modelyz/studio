@@ -166,30 +166,28 @@ aggregate (Message b p) state =
                     Dict.insert (IdentifierType.compare new) new <|
                         Dict.remove (IdentifierType.compare old) state.identifierTypes
                 , identifiers =
-                    -- keep the identifiers whose name are different from the one removed,
-                    -- or if this is the same name, whose item is not in the scope of the identifier type
+                    -- change the name of all the identifiers whose name equals the new name of the identifier type
+                    -- and that are in the scope of the changed identifier type
                     state.identifiers
                         |> Dict.values
-                        |> List.filter
-                            (\i ->
-                                i.name
-                                    /= new.name
-                                    || not
-                                        ((case i.what of
-                                            Type.TType tt ->
-                                                T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.applyTo)
-
-                                            Type.HType ht ->
-                                                H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.applyTo)
-                                         )
-                                            |> Maybe.withDefault False
-                                        )
-                            )
                         |> List.map
+                            -- rebuild the identifier compare keys
                             (\i ->
-                                if i.name == old.name then
+                                if
+                                    i.name
+                                        == old.name
+                                        && ((case i.what of
+                                                Type.TType tt ->
+                                                    T.find (allTyped state tt) i.identifiable
+                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.applyTo)
+
+                                                Type.HType ht ->
+                                                    H.find (allHierarchic state ht) i.identifiable
+                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.applyTo)
+                                            )
+                                                |> Maybe.withDefault False
+                                           )
+                                then
                                     let
                                         newi =
                                             { i | name = new.name }
@@ -245,38 +243,35 @@ aggregate (Message b p) state =
                     Dict.insert (ValueType.compare new) new <|
                         Dict.remove (ValueType.compare old) state.valueTypes
                 , values =
-                    -- keep the values whose name are different from the one removed,
-                    -- or if this is the same name, whose item is not in the scope of the value type
+                    -- change the name of all the values whose name equals the new name of the identifier type
                     state.values
                         |> Dict.values
-                        |> List.filter
-                            (\i ->
-                                i.name
-                                    /= new.name
-                                    || not
-                                        ((case i.what of
-                                            Type.TType tt ->
-                                                T.find (allTyped state tt) i.for
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.scope)
-
-                                            Type.HType ht ->
-                                                H.find (allHierarchic state ht) i.for
-                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.scope)
-                                         )
-                                            |> Maybe.withDefault False
-                                        )
-                            )
                         |> List.map
-                            (\i ->
-                                if i.name == old.name then
+                            -- rebuild the value compare keys
+                            (\v ->
+                                if
+                                    v.name
+                                        == old.name
+                                        && ((case v.what of
+                                                Type.TType tt ->
+                                                    T.find (allTyped state tt) v.for
+                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) v.for) new.scope)
+
+                                                Type.HType ht ->
+                                                    H.find (allHierarchic state ht) v.for
+                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) v.for) new.scope)
+                                            )
+                                                |> Maybe.withDefault False
+                                           )
+                                then
                                     let
                                         newi =
-                                            { i | name = new.name }
+                                            { v | name = new.name }
                                     in
                                     ( Value.compare newi, newi )
 
                                 else
-                                    ( Value.compare i, i )
+                                    ( Value.compare v, v )
                             )
                         |> Dict.fromList
             }
