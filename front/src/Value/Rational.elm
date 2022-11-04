@@ -1,4 +1,4 @@
-module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, neg, pow, toString)
+module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, multiply, neg, pow, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -31,6 +31,11 @@ div (Rational n1 d1) (Rational n2 d2) =
 add : Rational -> Rational -> Rational
 add (Rational n1 d1) (Rational n2 d2) =
     Rational ((n1 * d2) + (n2 * d1)) (d1 * d2)
+
+
+multiply : Rational -> Rational -> Rational
+multiply (Rational n1 d1) (Rational n2 d2) =
+    Rational (n1 * n2) (d1 * d2)
 
 
 sub : Rational -> Rational -> Rational

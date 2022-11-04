@@ -7,6 +7,7 @@
 * Several UI fixes and improvements
 * Full-page BSOD in case of JSON decode error
 * Ability to change a Value Type or Identifier Type
+* Added multiplication operator on expression
 
 ## version 7 -- 2022-10-30
 

@@ -25,6 +25,7 @@ type Expression
 
 type BOperator
     = Add
+    | Multiply
     | Or { name : String, desc : String, choice : Result String Bool }
 
 
@@ -119,6 +120,9 @@ bToString o =
         Add ->
             "Add"
 
+        Multiply ->
+            "Multiply"
+
         Or _ ->
             "Or"
 
@@ -128,6 +132,9 @@ bToShortString o =
     case o of
         Add ->
             " + "
+
+        Multiply ->
+            " × "
 
         Or _ ->
             " or "
@@ -145,7 +152,7 @@ allUnary =
 
 allBinary : List BOperator
 allBinary =
-    [ Add, or "" "" Nothing ]
+    [ Add, Multiply, or "" "" Nothing ]
 
 
 or : String -> String -> Maybe Bool -> BOperator
@@ -156,6 +163,11 @@ or n d c =
 add : Expression -> Expression -> Expression
 add e f =
     Binary Add e f
+
+
+multiply : Expression -> Expression -> Expression
+multiply e f =
+    Binary Multiply e f
 
 
 neg : Expression -> Expression
@@ -238,6 +250,9 @@ bEval operator res1 res2 =
         Add ->
             Result.map2 R.add res1 res2
 
+        Multiply ->
+            Result.map2 R.multiply res1 res2
+
         Or data ->
             -- one can choose either even if one fails
             data.choice
@@ -282,7 +297,10 @@ bEncode : BOperator -> Encode.Value
 bEncode op =
     case op of
         Add ->
-            Encode.object [ ( "type", Encode.string "Add" ) ]
+            Encode.object [ ( "type", Encode.string "+" ) ]
+
+        Multiply ->
+            Encode.object [ ( "type", Encode.string "*" ) ]
 
         Or data ->
             Encode.object
@@ -299,8 +317,11 @@ bDecoder =
         |> Decode.andThen
             (\s ->
                 case s of
-                    "Add" ->
+                    "+" ->
                         Decode.succeed Add
+
+                    "*" ->
+                        Decode.succeed Multiply
 
                     "Or" ->
                         Decode.map3 or (Decode.field "name" Decode.string) (Decode.field "desc" Decode.string) (Decode.field "choice" (Decode.nullable Decode.bool))
