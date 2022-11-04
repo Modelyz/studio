@@ -7,6 +7,7 @@ type IOStatus
     | ESStoring -- for instance, reading the ES from the MS through WS
     | WSSending
     | IOError String
+    | JSONError String
 
 
 toText : IOStatus -> String
@@ -26,3 +27,6 @@ toText status =
 
         IOError err ->
             "IOError: " ++ err
+
+        JSONError err ->
+            "JSON Format Error: " ++ err

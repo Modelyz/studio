@@ -127,7 +127,7 @@ toDocument s view =
     { title = view.title
     , body =
         [ case s.iostatus of
-            IO.IOError err ->
+            IO.JSONError err ->
                 layout [ width fill, height fill ] <|
                     row [ width fill, height fill ]
                         [ column [ Background.color (rgb 0 0 0), Font.color (rgb 0.9 0.9 0.9), padding 20, spacing 20, width fill, height fill, Font.size 15 ]
