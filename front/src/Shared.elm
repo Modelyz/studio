@@ -308,33 +308,37 @@ update msg model =
                     ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error getting status of message sending: " ++ errorToString err }, Cmd.none )
 
         MessagesReceived ms ->
-            case decodeString (Decode.list Message.decoder) ms of
-                Ok messages ->
-                    let
-                        msgs =
-                            exceptCI messages
-                    in
-                    ( { model
-                        | wsstatus = WSOpen
-                        , iostatus =
-                            if List.length msgs > 0 then
-                                ESStoring
+            case decodeString (Decode.maybe <| Decode.field "messages" <| Decode.list Message.decoder) ms of
+                Ok mbmessages ->
+                    mbmessages
+                        |> Maybe.map
+                            (\messages ->
+                                let
+                                    msgs =
+                                        exceptCI messages
+                                in
+                                ( { model
+                                    | wsstatus = WSOpen
+                                    , iostatus =
+                                        if List.length msgs > 0 then
+                                            ESStoring
 
-                            else
-                                IOIdle
-                      }
-                    , if List.length msgs > 0 then
-                        Message.storeMessages <|
-                            Encode.list Message.encode <|
-                                exceptCI messages
+                                        else
+                                            IOIdle
+                                  }
+                                , if List.length msgs > 0 then
+                                    Message.storeMessages <|
+                                        Encode.list Message.encode <|
+                                            exceptCI messages
 
-                      else
-                        Cmd.none
-                    )
+                                  else
+                                    Cmd.none
+                                )
+                            )
+                        |> Maybe.withDefault ( model, Cmd.none )
 
                 Err err ->
-                    -- TODO turn IOError into JSONError after moving to a single port transferring an object
-                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding received messages: " ++ errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error decoding received messages: " ++ errorToString err }, Cmd.none )
 
 
 initiateConnection : Uuid -> Model -> Cmd Msg
@@ -345,7 +349,7 @@ initiateConnection uuid model =
                 List.singleton <|
                     Message
                         { uuid = uuid, when = t, flow = Flow.Requested }
-                        (ConnectionInitiated
+                        (InitiatedConnection
                             { lastMessageTime = model.state.lastMessageTime
                             , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
                             }

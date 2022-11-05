@@ -60,7 +60,7 @@ update s msg model =
     case msg of
         Removed i ->
             ( model
-            , Shared.dispatch s <| Message.ValueTypeRemoved i
+            , Shared.dispatch s <| Message.RemovedValueType i
             )
 
         Add ->

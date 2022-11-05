@@ -179,8 +179,8 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <|
-                            Maybe.withDefault (Message.IdentifierTypeAdded i) <|
-                                Maybe.map (Message.IdentifierTypeChanged i) model.old
+                            Maybe.withDefault (Message.AddedIdentifierType i) <|
+                                Maybe.map (Message.ChangedIdentifierType i) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.List Nothing)
                         ]
                     )

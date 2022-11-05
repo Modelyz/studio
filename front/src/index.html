@@ -153,6 +153,7 @@ reconnect = function() {
     // Notify Elm we received messages from WS
     window.socket.onmessage = function(e) {
         console.log("JS WS socket.onmessage -> ELM port messagesReceiver.send(e.data): " + e.data)
+        console.log(e.data);
         app.ports.messagesReceiver.send(e.data);
     };
 }

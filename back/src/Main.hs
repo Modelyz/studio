@@ -18,6 +18,7 @@ import Control.Monad.Trans (liftIO)
 import qualified Data.Aeson as JSON (decode, encode)
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
+import qualified Data.HashMap.Lazy as HashMap
 import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -50,10 +51,12 @@ import qualified Network.WebSockets as WS
 import Options.Applicative
 
 -- dir, port, file
-data Options = Options String Port FilePath
+data Options = Options !String !Port !FilePath
 
 type NumClient = Int
+
 type Port = Int
+
 type WSState = MVar NumClient
 
 portOption :: Parser Port
@@ -88,9 +91,9 @@ wsApp f chan st pending_conn = do
             fix
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
-                    when (n /= nc && not (isType "ConnectionInitiated" ev)) $ do
+                    when (n /= nc && not (isType "InitiatedConnection" ev)) $ do
                         putStrLn $ "Read message on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
-                        sendTextData conn $ JSON.encode [ev]
+                        sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) [ev]
                     loop
                 )
 
@@ -118,7 +121,7 @@ clientApp storeChan conn = do
         forever $ do
             (n, ev) <- readChan storeChan
             putStrLn $ "Sending back this message coming from microservice " ++ show n ++ " to the store: " ++ show ev
-            WS.sendTextData conn $ JSON.encode ev
+            WS.sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) ev
 
     -- Fork a thread that writes WS data to stdout.
     -- TODO remove
@@ -131,12 +134,12 @@ handleMessage f conn nc chan ev =
     do
         -- store the message in the message store
         unless
-            (isType "ConnectionInitiated" ev)
+            (isType "InitiatedConnection" ev)
             (ES.appendMessage f ev)
-        -- if the message is a ConnectionInitiated, get the uuid list from it,
+        -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
         when
-            (isType "ConnectionInitiated" ev)
+            (isType "InitiatedConnection" ev)
             ( do
                 let uuids = getUuids ev
                 esevs <- ES.readMessages f
@@ -147,14 +150,14 @@ handleMessage f conn nc chan ev =
                                 Nothing -> False
                             )
                             esevs
-                sendTextData conn $ JSON.encode evs
+                sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) evs
                 putStrLn $ "Sent all missing " ++ show (length evs) ++ " messsages to client " ++ show nc
             )
         -- Send back and store an ACK to let the client know the message has been stored
         -- Except for messages that should be handled by another service
         let ev' = setProcessed ev
-        unless (isType "ConnectionInitiated" ev || isType "IdentifierAdded" ev) $ ES.appendMessage f ev'
-        sendTextData conn $ JSON.encode [ev']
+        unless (isType "InitiatedConnection" ev || isType "IdentifierAdded" ev) $ ES.appendMessage f ev'
+        sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) [ev']
         -- send the msg to other connected clients
         putStrLn $ "Writing to the chan as client " ++ show nc
         writeChan chan (nc, ev)

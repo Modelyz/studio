@@ -145,14 +145,14 @@ aggregate : Message -> State -> State
 aggregate (Message b p) state =
     case p of
         -- TODO review the names (some are StuffAdded, some AddedStuff)
-        ConnectionInitiated _ ->
+        InitiatedConnection _ ->
             { state
                 | lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        IdentifierTypeAdded it ->
+        AddedIdentifierType it ->
             { state
                 | identifierTypes = Dict.insert (IdentifierType.compare it) it state.identifierTypes
                 , lastMessageTime = b.when
@@ -160,7 +160,7 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        IdentifierTypeChanged new old ->
+        ChangedIdentifierType new old ->
             { state
                 | identifierTypes =
                     Dict.insert (IdentifierType.compare new) new <|
@@ -200,7 +200,7 @@ aggregate (Message b p) state =
                         |> Dict.fromList
             }
 
-        IdentifierTypeRemoved it ->
+        RemovedIdentifierType it ->
             { state
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
                 , identifiers =
@@ -229,7 +229,7 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        ValueTypeAdded it ->
+        AddedValueType it ->
             { state
                 | valueTypes = Dict.insert (ValueType.compare it) it state.valueTypes
                 , lastMessageTime = b.when
@@ -237,7 +237,7 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        ValueTypeChanged new old ->
+        ChangedValueType new old ->
             { state
                 | valueTypes =
                     Dict.insert (ValueType.compare new) new <|
@@ -276,7 +276,7 @@ aggregate (Message b p) state =
                         |> Dict.fromList
             }
 
-        ValueTypeRemoved vt ->
+        RemovedValueType vt ->
             { state
                 | valueTypes = Dict.remove (ValueType.compare vt) state.valueTypes
                 , values =
@@ -304,7 +304,7 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        ValueAdded v ->
+        AddedValue v ->
             { state
                 | values = Dict.insert (Value.compare v) v state.values
                 , lastMessageTime = b.when
@@ -504,7 +504,7 @@ aggregate (Message b p) state =
                 , uuids = insertUuid b.uuid state.uuids
             }
 
-        IdentifierAdded ei ->
+        AddedIdentifier ei ->
             { state
                 | identifiers = Dict.insert (Identifier.compare ei) ei state.identifiers
                 , lastMessageTime = b.when

@@ -226,8 +226,8 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedProcess t
-                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map Message.ValueAdded (Dict.values model.values)
+                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Message.AddedValue (Dict.values model.values)
                                 ++ List.map (\g -> Message.Grouped (Groupable.P t) g) (Dict.values addedGroups)
                                 ++ List.map (\g -> Message.Ungrouped (Groupable.P t) g) (Dict.values removedGroups)
                             )

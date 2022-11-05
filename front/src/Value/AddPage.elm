@@ -301,8 +301,8 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <|
-                            Maybe.withDefault (Message.ValueTypeAdded i) <|
-                                Maybe.map (Message.ValueTypeChanged i) model.old
+                            Maybe.withDefault (Message.AddedValueType i) <|
+                                Maybe.map (Message.ChangedValueType i) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List Nothing)
                         ]
                     )

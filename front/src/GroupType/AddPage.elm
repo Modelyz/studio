@@ -219,7 +219,7 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (mkMessage h
-                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
+                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map (\g -> Message.Grouped (Groupable.RT h) g) (Dict.values addedGroups)
                                 ++ List.map (\g -> Message.Ungrouped (Groupable.RT h) g) (Dict.values removedGroups)
                             )

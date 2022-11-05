@@ -199,8 +199,8 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (mkMessage t
-                                :: List.map Message.IdentifierAdded (Dict.values model.identifiers)
-                                ++ List.map Message.ValueAdded (Dict.values model.values)
+                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Message.AddedValue (Dict.values model.values)
                             )
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.View (Uuid.toString model.uuid)
                         ]

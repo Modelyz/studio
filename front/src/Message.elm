@@ -65,7 +65,7 @@ type Message
 
 
 type Payload
-    = ConnectionInitiated Connection
+    = InitiatedConnection Connection
     | AddedResourceType ResourceType
     | RemovedResourceType Uuid
     | AddedEventType EventType
@@ -90,14 +90,14 @@ type Payload
     | RemovedContract Uuid
     | AddedProcess Process
     | RemovedProcess Uuid
-    | IdentifierTypeAdded IdentifierType
-    | IdentifierTypeChanged IdentifierType IdentifierType
-    | IdentifierTypeRemoved IdentifierType
-    | IdentifierAdded Identifier
-    | ValueTypeAdded ValueType
-    | ValueTypeChanged ValueType ValueType
-    | ValueTypeRemoved ValueType
-    | ValueAdded Value
+    | AddedIdentifierType IdentifierType
+    | ChangedIdentifierType IdentifierType IdentifierType
+    | RemovedIdentifierType IdentifierType
+    | AddedIdentifier Identifier
+    | AddedValueType ValueType
+    | ChangedValueType ValueType ValueType
+    | RemovedValueType ValueType
+    | AddedValue Value
     | Configured Configuration
     | Unconfigured Configuration
     | AddedGroupType GroupType
@@ -111,29 +111,29 @@ type Payload
 toString : Payload -> String
 toString p =
     case p of
-        ConnectionInitiated _ ->
-            "ConnectionInitiated"
+        InitiatedConnection _ ->
+            "InitiatedConnection"
 
-        IdentifierTypeAdded _ ->
-            "IdentifierTypeAdded"
+        AddedIdentifierType _ ->
+            "AddedIdentifierType"
 
-        IdentifierTypeChanged _ _ ->
-            "IdentifierTypeChanged"
+        ChangedIdentifierType _ _ ->
+            "ChangedIdentifierType"
 
-        IdentifierTypeRemoved _ ->
-            "IdentifierTypeRemoved"
+        RemovedIdentifierType _ ->
+            "RemovedIdentifierType"
 
-        ValueTypeAdded _ ->
-            "ValueTypeAdded"
+        AddedValueType _ ->
+            "AddedValueType"
 
-        ValueTypeChanged _ _ ->
-            "ValueTypeChanged"
+        ChangedValueType _ _ ->
+            "ChangedValueType"
 
-        ValueTypeRemoved _ ->
-            "ValueTypeRemoved"
+        RemovedValueType _ ->
+            "RemovedValueType"
 
-        ValueAdded _ ->
-            "ValueAdded"
+        AddedValue _ ->
+            "AddedValue"
 
         AddedResourceType _ ->
             "AddedResourceType"
@@ -207,8 +207,8 @@ toString p =
         RemovedProcess _ ->
             "RemovedProcess"
 
-        IdentifierAdded _ ->
-            "IdentifierAdded"
+        AddedIdentifier _ ->
+            "AddedIdentifier"
 
         Configured _ ->
             "Configured"
@@ -259,7 +259,7 @@ exceptCI es =
     List.filter
         (\(Message _ p) ->
             case p of
-                ConnectionInitiated _ ->
+                InitiatedConnection _ ->
                     False
 
                 _ ->
@@ -287,7 +287,7 @@ encode (Message b p) =
         [ ( "what", Encode.string <| toString p )
         , ( "meta", encodeBase b )
         , case p of
-            ConnectionInitiated e ->
+            InitiatedConnection e ->
                 ( "load"
                 , Encode.object
                     [ ( "lastMessageTime", Encode.int <| posixToMillis e.lastMessageTime )
@@ -295,7 +295,7 @@ encode (Message b p) =
                     ]
                 )
 
-            IdentifierTypeChanged new old ->
+            ChangedIdentifierType new old ->
                 ( "load"
                 , Encode.object
                     [ ( "new", IdentifierType.encode new )
@@ -303,16 +303,16 @@ encode (Message b p) =
                     ]
                 )
 
-            IdentifierTypeAdded it ->
+            AddedIdentifierType it ->
                 ( "load", IdentifierType.encode it )
 
-            IdentifierTypeRemoved it ->
+            RemovedIdentifierType it ->
                 ( "load", IdentifierType.encode it )
 
-            ValueTypeAdded vt ->
+            AddedValueType vt ->
                 ( "load", ValueType.encode vt )
 
-            ValueTypeChanged new old ->
+            ChangedValueType new old ->
                 ( "load"
                 , Encode.object
                     [ ( "new", ValueType.encode new )
@@ -320,10 +320,10 @@ encode (Message b p) =
                     ]
                 )
 
-            ValueTypeRemoved vt ->
+            RemovedValueType vt ->
                 ( "load", ValueType.encode vt )
 
-            ValueAdded v ->
+            AddedValue v ->
                 ( "load", Value.encode v )
 
             AddedResourceType e ->
@@ -398,7 +398,7 @@ encode (Message b p) =
             RemovedProcess uuid ->
                 ( "load", Uuid.encode uuid )
 
-            IdentifierAdded i ->
+            AddedIdentifier i ->
                 ( "load", Identifier.encode i )
 
             Configured c ->
@@ -448,8 +448,8 @@ decoder =
             |> andThen
                 (\t ->
                     case t of
-                        "ConnectionInitiated" ->
-                            Decode.map ConnectionInitiated
+                        "InitiatedConnection" ->
+                            Decode.map InitiatedConnection
                                 (Decode.field "load"
                                     (Decode.map2 Connection
                                         (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
@@ -457,34 +457,34 @@ decoder =
                                     )
                                 )
 
-                        "IdentifierTypeAdded" ->
-                            Decode.map IdentifierTypeAdded
+                        "AddedIdentifierType" ->
+                            Decode.map AddedIdentifierType
                                 (Decode.field "load" IdentifierType.decoder)
 
-                        "IdentifierTypeChanged" ->
-                            Decode.map2 IdentifierTypeChanged
+                        "ChangedIdentifierType" ->
+                            Decode.map2 ChangedIdentifierType
                                 (Decode.at [ "load", "new" ] IdentifierType.decoder)
                                 (Decode.at [ "load", "old" ] IdentifierType.decoder)
 
-                        "IdentifierTypeRemoved" ->
-                            Decode.map IdentifierTypeRemoved
+                        "RemovedIdentifierType" ->
+                            Decode.map RemovedIdentifierType
                                 (Decode.field "load" IdentifierType.decoder)
 
-                        "ValueTypeAdded" ->
-                            Decode.map ValueTypeAdded
+                        "AddedValueType" ->
+                            Decode.map AddedValueType
                                 (Decode.field "load" ValueType.decoder)
 
-                        "ValueTypeChanged" ->
-                            Decode.map2 ValueTypeChanged
+                        "ChangedValueType" ->
+                            Decode.map2 ChangedValueType
                                 (Decode.at [ "load", "new" ] ValueType.decoder)
                                 (Decode.at [ "load", "old" ] ValueType.decoder)
 
-                        "ValueTypeRemoved" ->
-                            Decode.map ValueTypeRemoved
+                        "RemovedValueType" ->
+                            Decode.map RemovedValueType
                                 (Decode.field "load" ValueType.decoder)
 
-                        "ValueAdded" ->
-                            Decode.map ValueAdded
+                        "AddedValue" ->
+                            Decode.map AddedValue
                                 (Decode.field "load" Value.decoder)
 
                         "AddedResourceType" ->
@@ -583,8 +583,8 @@ decoder =
                             Decode.map RemovedProcessType
                                 (Decode.field "load" Uuid.decoder)
 
-                        "IdentifierAdded" ->
-                            Decode.map IdentifierAdded
+                        "AddedIdentifier" ->
+                            Decode.map AddedIdentifier
                                 (Decode.field "load" Identifier.decoder)
 
                         "Configured" ->
