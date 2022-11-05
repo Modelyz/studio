@@ -144,7 +144,7 @@ init s f =
                     , unique = it.unique
                     , mandatory = it.mandatory
                     , fragments = it.fragments
-                    , scope = it.applyTo
+                    , scope = it.scope
                     , old = Just it
                 }
             )

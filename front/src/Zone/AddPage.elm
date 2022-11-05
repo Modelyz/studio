@@ -268,7 +268,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    Scope.containsScope allT allH model.scope it.applyTo
+                                    Scope.containsScope allT allH model.scope it.scope
                                 )
                         )
                             |> List.map (.name >> IdentifierName)

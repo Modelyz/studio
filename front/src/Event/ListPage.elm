@@ -139,7 +139,7 @@ viewContent model s =
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.applyTo (HasType (Type.TType TType.Event)))
+                                |> List.filter (\it -> Scope.containsScope s.state.events s.state.eventTypes it.scope (HasType (Type.TType TType.Event)))
                                 |> List.map identifierColumn
                             )
                                 ++ [ tGroupsColumn s ]

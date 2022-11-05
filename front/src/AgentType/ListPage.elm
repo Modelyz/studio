@@ -140,7 +140,7 @@ viewContent model s =
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.applyTo (HasType (Type.HType HType.AgentType)))
+                                |> List.filter (\it -> Scope.containsScope s.state.agents s.state.agentTypes it.scope (HasType (Type.HType HType.AgentType)))
                                 |> List.map identifierColumn
                             )
                                 ++ [ hGroupsColumn s ]

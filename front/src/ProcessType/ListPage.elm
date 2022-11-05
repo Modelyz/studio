@@ -140,7 +140,7 @@ viewContent model s =
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.applyTo (HasType (Type.HType HType.ProcessType)))
+                                |> List.filter (\it -> Scope.containsScope s.state.processes s.state.processTypes it.scope (HasType (Type.HType HType.ProcessType)))
                                 |> List.map identifierColumn
                             )
                                 ++ [ hGroupsColumn s ]

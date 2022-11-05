@@ -236,7 +236,6 @@ toString p =
 
 
 type alias Connection =
-    -- TODO move in its module?
     { lastMessageTime : Time.Posix, uuids : Dict String Uuid }
 
 

@@ -179,11 +179,11 @@ aggregate (Message b p) state =
                                         && ((case i.what of
                                                 Type.TType tt ->
                                                     T.find (allTyped state tt) i.identifiable
-                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.applyTo)
+                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.scope)
 
                                                 Type.HType ht ->
                                                     H.find (allHierarchic state ht) i.identifiable
-                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.applyTo)
+                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.scope)
                                             )
                                                 |> Maybe.withDefault False
                                            )
@@ -215,11 +215,11 @@ aggregate (Message b p) state =
                                         ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) it.applyTo)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) it.scope)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) it.applyTo)
+                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) it.scope)
                                          )
                                             |> Maybe.withDefault False
                                         )

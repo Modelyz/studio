@@ -18,7 +18,7 @@ type alias IdentifierType =
     -- This is the definition of an identifier
     { name : String
     , fragments : List Fragment
-    , applyTo : Scope -- TODO rename to scope
+    , scope : Scope
     , unique : Bool
     , mandatory : Bool
     }
@@ -43,10 +43,10 @@ initIdentifiers allT allH its t mh uuid isNew =
                             Nothing ->
                                 HasType t
                         )
-                        it.applyTo
+                        it.scope
 
                 else
-                    Scope.containsScope allT allH (IsItem t uuid) it.applyTo
+                    Scope.containsScope allT allH (IsItem t uuid) it.scope
             )
         |> Dict.values
         |> List.map
@@ -62,7 +62,7 @@ initIdentifiers allT allH its t mh uuid isNew =
 
 compare : IdentifierType -> String
 compare it =
-    Scope.compare it.applyTo ++ "/" ++ it.name
+    Scope.compare it.scope ++ "/" ++ it.name
 
 
 encode : IdentifierType -> Encode.Value
@@ -70,7 +70,7 @@ encode e =
     Encode.object
         [ ( "name", Encode.string e.name )
         , ( "fragments", Encode.list Fragment.encode e.fragments )
-        , ( "applyTo", Scope.encode e.applyTo )
+        , ( "scope", Scope.encode e.scope )
         , ( "unique", Encode.bool e.unique )
         , ( "mandatory", Encode.bool e.mandatory )
         ]
@@ -81,6 +81,6 @@ decoder =
     Decode.map5 IdentifierType
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
-        (Decode.field "applyTo" Scope.decoder)
+        (Decode.field "scope" Scope.decoder)
         (Decode.field "unique" Decode.bool)
         (Decode.field "mandatory" Decode.bool)

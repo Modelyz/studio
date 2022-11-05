@@ -117,12 +117,12 @@ viewContent model s =
                     , text <|
                         "Scope: "
                             ++ Scope.View.toDisplay
-                                (allTfromScope s.state it.applyTo
+                                (allTfromScope s.state it.scope
                                     |> withIdentifiers s.state
                                 )
-                                (allHfromScope s.state it.applyTo |> withIdentifiers s.state)
+                                (allHfromScope s.state it.scope |> withIdentifiers s.state)
                                 s.state.configs
-                                it.applyTo
+                                it.scope
                     ]
             )
         |> Maybe.withDefault
