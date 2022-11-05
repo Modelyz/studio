@@ -67,10 +67,6 @@ import Zone.ListPage
 import Zone.ViewPage
 
 
-
--- TODO gather ports into a single typed one
-
-
 port messagesReader : (Encode.Value -> msg) -> Sub msg
 
 
