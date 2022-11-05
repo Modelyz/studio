@@ -57,8 +57,7 @@ initValues allT allH vts t mh uuid isNew =
 
 compare : ValueType -> String
 compare vt =
-    -- TODO replace "|" with "/" since its percentEncoded in the URL?
-    Scope.compare vt.scope ++ "|" ++ vt.name
+    Scope.compare vt.scope ++ "/" ++ vt.name
 
 
 encode : ValueType -> Encode.Value

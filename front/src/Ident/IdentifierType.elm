@@ -62,8 +62,7 @@ initIdentifiers allT allH its t mh uuid isNew =
 
 compare : IdentifierType -> String
 compare it =
-    -- TODO replace "|" with "/" since its percentEncoded in the URL?
-    Scope.compare it.applyTo ++ "|" ++ it.name
+    Scope.compare it.applyTo ++ "/" ++ it.name
 
 
 encode : IdentifierType -> Encode.Value
