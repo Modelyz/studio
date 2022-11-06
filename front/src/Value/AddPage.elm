@@ -240,14 +240,10 @@ update s msg model =
         Open subpage stackNum targetPath ->
             -- TODO try to pass the submodel along with the subpage (modify the Subpage Type to take the submodel)
             let
-                -- TODO improve
                 submodel =
                     model.submodel
-
-                submodel2 =
-                    { submodel | stackNum = stackNum, targetPath = targetPath }
             in
-            ( { model | subpage = Just subpage, submodel = submodel2 }, Effect.none )
+            ( { model | subpage = Just subpage, submodel = { submodel | stackNum = stackNum, targetPath = targetPath } }, Effect.none )
 
         ClosePopup ->
             ( { model | subpage = Nothing }, Effect.none )
