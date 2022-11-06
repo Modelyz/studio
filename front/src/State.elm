@@ -675,11 +675,8 @@ allTfromScope s scope =
             Dict.union (allTfromScope s s1) (allTfromScope s s2)
 
         Not _ ->
+            -- FIXME
             Dict.empty
-
-
-
--- FIXME
 
 
 allHfromScope : State -> Scope -> Dict String (Hierarchic (WithGroups {}))
@@ -712,6 +709,6 @@ allHfromScope s scope =
         Or s1 s2 ->
             Dict.union (allHfromScope s s1) (allHfromScope s s2)
 
-        -- FIXME
         Not _ ->
+            -- FIXME
             Dict.empty

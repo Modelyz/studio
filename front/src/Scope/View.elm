@@ -53,7 +53,6 @@ toDisplay allT allH configs scope =
             "Identified"
 
         And s1 s2 ->
-            -- FIXME allT and allH should be different between the left and right part
             "(" ++ toDisplay allT allH configs s1 ++ ") And (" ++ toDisplay allT allH configs s2 ++ ")"
 
         Or s1 s2 ->
@@ -65,8 +64,6 @@ toDisplay allT allH configs scope =
 
 selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Element msg
 selectScope s onInput scope =
-    -- TODO replace s with allT allH?
-    -- TODO refactor
     let
         allT =
             case scope of
