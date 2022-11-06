@@ -5,6 +5,7 @@
 ## version 9 -- unreleased
 
 * some internal changes
+* Fixed identifier still appearing after removing the identifier type
 
 ## version 8 -- 2022-11-04
 
