@@ -215,7 +215,7 @@ aggregate (Message b p) state =
                                         ((case i.what of
                                             Type.TType tt ->
                                                 T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) it.scope)
+                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) (allHierarchic state (TType.toHierarchic tt)) (IsItem (Type.TType tt) t.uuid) it.scope)
 
                                             Type.HType ht ->
                                                 H.find (allHierarchic state ht) i.identifiable
