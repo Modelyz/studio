@@ -190,10 +190,12 @@ update msg model =
             in
             ( { model | currentSeed = newSeed, wsstatus = wsstatus, timeoutReconnect = timeoutReconnect }, cmd )
 
-        WSError _ ->
+        WSError str ->
             ( { model
                 | iostatus =
-                    IOError "Websocket error"
+                    decodeValue Decode.int str
+                        |> Result.map (\_ -> IOIdle "Websocket changed its state")
+                        |> Result.withDefault (IOError "Could not decode the readyState of the Websocket")
               }
             , Cmd.none
             )
@@ -223,7 +225,7 @@ update msg model =
                                 |> millisToPosix
                     in
                     ( { model
-                        | iostatus = IOIdle
+                        | iostatus = IOIdle "Just received messages"
                         , wsstatus =
                             case model.wsstatus of
                                 WSClosed ->
@@ -248,7 +250,7 @@ update msg model =
                     )
 
                 Err str ->
-                    ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error decoding messages: " ++ errorToString str }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding messages: " ++ errorToString str }, Cmd.none )
 
         SendMessages messages ->
             -- send the new messages and the pending ones
@@ -287,25 +289,25 @@ update msg model =
                         )
 
                     else
-                        ( { model | iostatus = IOIdle }, Message.readMessages Encode.null )
+                        ( { model | iostatus = IOIdle "Just stored messages to send" }, Message.readMessages Encode.null )
 
                 Err err ->
-                    ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error decoding stored messages: " ++ errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding stored messages: " ++ errorToString err }, Cmd.none )
 
         MessagesStored _ ->
-            ( { model | iostatus = IOIdle, currentSeed = newSeed }, Message.readMessages Encode.null )
+            ( { model | iostatus = IOIdle "Just stored messages", currentSeed = newSeed }, Message.readMessages Encode.null )
 
         MessagesSent status ->
             case decodeValue Decode.string status of
                 Ok str ->
                     if str == "OK" then
-                        ( { model | iostatus = ESReading }, Cmd.none )
+                        ( { model | iostatus = IOIdle "Just sent messages" }, Cmd.none )
 
                     else
-                        ( { model | iostatus = IOError <| "Didn't get an OK statud after storing the messages: " ++ str }, Cmd.none )
+                        ( { model | iostatus = IOError <| str }, Cmd.none )
 
                 Err err ->
-                    ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error getting status of message sending: " ++ errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error getting status of message sending: " ++ errorToString err }, Cmd.none )
 
         MessagesReceived ms ->
             case decodeString (Decode.maybe <| Decode.field "messages" <| Decode.list Message.decoder) ms of
@@ -324,7 +326,7 @@ update msg model =
                                             ESStoring
 
                                         else
-                                            IOIdle
+                                            IOIdle "Just received messages"
                                   }
                                 , if List.length msgs > 0 then
                                     Message.storeMessages <|
@@ -338,7 +340,7 @@ update msg model =
                         |> Maybe.withDefault ( model, Cmd.none )
 
                 Err err ->
-                    ( { model | currentSeed = newSeed, iostatus = JSONError <| "Error decoding received messages: " ++ errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding received messages:\n" ++ errorToString err }, Cmd.none )
 
 
 initiateConnection : Uuid -> Model -> Cmd Msg

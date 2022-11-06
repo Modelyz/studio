@@ -70,7 +70,9 @@ const store = function(send) {
                 console.log("JS IDB transaction.oncomplete")
             }
             transaction.onerror = function(e) {
-                alert("IndexedDB transaction error while storing messages:" + transaction.error) // FIXME send error to elm
+                const msg = "IndexedDB transaction error while storing messages:" + transaction.error;
+                console.log(msg);
+                app.ports.wsSendStatus.send(msg);
             }
             messages.forEach(function(message) {
                 console.log("JS IDB messages.forEach transaction.objectStore('messages').add(message): " + message.what)
@@ -85,14 +87,18 @@ const store = function(send) {
                     }
                 }
                 addrequest.onerror = (e) => {
-                    alert("IndexedDB store request error: " + addrequest.error); // FIXME
+                    const msg = "IndexedDB store request error: " + addrequest.error;
+                    console.log(msg);
+                    app.ports.wsSendStatus.send(msg);
                     addrequest.transaction.abort()
                 }
             })
             db.close()
         }
         request.onerror = (e) => {
-            alert("IndexedDB could not be opened to store messages: " + request.error); // FIXME
+            const msg = "IndexedDB could not be opened to store messages: " + request.error;
+            console.log(msg);
+            app.ports.wsSendStatus.send(msg);
         }
     };
 };
@@ -114,11 +120,15 @@ app.ports.readMessages.subscribe(function() {
             app.ports.messagesReader.send(messages);
         }
         openCursor.onerror = () => {
-            alert("IndexedDB transaction error while reading messages:" + transaction.error); // FIXME
+            const msg = "IndexedDB transaction error while reading messages:" + transaction.error;
+            console.log(msg);
+            app.ports.wsSendStatus.send(msg);
         }
     }
     request.onerror = (e) => {
-        alert("IndexedDB could not be opened to read messages: " + request.error); // FIXME
+        const msg = "IndexedDB could not be opened to read messages. Please note that the browser private mode or some browser extensions can be the cause of this error:\n\n" + request.error;
+        console.log(msg);
+        app.ports.wsSendStatus.send(msg);
     }
 });
 

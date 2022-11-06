@@ -42,16 +42,16 @@ toEmoji status =
     -- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
     case status of
         WSOpen ->
-            "🔵"
+            "🟢"
 
         WSClosed ->
             "🔴"
 
         WSClosing ->
-            "🔶"
+            "🟡"
 
         WSConnecting ->
-            "🔷"
+            "🟠"
 
 
 fromReadyState : Decode.Value -> WSStatus
