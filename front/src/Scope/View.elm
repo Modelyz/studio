@@ -29,8 +29,6 @@ import Zone.Zone exposing (Zone(..))
 
 toDisplay : Dict String OnlyTyped -> Dict String (Hierarchic b) -> Dict String Configuration -> Scope -> String
 toDisplay allT allH configs scope =
-    -- for user display
-    -- TODO resolve the uuids
     case scope of
         Empty ->
             "Nothing"
