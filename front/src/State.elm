@@ -668,17 +668,18 @@ allTfromScope s scope =
         Identified _ ->
             Dict.empty
 
-        -- TODO
         And s1 s2 ->
-            Dict.empty
+            Dict.intersect (allTfromScope s s1) (allTfromScope s s2)
 
-        -- FIXME
         Or s1 s2 ->
-            Dict.empty
+            Dict.union (allTfromScope s s1) (allTfromScope s s2)
 
-        -- FIXME
         Not _ ->
             Dict.empty
+
+
+
+-- FIXME
 
 
 allHfromScope : State -> Scope -> Dict String (Hierarchic (WithGroups {}))
@@ -705,13 +706,11 @@ allHfromScope s scope =
         Identified _ ->
             Dict.empty
 
-        -- TODO
         And s1 s2 ->
-            Dict.empty
+            Dict.intersect (allHfromScope s s1) (allHfromScope s s2)
 
-        -- FIXME
         Or s1 s2 ->
-            Dict.empty
+            Dict.union (allHfromScope s s1) (allHfromScope s s2)
 
         -- FIXME
         Not _ ->
