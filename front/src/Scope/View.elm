@@ -13,7 +13,7 @@ import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier exposing (Identifier)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope(..))
+import Scope.Scope exposing (Scope(..), containsScope)
 import Shared
 import State exposing (State)
 import Type
@@ -146,31 +146,17 @@ selectScope s onInput scope =
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
                 HasType (Type.TType tt) ->
-                    let
-                        -- all the typed items
-                        -- all the hierarchic items corresponding to the typed ones
-                        allHwithIdentifiers =
-                            -- TODO try to replace with allT from above
-                            State.allHierarchic s.state (TType.toHierarchic tt)
-                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-                    in
                     (h3 <| "of type:")
-                        :: (allHwithIdentifiers
+                        :: (allH
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (HasUserType (Type.TType tt) h.what h.uuid))
+                                |> List.map (\h -> sClickableCard onInput allT allH s.state.configs h (HasUserType (Type.TType tt) h.what h.uuid))
                            )
 
                 HasType (Type.HType ht) ->
-                    -- TODO this should be always be displayed to select a subtype of the hierarchic
-                    let
-                        allHwithIdentifiers =
-                            State.allHierarchic s.state ht
-                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-                    in
                     (h3 <| "of type:")
-                        :: (allHwithIdentifiers
+                        :: (allH
                                 |> Dict.values
-                                |> List.map (\h -> sClickableCard onInput allT allHwithIdentifiers s.state.configs h (HasUserType (Type.HType ht) h.what h.uuid))
+                                |> List.map (\h -> sClickableCard onInput allT allH s.state.configs h (HasUserType (Type.HType ht) h.what h.uuid))
                            )
 
                 _ ->
@@ -178,23 +164,25 @@ selectScope s onInput scope =
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
                 HasUserType (Type.HType ht) _ uuid ->
-                    let
-                        allHwithIdentifiers =
-                            State.allHierarchic s.state ht |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-                    in
-                    (h3 <| "You can select a specific Hierarchic one (otherwise click Next):") :: (allHwithIdentifiers |> Dict.values |> List.map (\h -> hItemClickableCard onInput allT allHwithIdentifiers s.state.configs h (Type.HType ht)))
+                    (h3 <| "You can select a specific one (otherwise click Next):")
+                        :: (allH
+                                |> Dict.filter (\_ h -> containsScope allT allH (IsItem (Type.HType h.what) h.uuid) scope)
+                                |> Dict.values
+                                |> List.map (\h -> hItemClickableCard onInput allT allH s.state.configs h (Type.HType ht))
+                           )
 
                 HasUserType (Type.TType tt) _ uuid ->
                     let
-                        allHwithIdentifiers =
-                            State.allHierarchic s.state (TType.toHierarchic tt)
-                                |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-
                         allTwithIdentifiers =
                             State.allTyped s.state tt
                                 |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
                     in
-                    (h3 <| "You can select a specific Hierarchic one (otherwise click Next):") :: (allTwithIdentifiers |> Dict.values |> List.map (\h -> tItemClickableCard onInput allTwithIdentifiers allHwithIdentifiers s.state.configs h (Type.TType tt)))
+                    (h3 <| "You can select a specific one (otherwise click Next):")
+                        :: (allTwithIdentifiers
+                                |> Dict.filter (\_ t -> containsScope allT allH (IsItem (Type.TType t.what) t.uuid) scope)
+                                |> Dict.values
+                                |> List.map (\h -> tItemClickableCard onInput allTwithIdentifiers allH s.state.configs h (Type.TType tt))
+                           )
 
                 _ ->
                     []

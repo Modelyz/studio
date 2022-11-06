@@ -144,7 +144,6 @@ insertUuid uuid =
 aggregate : Message -> State -> State
 aggregate (Message b p) state =
     case p of
-        -- TODO review the names (some are StuffAdded, some AddedStuff)
         InitiatedConnection _ ->
             { state
                 | lastMessageTime = b.when

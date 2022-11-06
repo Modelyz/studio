@@ -186,7 +186,6 @@ getUpperList allT allH scope oldList =
 
 containsScope : Dict String (Typed a) -> Dict String (Hierarchic b) -> Scope -> Scope -> Bool
 containsScope allT allH inscope outscope =
-    -- definitely needs review
     case outscope of
         Empty ->
             False
