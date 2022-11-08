@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
-import Type exposing (Type)
 import Typed.Type as TType
 import Value.Value exposing (Value)
 
