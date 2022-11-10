@@ -135,3 +135,17 @@ inputObservable c s model targetPath obs v =
 
         ObsValue UndefinedValue ->
             row [ height fill ] [ text "Unselected value" ]
+
+        ObsLink (Link hl dl) ->
+            row [ height fill, htmlAttribute <| Attr.title "TODO" ]
+                [ text <|
+                    case oEval s.state.values (ObsLink (Link hl dl)) of
+                        Err err ->
+                            err
+
+                        Ok r ->
+                            R.toString r
+                ]
+
+        ObsLink EndPoint ->
+            row [ height fill ] [ text "Unselected value" ]

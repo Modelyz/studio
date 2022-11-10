@@ -38,7 +38,11 @@ type Msg
 
 init : Shared.Model -> Model
 init s =
-    { selection = None, onSelect = Selected, stackNum = 0, targetPath = [] }
+    { selection = None
+    , onSelect = Selected
+    , stackNum = 0
+    , targetPath = []
+    }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )

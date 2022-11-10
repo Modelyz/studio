@@ -17,6 +17,7 @@ import Shared
 import Spa.Page
 import Task
 import Type exposing (Type)
+import Value.DeepLink
 import Value.Rational as R exposing (Rational(..))
 import Value.Select
 import Value.Value exposing (..)
@@ -27,7 +28,7 @@ import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
 import View.Style exposing (..)
 
 
-type Msg submsg
+type Msg
     = InputName String
     | InputScope Scope
     | InputMandatory Bool
@@ -37,9 +38,10 @@ type Msg submsg
     | BinaryOperator BOperator
     | RemoveExpression Int
     | Undo
-    | SubMsg submsg
-    | Open (Popup submsg) Int (List Int)
-    | ClosePopup
+    | SubMsg Value.Select.Msg
+    | SubMsg2 Value.DeepLink.Msg
+    | Open Subpage Int (List Int)
+    | CloseSubpage
     | Warning String
     | Button Step.Msg
 
@@ -56,8 +58,9 @@ type alias Model =
     , mandatory : Bool
     , stack : List Expression
     , scope : Scope
-    , subpage : Maybe (Popup Value.Select.Msg)
+    , subpage : Maybe Subpage
     , submodel : Value.Select.Model
+    , submodel2 : Value.DeepLink.Model
     , warning : String
     , steps : List (Step.Step Step)
     , step : Step.Step Step
@@ -72,8 +75,9 @@ type Step
     | StepExpression
 
 
-type Popup submsg
-    = PopupSelectValue (ValueSelection -> Msg submsg)
+type Subpage
+    = SubpageSelectValue (ValueSelection -> Msg)
+    | SubpageSelectDeepLink (DeepLink -> Msg)
 
 
 validate : Model -> Result String ValueType
@@ -112,7 +116,7 @@ checkStep model =
                 Ok ()
 
 
-page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View (Msg Value.Select.Msg)) Model (Msg Value.Select.Msg)
+page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
 page s =
     Spa.Page.element
         { init = init s
@@ -136,7 +140,7 @@ match route =
             Nothing
 
 
-init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg (Msg submsg) )
+init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
         adding =
@@ -147,6 +151,7 @@ init s f =
             , scope = Empty
             , subpage = Nothing
             , submodel = Value.Select.init s
+            , submodel2 = Value.DeepLink.init s Empty
             , warning = ""
             , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
             , step = Step.Step StepName
@@ -181,14 +186,18 @@ applyB o stack =
     Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
 
-update : Shared.Model -> Msg Value.Select.Msg -> Model -> ( Model, Effect Shared.Msg (Msg Value.Select.Msg) )
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         InputName x ->
             ( { model | name = x }, Effect.none )
 
         InputScope scope ->
-            ( { model | scope = scope }, Effect.none )
+            ( { model
+                | scope = scope
+              }
+            , Effect.none
+            )
 
         InputMandatory x ->
             ( { model | mandatory = x }, Effect.none )
@@ -237,35 +246,45 @@ update s msg model =
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
-        Open subpage stackNum targetPath ->
-            -- TODO try to pass the submodel along with the subpage (modify the Subpage Type to take the submodel)
-            let
-                submodel =
-                    model.submodel
-            in
-            ( { model | subpage = Just subpage, submodel = { submodel | stackNum = stackNum, targetPath = targetPath } }, Effect.none )
+        Open (SubpageSelectValue onSelect) stackNum targetPath ->
+            ( { model
+                | subpage = Just (SubpageSelectValue onSelect)
+              }
+            , Effect.none
+            )
 
-        ClosePopup ->
+        Open (SubpageSelectDeepLink onSelect) stackNum targetPath ->
+            ( { model
+                | subpage = Just (SubpageSelectDeepLink onSelect)
+                , submodel2 = Value.DeepLink.init s model.scope
+              }
+            , Effect.none
+            )
+
+        CloseSubpage ->
             ( { model | subpage = Nothing }, Effect.none )
 
         SubMsg sub ->
-            let
-                ( submodel, subcmd ) =
-                    Value.Select.update s sub model.submodel
-            in
-            case sub of
-                Value.Select.Cancel ->
-                    ( { model | subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
+            case model.subpage of
+                Nothing ->
+                    ( model, Effect.none )
 
-                Value.Select.Selected vs ->
-                    -- TODO try to merge with InputExpression
-                    case model.subpage of
-                        Just (PopupSelectValue onSelect) ->
+                Just (SubpageSelectValue onSelect) ->
+                    let
+                        ( newsubmodel, subcmd ) =
+                            Value.Select.update s sub model.submodel
+                    in
+                    case sub of
+                        Value.Select.Cancel ->
+                            ( { model | subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
+
+                        Value.Select.Selected vs ->
+                            -- TODO try to merge with InputExpression
                             case vs of
                                 SelectedValue _ _ _ ->
                                     -- TODO we don't use the selected value?
                                     ( { model
-                                        | submodel = submodel
+                                        | submodel = newsubmodel
                                         , subpage = Nothing
                                         , stack =
                                             List.indexedMap
@@ -286,10 +305,54 @@ update s msg model =
                                     ( model, Effect.none )
 
                         _ ->
-                            ( { model | submodel = submodel, subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
+                            ( { model | submodel = newsubmodel }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
 
                 _ ->
-                    ( { model | submodel = submodel }, Effect.fromCmd (Cmd.map SubMsg subcmd) )
+                    ( model, Effect.none )
+
+        SubMsg2 sub ->
+            case model.subpage of
+                Nothing ->
+                    ( model, Effect.none )
+
+                Just (SubpageSelectDeepLink onSelect) ->
+                    let
+                        ( newsubmodel, subcmd ) =
+                            Value.DeepLink.update s sub model.submodel2
+                    in
+                    case sub of
+                        Value.DeepLink.Cancel ->
+                            ( { model | subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg2 subcmd) )
+
+                        Value.DeepLink.Selected dl ->
+                            -- TODO try to merge with InputExpression
+                            case dl of
+                                Link l ->
+                                    ( { model
+                                        | submodel2 = newsubmodel
+                                        , stack =
+                                            List.indexedMap
+                                                (\i e ->
+                                                    if model.submodel.stackNum == i then
+                                                        -- update the expression with the subexpr at given path
+                                                        updateExpr model.submodel.targetPath [] (Leaf <| ObsLink dl) e
+
+                                                    else
+                                                        e
+                                                )
+                                                model.stack
+                                      }
+                                    , Effect.fromCmd (Cmd.map SubMsg2 subcmd)
+                                    )
+
+                                EndPoint ->
+                                    ( model, Effect.none )
+
+                        _ ->
+                            ( { model | submodel2 = newsubmodel }, Effect.fromCmd (Cmd.map SubMsg2 subcmd) )
+
+                _ ->
+                    ( model, Effect.none )
 
         Button Step.Added ->
             case validate model of
@@ -311,7 +374,7 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View (Msg Value.Select.Msg)
+view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Adding a ValueType"
     , attributes = []
@@ -320,7 +383,7 @@ view s model =
     }
 
 
-viewContent : Model -> Shared.Model -> Element (Msg Value.Select.Msg)
+viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
         step =
@@ -365,21 +428,24 @@ viewContent model s =
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]
-        (viewPopup s model)
+        (viewSubpage s model)
 
 
-viewPopup : Shared.Model -> Model -> Maybe (Element (Msg Value.Select.Msg))
-viewPopup s model =
+viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)
+viewSubpage s model =
     Maybe.map
         (\subpage ->
             case subpage of
-                PopupSelectValue onSelect ->
+                SubpageSelectValue onSelect ->
                     Element.map SubMsg <| Value.Select.view s model.submodel
+
+                SubpageSelectDeepLink onSelect ->
+                    Element.map SubMsg2 <| Value.DeepLink.view s model.submodel2
         )
         model.subpage
 
 
-buttonUndo : Model -> Element (Msg submsg)
+buttonUndo : Model -> Element Msg
 buttonUndo model =
     if List.length model.stack == 0 then
         button.disabled "" "Undo"
@@ -408,7 +474,7 @@ undo stack =
         ++ (List.tail stack |> Maybe.withDefault [])
 
 
-expressionEditor : Shared.Model -> Model -> Element (Msg submsg)
+expressionEditor : Shared.Model -> Model -> Element Msg
 expressionEditor s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ -- display buttons
@@ -424,7 +490,7 @@ expressionEditor s model =
         ]
 
 
-displayLine : Shared.Model -> Model -> Int -> Expression -> Element (Msg submsg)
+displayLine : Shared.Model -> Model -> Int -> Expression -> Element Msg
 displayLine s model stackNum expr =
     row []
         [ row [ height fill, width fill, alignTop, paddingEach { zero | right = 5 } ]
@@ -434,7 +500,7 @@ displayLine s model stackNum expr =
         ]
 
 
-editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression ) -> Element (Msg submsg)
+editExpression : Shared.Model -> Model -> Int -> ( List Int, Expression ) -> Element Msg
 editExpression s model stackNum ( currentPath, expr ) =
     -- used to modify the expression and input default values
     case expr of
@@ -448,7 +514,7 @@ editExpression s model stackNum ( currentPath, expr ) =
             row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| bToShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
 
 
-editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element (Msg submsg)
+editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element Msg
 editObservable s model ( stackNum, exprPath ) obs =
     case obs of
         ObsNumber n ->
@@ -477,25 +543,42 @@ editObservable s model ( stackNum, exprPath ) obs =
                     ]
                 ]
 
-        ObsValue ov ->
+        ObsValue vs ->
             let
-                onSelect : ValueSelection -> Msg submsg
+                onSelect : ValueSelection -> Msg
                 onSelect =
                     InputExpression ( stackNum, exprPath ) << Leaf << ObsValue
             in
-            case ov of
+            case vs of
                 UndefinedValue ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) "Choose value..."
+                        [ button.primary (Open (SubpageSelectValue onSelect) stackNum exprPath) "Choose value..."
                         ]
 
                 SelectedValue _ _ name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (PopupSelectValue onSelect) stackNum exprPath) name
+                        [ button.primary (Open (SubpageSelectValue onSelect) stackNum exprPath) name
+                        ]
+
+        ObsLink ol ->
+            let
+                onSelect : DeepLink -> Msg
+                onSelect =
+                    InputExpression ( stackNum, exprPath ) << Leaf << ObsLink
+            in
+            case ol of
+                EndPoint ->
+                    row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                        [ button.primary (Open (SubpageSelectDeepLink onSelect) stackNum exprPath) "Choose link..."
+                        ]
+
+                Link dl ->
+                    row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                        [ button.primary (Open (SubpageSelectDeepLink onSelect) stackNum exprPath) "TODO"
                         ]
 
 
-buttonObservable : Observable -> Element (Msg submsg)
+buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
         ObsNumber n ->
@@ -504,14 +587,17 @@ buttonObservable obs =
         ObsValue v ->
             button.primary (AddExpression <| Leaf (ObsValue v)) (toString obs)
 
+        ObsLink l ->
+            button.primary (AddExpression <| Leaf (ObsLink l)) (toString obs)
 
-buttonUnaryOperator : Maybe Expression -> UOperator -> Element (Msg submsg)
+
+buttonUnaryOperator : Maybe Expression -> UOperator -> Element Msg
 buttonUnaryOperator me o =
     Maybe.map (\e -> button.primary (UnaryOperator o) (uToString o)) me
         |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (uToString o))
 
 
-buttonBinaryOperator : Maybe ( Expression, Expression ) -> BOperator -> Element (Msg submsg)
+buttonBinaryOperator : Maybe ( Expression, Expression ) -> BOperator -> Element Msg
 buttonBinaryOperator mt o =
     Maybe.map (\t -> button.primary (BinaryOperator o) (bToString o)) mt
         |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (bToString o))
