@@ -327,7 +327,7 @@ update s msg model =
                         Value.DeepLink.Selected dl ->
                             -- TODO try to merge with InputExpression
                             case dl of
-                                Link l ->
+                                Link hardlink deeplink ->
                                     ( { model
                                         | submodel2 = newsubmodel
                                         , stack =
@@ -345,7 +345,10 @@ update s msg model =
                                     , Effect.fromCmd (Cmd.map SubMsg2 subcmd)
                                     )
 
-                                EndPoint ->
+                                Null ->
+                                    ( model, Effect.none )
+
+                                EndPoint value ->
                                     ( model, Effect.none )
 
                         _ ->
@@ -567,12 +570,17 @@ editObservable s model ( stackNum, exprPath ) obs =
                     InputExpression ( stackNum, exprPath ) << Leaf << ObsLink
             in
             case ol of
-                EndPoint ->
+                Null ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                         [ button.primary (Open (SubpageSelectDeepLink onSelect) stackNum exprPath) "Choose link..."
                         ]
 
-                Link dl ->
+                EndPoint value ->
+                    row [ Background.color color.item.background, Font.size size.text.small, height fill ]
+                        [ button.primary (Open (SubpageSelectDeepLink onSelect) stackNum exprPath) "Choose link..."
+                        ]
+
+                Link hl dl ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                         [ button.primary (Open (SubpageSelectDeepLink onSelect) stackNum exprPath) "TODO"
                         ]

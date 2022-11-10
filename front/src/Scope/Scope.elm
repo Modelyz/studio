@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identification as Identification exposing (Identification)
-import Item.Item exposing (Item)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,7 +11,6 @@ import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T exposing (Typed)
 import Util exposing (otherwise)
-import Value.Value exposing (HardLink)
 
 
 type

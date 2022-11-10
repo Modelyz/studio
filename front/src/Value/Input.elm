@@ -147,5 +147,8 @@ inputObservable c s model targetPath obs v =
                             R.toString r
                 ]
 
-        ObsLink EndPoint ->
+        ObsLink (EndPoint value) ->
+            row [ height fill ] [ text "Unselected value" ]
+
+        ObsLink Null ->
             row [ height fill ] [ text "Unselected value" ]

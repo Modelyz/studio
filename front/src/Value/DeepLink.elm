@@ -10,7 +10,8 @@ import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value as Value exposing (DeepLink(..), HardLink(..), allRL)
+import Value.HardLink as HardLink exposing (HardLink(..))
+import Value.Value as Value exposing (DeepLink(..), Value)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
@@ -25,14 +26,13 @@ type alias Model =
     { selection : Selection
     , scope : Scope
     , deeplink : DeepLink
-    , onSelect : DeepLink -> Msg
     , stackNum : Int
     , targetPath : List Int
     }
 
 
 type Msg
-    = InputHardlink HardLink
+    = AddedHardlink HardLink
     | Cancel
     | Selected DeepLink
 
@@ -42,8 +42,7 @@ init s scope =
     -- scope is the scope of the Value being added
     { selection = OnlyScope scope
     , scope = scope
-    , deeplink = EndPoint
-    , onSelect = Selected
+    , deeplink = Null
     , stackNum = 0
     , targetPath = []
     }
@@ -52,19 +51,14 @@ init s scope =
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update s msg model =
     case msg of
-        InputHardlink deeplink ->
+        Selected deeplink ->
             ( { model | selection = OnlyScope model.scope }, Cmd.none )
 
         Cancel ->
             ( { model | selection = OnlyScope model.scope }, Cmd.none )
 
-        Selected vs ->
-            case vs of
-                EndPoint ->
-                    ( model, Cmd.none )
-
-                Link hl dl ->
-                    ( model, Cmd.none )
+        AddedHardlink hardLink ->
+            ( { model | deeplink = Link hardLink model.deeplink }, Cmd.none )
 
 
 view : Shared.Model -> Model -> Element Msg
@@ -74,12 +68,7 @@ view s model =
         "Building a link to another Value"
         [ wrappedRow [ width fill, spacing 20 ]
             [ button.secondary Cancel "Cancel"
-            , case model.selection of
-                HardLinkAndScope hardlink (IsItem type_ uuid) ->
-                    button.primary (model.onSelect <| Link hardlink model.deeplink) "Choose"
-
-                _ ->
-                    button.disabled "Please select a value" "Choose"
+            , button.disabled "Please select a value" "Choose"
             ]
         ]
     <|
@@ -95,10 +84,10 @@ view s model =
                                 HasUserType t ht uuid ->
                                     case t of
                                         Type.TType TType.Resource ->
-                                            Value.allRL
+                                            HardLink.allRL
 
                                         Type.TType TType.Commitment ->
-                                            Value.allCmL
+                                            HardLink.allCmL
 
                                         -- FIXME
                                         _ ->
@@ -107,7 +96,7 @@ view s model =
                                 _ ->
                                     []
                     in
-                    List.map (\l -> button.primary (model.onSelect <| Link model.deeplink) (Value.enlToString l)) allLink
+                    List.map (\l -> button.primary (AddedHardlink l) (HardLink.enlToString l)) allLink
 
                 HardLinkAndScope scope name ->
                     []
