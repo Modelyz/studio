@@ -20,8 +20,8 @@ type
     | GroupTypeLink GroupTypeLink
 
 
-enlToString : HardLink -> String
-enlToString x =
+hardlinkToString : HardLink -> String
+hardlinkToString x =
     case x of
         ResourceLink y ->
             rlToString y

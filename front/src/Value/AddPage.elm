@@ -590,13 +590,13 @@ buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
         ObsNumber n ->
-            button.primary (AddExpression <| Leaf (ObsNumber n)) (toString obs)
+            button.primary (AddExpression <| Leaf (ObsNumber n)) (obsToString obs)
 
         ObsValue v ->
-            button.primary (AddExpression <| Leaf (ObsValue v)) (toString obs)
+            button.primary (AddExpression <| Leaf (ObsValue v)) (obsToString obs)
 
         ObsLink l ->
-            button.primary (AddExpression <| Leaf (ObsLink l)) (toString obs)
+            button.primary (AddExpression <| Leaf (ObsLink l)) (obsToString obs)
 
 
 buttonUnaryOperator : Maybe Expression -> UOperator -> Element Msg

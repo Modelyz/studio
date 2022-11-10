@@ -10,8 +10,8 @@ import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
 import Typed.Type as TType
-import Value.HardLink as HardLink exposing (HardLink(..))
-import Value.Value as Value exposing (DeepLink(..), Value)
+import Value.HardLink as HardLink exposing (HardLink)
+import Value.Value as Value exposing (DeepLink(..), Value, addTail)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)
@@ -58,7 +58,7 @@ update s msg model =
             ( { model | selection = OnlyScope model.scope }, Cmd.none )
 
         AddedHardlink hardLink ->
-            ( { model | deeplink = Link hardLink model.deeplink }, Cmd.none )
+            ( { model | deeplink = addTail hardLink model.deeplink }, Cmd.none )
 
 
 view : Shared.Model -> Model -> Element Msg
@@ -72,7 +72,8 @@ view s model =
             ]
         ]
     <|
-        [ wrappedRow [ spacing 20 ] <|
+        [ text <| Value.displayDeepLink model.deeplink
+        , wrappedRow [ spacing 20 ] <|
             case model.selection of
                 OnlyScope scope ->
                     let
@@ -96,7 +97,7 @@ view s model =
                                 _ ->
                                     []
                     in
-                    List.map (\l -> button.primary (AddedHardlink l) (HardLink.enlToString l)) allLink
+                    List.map (\l -> button.primary (AddedHardlink l) (HardLink.hardlinkToString l)) allLink
 
                 HardLinkAndScope scope name ->
                     []

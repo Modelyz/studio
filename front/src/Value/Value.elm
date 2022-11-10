@@ -7,7 +7,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (Posix)
 import Type exposing (Type)
 import Typed.Type as TType
-import Value.HardLink exposing (HardLink)
+import Value.HardLink exposing (HardLink, hardlinkToString)
 import Value.Rational as R exposing (Rational(..))
 
 
@@ -56,9 +56,31 @@ type DeepLink
     | EndPoint Value
 
 
-link : HardLink -> DeepLink -> DeepLink
-link hl dl =
-    Link hl dl
+addTail : HardLink -> DeepLink -> DeepLink
+addTail hl dl =
+    case dl of
+        Null ->
+            Link hl dl
+
+        Link hl2 dl2 ->
+            Link hl2 (addTail hl dl2)
+
+        EndPoint v ->
+            Link hl (EndPoint v)
+
+
+displayDeepLink : DeepLink -> String
+displayDeepLink deeplink =
+    case deeplink of
+        Null ->
+            "Null"
+
+        Link hl dl ->
+            "Link : " ++ hardlinkToString hl ++ " → " ++ displayDeepLink dl
+
+        EndPoint value ->
+            -- FIXME
+            "Endpoint=" ++ compare value
 
 
 compare : Value -> String
@@ -355,8 +377,8 @@ vToString v =
             "UndefinedValue"
 
 
-lToString : DeepLink -> String
-lToString v =
+deeplinkToString : DeepLink -> String
+deeplinkToString v =
     case v of
         Link hl dl ->
             "Link"
@@ -370,8 +392,8 @@ lToString v =
             "Null"
 
 
-toString : Observable -> String
-toString obs =
+obsToString : Observable -> String
+obsToString obs =
     case obs of
         ObsNumber _ ->
             "Free Number"
@@ -456,19 +478,19 @@ oEncode obs =
                 Link hl dl ->
                     -- FIXME
                     Encode.object
-                        [ ( "type", Encode.string <| lToString l )
+                        [ ( "type", Encode.string <| deeplinkToString l )
                         ]
 
                 Null ->
                     -- FIXME
                     Encode.object
-                        [ ( "type", Encode.string <| lToString l )
+                        [ ( "type", Encode.string <| deeplinkToString l )
                         ]
 
                 EndPoint value ->
                     -- FIXME
                     Encode.object
-                        [ ( "type", Encode.string <| lToString l )
+                        [ ( "type", Encode.string <| deeplinkToString l )
                         ]
 
 
