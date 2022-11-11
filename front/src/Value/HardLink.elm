@@ -282,12 +282,12 @@ type EventTypeLink
     | EventTypeInflow
     | EventTypeOutflow
     | EventTypeGroup
-    | EventTypeType
+    | EventTypeParent
 
 
 allETL : List HardLink
 allETL =
-    [ EventTypeLink EventTypeProvider, EventTypeLink EventTypeReceiver, EventTypeLink EventTypeInflow, EventTypeLink EventTypeOutflow, EventTypeLink EventTypeGroup, EventTypeLink EventTypeType ]
+    [ EventTypeLink EventTypeProvider, EventTypeLink EventTypeReceiver, EventTypeLink EventTypeInflow, EventTypeLink EventTypeOutflow, EventTypeLink EventTypeGroup, EventTypeLink EventTypeParent ]
 
 
 etlToString : EventTypeLink -> String
@@ -308,18 +308,18 @@ etlToString x =
         EventTypeGroup ->
             "Event Type Group"
 
-        EventTypeType ->
+        EventTypeParent ->
             "Event Type Parent Type"
 
 
 type AgentTypeLink
     = AgentTypeGroup
-    | AgentTypeType
+    | AgentTypeParent
 
 
 allATL : List HardLink
 allATL =
-    [ AgentTypeLink AgentTypeGroup, AgentTypeLink AgentTypeType ]
+    [ AgentTypeLink AgentTypeGroup, AgentTypeLink AgentTypeParent ]
 
 
 atlToString : AgentTypeLink -> String
@@ -328,7 +328,7 @@ atlToString x =
         AgentTypeGroup ->
             "Agent Type Group"
 
-        AgentTypeType ->
+        AgentTypeParent ->
             "Agent Type Type"
 
 
@@ -338,12 +338,12 @@ type CommitmentTypeLink
     | CommitmentTypeInflow
     | CommitmentTypeOutflow
     | CommitmentTypeGroup
-    | CommitmentTypeType
+    | CommitmentTypeParent
 
 
 allCmTL : List HardLink
 allCmTL =
-    [ CommitmentTypeLink CommitmentTypeProvider, CommitmentTypeLink CommitmentTypeReceiver, CommitmentTypeLink CommitmentTypeInflow, CommitmentTypeLink CommitmentTypeOutflow, CommitmentTypeLink CommitmentTypeGroup, CommitmentTypeLink CommitmentTypeType ]
+    [ CommitmentTypeLink CommitmentTypeProvider, CommitmentTypeLink CommitmentTypeReceiver, CommitmentTypeLink CommitmentTypeInflow, CommitmentTypeLink CommitmentTypeOutflow, CommitmentTypeLink CommitmentTypeGroup, CommitmentTypeLink CommitmentTypeParent ]
 
 
 cmtlToString : CommitmentTypeLink -> String
@@ -364,18 +364,18 @@ cmtlToString x =
         CommitmentTypeGroup ->
             "Commitment Type Group"
 
-        CommitmentTypeType ->
+        CommitmentTypeParent ->
             "Commitment Type Parent Type"
 
 
 type ContractTypeLink
     = ContractTypeGroup
-    | ContractTypeType
+    | ContractTypeParent
 
 
 allCnTL : List HardLink
 allCnTL =
-    [ ContractTypeLink ContractTypeGroup, ContractTypeLink ContractTypeType ]
+    [ ContractTypeLink ContractTypeGroup, ContractTypeLink ContractTypeParent ]
 
 
 cntlToString : ContractTypeLink -> String
@@ -384,18 +384,18 @@ cntlToString x =
         ContractTypeGroup ->
             "Contract Type Group"
 
-        ContractTypeType ->
+        ContractTypeParent ->
             "Contract Type Type"
 
 
 type ProcessTypeLink
     = ProcessTypeGroup
-    | ProcessTypeType
+    | ProcessTypeParent
 
 
 allPTL : List HardLink
 allPTL =
-    [ ProcessTypeLink ProcessTypeGroup, ProcessTypeLink ProcessTypeType ]
+    [ ProcessTypeLink ProcessTypeGroup, ProcessTypeLink ProcessTypeParent ]
 
 
 ptlToString : ProcessTypeLink -> String
@@ -404,18 +404,18 @@ ptlToString x =
         ProcessTypeGroup ->
             "Process Type Group"
 
-        ProcessTypeType ->
+        ProcessTypeParent ->
             "Process Type Parent Type"
 
 
 type GroupTypeLink
     = GroupTypeGroup
-    | GroupTypeType
+    | GroupTypeParent
 
 
 allGTL : List HardLink
 allGTL =
-    [ GroupTypeLink GroupTypeGroup, GroupTypeLink GroupTypeType ]
+    [ GroupTypeLink GroupTypeGroup, GroupTypeLink GroupTypeParent ]
 
 
 gtlToString : GroupTypeLink -> String
@@ -424,5 +424,239 @@ gtlToString x =
         GroupTypeGroup ->
             "Group Type Group"
 
-        GroupTypeType ->
+        GroupTypeParent ->
             "Group Type Parent Type"
+
+
+hlToChoice : HardLink -> List HardLink
+hlToChoice hardlink =
+    case hardlink of
+        ResourceLink y ->
+            rlToChoice y
+
+        EventLink y ->
+            elToChoice y
+
+        AgentLink y ->
+            alToChoice y
+
+        CommitmentLink y ->
+            cmlToChoice y
+
+        ContractLink y ->
+            cnlToChoice y
+
+        ProcessLink y ->
+            plToChoice y
+
+        GroupLink y ->
+            glToChoice y
+
+        ResourceTypeLink y ->
+            rtlToChoice y
+
+        EventTypeLink y ->
+            etlToChoice y
+
+        AgentTypeLink y ->
+            atlToChoice y
+
+        CommitmentTypeLink y ->
+            cmtlToChoice y
+
+        ContractTypeLink y ->
+            cntlToChoice y
+
+        ProcessTypeLink y ->
+            ptlToChoice y
+
+        GroupTypeLink y ->
+            gtlToChoice y
+
+
+rlToChoice : ResourceLink -> List HardLink
+rlToChoice hl =
+    case hl of
+        ResourceGroup ->
+            allGL
+
+        ResourceType ->
+            allRTL
+
+
+elToChoice : EventLink -> List HardLink
+elToChoice hl =
+    case hl of
+        EventProvider ->
+            allAL
+
+        EventReceiver ->
+            allAL
+
+        EventInflow ->
+            allRL
+
+        EventOutflow ->
+            allRL
+
+        EventGroup ->
+            allGL
+
+        EventType ->
+            allETL
+
+
+alToChoice : AgentLink -> List HardLink
+alToChoice hl =
+    case hl of
+        AgentGroup ->
+            allGL
+
+        AgentType ->
+            allATL
+
+
+cmlToChoice : CommitmentLink -> List HardLink
+cmlToChoice hl =
+    case hl of
+        CommitmentProvider ->
+            allAL
+
+        CommitmentReceiver ->
+            allAL
+
+        CommitmentInflow ->
+            allRL
+
+        CommitmentOutflow ->
+            allRL
+
+        CommitmentGroup ->
+            allGL
+
+        CommitmentType ->
+            allCmTL
+
+
+cnlToChoice : ContractLink -> List HardLink
+cnlToChoice hl =
+    case hl of
+        ContractGroup ->
+            allGL
+
+        ContractType ->
+            allCnTL
+
+
+plToChoice : ProcessLink -> List HardLink
+plToChoice hl =
+    case hl of
+        ProcessGroup ->
+            allGL
+
+        ProcessType ->
+            allPTL
+
+
+glToChoice : GroupLink -> List HardLink
+glToChoice hl =
+    case hl of
+        GroupGroup ->
+            allGL
+
+        GroupType ->
+            allGTL
+
+
+rtlToChoice : ResourceTypeLink -> List HardLink
+rtlToChoice hl =
+    case hl of
+        ResourceTypeGroup ->
+            allGL
+
+        ResourceTypeParent ->
+            allRTL
+
+
+etlToChoice : EventTypeLink -> List HardLink
+etlToChoice hl =
+    case hl of
+        EventTypeProvider ->
+            allAL
+
+        EventTypeReceiver ->
+            allAL
+
+        EventTypeInflow ->
+            allRL
+
+        EventTypeOutflow ->
+            allRL
+
+        EventTypeGroup ->
+            allGL
+
+        EventTypeParent ->
+            allETL
+
+
+atlToChoice : AgentTypeLink -> List HardLink
+atlToChoice hl =
+    case hl of
+        AgentTypeGroup ->
+            allGL
+
+        AgentTypeParent ->
+            allATL
+
+
+cmtlToChoice : CommitmentTypeLink -> List HardLink
+cmtlToChoice hl =
+    case hl of
+        CommitmentTypeProvider ->
+            allAL
+
+        CommitmentTypeReceiver ->
+            allAL
+
+        CommitmentTypeInflow ->
+            allRL
+
+        CommitmentTypeOutflow ->
+            allRL
+
+        CommitmentTypeGroup ->
+            allGL
+
+        CommitmentTypeParent ->
+            allCmTL
+
+
+cntlToChoice : ContractTypeLink -> List HardLink
+cntlToChoice hl =
+    case hl of
+        ContractTypeGroup ->
+            allGL
+
+        ContractTypeParent ->
+            allCnTL
+
+
+ptlToChoice : ProcessTypeLink -> List HardLink
+ptlToChoice hl =
+    case hl of
+        ProcessTypeGroup ->
+            allGL
+
+        ProcessTypeParent ->
+            allPTL
+
+
+gtlToChoice : GroupTypeLink -> List HardLink
+gtlToChoice hl =
+    case hl of
+        GroupTypeGroup ->
+            allGL
+
+        GroupTypeParent ->
+            allGTL

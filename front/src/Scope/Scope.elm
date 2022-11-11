@@ -21,6 +21,8 @@ type
       -- A set with a single item of type Type:
     | IsItem Type Uuid
       -- the set of items of type Type whose type_ or parent is child of a precise user type
+      -- TODO : convert to HasUserType Type Uuid or HasUserType HType uuid (because the HType is always related to the Type)
+      -- btw, isn't the hasusertype just a htype?
     | HasUserType Type HType.Type Uuid
       -- The set of items with a specific concrete type:
     | HasType Type
