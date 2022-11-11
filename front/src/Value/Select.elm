@@ -1,4 +1,4 @@
-module Value.Select exposing (Model, Msg(..), init, update, view)
+module Value.Select exposing (Model, Msg(..), init, selectValue, update, view)
 
 import Dict
 import Element exposing (..)

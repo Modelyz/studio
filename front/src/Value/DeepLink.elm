@@ -12,6 +12,7 @@ import Shared
 import Type exposing (Type)
 import Typed.Type as TType
 import Value.HardLink as HL exposing (HardLink)
+import Value.Select as Select
 import Value.Value as Value exposing (DeepLink(..), Value, addTail)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
@@ -67,6 +68,7 @@ view s model =
         ]
     <|
         [ text <| Value.displayDeepLink model.deeplink
+        , h2 "Choose between:"
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of
                 {- TODO si on est sur null, on a notre contexte qui est le
@@ -98,13 +100,39 @@ view s model =
                 EndPoint value ->
                     []
         ]
+            ++ [ selectValue s model (dlToScope model model.deeplink) (Selected << EndPoint) ]
 
 
-selectHardLink : Shared.Model -> Model -> (String -> Msg) -> Element Msg
-selectHardLink s model onInput =
-    column [ spacing 20 ]
-        [ h2 "Choose between:"
-        ]
+dlToScope : Model -> DeepLink -> Scope
+dlToScope model deeplink =
+    case deeplink of
+        Null ->
+            model.scope
+
+        Link hl dl ->
+            dlToScope model dl
+
+        EndPoint v ->
+            model.scope
+
+
+selectValue : Shared.Model -> Model -> Scope -> (Value -> Msg) -> Element Msg
+selectValue s model scope onInput =
+    case scope of
+        IsItem t uuid ->
+            column [ spacing 20 ]
+                [ h2 "Select the value you want to choose:"
+                , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                    (s.state.values
+                        |> Dict.values
+                        |> List.filter (\v -> v.what == t && v.for == uuid)
+                        |> List.map (\v -> clickableCard (onInput v) (text v.name) none)
+                        |> withDefaultContent (text "(No values are defined for this entity. Choose another entity or create a value for this entity)")
+                    )
+                ]
+
+        _ ->
+            none
 
 
 scopeToChoice : Scope -> List HardLink
