@@ -13,7 +13,8 @@ import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier exposing (Identifier)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope(..), containsScope)
+import Scope.Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
 import State exposing (State)
 import Type
@@ -29,6 +30,7 @@ import Zone.Zone exposing (Zone(..))
 
 toDisplay : Dict String OnlyTyped -> Dict String (Hierarchic b) -> Dict String Configuration -> Scope -> String
 toDisplay allT allH configs scope =
+    -- TODO move to Scope.Scope?
     case scope of
         Empty ->
             "Nothing"
@@ -64,6 +66,7 @@ toDisplay allT allH configs scope =
 
 selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Element msg
 selectScope s onInput scope =
+    -- TODO move to Scope.Scope?
     let
         allT =
             case scope of

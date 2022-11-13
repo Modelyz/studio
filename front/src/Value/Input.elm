@@ -8,6 +8,8 @@ import Element.Input as Input
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
+import Value.Expression as Expression exposing (Expression(..))
+import Value.Observable as Observable exposing (Observable(..))
 import Value.Rational as R
 import Value.Value as Value exposing (..)
 import View exposing (..)
@@ -53,7 +55,7 @@ inputValue c s model v =
                     none
 
                 _ ->
-                    eval s.state.values v.expr
+                    Expression.eval s.state.values v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->
@@ -74,10 +76,10 @@ inputExpression c s model ( currentPath, expr ) v =
             inputObservable c s model currentPath obs v
 
         Unary o e ->
-            row [] [ text (uToShortString o), inputExpression c s model ( 1 :: currentPath, e ) v ]
+            row [] [ text (Expression.uToShortString o), inputExpression c s model ( 1 :: currentPath, e ) v ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s model ( 2 :: currentPath, e1 ) v, text <| bToShortString o, inputExpression c s model ( 3 :: currentPath, e2 ) v, text " )" ]
+            row [] [ text "( ", inputExpression c s model ( 2 :: currentPath, e1 ) v, text <| Expression.bToShortString o, inputExpression c s model ( 3 :: currentPath, e2 ) v, text " )" ]
 
 
 inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observable -> Value -> Element msg
@@ -101,7 +103,7 @@ inputObservable c s model targetPath obs v =
                 ]
                 { onChange =
                     \x ->
-                        c.onInput { v | expr = updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = R.fromString x |> Result.map Tuple.first }) v.expr }
+                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = R.fromString x |> Result.map Tuple.first }) v.expr }
                 , text =
                     n.input
                 , placeholder =
@@ -122,33 +124,6 @@ inputObservable c s model targetPath obs v =
                         )
                 }
 
-        ObsValue (SelectedValue what for name) ->
-            row [ height fill, htmlAttribute <| Attr.title name ]
-                [ text <|
-                    case oEval s.state.values (ObsValue (SelectedValue what for name)) of
-                        Err err ->
-                            err
-
-                        Ok r ->
-                            R.toString r
-                ]
-
-        ObsValue UndefinedValue ->
-            row [ height fill ] [ text "Unselected value" ]
-
-        ObsLink (Link hl dl) ->
-            row [ height fill, htmlAttribute <| Attr.title "TODO" ]
-                [ text <|
-                    case oEval s.state.values (ObsLink (Link hl dl)) of
-                        Err err ->
-                            err
-
-                        Ok r ->
-                            R.toString r
-                ]
-
-        ObsLink (EndPoint value) ->
-            row [ height fill ] [ text "Unselected value" ]
-
-        ObsLink Null ->
-            row [ height fill ] [ text "Unselected value" ]
+        -- TODO
+        _ ->
+            text "TODO"

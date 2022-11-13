@@ -6,9 +6,11 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Type exposing (Type)
 import Typed.Typed exposing (Typed)
-import Value.Value as Value exposing (..)
+import Value.Expression as Expression exposing (Expression)
+import Value.Value as Value exposing (Value)
 
 
 type alias ValueType =
@@ -29,7 +31,7 @@ initValues allT allH vts t mh uuid isNew =
         |> Dict.filter
             (\_ vt ->
                 if isNew then
-                    Scope.containsScope allT
+                    containsScope allT
                         allH
                         (case mh of
                             Just h ->
@@ -41,7 +43,7 @@ initValues allT allH vts t mh uuid isNew =
                         vt.scope
 
                 else
-                    Scope.containsScope allT allH (IsItem t uuid) vt.scope
+                    containsScope allT allH (IsItem t uuid) vt.scope
             )
         |> Dict.values
         |> List.map
@@ -64,7 +66,7 @@ encode : ValueType -> Encode.Value
 encode vt =
     Encode.object
         [ ( "name", Encode.string vt.name )
-        , ( "expr", eEncode vt.expr )
+        , ( "expr", Expression.encode vt.expr )
         , ( "scope", Scope.encode vt.scope )
         , ( "mandatory", Encode.bool vt.mandatory )
         ]
@@ -74,6 +76,6 @@ decoder : Decoder ValueType
 decoder =
     Decode.map4 ValueType
         (Decode.field "name" Decode.string)
-        (Decode.field "expr" eDecoder)
+        (Decode.field "expr" Expression.decoder)
         (Decode.field "scope" Scope.decoder)
         (Decode.field "mandatory" Decode.bool)

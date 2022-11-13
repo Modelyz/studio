@@ -9,7 +9,7 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
-import Value.Value exposing (ValueSelection(..))
+import Value.ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, viewHalfCard)
 import View.Style exposing (..)

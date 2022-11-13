@@ -20,8 +20,8 @@ type
     | GroupTypeLink GroupTypeLink
 
 
-hardlinkToString : HardLink -> String
-hardlinkToString x =
+toString : HardLink -> String
+toString x =
     case x of
         ResourceLink y ->
             rlToString y

@@ -12,6 +12,7 @@ import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -268,7 +269,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    Scope.containsScope allT allH model.scope it.scope
+                                    containsScope allT allH model.scope it.scope
                                 )
                         )
                             |> List.map (.name >> IdentifierName)

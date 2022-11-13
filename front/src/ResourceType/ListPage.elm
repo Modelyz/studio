@@ -16,6 +16,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirectView)
 import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Type exposing (Type(..))
@@ -140,7 +141,7 @@ viewContent model s =
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> Scope.containsScope s.state.resources s.state.resourceTypes it.scope (HasType (Type.HType HType.ResourceType)))
+                                |> List.filter (\it -> containsScope s.state.resources s.state.resourceTypes it.scope (HasType (Type.HType HType.ResourceType)))
                                 |> List.map identifierColumn
                             )
                                 ++ [ hGroupsColumn s ]

@@ -16,6 +16,7 @@ import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirectView)
 import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Type exposing (Type(..))
@@ -140,7 +141,7 @@ viewContent model s =
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> Scope.containsScope s.state.commitments s.state.commitmentTypes it.scope (HasType (Type.HType HType.CommitmentType)))
+                                |> List.filter (\it -> containsScope s.state.commitments s.state.commitmentTypes it.scope (HasType (Type.HType HType.CommitmentType)))
                                 |> List.map identifierColumn
                             )
                                 ++ [ hGroupsColumn s ]

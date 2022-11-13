@@ -28,7 +28,8 @@ import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
-import Scope.Scope exposing (Scope(..), containsScope)
+import Scope.Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType

@@ -9,6 +9,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed exposing (Typed)
@@ -34,7 +35,7 @@ initIdentifiers allT allH its t mh uuid isNew =
         |> Dict.filter
             (\_ it ->
                 if isNew then
-                    Scope.containsScope allT
+                    containsScope allT
                         allH
                         (case mh of
                             Just h ->
@@ -46,7 +47,7 @@ initIdentifiers allT allH its t mh uuid isNew =
                         it.scope
 
                 else
-                    Scope.containsScope allT allH (IsItem t uuid) it.scope
+                    containsScope allT allH (IsItem t uuid) it.scope
             )
         |> Dict.values
         |> List.map

@@ -5,8 +5,9 @@ module Value.View exposing (displayValueDict)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
+import Value.Expression as Expression
 import Value.Rational as Rational
-import Value.Value as Value exposing (Value, eval)
+import Value.Value as Value exposing (Value)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
 
@@ -18,7 +19,7 @@ displayValueDict default allV data =
             { data = Dict.values data
             , columns =
                 [ { header = headerCell color.table.header.background "Name", width = fill, view = .name >> innerCell }
-                , { header = headerCell color.table.header.background "Value", width = fill, view = .expr >> eval allV >> Result.map Rational.toString >> Result.withDefault "(undefined)" >> innerCell }
+                , { header = headerCell color.table.header.background "Value", width = fill, view = .expr >> Expression.eval allV >> Result.map Rational.toString >> Result.withDefault "(undefined)" >> innerCell }
                 ]
             }
 

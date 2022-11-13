@@ -5,6 +5,7 @@ import Hierarchy.Hierarchic exposing (Hierarchic)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope.Scope as Scope exposing (Scope)
+import Scope.State exposing (getUpperList)
 import Typed.Typed exposing (Typed)
 import Zone.Fragment as Fragment exposing (Fragment)
 import Zone.Zone as Zone exposing (Zone)
@@ -25,7 +26,7 @@ getConfig configs scope =
 getMostSpecific : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
 getMostSpecific allT allH configs zone scope =
     -- returns the most specific config for a given zone and scope
-    findFirst configs (List.reverse <| Scope.getUpperList allT allH scope [])
+    findFirst configs (List.reverse <| getUpperList allT allH scope [])
 
 
 findFirst : Dict String Configuration -> List Scope -> Maybe Configuration
