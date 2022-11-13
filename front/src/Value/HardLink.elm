@@ -1,5 +1,12 @@
 module Value.HardLink exposing (..)
 
+import Hierarchy.Type as HType
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
+import Scope.Scope as Scope exposing (Scope(..))
+import Type exposing (Type)
+import Typed.Type as TType
+
 
 type
     HardLink
@@ -23,47 +30,285 @@ type
 toString : HardLink -> String
 toString x =
     case x of
-        ResourceLink y ->
-            rlToString y
+        ResourceLink ResourceGroup ->
+            "Resource Group"
 
-        EventLink y ->
-            elToString y
+        ResourceLink ResourceType ->
+            "Resource Type"
 
-        AgentLink y ->
-            alToString y
+        EventLink EventProvider ->
+            "Event Provider"
 
-        CommitmentLink y ->
-            cmlToString y
+        EventLink EventReceiver ->
+            "Event Receiver"
 
-        ContractLink y ->
-            cnlToString y
+        EventLink EventInflow ->
+            "Event Incoming Resource"
 
-        ProcessLink y ->
-            plToString y
+        EventLink EventOutflow ->
+            "Event Outgoing Resource"
 
-        GroupLink y ->
-            glToString y
+        EventLink EventGroup ->
+            "Event Group"
 
-        ResourceTypeLink y ->
-            rtlToString y
+        EventLink EventType ->
+            "Event Type"
 
-        EventTypeLink y ->
-            etlToString y
+        AgentLink AgentGroup ->
+            "Agent Group"
 
-        AgentTypeLink y ->
-            atlToString y
+        AgentLink AgentType ->
+            "Agent Type"
 
-        CommitmentTypeLink y ->
-            cmtlToString y
+        CommitmentLink CommitmentProvider ->
+            "Commitment Provider"
 
-        ContractTypeLink y ->
-            cntlToString y
+        CommitmentLink CommitmentReceiver ->
+            "Commitment Receiver"
 
-        ProcessTypeLink y ->
-            ptlToString y
+        CommitmentLink CommitmentInflow ->
+            "Commitment Incoming Resource"
 
-        GroupTypeLink y ->
-            gtlToString y
+        CommitmentLink CommitmentOutflow ->
+            "Commitment Outgoing Resource"
+
+        CommitmentLink CommitmentGroup ->
+            "Commitment Group"
+
+        CommitmentLink CommitmentType ->
+            "Commitment Type"
+
+        ContractLink ContractGroup ->
+            "Contract Group"
+
+        ContractLink ContractType ->
+            "Contract Type"
+
+        ProcessLink ProcessGroup ->
+            "Process Group"
+
+        ProcessLink ProcessType ->
+            "Process Type"
+
+        GroupLink GroupGroup ->
+            "Group Group"
+
+        GroupLink GroupType ->
+            "Group Type"
+
+        ResourceTypeLink ResourceTypeGroup ->
+            "ResourceType Group"
+
+        ResourceTypeLink ResourceTypeParent ->
+            "ResourceType Parent"
+
+        EventTypeLink EventTypeProvider ->
+            "Event Type Provider"
+
+        EventTypeLink EventTypeReceiver ->
+            "Event Type Receiver"
+
+        EventTypeLink EventTypeInflow ->
+            "Event Type Incoming Resource"
+
+        EventTypeLink EventTypeOutflow ->
+            "Event Type Outgoing Resource"
+
+        EventTypeLink EventTypeGroup ->
+            "Event Type Group"
+
+        EventTypeLink EventTypeParent ->
+            "Event Type Parent Type"
+
+        AgentTypeLink AgentTypeGroup ->
+            "Agent Type Group"
+
+        AgentTypeLink AgentTypeParent ->
+            "Agent Type Type"
+
+        CommitmentTypeLink CommitmentTypeProvider ->
+            "Commitment Type Provider Agent"
+
+        CommitmentTypeLink CommitmentTypeReceiver ->
+            "Commitment Type Receiver Agent"
+
+        CommitmentTypeLink CommitmentTypeInflow ->
+            "Commitment Type Incoming Resource"
+
+        CommitmentTypeLink CommitmentTypeOutflow ->
+            "Commitment Type Outgoing Resource"
+
+        CommitmentTypeLink CommitmentTypeGroup ->
+            "Commitment Type Group"
+
+        CommitmentTypeLink CommitmentTypeParent ->
+            "Commitment Type Parent Type"
+
+        ContractTypeLink ContractTypeGroup ->
+            "Contract Type Group"
+
+        ContractTypeLink ContractTypeParent ->
+            "Contract Type Type"
+
+        ProcessTypeLink ProcessTypeGroup ->
+            "Process Type Group"
+
+        ProcessTypeLink ProcessTypeParent ->
+            "Process Type Parent Type"
+
+        GroupTypeLink GroupTypeGroup ->
+            "Group Type Group"
+
+        GroupTypeLink GroupTypeParent ->
+            "Group Type Parent Type"
+
+
+encode : HardLink -> Encode.Value
+encode hl =
+    Encode.string <| toString hl
+
+
+decoder : Decoder HardLink
+decoder =
+    Decode.string
+        |> Decode.andThen
+            (\s ->
+                case s of
+                    "Resource Group" ->
+                        Decode.succeed <| ResourceLink ResourceGroup
+
+                    "Resource Type" ->
+                        Decode.succeed <| ResourceLink ResourceType
+
+                    "Event Provider" ->
+                        Decode.succeed <| EventLink EventProvider
+
+                    "Event Receiver" ->
+                        Decode.succeed <| EventLink EventReceiver
+
+                    "Event Incoming Resource" ->
+                        Decode.succeed <| EventLink EventInflow
+
+                    "Event Outgoing Resource" ->
+                        Decode.succeed <| EventLink EventOutflow
+
+                    "Event Group" ->
+                        Decode.succeed <| EventLink EventGroup
+
+                    "Event Type" ->
+                        Decode.succeed <| EventLink EventType
+
+                    "Agent Group" ->
+                        Decode.succeed <| AgentLink AgentGroup
+
+                    "Agent Type" ->
+                        Decode.succeed <| AgentLink AgentType
+
+                    "Commitment Provider" ->
+                        Decode.succeed <| CommitmentLink CommitmentProvider
+
+                    "Commitment Receiver" ->
+                        Decode.succeed <| CommitmentLink CommitmentReceiver
+
+                    "Commitment Incoming Resource" ->
+                        Decode.succeed <| CommitmentLink CommitmentInflow
+
+                    "Commitment Outgoing Resource" ->
+                        Decode.succeed <| CommitmentLink CommitmentOutflow
+
+                    "Commitment Group" ->
+                        Decode.succeed <| CommitmentLink CommitmentGroup
+
+                    "Commitment Type" ->
+                        Decode.succeed <| CommitmentLink CommitmentType
+
+                    "Contract Group" ->
+                        Decode.succeed <| ContractLink ContractGroup
+
+                    "Contract Type" ->
+                        Decode.succeed <| ContractLink ContractType
+
+                    "Process Group" ->
+                        Decode.succeed <| ProcessLink ProcessGroup
+
+                    "Process Type" ->
+                        Decode.succeed <| ProcessLink ProcessType
+
+                    "Group Group" ->
+                        Decode.succeed <| GroupLink GroupGroup
+
+                    "Group Type" ->
+                        Decode.succeed <| GroupLink GroupType
+
+                    "ResourceType Group" ->
+                        Decode.succeed <| ResourceTypeLink ResourceTypeGroup
+
+                    "ResourceType Parent" ->
+                        Decode.succeed <| ResourceTypeLink ResourceTypeParent
+
+                    "Event Type Provider" ->
+                        Decode.succeed <| EventTypeLink EventTypeProvider
+
+                    "Event Type Receiver" ->
+                        Decode.succeed <| EventTypeLink EventTypeReceiver
+
+                    "Event Type Incoming Resource" ->
+                        Decode.succeed <| EventTypeLink EventTypeInflow
+
+                    "Event Type Outgoing Resource" ->
+                        Decode.succeed <| EventTypeLink EventTypeOutflow
+
+                    "Event Type Group" ->
+                        Decode.succeed <| EventTypeLink EventTypeGroup
+
+                    "Event Type Parent Type" ->
+                        Decode.succeed <| EventTypeLink EventTypeParent
+
+                    "Agent Type Group" ->
+                        Decode.succeed <| AgentTypeLink AgentTypeGroup
+
+                    "Agent Type Type" ->
+                        Decode.succeed <| AgentTypeLink AgentTypeParent
+
+                    "Commitment Type Provider Agent" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeProvider
+
+                    "Commitment Type Receiver Agent" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeReceiver
+
+                    "Commitment Type Incoming Resource" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeInflow
+
+                    "Commitment Type Outgoing Resource" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeOutflow
+
+                    "Commitment Type Group" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeGroup
+
+                    "Commitment Type Parent Type" ->
+                        Decode.succeed <| CommitmentTypeLink CommitmentTypeParent
+
+                    "Contract Type Group" ->
+                        Decode.succeed <| ContractTypeLink ContractTypeGroup
+
+                    "Contract Type Type" ->
+                        Decode.succeed <| ContractTypeLink ContractTypeParent
+
+                    "Process Type Group" ->
+                        Decode.succeed <| ProcessTypeLink ProcessTypeGroup
+
+                    "Process Type Parent Type" ->
+                        Decode.succeed <| ProcessTypeLink ProcessTypeParent
+
+                    "Group Type Group" ->
+                        Decode.succeed <| GroupTypeLink GroupTypeGroup
+
+                    "Group Type Parent Type" ->
+                        Decode.succeed <| GroupTypeLink GroupTypeParent
+
+                    _ ->
+                        Decode.fail "Unknown hardlink"
+            )
 
 
 type
@@ -74,28 +319,11 @@ type
     | ResourceType
 
 
-rlToString : ResourceLink -> String
-rlToString x =
-    case x of
-        ResourceGroup ->
-            "Resource Group"
-
-        ResourceType ->
-            "Resource Type"
-
-
 allRL : List HardLink
 allRL =
     [ ResourceLink ResourceGroup
     , ResourceLink ResourceType
     ]
-
-
-
---rlEval : Dict String Value -> ResourceLink -> Result String Value
---rlEval allVals link = case link of
---    ResourceGroup uuid l ->
---    ResourceType uuid l ->
 
 
 type EventLink
@@ -112,28 +340,6 @@ allEL =
     [ EventLink EventProvider, EventLink EventReceiver, EventLink EventInflow, EventLink EventOutflow, EventLink EventGroup, EventLink EventType ]
 
 
-elToString : EventLink -> String
-elToString x =
-    case x of
-        EventProvider ->
-            "Event Provider"
-
-        EventReceiver ->
-            "Event Receiver"
-
-        EventInflow ->
-            "Event Incoming resource"
-
-        EventOutflow ->
-            "Event Outgoing resource"
-
-        EventGroup ->
-            "Event Group"
-
-        EventType ->
-            "Event Type"
-
-
 type AgentLink
     = AgentGroup
     | AgentType
@@ -142,16 +348,6 @@ type AgentLink
 allAL : List HardLink
 allAL =
     [ AgentLink AgentGroup, AgentLink AgentType ]
-
-
-alToString : AgentLink -> String
-alToString x =
-    case x of
-        AgentGroup ->
-            "Agent Group"
-
-        AgentType ->
-            "Agent Type"
 
 
 type CommitmentLink
@@ -174,28 +370,6 @@ allCmL =
     ]
 
 
-cmlToString : CommitmentLink -> String
-cmlToString x =
-    case x of
-        CommitmentProvider ->
-            "Commitment Provider"
-
-        CommitmentReceiver ->
-            "Commitment Receiver"
-
-        CommitmentInflow ->
-            "Commitment Incoming Resource"
-
-        CommitmentOutflow ->
-            "Commitment Outgoing Resource"
-
-        CommitmentGroup ->
-            "Commitment Group"
-
-        CommitmentType ->
-            "Commitment Type"
-
-
 type ContractLink
     = ContractGroup
     | ContractType
@@ -204,16 +378,6 @@ type ContractLink
 allCnL : List HardLink
 allCnL =
     [ ContractLink ContractGroup, ContractLink ContractType ]
-
-
-cnlToString : ContractLink -> String
-cnlToString x =
-    case x of
-        ContractGroup ->
-            "Contract Group"
-
-        ContractType ->
-            "Contract Type"
 
 
 type ProcessLink
@@ -226,16 +390,6 @@ allPL =
     [ ProcessLink ProcessGroup, ProcessLink ProcessType ]
 
 
-plToString : ProcessLink -> String
-plToString x =
-    case x of
-        ProcessGroup ->
-            "Process Group"
-
-        ProcessType ->
-            "Process Type"
-
-
 type GroupLink
     = GroupGroup
     | GroupType
@@ -246,16 +400,6 @@ allGL =
     [ GroupLink GroupGroup, GroupLink GroupType ]
 
 
-glToString : GroupLink -> String
-glToString x =
-    case x of
-        GroupGroup ->
-            "Group Group"
-
-        GroupType ->
-            "Group Type"
-
-
 type ResourceTypeLink
     = ResourceTypeGroup
     | ResourceTypeParent
@@ -264,16 +408,6 @@ type ResourceTypeLink
 allRTL : List HardLink
 allRTL =
     [ ResourceTypeLink ResourceTypeGroup, ResourceTypeLink ResourceTypeParent ]
-
-
-rtlToString : ResourceTypeLink -> String
-rtlToString x =
-    case x of
-        ResourceTypeGroup ->
-            "ResourceType Group"
-
-        ResourceTypeParent ->
-            "ResourceType Parent"
 
 
 type EventTypeLink
@@ -290,28 +424,6 @@ allETL =
     [ EventTypeLink EventTypeProvider, EventTypeLink EventTypeReceiver, EventTypeLink EventTypeInflow, EventTypeLink EventTypeOutflow, EventTypeLink EventTypeGroup, EventTypeLink EventTypeParent ]
 
 
-etlToString : EventTypeLink -> String
-etlToString x =
-    case x of
-        EventTypeProvider ->
-            "Event Type Provider"
-
-        EventTypeReceiver ->
-            "Event Type Receiver"
-
-        EventTypeInflow ->
-            "Event Type Incoming Resource"
-
-        EventTypeOutflow ->
-            "Event Type Outgoing Resource"
-
-        EventTypeGroup ->
-            "Event Type Group"
-
-        EventTypeParent ->
-            "Event Type Parent Type"
-
-
 type AgentTypeLink
     = AgentTypeGroup
     | AgentTypeParent
@@ -320,16 +432,6 @@ type AgentTypeLink
 allATL : List HardLink
 allATL =
     [ AgentTypeLink AgentTypeGroup, AgentTypeLink AgentTypeParent ]
-
-
-atlToString : AgentTypeLink -> String
-atlToString x =
-    case x of
-        AgentTypeGroup ->
-            "Agent Type Group"
-
-        AgentTypeParent ->
-            "Agent Type Type"
 
 
 type CommitmentTypeLink
@@ -346,28 +448,6 @@ allCmTL =
     [ CommitmentTypeLink CommitmentTypeProvider, CommitmentTypeLink CommitmentTypeReceiver, CommitmentTypeLink CommitmentTypeInflow, CommitmentTypeLink CommitmentTypeOutflow, CommitmentTypeLink CommitmentTypeGroup, CommitmentTypeLink CommitmentTypeParent ]
 
 
-cmtlToString : CommitmentTypeLink -> String
-cmtlToString x =
-    case x of
-        CommitmentTypeProvider ->
-            "Commitment Type Provider Agent"
-
-        CommitmentTypeReceiver ->
-            "Commitment Type Receiver Agent"
-
-        CommitmentTypeInflow ->
-            "Commitment Type Incoming Resource"
-
-        CommitmentTypeOutflow ->
-            "Commitment Type Outgoing Resource"
-
-        CommitmentTypeGroup ->
-            "Commitment Type Group"
-
-        CommitmentTypeParent ->
-            "Commitment Type Parent Type"
-
-
 type ContractTypeLink
     = ContractTypeGroup
     | ContractTypeParent
@@ -376,16 +456,6 @@ type ContractTypeLink
 allCnTL : List HardLink
 allCnTL =
     [ ContractTypeLink ContractTypeGroup, ContractTypeLink ContractTypeParent ]
-
-
-cntlToString : ContractTypeLink -> String
-cntlToString x =
-    case x of
-        ContractTypeGroup ->
-            "Contract Type Group"
-
-        ContractTypeParent ->
-            "Contract Type Type"
 
 
 type ProcessTypeLink
@@ -398,16 +468,6 @@ allPTL =
     [ ProcessTypeLink ProcessTypeGroup, ProcessTypeLink ProcessTypeParent ]
 
 
-ptlToString : ProcessTypeLink -> String
-ptlToString x =
-    case x of
-        ProcessTypeGroup ->
-            "Process Type Group"
-
-        ProcessTypeParent ->
-            "Process Type Parent Type"
-
-
 type GroupTypeLink
     = GroupTypeGroup
     | GroupTypeParent
@@ -418,18 +478,8 @@ allGTL =
     [ GroupTypeLink GroupTypeGroup, GroupTypeLink GroupTypeParent ]
 
 
-gtlToString : GroupTypeLink -> String
-gtlToString x =
-    case x of
-        GroupTypeGroup ->
-            "Group Type Group"
-
-        GroupTypeParent ->
-            "Group Type Parent Type"
-
-
-hlToChoice : HardLink -> List HardLink
-hlToChoice hardlink =
+toChoice : HardLink -> List HardLink
+toChoice hardlink =
     case hardlink of
         ResourceLink y ->
             rlToChoice y
@@ -660,3 +710,238 @@ gtlToChoice hl =
 
         GroupTypeParent ->
             allGTL
+
+
+toScope : HardLink -> Scope
+toScope x =
+    case x of
+        ResourceLink y ->
+            rlToScope y
+
+        EventLink y ->
+            elToScope y
+
+        AgentLink y ->
+            alToScope y
+
+        CommitmentLink y ->
+            cmlToScope y
+
+        ContractLink y ->
+            cnlToScope y
+
+        ProcessLink y ->
+            plToScope y
+
+        GroupLink y ->
+            glToScope y
+
+        ResourceTypeLink y ->
+            rtlToScope y
+
+        EventTypeLink y ->
+            etlToScope y
+
+        AgentTypeLink y ->
+            atlToScope y
+
+        CommitmentTypeLink y ->
+            cmtlToScope y
+
+        ContractTypeLink y ->
+            cntlToScope y
+
+        ProcessTypeLink y ->
+            ptlToScope y
+
+        GroupTypeLink y ->
+            gtlToScope y
+
+
+rlToScope : ResourceLink -> Scope
+rlToScope x =
+    case x of
+        ResourceGroup ->
+            HasType (Type.TType TType.Group)
+
+        ResourceType ->
+            HasType (Type.HType HType.ResourceType)
+
+
+elToScope : EventLink -> Scope
+elToScope x =
+    case x of
+        EventProvider ->
+            HasType (Type.TType TType.Agent)
+
+        EventReceiver ->
+            HasType (Type.TType TType.Agent)
+
+        EventInflow ->
+            HasType (Type.TType TType.Resource)
+
+        EventOutflow ->
+            HasType (Type.TType TType.Resource)
+
+        EventGroup ->
+            HasType (Type.TType TType.Group)
+
+        EventType ->
+            HasType (Type.HType HType.EventType)
+
+
+alToScope : AgentLink -> Scope
+alToScope x =
+    case x of
+        AgentGroup ->
+            HasType (Type.TType TType.Group)
+
+        AgentType ->
+            HasType (Type.HType HType.AgentType)
+
+
+cmlToScope : CommitmentLink -> Scope
+cmlToScope x =
+    case x of
+        CommitmentProvider ->
+            HasType (Type.TType TType.Agent)
+
+        CommitmentReceiver ->
+            HasType (Type.TType TType.Agent)
+
+        CommitmentInflow ->
+            HasType (Type.TType TType.Resource)
+
+        CommitmentOutflow ->
+            HasType (Type.TType TType.Resource)
+
+        CommitmentGroup ->
+            HasType (Type.TType TType.Group)
+
+        CommitmentType ->
+            HasType (Type.HType HType.CommitmentType)
+
+
+cnlToScope : ContractLink -> Scope
+cnlToScope x =
+    case x of
+        ContractGroup ->
+            HasType (Type.TType TType.Group)
+
+        ContractType ->
+            HasType (Type.HType HType.ContractType)
+
+
+plToScope : ProcessLink -> Scope
+plToScope x =
+    case x of
+        ProcessGroup ->
+            HasType (Type.TType TType.Group)
+
+        ProcessType ->
+            HasType (Type.HType HType.ProcessType)
+
+
+glToScope : GroupLink -> Scope
+glToScope x =
+    case x of
+        GroupGroup ->
+            HasType (Type.TType TType.Group)
+
+        GroupType ->
+            HasType (Type.HType HType.GroupType)
+
+
+rtlToScope : ResourceTypeLink -> Scope
+rtlToScope x =
+    case x of
+        ResourceTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        ResourceTypeParent ->
+            HasType (Type.HType HType.ResourceType)
+
+
+etlToScope : EventTypeLink -> Scope
+etlToScope x =
+    case x of
+        EventTypeProvider ->
+            HasType (Type.TType TType.Agent)
+
+        EventTypeReceiver ->
+            HasType (Type.TType TType.Agent)
+
+        EventTypeInflow ->
+            -- TODO an inflow can also defined by be a RT
+            HasType (Type.TType TType.Resource)
+
+        EventTypeOutflow ->
+            HasType (Type.TType TType.Resource)
+
+        EventTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        EventTypeParent ->
+            HasType (Type.HType HType.EventType)
+
+
+atlToScope : AgentTypeLink -> Scope
+atlToScope x =
+    case x of
+        AgentTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        AgentTypeParent ->
+            HasType (Type.HType HType.AgentType)
+
+
+cmtlToScope : CommitmentTypeLink -> Scope
+cmtlToScope x =
+    case x of
+        CommitmentTypeProvider ->
+            HasType (Type.TType TType.Agent)
+
+        CommitmentTypeReceiver ->
+            HasType (Type.TType TType.Agent)
+
+        CommitmentTypeInflow ->
+            HasType (Type.TType TType.Resource)
+
+        CommitmentTypeOutflow ->
+            HasType (Type.TType TType.Resource)
+
+        CommitmentTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        CommitmentTypeParent ->
+            HasType (Type.HType HType.CommitmentType)
+
+
+cntlToScope : ContractTypeLink -> Scope
+cntlToScope x =
+    case x of
+        ContractTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        ContractTypeParent ->
+            HasType (Type.HType HType.ContractType)
+
+
+ptlToScope : ProcessTypeLink -> Scope
+ptlToScope x =
+    case x of
+        ProcessTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        ProcessTypeParent ->
+            HasType (Type.HType HType.ProcessType)
+
+
+gtlToScope : GroupTypeLink -> Scope
+gtlToScope x =
+    case x of
+        GroupTypeGroup ->
+            HasType (Type.TType TType.Group)
+
+        GroupTypeParent ->
+            HasType (Type.HType HType.GroupType)

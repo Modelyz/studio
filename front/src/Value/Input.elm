@@ -8,10 +8,12 @@ import Element.Input as Input
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope)
 import Shared
+import Value.DeepLink as DeepLink
 import Value.Expression as Expression exposing (Expression(..))
 import Value.Observable as Observable exposing (Observable(..))
-import Value.Rational as R
+import Value.Rational as Rational
 import Value.Value as Value exposing (..)
+import Value.ValueSelection as ValueSelection
 import View exposing (..)
 import View.Style exposing (..)
 
@@ -59,7 +61,7 @@ inputValue c s model v =
                         |> (\r ->
                                 case r of
                                     Ok val ->
-                                        text <| "= " ++ R.toString val
+                                        text <| "= " ++ Rational.toString val
 
                                     Err err ->
                                         text <| "= error : " ++ err
@@ -87,7 +89,7 @@ inputObservable c s model targetPath obs v =
     case obs of
         ObsNumber n ->
             Input.text
-                [ width <| px <| R.adaptRF n.val
+                [ width <| px <| Rational.adaptRF n.val
                 , htmlAttribute <| Attr.title n.input
                 , Background.color
                     (case n.val of
@@ -103,7 +105,7 @@ inputObservable c s model targetPath obs v =
                 ]
                 { onChange =
                     \x ->
-                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = R.fromString x |> Result.map Tuple.first }) v.expr }
+                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = Rational.fromString x |> Result.map Tuple.first }) v.expr }
                 , text =
                     n.input
                 , placeholder =
@@ -113,7 +115,7 @@ inputObservable c s model targetPath obs v =
                         (text
                             (case n.val of
                                 Ok r ->
-                                    "= " ++ R.toString r
+                                    "= " ++ Rational.toString r
 
                                 Err "" ->
                                     ""
@@ -125,5 +127,35 @@ inputObservable c s model targetPath obs v =
                 }
 
         -- TODO
-        _ ->
-            text "TODO"
+        ObsValue (ValueSelection.SelectedValue what for name) ->
+            row [ height fill, htmlAttribute <| Attr.title name ]
+                [ text <|
+                    case
+                        Value.getByUuid for s.state.values
+                            |> Result.andThen (Value.eval s.state.values)
+                    of
+                        Err err ->
+                            err
+
+                        Ok r ->
+                            Rational.toString r
+                ]
+
+        ObsValue ValueSelection.UndefinedValue ->
+            row [ height fill ] [ text "Unselected value" ]
+
+        ObsLink deeplink ->
+            row [ height fill ]
+                [ text <|
+                    case
+                        {- DeepLink.eval s.state.values deeplink
+                           |> Result.andThen (Value.eval s.state.values)
+                        -}
+                        Err "TODO"
+                    of
+                        Err err ->
+                            err
+
+                        Ok r ->
+                            Rational.toString r
+                ]

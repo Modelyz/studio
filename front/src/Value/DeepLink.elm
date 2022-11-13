@@ -1,11 +1,13 @@
-module Value.DeepLink exposing (DeepLink(..), addTail, isComplete, terminate, toChoice, toDisplay, toScope, toString)
+module Value.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope, toString)
 
 import Dict
 import Hierarchy.Type as HType
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Scope.Scope as Scope exposing (Scope(..))
 import Type exposing (Type)
 import Typed.Type as TType
-import Value.HardLink as HL exposing (HardLink)
+import Value.HardLink as HardLink exposing (HardLink)
 
 
 type DeepLink
@@ -29,6 +31,57 @@ toString v =
         Null ->
             -- FIXME
             "Null"
+
+
+encode : DeepLink -> Encode.Value
+encode deeplink =
+    case deeplink of
+        -- TODO we shouldn't be able to add an incomplete deeplink here
+        Link hl dl ->
+            -- FIXME
+            Encode.object
+                [ ( "type", Encode.string "Link" )
+                , ( "hardlink", HardLink.encode hl )
+                , ( "deeplink", encode dl )
+                ]
+
+        Null ->
+            -- FIXME
+            Encode.object
+                [ ( "type", Encode.string "Null" )
+                ]
+
+        EndPoint scope name ->
+            -- FIXME
+            Encode.object
+                [ ( "type", Encode.string "Endpoint" )
+                , ( "scope", Scope.encode scope )
+                , ( "name", Encode.string name )
+                ]
+
+
+decoder : Decoder DeepLink
+decoder =
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\t ->
+                case t of
+                    "Link" ->
+                        Decode.map2 Link
+                            (Decode.field "hardlink" HardLink.decoder)
+                            (Decode.field "deeplink" decoder)
+
+                    "Null" ->
+                        Decode.succeed Null
+
+                    "Endpoint" ->
+                        Decode.map2 EndPoint
+                            (Decode.field "scope" Scope.decoder)
+                            (Decode.field "name" Decode.string)
+
+                    _ ->
+                        Decode.fail "Unknown type of DeepLink"
+            )
 
 
 addTail : HardLink -> DeepLink -> DeepLink
@@ -77,7 +130,7 @@ toDisplay deeplink =
             "Empty"
 
         Link hl dl ->
-            HL.toString hl ++ " → " ++ toDisplay dl
+            HardLink.toString hl ++ " → " ++ toDisplay dl
 
         EndPoint scope name ->
             -- TODO display without uuid
@@ -93,7 +146,7 @@ toScope scope deeplink =
             scope
 
         Link hl dl ->
-            toScope (hlToScope hl) dl
+            toScope (HardLink.toScope hl) dl
 
         EndPoint vtscope name ->
             scope
@@ -105,281 +158,46 @@ toChoice scope =
         HasUserType t ht uuid ->
             case t of
                 Type.TType TType.Resource ->
-                    HL.allRL
+                    HardLink.allRL
 
                 Type.TType TType.Event ->
-                    HL.allEL
+                    HardLink.allEL
 
                 Type.TType TType.Agent ->
-                    HL.allAL
+                    HardLink.allAL
 
                 Type.TType TType.Commitment ->
-                    HL.allCmL
+                    HardLink.allCmL
 
                 Type.TType TType.Contract ->
-                    HL.allCnL
+                    HardLink.allCnL
 
                 Type.TType TType.Process ->
-                    HL.allPL
+                    HardLink.allPL
 
                 Type.TType TType.Group ->
-                    HL.allGL
+                    HardLink.allGL
 
                 Type.HType HType.ResourceType ->
-                    HL.allRL
+                    HardLink.allRL
 
                 Type.HType HType.EventType ->
-                    HL.allEL
+                    HardLink.allEL
 
                 Type.HType HType.AgentType ->
-                    HL.allAL
+                    HardLink.allAL
 
                 Type.HType HType.CommitmentType ->
-                    HL.allCmL
+                    HardLink.allCmL
 
                 Type.HType HType.ContractType ->
-                    HL.allCnL
+                    HardLink.allCnL
 
                 Type.HType HType.ProcessType ->
-                    HL.allPL
+                    HardLink.allPL
 
                 Type.HType HType.GroupType ->
-                    HL.allGL
+                    HardLink.allGL
 
         _ ->
             []
-
-
-hlToScope : HardLink -> Scope
-hlToScope x =
-    case x of
-        HL.ResourceLink y ->
-            rlToScope y
-
-        HL.EventLink y ->
-            elToScope y
-
-        HL.AgentLink y ->
-            alToScope y
-
-        HL.CommitmentLink y ->
-            cmlToScope y
-
-        HL.ContractLink y ->
-            cnlToScope y
-
-        HL.ProcessLink y ->
-            plToScope y
-
-        HL.GroupLink y ->
-            glToScope y
-
-        HL.ResourceTypeLink y ->
-            rtlToScope y
-
-        HL.EventTypeLink y ->
-            etlToScope y
-
-        HL.AgentTypeLink y ->
-            atlToScope y
-
-        HL.CommitmentTypeLink y ->
-            cmtlToScope y
-
-        HL.ContractTypeLink y ->
-            cntlToScope y
-
-        HL.ProcessTypeLink y ->
-            ptlToScope y
-
-        HL.GroupTypeLink y ->
-            gtlToScope y
-
-
-rlToScope : HL.ResourceLink -> Scope
-rlToScope x =
-    case x of
-        HL.ResourceGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ResourceType ->
-            HasType (Type.HType HType.ResourceType)
-
-
-elToScope : HL.EventLink -> Scope
-elToScope x =
-    case x of
-        HL.EventProvider ->
-            HasType (Type.TType TType.Agent)
-
-        HL.EventReceiver ->
-            HasType (Type.TType TType.Agent)
-
-        HL.EventInflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.EventOutflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.EventGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.EventType ->
-            HasType (Type.HType HType.EventType)
-
-
-alToScope : HL.AgentLink -> Scope
-alToScope x =
-    case x of
-        HL.AgentGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.AgentType ->
-            HasType (Type.HType HType.AgentType)
-
-
-cmlToScope : HL.CommitmentLink -> Scope
-cmlToScope x =
-    case x of
-        HL.CommitmentProvider ->
-            HasType (Type.TType TType.Agent)
-
-        HL.CommitmentReceiver ->
-            HasType (Type.TType TType.Agent)
-
-        HL.CommitmentInflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.CommitmentOutflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.CommitmentGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.CommitmentType ->
-            HasType (Type.HType HType.CommitmentType)
-
-
-cnlToScope : HL.ContractLink -> Scope
-cnlToScope x =
-    case x of
-        HL.ContractGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ContractType ->
-            HasType (Type.HType HType.ContractType)
-
-
-plToScope : HL.ProcessLink -> Scope
-plToScope x =
-    case x of
-        HL.ProcessGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ProcessType ->
-            HasType (Type.HType HType.ProcessType)
-
-
-glToScope : HL.GroupLink -> Scope
-glToScope x =
-    case x of
-        HL.GroupGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.GroupType ->
-            HasType (Type.HType HType.GroupType)
-
-
-rtlToScope : HL.ResourceTypeLink -> Scope
-rtlToScope x =
-    case x of
-        HL.ResourceTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ResourceTypeParent ->
-            HasType (Type.HType HType.ResourceType)
-
-
-etlToScope : HL.EventTypeLink -> Scope
-etlToScope x =
-    case x of
-        HL.EventTypeProvider ->
-            HasType (Type.TType TType.Agent)
-
-        HL.EventTypeReceiver ->
-            HasType (Type.TType TType.Agent)
-
-        HL.EventTypeInflow ->
-            -- TODO an inflow can also defined by be a RT
-            HasType (Type.TType TType.Resource)
-
-        HL.EventTypeOutflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.EventTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.EventTypeParent ->
-            HasType (Type.HType HType.EventType)
-
-
-atlToScope : HL.AgentTypeLink -> Scope
-atlToScope x =
-    case x of
-        HL.AgentTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.AgentTypeParent ->
-            HasType (Type.HType HType.AgentType)
-
-
-cmtlToScope : HL.CommitmentTypeLink -> Scope
-cmtlToScope x =
-    case x of
-        HL.CommitmentTypeProvider ->
-            HasType (Type.TType TType.Agent)
-
-        HL.CommitmentTypeReceiver ->
-            HasType (Type.TType TType.Agent)
-
-        HL.CommitmentTypeInflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.CommitmentTypeOutflow ->
-            HasType (Type.TType TType.Resource)
-
-        HL.CommitmentTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.CommitmentTypeParent ->
-            HasType (Type.HType HType.CommitmentType)
-
-
-cntlToScope : HL.ContractTypeLink -> Scope
-cntlToScope x =
-    case x of
-        HL.ContractTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ContractTypeParent ->
-            HasType (Type.HType HType.ContractType)
-
-
-ptlToScope : HL.ProcessTypeLink -> Scope
-ptlToScope x =
-    case x of
-        HL.ProcessTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.ProcessTypeParent ->
-            HasType (Type.HType HType.ProcessType)
-
-
-gtlToScope : HL.GroupTypeLink -> Scope
-gtlToScope x =
-    case x of
-        HL.GroupTypeGroup ->
-            HasType (Type.TType TType.Group)
-
-        HL.GroupTypeParent ->
-            HasType (Type.HType HType.GroupType)

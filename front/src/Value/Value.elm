@@ -25,7 +25,21 @@ compare v =
 
 fromUuid : Uuid -> Dict String Value -> Dict String Value
 fromUuid uuid =
+    -- TODO rename to filterUuid
     Dict.filter (\_ v -> uuid == v.for)
+
+
+getByUuid : Uuid -> Dict String Value -> Result String Value
+getByUuid uuid all =
+    fromUuid uuid all
+        |> Dict.values
+        |> List.head
+        |> Result.fromMaybe "Missing value"
+
+
+eval : Dict String Value -> Value -> Result String Rational
+eval allVals value =
+    Expression.eval allVals value.expr
 
 
 encode : Value -> Encode.Value
