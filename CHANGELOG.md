@@ -2,8 +2,9 @@
 
 [Back to app](../)
 
-## version 9 -- unreleased
+## version 9 -- 2022-11-14
 
+* (draft) Ability to create a value based on another value dynamically depending on the current context
 * Fixed identifier still appearing after removing the identifier type
 * Improved error and status handling
 * internal changes
