@@ -2,6 +2,7 @@ module Commitment.Commitment exposing (Commitment, compare, decoder, encode)
 
 import Agent.Agent as Agent exposing (Agent)
 import Dict exposing (Dict)
+import Flow exposing (Flow)
 import Group.Group exposing (Group)
 import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
@@ -19,15 +20,15 @@ type alias Commitment =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
+    , provider : Uuid
+    , receiver : Uuid
+    , flow : Flow
+
+    -- TODO try to remove non intrinsic fields : identifiers, values, display
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , groups : Dict String Group
     , display : Dict String String
-
-    --, qty : Rational
-    --        , rtype: ResourceType
-    --, provider : Uuid
-    --, receiver : Uuid
     }
 
 
@@ -43,16 +44,17 @@ encode c =
 
 decoder : Decode.Decoder Commitment
 decoder =
-    Decode.map4
-        (\what uuid type_ when ->
-            {- qty provider receiver -}
-            Commitment what uuid type_ when Dict.empty Dict.empty Dict.empty Dict.empty
-         --qty provider receiver
+    Decode.map7
+        (\what uuid type_ when provider receiver flow ->
+            Commitment what uuid type_ when provider receiver flow Dict.empty Dict.empty Dict.empty Dict.empty
         )
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "provider" Uuid.decoder)
+        (Decode.field "receiver" Uuid.decoder)
+        (Decode.field "flow" Flow.decoder)
 
 
 

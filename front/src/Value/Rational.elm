@@ -1,4 +1,4 @@
-module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, multiply, neg, pow, toString)
+module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, multiply, neg, pow, rdecoder, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -166,10 +166,27 @@ toString (Rational n d) =
            )
 
 
-decoder : Decoder (Result String Rational)
-decoder =
+rdecoder : Decoder (Result String Rational)
+rdecoder =
     Decode.string
         |> Decode.map (fromString >> Result.map Tuple.first)
+
+
+decoder : Decoder Rational
+decoder =
+    Decode.string
+        |> Decode.andThen
+            (fromString
+                >> Result.map Tuple.first
+                >> (\r ->
+                        case r of
+                            Ok rational ->
+                                Decode.succeed rational
+
+                            Err msg ->
+                                Decode.fail "plop"
+                   )
+            )
 
 
 encode : Rational -> Encode.Value

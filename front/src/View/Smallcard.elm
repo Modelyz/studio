@@ -1,4 +1,4 @@
-module View.Smallcard exposing (clickableCard, clickableRemovableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, hViewHalfCard, sClickableCard, tClickableRemovableCard, tItemClickableCard, viewHalfCard, viewSmallCard)
+module View.Smallcard exposing (clickableCard, clickableRemovableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, hViewHalfCard, sClickableCard, tClickableCard, tClickableRemovableCard, tItemClickableCard, tViewHalfCard, viewHalfCard, viewSmallCard)
 
 import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
@@ -63,6 +63,25 @@ viewHalfCard maybeOnDelete title =
         ]
 
 
+
+-- TODO try to remove the split t/h by replacing Typed a and Hierarchic b with a and b, and passing the relevant function to extract the wanted field
+-- something like:
+{-
+   xViewHalfCard : msg -> Dict String a -> Dict String b -> Dict String Configuration -> a -> Element msg
+   xViewHalfCard onDelete allT allH configs t =
+       viewHalfCard
+           (Just onDelete)
+           (text <| tDisplay allT allH configs SmallcardTitle t)
+-}
+
+
+tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
+tViewHalfCard onDelete allT allH configs t =
+    viewHalfCard
+        (Just onDelete)
+        (text <| tDisplay allT allH configs SmallcardTitle t)
+
+
 hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
 hViewHalfCard onDelete allT allH configs h =
     viewHalfCard
@@ -92,6 +111,14 @@ sClickableCard onInput allT allH configs h scope =
         (onInput scope)
         (text <| hDisplay allT allH configs SmallcardTitle h)
         (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+
+
+tClickableCard : (Maybe (Typed a) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
+tClickableCard onInput allT allH configs t =
+    clickableCard
+        (onInput (Just t))
+        (text <| tDisplay allT allH configs SmallcardTitle t)
+        (H.find allH t.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
 
 
 hClickableCard : (Maybe (Hierarchic b) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg

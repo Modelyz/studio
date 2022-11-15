@@ -8,7 +8,7 @@ import Scope.Scope as Scope
 import Type exposing (Type)
 import Value.DeepLink as DeepLink exposing (DeepLink(..))
 import Value.HardLink as HardLink
-import Value.Rational as R exposing (Rational(..))
+import Value.Rational as Rational exposing (Rational(..))
 import Value.ValueSelection as VS exposing (ValueSelection(..))
 
 
@@ -52,7 +52,7 @@ encode obs =
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
                 , ( "input", Encode.string n.input )
-                , ( "val", Result.map R.encode n.val |> Result.withDefault (Encode.string "") )
+                , ( "val", Result.map Rational.encode n.val |> Result.withDefault (Encode.string "") )
                 ]
 
         ObsValue vs ->
@@ -87,7 +87,7 @@ decoder =
                         Decode.map3 (\n i v -> ObsNumber { name = n, input = i, val = v })
                             (Decode.field "name" Decode.string)
                             (Decode.field "input" Decode.string)
-                            (Decode.field "val" R.decoder)
+                            (Decode.field "val" Rational.rdecoder)
 
                     "SelectedValue" ->
                         Decode.map ObsValue VS.decoder

@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 10 -- unreleased
+
+* Ability to select the provider and receiver of a commitment
+
 ## version 9 -- 2022-11-14
 
 * (draft) Ability to create a value based on another value dynamically depending on the current context

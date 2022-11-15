@@ -1,5 +1,6 @@
 module Commitment.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Agent.Agent exposing (Agent)
 import Commitment.Commitment exposing (Commitment)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
@@ -7,6 +8,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
+import Flow exposing (Flow)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
@@ -30,6 +32,7 @@ import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
+import View.FlatSelect exposing (hflatselect, tflatselect)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
@@ -81,7 +84,13 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
+
+    -- TODO try to rename flatselect to type_ by passing a .type_ function to
+    -- extract the type_ from the model in the select view
     , flatselect : Maybe HierarchicType
+    , provider : Maybe Agent
+    , receiver : Maybe Agent
+    , flow : Maybe Flow
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Group
@@ -94,6 +103,9 @@ type alias Model =
 
 type Step
     = StepType
+    | StepProvider
+    | StepReceiver
+    | StepFlow
     | StepIdentifiers
     | StepValues
     | StepGroups
@@ -101,6 +113,8 @@ type Step
 
 type Msg
     = InputType (Maybe HierarchicType)
+    | InputProvider (Maybe Agent)
+    | InputReceiver (Maybe Agent)
     | InputIdentifier Identifier
     | InputValue Value
     | InputGroups (Dict String Group)
@@ -143,6 +157,9 @@ init s f =
             { route = f.route
             , isNew = isNew
             , flatselect = Nothing
+            , provider = Nothing
+            , receiver = Nothing
+            , flow = Nothing
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
@@ -151,7 +168,7 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
@@ -200,6 +217,12 @@ update s msg model =
               }
             , Effect.none
             )
+
+        InputProvider ma ->
+            ( { model | provider = ma }, Effect.none )
+
+        InputReceiver ma ->
+            ( { model | receiver = ma }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -256,6 +279,15 @@ checkStep model =
         Step StepType ->
             Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Commitment Type")
 
+        Step StepProvider ->
+            Maybe.map (\_ -> Ok ()) model.provider |> Maybe.withDefault (Err "You must select a Provider")
+
+        Step StepReceiver ->
+            Maybe.map (\_ -> Ok ()) model.receiver |> Maybe.withDefault (Err "You must select a Receiver")
+
+        Step StepFlow ->
+            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Resource or Resource Type")
+
         Step StepIdentifiers ->
             Ok ()
 
@@ -268,13 +300,27 @@ checkStep model =
 
 validate : Model -> Result String Commitment
 validate m =
-    case m.flatselect of
-        Just h ->
-            -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid h.uuid (millisToPosix 0) Dict.empty Dict.empty Dict.empty Dict.empty
-
-        Nothing ->
-            Err "You must select a Commitment Type"
+    -- TODO check that TType thing is useful
+    Maybe.map4
+        (\type_ provider receiver flow ->
+            constructor
+                typedConstructor
+                m.uuid
+                type_
+                (millisToPosix 0)
+                provider.uuid
+                receiver.uuid
+                flow
+                Dict.empty
+                Dict.empty
+                Dict.empty
+                Dict.empty
+        )
+        (Maybe.map .uuid m.flatselect)
+        m.provider
+        m.receiver
+        m.flow
+        |> Result.fromMaybe "You must select a Commitment Type"
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -283,26 +329,47 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    let
-                        allHwithIdentifiers =
-                            allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-                    in
-                    column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                            [ h2 "Type"
-                            , model.flatselect
-                                |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
-                                |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
-                                |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
-                            ]
-                        , h2 "Choose the type of the new Commitment:"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
-                            (allHwithIdentifiers
-                                |> Dict.values
-                                |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Commitment Types yet)")
-                            )
+                    hflatselect
+                        { allT = allT
+                        , allH = allH
+                        , mstuff = model.flatselect
+                        , onInput = InputType
+                        , title = "Type"
+                        , explain = "Choose the type of the commitment:"
+                        , empty = "(There are no Commitment Types yet to choose from)"
+                        }
+                        s
+
+                Step.Step StepProvider ->
+                    column [ spacing 20 ]
+                        [ tflatselect
+                            { allT = .state >> .agents
+                            , allH = .state >> .agentTypes
+                            , mstuff = model.provider
+                            , onInput = InputProvider
+                            , title = "Agent"
+                            , explain = "Choose the provider of the commitment:"
+                            , empty = "(There are no agents yet to choose from)"
+                            }
+                            s
                         ]
+
+                Step.Step StepReceiver ->
+                    column [ spacing 20 ]
+                        [ tflatselect
+                            { allT = .state >> .agents
+                            , allH = .state >> .agentTypes
+                            , mstuff = model.receiver
+                            , onInput = InputReceiver
+                            , title = "Agent"
+                            , explain = "Choose the receiver of the commitment:"
+                            , empty = "(There are no agents yet to choose from)"
+                            }
+                            s
+                        ]
+
+                Step.Step StepFlow ->
+                    column [] [ h2 "Flow" ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model
