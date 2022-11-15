@@ -29,6 +29,7 @@ import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
+import View.FlatSelect exposing (hflatselect, tflatselect)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
@@ -270,26 +271,16 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    let
-                        allHwithIdentifiers =
-                            allH s |> Dict.map (\_ h -> { h | identifiers = s.state.identifiers |> Dict.filter (\_ id -> h.uuid == id.identifiable) })
-                    in
-                    column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                            [ h2 "Type"
-                            , model.flatselect
-                                |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
-                                |> Maybe.map (hViewHalfCard (InputType Nothing) (allT s) allHwithIdentifiers s.state.configs)
-                                |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
-                            ]
-                        , h2 "Optional parent type for the new Group Type (it can be hierarchical)"
-                        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
-                            (allHwithIdentifiers
-                                |> Dict.values
-                                |> List.map (hClickableCard InputType (allT s) allHwithIdentifiers s.state.configs)
-                                |> withDefaultContent (p "(There are no Group Types yet)")
-                            )
-                        ]
+                    hflatselect
+                        { allT = allT
+                        , allH = allH
+                        , mstuff = model.flatselect
+                        , onInput = InputType
+                        , title = "Type:"
+                        , explain = "Optional parent type for the new Group Type (it can be hierarchical)"
+                        , empty = "(There are no Group Types yet to choose from)"
+                        }
+                        s
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model
