@@ -112,12 +112,12 @@ type Step
 
 
 type Msg
-    = InputType (Maybe HierarchicType)
-    | InputProvider (Maybe Agent)
-    | InputReceiver (Maybe Agent)
+    = SelectType (Maybe HierarchicType)
+    | SelectProvider (Maybe Agent)
+    | SelectReceiver (Maybe Agent)
     | InputIdentifier Identifier
     | InputValue Value
-    | InputGroups (Dict String Group)
+    | SelectGroups (Dict String Group)
     | Button Step.Msg
 
 
@@ -205,7 +205,7 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mh ->
+        SelectType mh ->
             ( { model
                 | flatselect = mh
                 , identifiers =
@@ -218,10 +218,10 @@ update s msg model =
             , Effect.none
             )
 
-        InputProvider ma ->
+        SelectProvider ma ->
             ( { model | provider = ma }, Effect.none )
 
-        InputReceiver ma ->
+        SelectReceiver ma ->
             ( { model | receiver = ma }, Effect.none )
 
         InputIdentifier i ->
@@ -230,7 +230,7 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups gs ->
+        SelectGroups gs ->
             ( { model | groups = gs }, Effect.none )
 
         Button Step.Added ->
@@ -333,7 +333,7 @@ viewContent model s =
                         { allT = allT
                         , allH = allH
                         , mstuff = model.flatselect
-                        , onInput = InputType
+                        , onInput = SelectType
                         , title = "Type"
                         , explain = "Choose the type of the commitment:"
                         , empty = "(There are no Commitment Types yet to choose from)"
@@ -346,8 +346,8 @@ viewContent model s =
                             { allT = .state >> .agents
                             , allH = .state >> .agentTypes
                             , mstuff = model.provider
-                            , onInput = InputProvider
-                            , title = "Agent"
+                            , onInput = SelectProvider
+                            , title = "Provider:"
                             , explain = "Choose the provider of the commitment:"
                             , empty = "(There are no agents yet to choose from)"
                             }
@@ -360,8 +360,8 @@ viewContent model s =
                             { allT = .state >> .agents
                             , allH = .state >> .agentTypes
                             , mstuff = model.receiver
-                            , onInput = InputReceiver
-                            , title = "Agent"
+                            , onInput = SelectReceiver
+                            , title = "Receiver:"
                             , explain = "Choose the receiver of the commitment:"
                             , empty = "(There are no agents yet to choose from)"
                             }
@@ -372,7 +372,7 @@ viewContent model s =
                     column [] [ h2 "Flow" ]
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model
+                    inputGroups { onInput = SelectGroups } s model
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
