@@ -29,7 +29,7 @@ import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hflatselect, tflatselect)
+import View.FlatSelect exposing (hFlatselect, tFlatselect)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
@@ -76,7 +76,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , flatselect : Maybe HierarchicType
+    , parent : Maybe HierarchicType
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Group
@@ -137,7 +137,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , flatselect = Nothing
+            , parent = Nothing
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
@@ -163,7 +163,7 @@ init s f =
                         h.parent |> Maybe.andThen (H.find (allH s))
                 in
                 { adding
-                    | flatselect = mp
+                    | parent = mp
                     , uuid = h.uuid
                     , identifiers =
                         initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mp h.uuid adding.isNew
@@ -185,7 +185,7 @@ update s msg model =
     case msg of
         InputType mh ->
             ( { model
-                | flatselect = mh
+                | parent = mh
                 , identifiers =
                     initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
                         |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
@@ -262,7 +262,7 @@ checkStep model =
 
 validate : Model -> Result String HierarchicType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.flatselect) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.parent) Dict.empty Dict.empty Dict.empty Dict.empty
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -271,10 +271,10 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hflatselect
+                    hFlatselect
                         { allT = allT
                         , allH = allH
-                        , mstuff = model.flatselect
+                        , mstuff = model.parent
                         , onInput = InputType
                         , title = "Type:"
                         , explain = "Optional parent type for the new Group Type (it can be hierarchical)"

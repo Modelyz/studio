@@ -26,7 +26,7 @@ import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hflatselect, tflatselect)
+import View.FlatSelect exposing (hFlatselect, tFlatselect)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
@@ -78,7 +78,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , flatselect : Maybe HierarchicType
+    , type_ : Maybe HierarchicType
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , warning : String
@@ -135,7 +135,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , flatselect = Nothing
+            , type_ = Nothing
             , uuid = newUuid
             , seed = newSeed
             , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
@@ -154,7 +154,7 @@ init s f =
                         H.find (allH s) t.type_
                 in
                 { adding
-                    | flatselect = parent
+                    | type_ = parent
                     , uuid = t.uuid
                     , identifiers =
                         initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid adding.isNew
@@ -174,7 +174,7 @@ update s msg model =
     case msg of
         InputType mh ->
             ( { model
-                | flatselect = mh
+                | type_ = mh
                 , identifiers =
                     initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
                         |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
@@ -226,7 +226,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Group Type")
+            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Group Type")
 
         Step StepIdentifiers ->
             Ok ()
@@ -237,7 +237,7 @@ checkStep model =
 
 validate : Model -> Result String TypedType
 validate m =
-    case m.flatselect of
+    case m.type_ of
         Just h ->
             -- TODO check that TType thing is useful
             Ok <| constructor typedConstructor m.uuid h.uuid Empty Dict.empty Dict.empty Dict.empty
@@ -252,10 +252,10 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hflatselect
+                    hFlatselect
                         { allT = allT
                         , allH = allH
-                        , mstuff = model.flatselect
+                        , mstuff = model.type_
                         , onInput = InputType
                         , title = "Type:"
                         , explain = "Choose the type of the new group:"

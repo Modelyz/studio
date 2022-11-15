@@ -1,4 +1,4 @@
-module View.FlatSelect exposing (TConfig, hflatselect, tflatselect)
+module View.FlatSelect exposing (TConfig, hFlatselect, tFlatselect)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -43,8 +43,8 @@ type alias HConfig a b msg =
 -- TODO : try to remove modules with a partial Model by passing the target (such as flatselect here)
 
 
-tflatselect : TConfig a b msg -> Shared.Model -> Element msg
-tflatselect c s =
+tFlatselect : TConfig a b msg -> Shared.Model -> Element msg
+tFlatselect c s =
     let
         allTwithIdentifiers =
             c.allT s
@@ -75,8 +75,8 @@ tflatselect c s =
         ]
 
 
-hflatselect : HConfig a b msg -> Shared.Model -> Element msg
-hflatselect c s =
+hFlatselect : HConfig a b msg -> Shared.Model -> Element msg
+hFlatselect c s =
     let
         allHwithIdentifiers =
             c.allH s

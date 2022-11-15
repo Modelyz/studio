@@ -32,7 +32,7 @@ import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hflatselect, tflatselect)
+import View.FlatSelect exposing (hFlatselect, tFlatselect)
 import View.Smallcard exposing (hClickableCard, hViewHalfCard)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (..)
@@ -84,10 +84,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-
-    -- TODO try to rename flatselect to type_ by passing a .type_ function to
-    -- extract the type_ from the model in the select view
-    , flatselect : Maybe HierarchicType
+    , type_ : Maybe HierarchicType
     , provider : Maybe Agent
     , receiver : Maybe Agent
     , flow : Maybe Flow
@@ -156,7 +153,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , flatselect = Nothing
+            , type_ = Nothing
             , provider = Nothing
             , receiver = Nothing
             , flow = Nothing
@@ -185,7 +182,7 @@ init s f =
                         H.find (allH s) t.type_
                 in
                 { adding
-                    | flatselect = parent
+                    | type_ = parent
                     , uuid = t.uuid
                     , identifiers =
                         initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid adding.isNew
@@ -207,7 +204,7 @@ update s msg model =
     case msg of
         SelectType mh ->
             ( { model
-                | flatselect = mh
+                | type_ = mh
                 , identifiers =
                     initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
                         |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
@@ -277,7 +274,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Commitment Type")
+            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Commitment Type")
 
         Step StepProvider ->
             Maybe.map (\_ -> Ok ()) model.provider |> Maybe.withDefault (Err "You must select a Provider")
@@ -286,7 +283,7 @@ checkStep model =
             Maybe.map (\_ -> Ok ()) model.receiver |> Maybe.withDefault (Err "You must select a Receiver")
 
         Step StepFlow ->
-            Maybe.map (\_ -> Ok ()) model.flatselect |> Maybe.withDefault (Err "You must select a Resource or Resource Type")
+            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Resource or Resource Type")
 
         Step StepIdentifiers ->
             Ok ()
@@ -316,7 +313,7 @@ validate m =
                 Dict.empty
                 Dict.empty
         )
-        (Maybe.map .uuid m.flatselect)
+        (Maybe.map .uuid m.type_)
         m.provider
         m.receiver
         m.flow
@@ -329,10 +326,10 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hflatselect
+                    hFlatselect
                         { allT = allT
                         , allH = allH
-                        , mstuff = model.flatselect
+                        , mstuff = model.type_
                         , onInput = SelectType
                         , title = "Type"
                         , explain = "Choose the type of the commitment:"
@@ -342,7 +339,7 @@ viewContent model s =
 
                 Step.Step StepProvider ->
                     column [ spacing 20 ]
-                        [ tflatselect
+                        [ tFlatselect
                             { allT = .state >> .agents
                             , allH = .state >> .agentTypes
                             , mstuff = model.provider
@@ -356,7 +353,7 @@ viewContent model s =
 
                 Step.Step StepReceiver ->
                     column [ spacing 20 ]
-                        [ tflatselect
+                        [ tFlatselect
                             { allT = .state >> .agents
                             , allH = .state >> .agentTypes
                             , mstuff = model.receiver
