@@ -62,14 +62,14 @@ tFlatselect c s =
             [ h2 c.title
             , c.mstuff
                 |> Maybe.map (tWithIdentifiers (c.allT s) (c.allH s) s.state.identifierTypes s.state.identifiers)
-                |> Maybe.map (tViewHalfCard (c.onInput Nothing) allTwithIdentifiers (c.allH s) s.state.configs)
+                |> Maybe.map (tViewHalfCard (Just <| c.onInput Nothing) allTwithIdentifiers (c.allH s) s.state.configs)
                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
             ]
         , h2 c.explain
         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
             (allTwithIdentifiers
                 |> Dict.values
-                |> List.map (tClickableCard c.onInput allTwithIdentifiers (c.allH s) s.state.configs)
+                |> List.map (\t -> tClickableCard (c.onInput <| Just t) allTwithIdentifiers (c.allH s) s.state.configs t)
                 |> withDefaultContent (p c.empty)
             )
         ]
@@ -94,14 +94,14 @@ hFlatselect c s =
             [ h2 c.title
             , c.mstuff
                 |> Maybe.map (hWithIdentifiers (c.allT s) (c.allH s) s.state.identifierTypes s.state.identifiers)
-                |> Maybe.map (hViewHalfCard (c.onInput Nothing) (c.allT s) allHwithIdentifiers s.state.configs)
+                |> Maybe.map (hViewHalfCard (Just <| c.onInput Nothing) (c.allT s) allHwithIdentifiers s.state.configs)
                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
             ]
         , h2 c.explain
         , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
             (allHwithIdentifiers
                 |> Dict.values
-                |> List.map (hClickableCard c.onInput (c.allT s) allHwithIdentifiers s.state.configs)
+                |> List.map (\h -> hClickableCard (c.onInput <| Just h) (c.allT s) allHwithIdentifiers s.state.configs h)
                 |> withDefaultContent (p c.empty)
             )
         ]

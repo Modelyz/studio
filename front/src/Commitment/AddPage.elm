@@ -9,6 +9,7 @@ import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Flow exposing (Flow)
+import Flow.Input
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
@@ -112,6 +113,7 @@ type Msg
     = SelectType (Maybe HierarchicType)
     | SelectProvider (Maybe Agent)
     | SelectReceiver (Maybe Agent)
+    | InputFlow (Maybe Flow)
     | InputIdentifier Identifier
     | InputValue Value
     | SelectGroups (Dict String Group)
@@ -202,24 +204,24 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        SelectType mh ->
+        SelectType h ->
             ( { model
-                | type_ = mh
+                | type_ = h
                 , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
+                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType h model.uuid model.isNew
                         |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
                 , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid model.isNew
+                    initValues (allT s) (allH s) s.state.valueTypes hereType h model.uuid model.isNew
                         |> Dict.union (Value.fromUuid model.uuid s.state.values)
               }
             , Effect.none
             )
 
-        SelectProvider ma ->
-            ( { model | provider = ma }, Effect.none )
+        SelectProvider a ->
+            ( { model | provider = a }, Effect.none )
 
-        SelectReceiver ma ->
-            ( { model | receiver = ma }, Effect.none )
+        SelectReceiver a ->
+            ( { model | receiver = a }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -366,7 +368,17 @@ viewContent model s =
                         ]
 
                 Step.Step StepFlow ->
-                    column [] [ h2 "Flow" ]
+                    column [ spacing 20 ]
+                        [ Flow.Input.input
+                            { flow = model.flow
+                            , onInput = InputFlow
+                            , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                            , title = "Resource:"
+                            , explain = "Choose the Resource expected to flow from the provider to the receiver"
+                            , empty = "(There are no resources yet to choose from"
+                            }
+                            s
+                        ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = SelectGroups } s model
@@ -375,7 +387,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

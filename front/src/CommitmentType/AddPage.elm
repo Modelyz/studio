@@ -91,6 +91,9 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepProviders
+    | StepReceivers
+    | StepFlow
     | StepValues
     | StepGroups
 
@@ -257,6 +260,15 @@ checkStep model =
         Step StepValues ->
             Ok ()
 
+        Step StepProviders ->
+            Ok ()
+
+        Step StepReceivers ->
+            Ok ()
+
+        Step StepFlow ->
+            Ok ()
+
         Step StepGroups ->
             Ok ()
 
@@ -290,7 +302,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

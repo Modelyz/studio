@@ -633,7 +633,7 @@ allHierarchic s t =
             s.agentTypes
 
         HType.CommitmentType ->
-            s.commitmentTypes
+            s.commitmentTypes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, parent = x.parent, identifiers = Dict.empty, values = Dict.empty, providers = x.providers, receivers = x.receivers, flow = x.flow, groups = Dict.empty, display = Dict.empty })
 
         HType.ContractType ->
             s.contractTypes

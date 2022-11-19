@@ -1,4 +1,4 @@
-module Value.Input exposing (Config, Model, inputValues)
+module Value.Input exposing (Config, inputExpression, inputValues)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -18,37 +18,33 @@ import View exposing (..)
 import View.Style exposing (..)
 
 
-type alias Model a =
-    { a | values : Dict String Value }
-
-
 type alias Config msg =
     { onEnter : msg
     , onInput : Value -> msg
     }
 
 
-inputValues : Config msg -> Shared.Model -> Model a -> Element msg
-inputValues c s model =
+inputValues : Config msg -> Shared.Model -> Dict String Value -> Element msg
+inputValues c s values =
     -- display the expression with input fields for each relevant valueType
     column [ spacing 10 ]
         (h2 "Input values"
-            :: (model.values
+            :: (values
                     |> Dict.values
                     |> List.map
-                        (inputValue c s model)
+                        (inputValue c s)
                     |> withDefaultContent (p <| "Apparently there are no values defined for this entity. Please first create one.")
                 --TODO + link
                )
         )
 
 
-inputValue : Config msg -> Shared.Model -> Model a -> Value -> Element msg
-inputValue c s model v =
+inputValue : Config msg -> Shared.Model -> Value -> Element msg
+inputValue c s v =
     column []
         [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
         , row [ spacing 5 ]
-            [ inputExpression c s model ( [], v.expr ) v
+            [ inputExpression c s ( [], v.expr ) v.expr v
 
             -- display the evaluated expression:
             , case v.expr of
@@ -70,22 +66,22 @@ inputValue c s model v =
         ]
 
 
-inputExpression : Config msg -> Shared.Model -> Model a -> ( List Int, Expression ) -> Value -> Element msg
-inputExpression c s model ( currentPath, expr ) v =
+inputExpression : Config msg -> Shared.Model -> ( List Int, Expression ) -> Expression -> Value -> Element msg
+inputExpression c s ( currentPath, expr ) ex v =
     -- used to input values into an expression
     case expr of
         Leaf obs ->
-            inputObservable c s model currentPath obs v
+            inputObservable c s currentPath obs ex v
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), inputExpression c s model ( 1 :: currentPath, e ) v ]
+            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) e v ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s model ( 2 :: currentPath, e1 ) v, text <| Expression.bToShortString o, inputExpression c s model ( 3 :: currentPath, e2 ) v, text " )" ]
+            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) ex v, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) ex v, text " )" ]
 
 
-inputObservable : Config msg -> Shared.Model -> Model a -> List Int -> Observable -> Value -> Element msg
-inputObservable c s model targetPath obs v =
+inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Value -> Element msg
+inputObservable c s targetPath obs expr v =
     case obs of
         ObsNumber n ->
             Input.text
@@ -104,8 +100,8 @@ inputObservable c s model targetPath obs v =
                     )
                 ]
                 { onChange =
-                    \x ->
-                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = x, val = Rational.fromString x |> Result.map Tuple.first }) v.expr }
+                    \str ->
+                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str, val = Rational.fromString str |> Result.map Tuple.first }) expr }
                 , text =
                     n.input
                 , placeholder =

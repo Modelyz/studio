@@ -26,6 +26,7 @@ import Spa.Page
 import State exposing (State)
 import Type
 import Typed.Type as TType
+import Value.Expression as Expression exposing (Expression)
 import Value.Input exposing (inputValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
@@ -290,7 +291,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

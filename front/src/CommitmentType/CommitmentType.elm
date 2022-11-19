@@ -8,6 +8,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
+import Scope.Scope as Scope exposing (Scope)
 import Type exposing (Type)
 import Value.Value exposing (Value)
 
@@ -18,6 +19,9 @@ type alias CommitmentType =
     , parent : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
+    , providers : Scope
+    , receivers : Scope
+    , flow : Scope
     , groups : Dict String Group
     , display : Dict String String
     }
@@ -34,14 +38,13 @@ encode ct =
 
 decoder : Decode.Decoder CommitmentType
 decoder =
-    Decode.map7 CommitmentType
+    Decode.map6 (\wh uu pa pr re fl -> CommitmentType wh uu pa Dict.empty Dict.empty pr re fl Dict.empty Dict.empty)
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
+        (Decode.field "providers" Scope.decoder)
+        (Decode.field "receivers" Scope.decoder)
+        (Decode.field "flow" Scope.decoder)
 
 
 compare : CommitmentType -> String
