@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, allHfromScope, allHierarchic, allTfromScope, allTyped, empty)
+module State exposing (State, aggregate, allHfromScope, allHierarchic, allTfromScope, allTyped, empty, find)
 
 import Agent.Agent exposing (Agent)
 import AgentType.AgentType exposing (AgentType)
@@ -713,3 +713,10 @@ allHfromScope s scope =
         Not _ ->
             -- FIXME
             Dict.empty
+
+
+find : Dict String { a | uuid : Uuid } -> Uuid -> Maybe { a | uuid : Uuid }
+find et uuid =
+    Dict.filter (\_ e -> e.uuid == uuid) et
+        |> Dict.values
+        |> List.head

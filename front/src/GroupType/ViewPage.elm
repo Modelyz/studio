@@ -7,13 +7,13 @@ import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
 import GroupType.GroupType exposing (GroupType)
-import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import State
 import Value.Valuable exposing (hWithValues, withValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
@@ -63,10 +63,10 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
         mgroupType =
-            f.uuid |> Maybe.andThen (H.find s.state.groupTypes)
+            f.uuid |> Maybe.andThen (State.find s.state.groupTypes)
     in
     ( { route = f.route
-      , groupType = f.uuid |> Maybe.andThen (H.find s.state.groupTypes)
+      , groupType = f.uuid |> Maybe.andThen (State.find s.state.groupTypes)
       , groups =
             mgroupType
                 |> Maybe.map
@@ -116,7 +116,7 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
                     , h.parent
-                        |> Maybe.andThen (H.find s.state.groupTypes)
+                        |> Maybe.andThen (State.find s.state.groupTypes)
                         |> Maybe.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display

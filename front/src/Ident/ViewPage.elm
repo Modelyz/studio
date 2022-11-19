@@ -6,7 +6,6 @@ import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as VT exposing (IdentifierType)

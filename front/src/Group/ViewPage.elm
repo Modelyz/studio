@@ -5,13 +5,13 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
-import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import State
 import Typed.Typed as T
 import Value.Valuable exposing (tWithValues, withValues)
 import Value.View exposing (displayValueDict)
@@ -115,7 +115,7 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Type:"
                     , t.type_
-                        |> H.find s.state.groupTypes
+                        |> State.find s.state.groupTypes
                         |> Maybe.map (hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display

@@ -8,13 +8,13 @@ import EventType.EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import State
 import Typed.Typed as T
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (tWithValues, withValues)
@@ -131,7 +131,7 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Type:"
                     , t.type_
-                        |> H.find (allH s)
+                        |> State.find (allH s)
                         |> Maybe.map (hWithIdentifiers (allT s) (allH s) s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay (allT s) (allH s) s.state.configs SmallcardTitle)
                         |> Maybe.map .display

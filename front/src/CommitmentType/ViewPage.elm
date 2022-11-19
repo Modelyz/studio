@@ -8,13 +8,13 @@ import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H
 import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import State
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (hWithValues, withValues)
 import Value.Value as Value exposing (Value)
@@ -77,10 +77,10 @@ init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
         mcommitmentType =
-            f.uuid |> Maybe.andThen (H.find s.state.commitmentTypes)
+            f.uuid |> Maybe.andThen (State.find s.state.commitmentTypes)
     in
     ( { route = f.route
-      , commitmentType = f.uuid |> Maybe.andThen (H.find s.state.commitmentTypes)
+      , commitmentType = f.uuid |> Maybe.andThen (State.find s.state.commitmentTypes)
       , groups =
             mcommitmentType
                 |> Maybe.map
@@ -130,7 +130,7 @@ viewContent model s =
                     [ button.primary Edit "Edit" ]
                     [ h2 "Parent type:"
                     , h.parent
-                        |> Maybe.andThen (H.find s.state.commitmentTypes)
+                        |> Maybe.andThen (State.find s.state.commitmentTypes)
                         |> Maybe.map (hWithIdentifiers s.state.commitments s.state.commitmentTypes s.state.identifierTypes s.state.identifiers)
                         |> Maybe.map (hWithDisplay s.state.commitments s.state.commitmentTypes s.state.configs SmallcardTitle)
                         |> Maybe.map .display
