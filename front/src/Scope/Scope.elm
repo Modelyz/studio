@@ -19,9 +19,7 @@ type
       -- A set with a single item of type Type:
     | IsItem Type Uuid
       -- the set of items of type Type whose type_ or parent is child of a precise user type
-      -- TODO : convert to HasUserType Type Uuid or HasUserType HType uuid (because the HType is always related to the Type)
-      -- btw, isn't the hasusertype just a htype?
-    | HasUserType Type HType.Type Uuid
+    | HasUserType Type Uuid
       -- The set of items with a specific concrete type:
     | HasType Type
       -- TODO : need to rethink what is below. Seems not relevant for Ident and Value. Can an entity be of several type?? Or is it useful for search? Maybe we need to implement a search expression like the one in Value and which is different from the scope?
@@ -41,8 +39,8 @@ encode scope =
         HasType t ->
             Encode.object [ ( "IsType", Type.encode t ) ]
 
-        HasUserType t ht uuid ->
-            Encode.object [ ( "HasUserType", Encode.object [ ( "what", Type.encode t ), ( "type", HType.encode ht ), ( "uuid", Uuid.encode uuid ) ] ) ]
+        HasUserType t uuid ->
+            Encode.object [ ( "HasUserType", Encode.object [ ( "what", Type.encode t ), ( "typeUuid", Uuid.encode uuid ) ] ) ]
 
         IsItem t uuid ->
             Encode.object [ ( "IsItem", Encode.object [ ( "type", Type.encode t ), ( "uuid", Uuid.encode uuid ) ] ) ]
@@ -85,10 +83,9 @@ decoder =
         , Decode.map2 IsItem
             (Decode.at [ "IsItem", "type" ] Type.decoder)
             (Decode.at [ "IsItem", "uuid" ] Uuid.decoder)
-        , Decode.map3 HasUserType
+        , Decode.map2 HasUserType
             (Decode.at [ "HasUserType", "what" ] Type.decoder)
-            (Decode.at [ "HasUserType", "type" ] HType.decoder)
-            (Decode.at [ "HasUserType", "uuid" ] Uuid.decoder)
+            (Decode.at [ "HasUserType", "typeUuid" ] Uuid.decoder)
         , Decode.field "And" (Decode.lazy (\_ -> pairDecoder And "And"))
         , Decode.field "Or" (Decode.lazy (\_ -> pairDecoder Or "Or"))
         , Decode.map Not (Decode.field "Not" (Decode.lazy (\_ -> decoder)))
@@ -120,8 +117,8 @@ toString scope =
         HasType t ->
             Type.toString t
 
-        HasUserType t parentType parentUuid ->
-            Type.toString t ++ "(parent=" ++ Uuid.toString parentUuid ++ ")"
+        HasUserType t parentUuid ->
+            Type.toString t ++ "(typeUuid=" ++ Uuid.toString parentUuid ++ ")"
 
         Identified _ ->
             "Identified"
@@ -151,10 +148,10 @@ mainTType scope =
         HasType (Type.TType tt) ->
             Just tt
 
-        HasUserType (Type.HType ht) _ _ ->
+        HasUserType (Type.HType ht) _ ->
             Just (TType.fromHierarchic ht)
 
-        HasUserType (Type.TType tt) _ _ ->
+        HasUserType (Type.TType tt) _ ->
             Just tt
 
         And s1 s2 ->
@@ -176,10 +173,10 @@ mainHType scope =
         HasType (Type.TType tt) ->
             Just (TType.toHierarchic tt)
 
-        HasUserType (Type.HType ht) _ _ ->
+        HasUserType (Type.HType ht) _ ->
             Just ht
 
-        HasUserType (Type.TType tt) _ _ ->
+        HasUserType (Type.TType tt) _ ->
             Just (TType.toHierarchic tt)
 
         And s1 s2 ->

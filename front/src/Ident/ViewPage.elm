@@ -6,7 +6,6 @@ import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as VT exposing (IdentifierType)
 import Ident.Input exposing (inputIdentifiers)
@@ -17,9 +16,7 @@ import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import View exposing (..)
-import Zone.View exposing (hWithDisplay, tWithDisplay)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -113,15 +110,7 @@ viewContent model s =
                     "IdentifierType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| it.name
-                    , text <|
-                        "Scope: "
-                            ++ Scope.View.toDisplay
-                                (allTfromScope s.state it.scope
-                                    |> withIdentifiers s.state
-                                )
-                                (allHfromScope s.state it.scope |> withIdentifiers s.state)
-                                s.state.configs
-                                it.scope
+                    , text <| "Scope: " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs it.scope
                     ]
             )
         |> Maybe.withDefault

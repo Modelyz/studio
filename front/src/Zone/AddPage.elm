@@ -249,14 +249,7 @@ inputFragments s model =
                             )
                     )
         , h2 "Click on the items below to construct the format of the zone"
-        , let
-            allT =
-                Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault Dict.empty
-
-            allH =
-                Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault Dict.empty
-          in
-          wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
                 (\f ->
                     clickableCard
@@ -269,7 +262,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    containsScope allT allH model.scope it.scope
+                                    containsScope s.state.types model.scope it.scope
                                 )
                         )
                             |> List.map (.name >> IdentifierName)

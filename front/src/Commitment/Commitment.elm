@@ -20,15 +20,11 @@ type alias Commitment =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
-    , provider : Uuid
-    , receiver : Uuid
-    , flow : Flow
 
-    -- TODO try to remove non intrinsic fields : identifiers, values, display
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
+    {- , provider : Uuid
+       , receiver : Uuid
+       , flow : Flow
+    -}
     }
 
 
@@ -44,23 +40,23 @@ encode c =
 
 decoder : Decode.Decoder Commitment
 decoder =
-    Decode.map7
-        (\what uuid type_ when provider receiver flow ->
-            Commitment what uuid type_ when provider receiver flow Dict.empty Dict.empty Dict.empty Dict.empty
+    Decode.map4
+        (\what uuid type_ when ->
+            {- provider receiver flow -}
+            Commitment what uuid type_ when
+         {- provider receiver flow -}
         )
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.field "provider" Uuid.decoder)
-        (Decode.field "receiver" Uuid.decoder)
-        (Decode.field "flow" Flow.decoder)
 
 
 
---(Decode.field "qty" Rational.decoder)
---(Decode.field "provider" Uuid.decoder)
---(Decode.field "receiver" Uuid.decoder)
+{- (Decode.field "provider" Uuid.decoder)
+   (Decode.field "receiver" Uuid.decoder)
+   (Decode.field "flow" Flow.decoder)
+-}
 
 
 compare : Commitment -> String

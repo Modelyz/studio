@@ -5,42 +5,26 @@ import AgentType.AgentType exposing (AgentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Border as Border
-import Element.Font as Font
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Group.Link exposing (Link)
+import Hierarchy.Type as HType
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Type
+import Type exposing (Type)
 import Typed.Type as TType
-import Typed.Typed as T
 import Value.Input exposing (inputValues)
+import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hFlatselect, tFlatselect)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard)
+import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import View.Style exposing (..)
-
-
-type alias TypedType =
-    Agent
-
-
-type alias HierarchicType =
-    AgentType
 
 
 constructor =
@@ -57,21 +41,6 @@ hereType =
     Type.TType TType.Agent
 
 
-mkMessage : TypedType -> Message.Payload
-mkMessage =
-    Message.AddedAgent
-
-
-allT : Shared.Model -> Dict String Agent
-allT =
-    .state >> .agents
-
-
-allH : Shared.Model -> Dict String AgentType
-allH =
-    .state >> .agentTypes
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -81,11 +50,11 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , type_ : Maybe HierarchicType
+    , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Group
-    , groups : Dict String Group
+    , oldGroups : Dict String Uuid
+    , groups : Dict String Uuid
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -100,10 +69,10 @@ type Step
 
 
 type Msg
-    = InputType (Maybe HierarchicType)
+    = InputType (Maybe Uuid)
     | InputIdentifier Identifier
     | InputValue Value
-    | InputGroups (Dict String Group)
+    | InputGroups (Dict String Uuid)
     | Button Step.Msg
 
 
@@ -145,8 +114,8 @@ init s f =
             , type_ = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
-            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid isNew
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -155,27 +124,21 @@ init s f =
             }
     in
     ( f.uuid
-        |> Maybe.andThen (T.find (allT s))
         |> Maybe.map
-            (\t ->
+            (\uuid ->
                 let
                     oldGroups =
                         s.state.grouped
-                            |> Dict.filter (\_ v -> t.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-
-                    parent =
-                        H.find (allH s) t.type_
+                            |> Dict.filter (\_ link -> uuid == link.groupable)
+                            |> Dict.values
+                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
+                            |> Dict.fromList
                 in
                 { adding
-                    | type_ = parent
-                    , uuid = t.uuid
-                    , identifiers =
-                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid adding.isNew
-                            |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
-                    , values =
-                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid adding.isNew
-                            |> Dict.union (Value.fromUuid t.uuid s.state.values)
+                    | type_ = Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen Tuple.second
+                    , uuid = uuid
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -191,12 +154,8 @@ update s msg model =
         InputType mh ->
             ( { model
                 | type_ = mh
-                , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
-                , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Value.fromUuid model.uuid s.state.values)
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid
+                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid
               }
             , Effect.none
             )
@@ -207,8 +166,8 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups gs ->
-            ( { model | groups = gs }, Effect.none )
+        InputGroups uuids ->
+            ( { model | groups = uuids }, Effect.none )
 
         Button Step.Added ->
             case validate model of
@@ -226,8 +185,8 @@ update s msg model =
                             (Message.AddedAgent t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\g -> Message.Grouped (Groupable.A t) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.A t) g) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
                         , redirect s.navkey (Route.Entity Route.Agent (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
                         ]
@@ -243,7 +202,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Agent Type"
+    { title = "Adding an Agent"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -269,9 +228,9 @@ checkStep model =
 validate : Model -> Result String Agent
 validate m =
     case m.type_ of
-        Just h ->
+        Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid h.uuid Dict.empty Dict.empty Dict.empty Dict.empty
+            Ok <| constructor typedConstructor m.uuid uuid
 
         Nothing ->
             Err "You must select an Agent Type"
@@ -283,19 +242,18 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hFlatselect
-                        { allT = allT
-                        , allH = allH
-                        , mstuff = model.type_
+                    flatSelect s
+                        { what = Type.TType TType.Agent
+                        , muuid = Just model.uuid
                         , onInput = InputType
                         , title = "Type:"
                         , explain = "Choose the type of the new Agent:"
                         , empty = "(There are no Agent Types yet to choose from)"
                         }
-                        s
+                        (s.state.agentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model
+                    inputGroups { onInput = InputGroups } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model

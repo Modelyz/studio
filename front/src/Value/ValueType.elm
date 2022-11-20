@@ -22,28 +22,23 @@ type alias ValueType =
     }
 
 
-initValues : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String ValueType -> Type -> Maybe (Hierarchic h) -> Uuid -> Bool -> Dict String Value
-initValues allT allH vts t mh uuid isNew =
+initValues : Dict String ( Type, Maybe Uuid ) -> Dict String ValueType -> Type -> Maybe Uuid -> Uuid -> Bool -> Dict String Value
+initValues types vts t muuid uuid isNew =
     -- build the empty values corresponding to the chosen type, possible user type, and uuid of the added/edited entity
     -- if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
-    -- So we must find all the vt whose scope is ascendent of (HasUserType t h.what h.uuid).
+    -- So we must find all the vt whose scope is ascendent of (HasUserType t h.uuid).
     vts
         |> Dict.filter
             (\_ vt ->
                 if isNew then
-                    containsScope allT
-                        allH
-                        (case mh of
-                            Just h ->
-                                HasUserType t h.what h.uuid
-
-                            Nothing ->
-                                HasType t
+                    containsScope types
+                        (Maybe.map (HasUserType t) muuid
+                            |> Maybe.withDefault (HasType t)
                         )
                         vt.scope
 
                 else
-                    containsScope allT allH (IsItem t uuid) vt.scope
+                    containsScope types (IsItem t uuid) vt.scope
             )
         |> Dict.values
         |> List.map

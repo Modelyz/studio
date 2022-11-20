@@ -15,10 +15,6 @@ type alias Resource =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
 
 
@@ -38,11 +34,7 @@ encode r =
 
 decoder : Decoder Resource
 decoder =
-    Decode.map7 Resource
+    Decode.map3 Resource
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)

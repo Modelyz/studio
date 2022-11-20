@@ -17,6 +17,10 @@ import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 
 
+
+-- TODO remove?
+
+
 type Groupable
     = R Resource
     | E Event

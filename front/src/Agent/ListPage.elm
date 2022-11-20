@@ -1,16 +1,13 @@
 module Agent.ListPage exposing (Flags, Model, Msg, match, page)
 
-import Agent.Agent exposing (Agent)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
-import Group.View exposing (tGroupsColumn)
-import Group.WithGroups exposing (tWithGroups)
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
+import Group.View exposing (groupsColumn)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
+import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirectView)
@@ -18,14 +15,12 @@ import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Type exposing (Type(..))
+import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
-import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (tWithDisplay)
-import Zone.Zone exposing (Zone(..))
+import View.Type as ViewType
 
 
 type alias Model =
@@ -67,7 +62,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = ViewType.Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -97,68 +92,45 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    let
-        allT =
-            s.state.agents |> Dict.map (\_ t -> tWithIdentifiers s.state.agents Dict.empty s.state.identifierTypes s.state.identifiers t)
-
-        allH =
-            s.state.agentTypes |> Dict.map (\_ v -> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers v)
-    in
     case model.viewtype of
-        Smallcard ->
+        ViewType.Smallcard ->
             flatContainer s
                 Nothing
                 "Agents"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allT
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.agents allH s.state.configs t)
+                    (s.state.agents
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Agents yet. Add your first one!")
                     )
                 ]
 
-        Table ->
+        ViewType.Table ->
             flatContainer s
                 Nothing
                 "Agents"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            allT
-                                |> Dict.values
-                                |> List.map (tWithGroups s.state.grouped)
+                            Dict.values s.state.agents
+                                |> List.map (\a -> ( Type.TType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> containsScope s.state.agents s.state.agentTypes it.scope (HasType (Type.TType TType.Agent)))
-                                |> List.map identifierColumn
+                                |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Agent)))
+                                |> List.map (identifierColumn s)
                             )
-                                ++ [ tGroupsColumn s ]
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
-
-
-identifierColumn : IdentifierType -> Column Agent msg
-identifierColumn it =
-    { header = headerCell color.table.header.background it.name
-    , width = fill
-    , view =
-        .identifiers
-            >> Dict.values
-            >> List.filter (\id -> id.name == it.name)
-            >> List.map Identifier.toValue
-            >> List.head
-            >> Maybe.withDefault ""
-            >> innerCell
-    }

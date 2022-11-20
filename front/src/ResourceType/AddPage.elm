@@ -3,16 +3,11 @@ module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, pa
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Border as Border
-import Element.Font as Font
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H
+import Group.Link exposing (Link)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -20,29 +15,21 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Resource.Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
 import Route exposing (Route, redirect)
-import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import State exposing (State)
-import Type
+import Type exposing (Type)
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
+import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hFlatselect, tFlatselect)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard)
+import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import View.Style exposing (..)
 
 
 hereType : Type.Type
 hereType =
     Type.HType HType.ResourceType
-
-
-type alias HierarchicType =
-    ResourceType
 
 
 constructor =
@@ -51,21 +38,6 @@ constructor =
 
 hierarchicConstructor =
     HType.ResourceType
-
-
-mkMessage : HierarchicType -> Message.Payload
-mkMessage =
-    Message.AddedResourceType
-
-
-allT : Shared.Model -> Dict String Resource
-allT =
-    .state >> .resources
-
-
-allH : Shared.Model -> Dict String ResourceType
-allH =
-    .state >> .resourceTypes
 
 
 type alias Flags =
@@ -77,11 +49,11 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , parent : Maybe HierarchicType
+    , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Group
-    , groups : Dict String Group
+    , oldGroups : Dict String Uuid
+    , groups : Dict String Uuid
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -96,9 +68,9 @@ type Step
 
 
 type Msg
-    = InputType (Maybe HierarchicType)
+    = InputType (Maybe Uuid)
     | InputIdentifier Identifier
-    | InputGroups (Dict String Group)
+    | InputGroups (Dict String Uuid)
     | InputValue Value
     | Button Step.Msg
 
@@ -138,11 +110,11 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , parent = Nothing
+            , type_ = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
-            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid isNew
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -151,27 +123,21 @@ init s f =
             }
     in
     ( f.uuid
-        |> Maybe.andThen (H.find (allH s))
         |> Maybe.map
-            (\h ->
+            (\uuid ->
                 let
                     oldGroups =
                         s.state.grouped
-                            |> Dict.filter (\_ v -> h.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-
-                    mp =
-                        h.parent |> Maybe.andThen (H.find (allH s))
+                            |> Dict.filter (\_ link -> uuid == link.groupable)
+                            |> Dict.values
+                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
+                            |> Dict.fromList
                 in
                 { adding
-                    | parent = mp
-                    , uuid = h.uuid
-                    , identifiers =
-                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mp h.uuid adding.isNew
-                            |> Dict.union (Identifier.fromUuid h.uuid s.state.identifiers)
-                    , values =
-                        initValues (allT s) (allH s) s.state.valueTypes hereType mp h.uuid adding.isNew
-                            |> Dict.union (Value.fromUuid h.uuid s.state.values)
+                    | type_ = Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen Tuple.second
+                    , uuid = uuid
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -186,13 +152,9 @@ update s msg model =
     case msg of
         InputType mh ->
             ( { model
-                | parent = mh
-                , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
-                , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Value.fromUuid model.uuid s.state.values)
+                | type_ = mh
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid
+                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid
               }
             , Effect.none
             )
@@ -203,12 +165,12 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups gs ->
-            ( { model | groups = gs }, Effect.none )
+        InputGroups uuids ->
+            ( { model | groups = uuids }, Effect.none )
 
         Button Step.Added ->
             case validate model of
-                Ok h ->
+                Ok t ->
                     let
                         addedGroups =
                             Dict.diff model.groups model.oldGroups
@@ -219,12 +181,13 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (mkMessage h
+                            (Message.AddedResourceType t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.RT h) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.RT h) g) (Dict.values removedGroups)
+                                ++ List.map Message.AddedValue (Dict.values model.values)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
-                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ResourceType (Route.View (Uuid.toString model.uuid))
+                        , redirect s.navkey (Route.Entity Route.ResourceType (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
                         ]
                     )
 
@@ -261,9 +224,9 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String HierarchicType
+validate : Model -> Result String ResourceType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.parent) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid m.type_
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -272,19 +235,18 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hFlatselect
-                        { allT = allT
-                        , allH = allH
-                        , mstuff = model.parent
+                    flatSelect s
+                        { what = Type.HType HType.ResourceType
+                        , muuid = Just model.uuid
                         , onInput = InputType
-                        , title = "Parent:"
+                        , title = "Parent Type:"
                         , explain = "Optional parent type for the new Resource Type (it can be hierarchical)"
                         , empty = "(There are no Resource Types yet to choose from)"
                         }
-                        s
+                        (s.state.resourceTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model
+                    inputGroups { onInput = InputGroups } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model

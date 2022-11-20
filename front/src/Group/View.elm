@@ -1,18 +1,21 @@
-module Group.View exposing (displayGroupTable, hGroupsColumn, tGroupsColumn)
+module Group.View exposing (displayGroupTable, groupsColumn)
 
 import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.WithGroups exposing (WithGroups, hWithGroups, tWithGroups)
+import Group.WithGroups exposing (getGroups)
 import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifiable exposing (gWithIdentifiers)
+import Ident.Identifiable exposing (getIdentifiers)
 import Item.Item exposing (Item)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
+import Type exposing (Type)
+import Typed.Type as TType
 import Typed.Typed exposing (Typed)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
-import Zone.View exposing (tWithDisplay)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -30,37 +33,20 @@ displayGroupTable default groups =
         text default
 
 
-hGroupsColumn : Shared.Model -> Column (WithGroups (Hierarchic a)) msg
-hGroupsColumn s =
+groupsColumn : Shared.Model -> Column ( Type, Maybe Uuid ) msg
+groupsColumn s =
     { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
-        hWithGroups s.state.grouped
-            >> .groups
-            >> Dict.values
-            >> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-            >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
-            >> List.map .display
-            >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
-            >> String.join "\n"
-            >> text
-            >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
-    }
-
-
-tGroupsColumn : Shared.Model -> Column (WithGroups (Typed a)) msg
-tGroupsColumn s =
-    { header = headerCell color.table.header.background2 "Groups"
-    , width = fill
-    , view =
-        tWithGroups s.state.grouped
-            >> .groups
-            >> Dict.values
-            >> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-            >> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
-            >> List.map .display
-            >> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(missing zone config)")
-            >> String.join "\n"
-            >> text
-            >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
+        \( _, muuid ) ->
+            muuid
+                |> Maybe.map
+                    (\uuid ->
+                        getGroups s.state.grouped uuid
+                            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
+                            |> String.join "\n"
+                            |> text
+                            |> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
+                    )
+                |> Maybe.withDefault none
     }

@@ -12,6 +12,7 @@ import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable exposing (Groupable)
+import Group.Link as GroupLink
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
@@ -104,8 +105,8 @@ type Payload
     | RemovedGroupType Uuid
     | DefinedGroup Group
     | RemovedGroup Uuid
-    | Grouped Groupable Group
-    | Ungrouped Groupable Group
+    | Grouped GroupLink.Link
+    | Ungrouped GroupLink.Link
 
 
 toString : Payload -> String
@@ -228,10 +229,10 @@ toString p =
         RemovedGroup _ ->
             "RemovedGroup"
 
-        Grouped _ _ ->
+        Grouped _ ->
             "Grouped"
 
-        Ungrouped _ _ ->
+        Ungrouped _ ->
             "Ungrouped"
 
 
@@ -419,11 +420,11 @@ encode (Message b p) =
             RemovedGroup uuid ->
                 ( "load", Uuid.encode uuid )
 
-            Grouped e g ->
-                ( "load", Encode.object [ ( "groupable", Groupable.encode e ), ( "group", Group.encode g ) ] )
+            Grouped link ->
+                ( "load", GroupLink.encode link )
 
-            Ungrouped e g ->
-                ( "load", Encode.object [ ( "groupable", Groupable.encode e ), ( "group", Group.encode g ) ] )
+            Ungrouped link ->
+                ( "load", GroupLink.encode link )
         ]
 
 
@@ -608,10 +609,10 @@ decoder =
                             Decode.map RemovedGroup (Decode.field "load" Uuid.decoder)
 
                         "Grouped" ->
-                            Decode.map2 Grouped (Decode.at [ "load", "groupable" ] Groupable.decoder) (Decode.at [ "load", "group" ] Group.decoder)
+                            Decode.map Grouped (Decode.field "load" GroupLink.decoder)
 
                         "Ungrouped" ->
-                            Decode.map2 Ungrouped (Decode.at [ "load", "groupable" ] Groupable.decoder) (Decode.at [ "load", "group" ] Group.decoder)
+                            Decode.map Ungrouped (Decode.field "load" GroupLink.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

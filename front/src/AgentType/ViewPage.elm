@@ -8,43 +8,41 @@ import Element exposing (..)
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
+import Hierarchy.Type as HType
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import State
+import Type exposing (Type)
 import Value.Input exposing (inputValues)
-import Value.Valuable exposing (hWithValues, withValues)
+import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (initValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Zone.View exposing (hWithDisplay, tWithDisplay)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
-allT : Shared.Model -> Dict String Agent
-allT =
-    .state >> .agents
-
-
-allH : Shared.Model -> Dict String AgentType
-allH =
-    .state >> .agentTypes
+mainHType : Type
+mainHType =
+    Type.HType HType.AgentType
 
 
 type alias Flags =
     { route : Route
-    , uuid : Maybe Uuid
+    , uuid : Uuid
     }
 
 
 type alias Model =
     { route : Route
-    , agentType : Maybe AgentType
-    , groups : Dict String Group
+    , what : Type
+    , uuid : Uuid
+    , groups : List ( Type, Uuid )
     }
 
 
@@ -67,7 +65,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Entity Route.AgentType (Route.View uuid) ->
-            Just { route = route, uuid = Uuid.fromString uuid }
+            Uuid.fromString uuid |> Maybe.map (Flags route)
 
         _ ->
             Nothing
@@ -75,21 +73,14 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    let
-        magentType =
-            f.uuid |> Maybe.andThen (State.find s.state.agentTypes)
-    in
     ( { route = f.route
-      , agentType = f.uuid |> Maybe.andThen (State.find s.state.agentTypes)
+      , what = mainHType
+      , uuid = f.uuid
       , groups =
-            magentType
-                |> Maybe.map
-                    (\agent ->
-                        s.state.grouped
-                            |> Dict.filter (\_ v -> agent.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-                    )
-                |> Maybe.withDefault Dict.empty
+            s.state.grouped
+                |> Dict.filter (\_ link -> link.groupable == f.uuid)
+                |> Dict.values
+                |> List.map (\link -> ( link.what, link.groupable ))
       }
     , closeMenu f s.menu
     )
@@ -102,17 +93,12 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.AgentType <| Route.List Nothing )
 
         Edit ->
-            model.agentType
-                |> Maybe.map
-                    (\h ->
-                        ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.AgentType <| Route.Edit (Uuid.toString h.uuid) )
-                    )
-                |> Maybe.withDefault ( model, Effect.none )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.AgentType <| Route.Edit (Uuid.toString model.uuid) )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding an Agent Type"
+    { title = "Agent Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -121,46 +107,23 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    model.agentType
-        |> Maybe.map
-            (\h ->
-                floatingContainer s
-                    (Just Close)
-                    "AgentType"
-                    [ button.primary Edit "Edit" ]
-                    [ h2 "Parent type:"
-                    , h.parent
-                        |> Maybe.andThen (State.find s.state.agentTypes)
-                        |> Maybe.map (hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers)
-                        |> Maybe.map (hWithDisplay s.state.agents s.state.agentTypes s.state.configs SmallcardTitle)
-                        |> Maybe.map .display
-                        |> Maybe.andThen (Dict.get "SmallcardTitle")
-                        |> Maybe.withDefault "(none)"
-                        |> text
-                    , h2 "Identifiers:"
-                    , h
-                        |> hWithIdentifiers s.state.agents s.state.agentTypes s.state.identifierTypes s.state.identifiers
-                        |> .identifiers
-                        |> displayIdentifierDict "(none)"
-                    , h2 "Values:"
-                    , h
-                        |> hWithValues s.state.agents s.state.agentTypes s.state.valueTypes s.state.values
-                        |> .values
-                        |> displayValueDict "(none)" s.state.values
-                    , h2 "Groups:"
-                    , model.groups
-                        |> Dict.values
-                        |> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
-                        |> List.map .display
-                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")
-                        |> displayGroupTable "(none)"
-                    ]
-            )
-        |> Maybe.withDefault
-            (floatingContainer s
-                (Just Close)
-                "AgentType"
-                []
-                [ h1 "Not found", text "The current URL does not correspond to anything" ]
-            )
+    floatingContainer s
+        (Just Close)
+        "Agent Type"
+        [ button.primary Edit "Edit" ]
+        [ h2 "Type:"
+        , Dict.get (Uuid.toString model.uuid) s.state.types
+            |> Maybe.andThen (\( _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
+            |> Maybe.withDefault ""
+            |> text
+        , h2 "Identifiers:"
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid
+            |> displayIdentifierDict "(none)"
+        , h2 "Values:"
+        , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid
+            |> displayValueDict "(none)" s.state.values
+        , h2 "Groups:"
+        , model.groups
+            |> List.map (\( gt, guuid ) -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers gt guuid)
+            |> displayGroupTable "(none)"
+        ]

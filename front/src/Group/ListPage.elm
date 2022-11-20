@@ -4,23 +4,23 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Group.Group exposing (Group)
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
+import Group.View exposing (groupsColumn)
 import Ident.Identifier as Identifier
 import Ident.IdentifierType exposing (IdentifierType)
+import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirectView)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Type exposing (Type(..))
+import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
-import View.Type as ViewType exposing (Type(..))
+import View.Type as ViewType
 
 
 type alias Model =
@@ -62,7 +62,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = ViewType.Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -93,59 +93,44 @@ view s model =
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     case model.viewtype of
-        Smallcard ->
+        ViewType.Smallcard ->
             flatContainer s
                 Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
-                        |> Dict.map (\_ t -> tWithIdentifiers s.state.groups Dict.empty s.state.identifierTypes s.state.identifiers t)
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.groups (Dict.map (\_ v -> hWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers v) s.state.groupTypes) s.state.configs t)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )
                 ]
 
-        Table ->
+        ViewType.Table ->
             flatContainer s
                 Nothing
                 "Groups"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            s.state.groups
-                                |> Dict.values
-                                |> List.map (tWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
+                            Dict.values s.state.groups
+                                |> List.map (\g -> ( Type.TType g.what, Just g.uuid ))
                         , columns =
-                            s.state.identifierTypes
+                            (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> containsScope s.state.groups s.state.groupTypes it.scope (HasType (Type.TType TType.Group)))
-                                |> List.map identifierColumn
+                                |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
+                                |> List.map (identifierColumn s)
+                            )
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
-
-
-identifierColumn : IdentifierType -> Column Group msg
-identifierColumn it =
-    { header = headerCell color.table.header.background it.name
-    , width = fill
-    , view =
-        .identifiers
-            >> Dict.values
-            >> List.filter (\id -> id.name == it.name)
-            >> List.map Identifier.toValue
-            >> List.head
-            >> Maybe.withDefault ""
-            >> innerCell
-    }

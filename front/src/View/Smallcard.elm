@@ -7,13 +7,14 @@ import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Hierarchy.Type as HType
+import Ident.Identifier exposing (Identifier)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
-import Type
+import Type exposing (Type)
 import Typed.Typed as T exposing (Typed)
 import View exposing (..)
 import View.Style exposing (..)
-import Zone.View exposing (hDisplay, tDisplay)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -63,85 +64,73 @@ viewHalfCard maybeOnDelete title =
         ]
 
 
-
--- TODO try to remove the split t/h by replacing Typed a and Hierarchic b with a and b, and passing the relevant function to extract the wanted field
--- something like:
-{-
-   xViewHalfCard : msg -> Dict String a -> Dict String b -> Dict String Configuration -> a -> Element msg
-   xViewHalfCard onDelete allT allH configs t =
-       viewHalfCard
-           (Just onDelete)
-           (text <| tDisplay allT allH configs SmallcardTitle t)
--}
-
-
-tViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tViewHalfCard onDelete allT allH configs t =
+tViewHalfCard : msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tViewHalfCard onDelete types configs ids t uuid =
     viewHalfCard
         (Just onDelete)
-        (text <| tDisplay allT allH configs SmallcardTitle t)
+        (text <| display types configs SmallcardTitle ids t uuid)
 
 
-hViewHalfCard : msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hViewHalfCard onDelete allT allH configs h =
-    viewHalfCard
-        (Just onDelete)
-        (text <| hDisplay allT allH configs SmallcardTitle h)
+hViewHalfCard =
+    tViewHalfCard
 
 
-tItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Type.Type -> Element msg
-tItemClickableCard onInput allT allH configs t type_ =
+tItemClickableCard : (Scope -> msg) -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tItemClickableCard onInput types configs ids t uuid =
     clickableCard
-        (onInput (IsItem type_ t.uuid))
-        (text <| tDisplay allT allH configs SmallcardTitle t)
-        (T.find allT t.type_ |> Maybe.map (tDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (onInput (IsItem t uuid))
+        (text <| display types configs SmallcardTitle ids t uuid)
+        (Dict.get (Uuid.toString uuid) types
+            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle ids pt puuid))
+            |> Maybe.withDefault ""
+            |> text
+        )
 
 
-hItemClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Type.Type -> Element msg
-hItemClickableCard onInput allT allH configs h type_ =
-    clickableCard
-        (onInput (IsItem type_ h.uuid))
-        (text <| hDisplay allT allH configs SmallcardTitle h)
-        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+hItemClickableCard =
+    tItemClickableCard
 
 
-sClickableCard : (Scope -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Scope -> Element msg
-sClickableCard onInput allT allH configs h scope =
+sClickableCard : (Scope -> msg) -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Scope -> Element msg
+sClickableCard onInput types configs ids t uuid scope =
     clickableCard
         (onInput scope)
-        (text <| hDisplay allT allH configs SmallcardTitle h)
-        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (text <| display types configs SmallcardTitle ids t uuid)
+        (Dict.get (Uuid.toString uuid) types
+            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle ids pt puuid))
+            |> Maybe.withDefault ""
+            |> text
+        )
 
 
-tClickableCard : (Maybe (Typed a) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tClickableCard onInput allT allH configs t =
+tClickableCard : msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tClickableCard onInput types configs ids t uuid =
     clickableCard
-        (onInput (Just t))
-        (text <| tDisplay allT allH configs SmallcardTitle t)
-        (H.find allH t.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        onInput
+        (text <| display types configs SmallcardTitle ids t uuid)
+        (Dict.get (Uuid.toString uuid) types
+            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle ids pt puuid))
+            |> Maybe.withDefault ""
+            |> text
+        )
 
 
-hClickableCard : (Maybe (Hierarchic b) -> msg) -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableCard onInput allT allH configs h =
-    clickableCard
-        (onInput (Just h))
-        (text <| hDisplay allT allH configs SmallcardTitle h)
-        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+hClickableCard =
+    tClickableCard
 
 
-tClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Typed a -> Element msg
-tClickableRemovableCard onChoose onDelete allT allH configs t =
+tClickableRemovableCard : msg -> msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tClickableRemovableCard onChoose onDelete types configs ids t uuid =
     clickableRemovableCard
         onChoose
         onDelete
-        (text <| tDisplay allT allH configs SmallcardTitle t)
-        (H.find allH t.type_ |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+        (text <| display types configs SmallcardTitle ids t uuid)
+        (Dict.get (Uuid.toString uuid) types
+            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle ids pt puuid))
+            |> Maybe.withDefault ""
+            |> text
+        )
 
 
-hClickableRemovableCard : msg -> msg -> Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Hierarchic b -> Element msg
-hClickableRemovableCard onChoose onDelete allT allH configs h =
-    clickableRemovableCard
-        onChoose
-        onDelete
-        (text <| hDisplay allT allH configs SmallcardTitle h)
-        (h.parent |> Maybe.andThen (H.find allH) |> Maybe.map (hDisplay allT allH configs SmallcardTitle) |> Maybe.withDefault "" |> text)
+hClickableRemovableCard =
+    tClickableRemovableCard

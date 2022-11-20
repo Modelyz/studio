@@ -15,10 +15,9 @@ type alias Group =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
+
+    -- TODO what's the scope of a group?
     , scope : Scope
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , display : Dict String String
     }
 
 
@@ -34,14 +33,11 @@ encode g =
 
 decoder : Decoder Group
 decoder =
-    Decode.map7 Group
+    Decode.map4 Group
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
 
 
 compare : Group -> String

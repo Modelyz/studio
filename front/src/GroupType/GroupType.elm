@@ -16,10 +16,6 @@ type alias GroupType =
     { what : HType.Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
 
 
@@ -34,11 +30,7 @@ encode gt =
 
 decoder : Decode.Decoder GroupType
 decoder =
-    Decode.map7 GroupType
+    Decode.map3 GroupType
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)

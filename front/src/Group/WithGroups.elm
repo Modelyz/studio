@@ -1,4 +1,4 @@
-module Group.WithGroups exposing (WithGroups, hWithGroups, tWithGroups)
+module Group.WithGroups exposing (getGroups)
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
@@ -6,33 +6,17 @@ import Group.Groupable as Groupable
 import Group.Link as GroupLink
 import Hierarchy.Hierarchic exposing (Hierarchic)
 import Item.Item exposing (Item)
-import Prng.Uuid as Uuid
+import Prng.Uuid as Uuid exposing (Uuid)
 import Typed.Typed exposing (Typed)
 
 
-type alias WithGroups a =
-    { a | groups : Dict String Group }
+
+-- TODO rename or move to State or Groups or Group.State
 
 
-tWithGroups : Dict String GroupLink.Link -> WithGroups (Typed a) -> WithGroups (Typed a)
-tWithGroups gls i =
-    { i
-        | groups =
-            gls
-                |> Dict.filter (\_ gl -> Groupable.uuid gl.groupable == i.uuid)
-                |> Dict.values
-                |> List.map (\gl -> ( gl.group.uuid |> Uuid.toString, gl.group ))
-                |> Dict.fromList
-    }
-
-
-hWithGroups : Dict String GroupLink.Link -> WithGroups (Hierarchic a) -> WithGroups (Hierarchic a)
-hWithGroups gls i =
-    { i
-        | groups =
-            gls
-                |> Dict.filter (\_ gl -> Groupable.uuid gl.groupable == i.uuid)
-                |> Dict.values
-                |> List.map (\gl -> ( gl.group.uuid |> Uuid.toString, gl.group ))
-                |> Dict.fromList
-    }
+getGroups : Dict String GroupLink.Link -> Uuid -> List Uuid
+getGroups links uuid =
+    links
+        |> Dict.filter (\_ link -> link.groupable == uuid)
+        |> Dict.values
+        |> List.map .group

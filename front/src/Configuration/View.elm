@@ -6,7 +6,6 @@ import Ident.Identifiable exposing (withIdentifiers)
 import Scope.Scope as Scope
 import Scope.View
 import Shared
-import State exposing (allHfromScope, allTfromScope)
 import Zone.Fragment as Fragment exposing (display)
 import Zone.Zone as Zone
 
@@ -25,10 +24,4 @@ description : Shared.Model -> Configuration -> String
 description s c =
     case c of
         ZoneConfig zone fragments scope ->
-            Scope.View.toDisplay
-                (allTfromScope s.state scope
-                    |> withIdentifiers s.state
-                )
-                (allHfromScope s.state scope |> withIdentifiers s.state)
-                s.state.configs
-                scope
+            Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs scope

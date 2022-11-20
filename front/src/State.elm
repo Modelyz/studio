@@ -1,4 +1,4 @@
-module State exposing (State, aggregate, allHfromScope, allHierarchic, allTfromScope, allTyped, empty, find)
+module State exposing (State, aggregate, empty)
 
 import Agent.Agent exposing (Agent)
 import AgentType.AgentType exposing (AgentType)
@@ -12,7 +12,6 @@ import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
 import Group.Group exposing (Group)
 import Group.Link as GroupLink
-import Group.WithGroups exposing (WithGroups)
 import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
@@ -31,7 +30,7 @@ import ResourceType.ResourceType exposing (ResourceType)
 import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Time exposing (millisToPosix)
-import Type
+import Type exposing (Type)
 import Typed.Type as TType
 import Typed.Typed as T exposing (OnlyTyped, Typed)
 import Value.Value as Value exposing (Value)
@@ -44,7 +43,6 @@ type alias State =
     , uuids : Dict String Uuid
 
     -- entities
-    --, entities : Dict String Entity
     , resources : Dict String Resource
     , events : Dict String Event
     , agents : Dict String Agent
@@ -59,6 +57,9 @@ type alias State =
     , processTypes : Dict String ProcessType
     , groups : Dict String Group
     , groupTypes : Dict String GroupType
+
+    -- Hierarchy mapping from an entity uuid to its own type and parent type uuid
+    , types : Dict String ( Type, Maybe Uuid )
 
     -- links
     , process_commitments : Dict String ProcessCommitments
@@ -85,7 +86,7 @@ empty =
     , uuids = Dict.empty
 
     -- entities
-    --, entities = Dict.empty
+    , types = Dict.empty
     , resources = Dict.empty
     , events = Dict.empty
     , agents = Dict.empty
@@ -115,31 +116,6 @@ empty =
     -- config
     , configs = Dict.empty
     }
-
-
-insertT : Typed a -> Dict String (Typed a) -> Dict String (Typed a)
-insertT i d =
-    Dict.insert (Uuid.toString i.uuid) i d
-
-
-insertH : Hierarchic a -> Dict String (Hierarchic a) -> Dict String (Hierarchic a)
-insertH i d =
-    Dict.insert (Uuid.toString i.uuid) i d
-
-
-removeHUuid : Uuid -> Dict String (Hierarchic a) -> Dict String (Hierarchic a)
-removeHUuid uuid d =
-    Dict.remove (Uuid.toString uuid) d
-
-
-removeTUuid : Uuid -> Dict String (Typed a) -> Dict String (Typed a)
-removeTUuid uuid d =
-    Dict.remove (Uuid.toString uuid) d
-
-
-insertUuid : Uuid -> Dict String Uuid -> Dict String Uuid
-insertUuid uuid =
-    Dict.insert (Uuid.toString uuid) uuid
 
 
 aggregate : Message -> State -> State
@@ -173,21 +149,7 @@ aggregate (Message b p) state =
                         |> List.map
                             -- rebuild the identifier compare keys
                             (\i ->
-                                if
-                                    i.name
-                                        == old.name
-                                        && ((case i.what of
-                                                Type.TType tt ->
-                                                    T.find (allTyped state tt) i.identifiable
-                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) t.uuid) new.scope)
-
-                                                Type.HType ht ->
-                                                    H.find (allHierarchic state ht) i.identifiable
-                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) new.scope)
-                                            )
-                                                |> Maybe.withDefault False
-                                           )
-                                then
+                                if i.name == old.name && containsScope state.types (IsItem i.what i.identifiable) new.scope then
                                     let
                                         newi =
                                             { i | name = new.name }
@@ -208,22 +170,7 @@ aggregate (Message b p) state =
                     -- or if this is the same name, whose item is not in the scope of the identifier type
                     state.identifiers
                         |> Dict.filter
-                            (\_ i ->
-                                i.name
-                                    /= it.name
-                                    || not
-                                        ((case i.what of
-                                            Type.TType tt ->
-                                                T.find (allTyped state tt) i.identifiable
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) (allHierarchic state (TType.toHierarchic tt)) (IsItem (Type.TType tt) t.uuid) it.scope)
-
-                                            Type.HType ht ->
-                                                H.find (allHierarchic state ht) i.identifiable
-                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) h.uuid) it.scope)
-                                         )
-                                            |> Maybe.withDefault False
-                                        )
-                            )
+                            (\_ i -> i.name /= it.name || not (containsScope state.types (IsItem i.what i.identifiable) it.scope))
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -249,21 +196,7 @@ aggregate (Message b p) state =
                         |> List.map
                             -- rebuild the value compare keys
                             (\v ->
-                                if
-                                    v.name
-                                        == old.name
-                                        && ((case v.what of
-                                                Type.TType tt ->
-                                                    T.find (allTyped state tt) v.for
-                                                        |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) v.for) new.scope)
-
-                                                Type.HType ht ->
-                                                    H.find (allHierarchic state ht) v.for
-                                                        |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) v.for) new.scope)
-                                            )
-                                                |> Maybe.withDefault False
-                                           )
-                                then
+                                if v.name == old.name && containsScope state.types (IsItem v.what v.for) new.scope then
                                     let
                                         newi =
                                             { v | name = new.name }
@@ -284,21 +217,7 @@ aggregate (Message b p) state =
                     -- or if this is the same name, whose item is not in the scope of the value type
                     state.values
                         |> Dict.filter
-                            (\_ v ->
-                                (v.name /= vt.name)
-                                    || not
-                                        ((case v.what of
-                                            Type.TType tt ->
-                                                T.find (allTyped state tt) v.for
-                                                    |> Maybe.map (\t -> containsScope (allTyped state tt) Dict.empty (IsItem (Type.TType tt) v.for) vt.scope)
-
-                                            Type.HType ht ->
-                                                H.find (allHierarchic state ht) v.for
-                                                    |> Maybe.map (\h -> containsScope Dict.empty (allHierarchic state ht) (IsItem (Type.HType ht) v.for) vt.scope)
-                                         )
-                                            |> Maybe.withDefault False
-                                        )
-                            )
+                            (\_ v -> (v.name /= vt.name) || not (containsScope state.types (IsItem v.what v.for) vt.scope))
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -309,199 +228,223 @@ aggregate (Message b p) state =
                 | values = Dict.insert (Value.compare v) v state.values
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedResourceType rt ->
             { state
-                | resourceTypes = insertH rt state.resourceTypes
+                | resourceTypes = Dict.insert (Uuid.toString rt.uuid) rt state.resourceTypes
+                , types = Dict.insert (Uuid.toString rt.uuid) ( Type.HType HType.ResourceType, rt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedResourceType uuid ->
             { state
-                | resourceTypes = removeHUuid uuid state.resourceTypes
+                | resourceTypes = Dict.remove (Uuid.toString uuid) state.resourceTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedEventType et ->
             { state
-                | eventTypes = insertH et state.eventTypes
+                | eventTypes = Dict.insert (Uuid.toString et.uuid) et state.eventTypes
+                , types = Dict.insert (Uuid.toString et.uuid) ( Type.HType HType.EventType, et.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedEventType uuid ->
             { state
-                | eventTypes = removeHUuid uuid state.eventTypes
+                | eventTypes = Dict.remove (Uuid.toString uuid) state.eventTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedAgentType at ->
             { state
-                | agentTypes = insertH at state.agentTypes
+                | agentTypes = Dict.insert (Uuid.toString at.uuid) at state.agentTypes
+                , types = Dict.insert (Uuid.toString at.uuid) ( Type.HType HType.AgentType, at.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedAgentType uuid ->
             { state
-                | agentTypes = removeHUuid uuid state.agentTypes
+                | agentTypes = Dict.remove (Uuid.toString uuid) state.agentTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedCommitmentType cmt ->
             { state
-                | commitmentTypes = insertH cmt state.commitmentTypes
+                | commitmentTypes = Dict.insert (Uuid.toString cmt.uuid) cmt state.commitmentTypes
+                , types = Dict.insert (Uuid.toString cmt.uuid) ( Type.HType HType.CommitmentType, cmt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedCommitmentType uuid ->
             { state
-                | commitmentTypes = removeHUuid uuid state.commitmentTypes
+                | commitmentTypes = Dict.remove (Uuid.toString uuid) state.commitmentTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedContractType cnt ->
             { state
-                | contractTypes = insertH cnt state.contractTypes
+                | contractTypes = Dict.insert (Uuid.toString cnt.uuid) cnt state.contractTypes
+                , types = Dict.insert (Uuid.toString cnt.uuid) ( Type.HType HType.ContractType, cnt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedContractType uuid ->
             { state
-                | contractTypes = removeHUuid uuid state.contractTypes
+                | contractTypes = Dict.remove (Uuid.toString uuid) state.contractTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedProcessType pt ->
             { state
-                | processTypes = insertH pt state.processTypes
+                | processTypes = Dict.insert (Uuid.toString pt.uuid) pt state.processTypes
+                , types = Dict.insert (Uuid.toString pt.uuid) ( Type.HType HType.ProcessType, pt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedProcessType uuid ->
             { state
-                | processTypes = removeHUuid uuid state.processTypes
+                | processTypes = Dict.remove (Uuid.toString uuid) state.processTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedResource rt ->
+        AddedResource r ->
             { state
-                | resources = insertT rt state.resources
+                | resources = Dict.insert (Uuid.toString r.uuid) r state.resources
+                , types = Dict.insert (Uuid.toString r.uuid) ( Type.TType TType.Resource, Just r.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedResource uuid ->
             { state
-                | resources = removeTUuid uuid state.resources
+                | resources = Dict.remove (Uuid.toString uuid) state.resources
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedEvent et ->
+        AddedEvent e ->
             { state
-                | events = insertT et state.events
+                | events = Dict.insert (Uuid.toString e.uuid) e state.events
+                , types = Dict.insert (Uuid.toString e.uuid) ( Type.TType TType.Event, Just e.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedEvent uuid ->
             { state
-                | events = removeTUuid uuid state.events
+                | events = Dict.remove (Uuid.toString uuid) state.events
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedAgent at ->
+        AddedAgent a ->
             { state
-                | agents = insertT at state.agents
+                | agents = Dict.insert (Uuid.toString a.uuid) a state.agents
+                , types = Dict.insert (Uuid.toString a.uuid) ( Type.TType TType.Agent, Just a.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedAgent uuid ->
             { state
-                | agents = removeTUuid uuid state.agents
+                | agents = Dict.remove (Uuid.toString uuid) state.agents
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedCommitment cmt ->
+        AddedCommitment cm ->
             { state
-                | commitments = insertT cmt state.commitments
+                | commitments = Dict.insert (Uuid.toString cm.uuid) cm state.commitments
+                , types = Dict.insert (Uuid.toString cm.uuid) ( Type.TType TType.Commitment, Just cm.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedCommitment uuid ->
             { state
-                | commitments = removeTUuid uuid state.commitments
+                | commitments = Dict.remove (Uuid.toString uuid) state.commitments
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedContract cnt ->
+        AddedContract cn ->
             { state
-                | contracts = insertT cnt state.contracts
+                | contracts = Dict.insert (Uuid.toString cn.uuid) cn state.contracts
+                , types = Dict.insert (Uuid.toString cn.uuid) ( Type.TType TType.Contract, Just cn.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedContract uuid ->
             { state
-                | contracts = removeTUuid uuid state.contracts
+                | contracts = Dict.remove (Uuid.toString uuid) state.contracts
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        AddedProcess pt ->
+        AddedProcess pr ->
             { state
-                | processes = insertT pt state.processes
+                | processes = Dict.insert (Uuid.toString pr.uuid) pr state.processes
+                , types = Dict.insert (Uuid.toString pr.uuid) ( Type.TType TType.Process, Just pr.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedProcess uuid ->
             { state
-                | processes = removeTUuid uuid state.processes
+                | processes = Dict.remove (Uuid.toString uuid) state.processes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedIdentifier ei ->
@@ -509,7 +452,7 @@ aggregate (Message b p) state =
                 | identifiers = Dict.insert (Identifier.compare ei) ei state.identifiers
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         Configured conf ->
@@ -517,7 +460,7 @@ aggregate (Message b p) state =
                 | configs = Dict.insert (Configuration.compare conf) conf state.configs
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         Unconfigured conf ->
@@ -525,23 +468,24 @@ aggregate (Message b p) state =
                 | configs = Dict.remove (Configuration.compare conf) state.configs
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         AddedGroupType gt ->
             { state
-                | groupTypes = insertH gt state.groupTypes
+                | groupTypes = Dict.insert (Uuid.toString gt.uuid) gt state.groupTypes
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedGroupType uuid ->
             { state
-                | groupTypes = removeHUuid uuid state.groupTypes
+                | groupTypes = Dict.remove (Uuid.toString uuid) state.groupTypes
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         DefinedGroup group ->
@@ -549,39 +493,32 @@ aggregate (Message b p) state =
                 | groups = Dict.insert (Uuid.toString group.uuid) group state.groups
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
         RemovedGroup uuid ->
             { state
-                | groups = removeTUuid uuid state.groups
+                | groups = Dict.remove (Uuid.toString uuid) state.groups
+                , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        Grouped e g ->
-            let
-                grouplink =
-                    GroupLink.Link e g
-            in
+        Grouped link ->
             { state
-                | grouped = Dict.insert (GroupLink.compare grouplink) grouplink state.grouped
+                | grouped = Dict.insert (GroupLink.compare link) link state.grouped
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        Ungrouped e g ->
-            let
-                grouplink =
-                    GroupLink.Link e g
-            in
+        Ungrouped link ->
             { state
-                | grouped = Dict.remove (GroupLink.compare grouplink) state.grouped
+                | grouped = Dict.remove (GroupLink.compare link) state.grouped
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
-                , uuids = insertUuid b.uuid state.uuids
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
 
@@ -593,130 +530,3 @@ updatePending e es =
 
         Processed ->
             Dict.remove (Message.compare e) es
-
-
-allTyped : State -> TType.Type -> Dict String OnlyTyped
-allTyped s t =
-    case t of
-        TType.Resource ->
-            s.resources |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Event ->
-            s.events |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Agent ->
-            s.agents |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Commitment ->
-            s.commitments |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Contract ->
-            s.contracts |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Process ->
-            s.processes |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-        TType.Group ->
-            s.groups |> Dict.map (\_ x -> { what = x.what, uuid = x.uuid, type_ = x.type_, identifiers = Dict.empty, values = Dict.empty, display = Dict.empty })
-
-
-allHierarchic : State -> HType.Type -> Dict String (WithGroups (Hierarchic {}))
-allHierarchic s t =
-    case t of
-        HType.ResourceType ->
-            s.resourceTypes
-
-        HType.EventType ->
-            s.eventTypes
-
-        HType.AgentType ->
-            s.agentTypes
-
-        HType.CommitmentType ->
-            s.commitmentTypes
-
-        HType.ContractType ->
-            s.contractTypes
-
-        HType.ProcessType ->
-            s.processTypes
-
-        HType.GroupType ->
-            s.groupTypes
-
-
-allTfromScope : State -> Scope -> Dict String OnlyTyped
-allTfromScope s scope =
-    case scope of
-        Empty ->
-            Dict.empty
-
-        IsItem (Type.TType tt) uuid ->
-            allTyped s tt
-
-        IsItem (Type.HType ht) uuid ->
-            allTyped s (TType.fromHierarchic ht)
-
-        HasType (Type.TType tt) ->
-            allTyped s tt
-
-        HasType (Type.HType ht) ->
-            allTyped s (TType.fromHierarchic ht)
-
-        HasUserType _ ht uuid ->
-            allTyped s (TType.fromHierarchic ht)
-
-        Identified _ ->
-            Dict.empty
-
-        And s1 s2 ->
-            Dict.intersect (allTfromScope s s1) (allTfromScope s s2)
-
-        Or s1 s2 ->
-            Dict.union (allTfromScope s s1) (allTfromScope s s2)
-
-        Not _ ->
-            -- FIXME
-            Dict.empty
-
-
-allHfromScope : State -> Scope -> Dict String (Hierarchic (WithGroups {}))
-allHfromScope s scope =
-    case scope of
-        Empty ->
-            Dict.empty
-
-        IsItem (Type.HType ht) uuid ->
-            allHierarchic s ht
-
-        IsItem (Type.TType tt) uuid ->
-            allHierarchic s (TType.toHierarchic tt)
-
-        HasType (Type.TType tt) ->
-            allHierarchic s (TType.toHierarchic tt)
-
-        HasType (Type.HType ht) ->
-            allHierarchic s ht
-
-        HasUserType _ ht uuid ->
-            allHierarchic s ht
-
-        Identified _ ->
-            Dict.empty
-
-        And s1 s2 ->
-            Dict.intersect (allHfromScope s s1) (allHfromScope s s2)
-
-        Or s1 s2 ->
-            Dict.union (allHfromScope s s1) (allHfromScope s s2)
-
-        Not _ ->
-            -- FIXME
-            Dict.empty
-
-
-find : Dict String { a | uuid : Uuid } -> Uuid -> Maybe { a | uuid : Uuid }
-find et uuid =
-    Dict.filter (\_ e -> e.uuid == uuid) et
-        |> Dict.values
-        |> List.head

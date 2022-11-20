@@ -7,7 +7,6 @@ import Hierarchy.Type as HType
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
-import State exposing (allHfromScope, allTfromScope)
 import Type exposing (Type)
 import Value.DeepLink as DeepLink exposing (DeepLink(..))
 import Value.HardLink as Hardlink exposing (HardLink)
@@ -107,19 +106,13 @@ view s model =
             ++ [ let
                     sc =
                         DeepLink.toScope model.scope model.deeplink
-
-                    allT =
-                        allTfromScope s.state sc
-
-                    allH =
-                        allHfromScope s.state sc
                  in
                  column [ spacing 20 ]
                     [ h2 "Select the value you want to choose:"
                     , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                         (s.state.valueTypes
                             |> Dict.values
-                            |> List.filter (\vt -> containsScope allT allH vt.scope sc)
+                            |> List.filter (\vt -> containsScope s.state.types vt.scope sc)
                             |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) none)
                             |> withDefaultContent (text "(No Value Types are defined for this scope. Choose another entity or create a value for this entity)")
                         )

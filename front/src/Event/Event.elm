@@ -17,10 +17,6 @@ type alias Event =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
 
     --    , qty: Float
     --    , rtype: ResourceType
@@ -41,15 +37,11 @@ encode e =
 
 decoder : Decoder Event
 decoder =
-    Decode.map8 Event
+    Decode.map4 Event
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
 
 
 compare : Event -> String

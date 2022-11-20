@@ -155,7 +155,7 @@ toScope scope deeplink =
 toChoice : Scope -> List HardLink
 toChoice scope =
     case scope of
-        HasUserType t ht uuid ->
+        HasUserType t uuid ->
             case t of
                 Type.TType TType.Resource ->
                     HardLink.allRL

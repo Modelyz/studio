@@ -15,10 +15,6 @@ type alias Agent =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
 
 
@@ -33,14 +29,10 @@ encode a =
 
 decoder : Decoder Agent
 decoder =
-    Decode.map7 Agent
+    Decode.map3 Agent
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
 
 
 compare : Agent -> String

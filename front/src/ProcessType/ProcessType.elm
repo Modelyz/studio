@@ -16,10 +16,6 @@ type alias ProcessType =
     { what : HType.Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
 
 
@@ -34,14 +30,10 @@ encode pt =
 
 decoder : Decode.Decoder ProcessType
 decoder =
-    Decode.map7 ProcessType
+    Decode.map3 ProcessType
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
 
 
 compare : ProcessType -> String

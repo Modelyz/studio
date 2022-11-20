@@ -8,7 +8,6 @@ import Route exposing (Route, redirect)
 import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import Value.Value as Value exposing (Value)
 import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
@@ -94,7 +93,9 @@ viewContent model s =
                     "ValueType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| vt.name
-                    , text <| "Scope: " ++ Scope.View.toDisplay (allTfromScope s.state vt.scope |> withIdentifiers s.state) (allHfromScope s.state vt.scope |> withIdentifiers s.state) s.state.configs vt.scope
+                    , text <|
+                        "Scope: "
+                            ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs vt.scope
                     ]
             )
         |> Maybe.withDefault

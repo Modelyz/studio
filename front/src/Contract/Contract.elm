@@ -15,10 +15,6 @@ type alias Contract =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
 
     --    , parties: List Agent
     --    , clauses:
@@ -39,14 +35,10 @@ encode c =
 
 decoder : Decode.Decoder Contract
 decoder =
-    Decode.map7 Contract
+    Decode.map3 Contract
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
 
 
 compare : Contract -> String
