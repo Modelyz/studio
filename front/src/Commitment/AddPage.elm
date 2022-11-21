@@ -251,7 +251,7 @@ viewContent model s =
                         , explain = "Choose the type of the new Commitment:"
                         , empty = "(There are no Commitment Types yet to choose from)"
                         }
-                        (s.state.agentTypes |> Dict.map (\_ a -> a.uuid))
+                        (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups

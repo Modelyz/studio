@@ -243,7 +243,7 @@ viewContent model s =
                         , explain = "Optional parent type for the new Group Type (it can be hierarchical)"
                         , empty = "(There are no Group Types yet to choose from)"
                         }
-                        (s.state.agentTypes |> Dict.map (\_ a -> a.uuid))
+                        (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups
