@@ -33,7 +33,7 @@ type alias OnlyTyped =
     }
 
 
-isAscendantOf : Uuid -> Dict String ( Type, Maybe Uuid ) -> Uuid -> Bool
+isAscendantOf : Uuid -> Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Bool
 isAscendantOf =
     H.isAscendantOf
 

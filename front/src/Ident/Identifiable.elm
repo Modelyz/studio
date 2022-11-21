@@ -18,10 +18,10 @@ import Typed.Typed exposing (Typed)
 -- TODO or restore a separated Identifiable type?
 
 
-getIdentifiers : Dict String ( Type, Maybe Uuid ) -> Dict String IdentifierType -> Dict String Identifier -> Type -> Uuid -> Dict String Identifier
+getIdentifiers : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String IdentifierType -> Dict String Identifier -> Type -> Uuid -> Dict String Identifier
 getIdentifiers types allIdts allIds t uuid =
     -- start with empty identifiers from identifierTypes, then merge with existing identifiers
-    initIdentifiers types allIdts t (Maybe.andThen Tuple.second (Dict.get (Uuid.toString uuid) types)) uuid False
+    initIdentifiers types allIdts t (Maybe.andThen (\( _, _, x ) -> x) (Dict.get (Uuid.toString uuid) types)) uuid False
         |> Dict.union (Identifier.fromUuid uuid allIds)
 
 

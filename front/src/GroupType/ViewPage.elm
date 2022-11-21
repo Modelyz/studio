@@ -109,7 +109,7 @@ viewContent model s =
         [ button.primary Edit "Edit" ]
         [ h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
         , h2 "Identifiers:"

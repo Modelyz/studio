@@ -10,7 +10,7 @@ import Shared
 import Type
 import Typed.Type as TType
 import View exposing (..)
-import View.Smallcard exposing (tClickableCard, tViewHalfCard)
+import View.Smallcard exposing (tClickableCard, viewHalfCard)
 import View.Style exposing (..)
 import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
@@ -31,7 +31,7 @@ inputGroups c s uuids =
                         |> Dict.values
                         |> List.map
                             (\uuid ->
-                                tViewHalfCard (c.onInput <| Dict.remove (Uuid.toString uuid) uuids) s.state.types s.state.configs s.state.identifiers (Type.TType TType.Group) uuid
+                                viewHalfCard (Just (c.onInput <| Dict.remove (Uuid.toString uuid) uuids)) s.state.types s.state.configs s.state.identifiers (Type.TType TType.Group) uuid
                             )
                    )
         , h2 <| "Select the groups this entity should belong to"

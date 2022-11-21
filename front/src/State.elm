@@ -59,7 +59,7 @@ type alias State =
     , groupTypes : Dict String GroupType
 
     -- Hierarchy mapping from an entity uuid to its own type and parent type uuid
-    , types : Dict String ( Type, Maybe Uuid )
+    , types : Dict String ( Uuid, Type, Maybe Uuid )
 
     -- links
     , process_commitments : Dict String ProcessCommitments
@@ -234,7 +234,7 @@ aggregate (Message b p) state =
         AddedResourceType rt ->
             { state
                 | resourceTypes = Dict.insert (Uuid.toString rt.uuid) rt state.resourceTypes
-                , types = Dict.insert (Uuid.toString rt.uuid) ( Type.HType HType.ResourceType, rt.parent ) state.types
+                , types = Dict.insert (Uuid.toString rt.uuid) ( rt.uuid, Type.HType HType.ResourceType, rt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -252,7 +252,7 @@ aggregate (Message b p) state =
         AddedEventType et ->
             { state
                 | eventTypes = Dict.insert (Uuid.toString et.uuid) et state.eventTypes
-                , types = Dict.insert (Uuid.toString et.uuid) ( Type.HType HType.EventType, et.parent ) state.types
+                , types = Dict.insert (Uuid.toString et.uuid) ( et.uuid, Type.HType HType.EventType, et.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -270,7 +270,7 @@ aggregate (Message b p) state =
         AddedAgentType at ->
             { state
                 | agentTypes = Dict.insert (Uuid.toString at.uuid) at state.agentTypes
-                , types = Dict.insert (Uuid.toString at.uuid) ( Type.HType HType.AgentType, at.parent ) state.types
+                , types = Dict.insert (Uuid.toString at.uuid) ( at.uuid, Type.HType HType.AgentType, at.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -288,7 +288,7 @@ aggregate (Message b p) state =
         AddedCommitmentType cmt ->
             { state
                 | commitmentTypes = Dict.insert (Uuid.toString cmt.uuid) cmt state.commitmentTypes
-                , types = Dict.insert (Uuid.toString cmt.uuid) ( Type.HType HType.CommitmentType, cmt.parent ) state.types
+                , types = Dict.insert (Uuid.toString cmt.uuid) ( cmt.uuid, Type.HType HType.CommitmentType, cmt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -306,7 +306,7 @@ aggregate (Message b p) state =
         AddedContractType cnt ->
             { state
                 | contractTypes = Dict.insert (Uuid.toString cnt.uuid) cnt state.contractTypes
-                , types = Dict.insert (Uuid.toString cnt.uuid) ( Type.HType HType.ContractType, cnt.parent ) state.types
+                , types = Dict.insert (Uuid.toString cnt.uuid) ( cnt.uuid, Type.HType HType.ContractType, cnt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -324,7 +324,7 @@ aggregate (Message b p) state =
         AddedProcessType pt ->
             { state
                 | processTypes = Dict.insert (Uuid.toString pt.uuid) pt state.processTypes
-                , types = Dict.insert (Uuid.toString pt.uuid) ( Type.HType HType.ProcessType, pt.parent ) state.types
+                , types = Dict.insert (Uuid.toString pt.uuid) ( pt.uuid, Type.HType HType.ProcessType, pt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -342,7 +342,7 @@ aggregate (Message b p) state =
         AddedResource r ->
             { state
                 | resources = Dict.insert (Uuid.toString r.uuid) r state.resources
-                , types = Dict.insert (Uuid.toString r.uuid) ( Type.TType TType.Resource, Just r.type_ ) state.types
+                , types = Dict.insert (Uuid.toString r.uuid) ( r.uuid, Type.TType TType.Resource, Just r.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -360,7 +360,7 @@ aggregate (Message b p) state =
         AddedEvent e ->
             { state
                 | events = Dict.insert (Uuid.toString e.uuid) e state.events
-                , types = Dict.insert (Uuid.toString e.uuid) ( Type.TType TType.Event, Just e.type_ ) state.types
+                , types = Dict.insert (Uuid.toString e.uuid) ( e.uuid, Type.TType TType.Event, Just e.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -378,7 +378,7 @@ aggregate (Message b p) state =
         AddedAgent a ->
             { state
                 | agents = Dict.insert (Uuid.toString a.uuid) a state.agents
-                , types = Dict.insert (Uuid.toString a.uuid) ( Type.TType TType.Agent, Just a.type_ ) state.types
+                , types = Dict.insert (Uuid.toString a.uuid) ( a.uuid, Type.TType TType.Agent, Just a.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -396,7 +396,7 @@ aggregate (Message b p) state =
         AddedCommitment cm ->
             { state
                 | commitments = Dict.insert (Uuid.toString cm.uuid) cm state.commitments
-                , types = Dict.insert (Uuid.toString cm.uuid) ( Type.TType TType.Commitment, Just cm.type_ ) state.types
+                , types = Dict.insert (Uuid.toString cm.uuid) ( cm.uuid, Type.TType TType.Commitment, Just cm.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -414,7 +414,7 @@ aggregate (Message b p) state =
         AddedContract cn ->
             { state
                 | contracts = Dict.insert (Uuid.toString cn.uuid) cn state.contracts
-                , types = Dict.insert (Uuid.toString cn.uuid) ( Type.TType TType.Contract, Just cn.type_ ) state.types
+                , types = Dict.insert (Uuid.toString cn.uuid) ( cn.uuid, Type.TType TType.Contract, Just cn.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -432,7 +432,7 @@ aggregate (Message b p) state =
         AddedProcess pr ->
             { state
                 | processes = Dict.insert (Uuid.toString pr.uuid) pr state.processes
-                , types = Dict.insert (Uuid.toString pr.uuid) ( Type.TType TType.Process, Just pr.type_ ) state.types
+                , types = Dict.insert (Uuid.toString pr.uuid) ( pr.uuid, Type.TType TType.Process, Just pr.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -474,6 +474,7 @@ aggregate (Message b p) state =
         AddedGroupType gt ->
             { state
                 | groupTypes = Dict.insert (Uuid.toString gt.uuid) gt state.groupTypes
+                , types = Dict.insert (Uuid.toString gt.uuid) ( gt.uuid, Type.HType HType.CommitmentType, gt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -488,9 +489,10 @@ aggregate (Message b p) state =
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
             }
 
-        DefinedGroup group ->
+        DefinedGroup g ->
             { state
-                | groups = Dict.insert (Uuid.toString group.uuid) group state.groups
+                | groups = Dict.insert (Uuid.toString g.uuid) g state.groups
+                , types = Dict.insert (Uuid.toString g.uuid) ( g.uuid, Type.HType HType.CommitmentType, Just g.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids

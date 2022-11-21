@@ -3,6 +3,7 @@ module Scope.View exposing (selectScope, toDisplay)
 import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Group.Group exposing (Group)
@@ -27,7 +28,7 @@ import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
-toDisplay : Dict String ( Type, Maybe Uuid ) -> Dict String Identifier -> Dict String Configuration -> Scope -> String
+toDisplay : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Identifier -> Dict String Configuration -> Scope -> String
 toDisplay types ids configs scope =
     -- TODO move to Scope.Scope?
     case scope of
@@ -43,8 +44,11 @@ toDisplay types ids configs scope =
         HasType t ->
             "All " ++ Type.toPluralString t
 
-        HasUserType t tuid ->
-            "All " ++ Type.toPluralString t ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) t tuid
+        HasUserType (Type.TType tt) tuid ->
+            "All " ++ TType.toPluralString tt ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType (TType.toHierarchic tt)) tuid
+
+        HasUserType (Type.HType ht) tuid ->
+            "All " ++ HType.toPluralString ht ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType ht) tuid
 
         Identified _ ->
             "Identified"
@@ -59,18 +63,24 @@ toDisplay types ids configs scope =
             "Not (" ++ toDisplay types ids configs s ++ ")"
 
 
+halfCard : msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Scope -> Element msg
+halfCard onDelete types configs ids scope =
+    row [ Background.color color.item.selected ]
+        [ el [ padding 10 ] (text <| toDisplay types ids configs scope)
+        , if scope == Empty then
+            none
+
+          else
+            button.secondary onDelete "×"
+        ]
+
+
 selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Element msg
 selectScope s onInput scope =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
-            , (if scope == Empty then
-                viewHalfCard Nothing
-
-               else
-                viewHalfCard (Just <| onInput Empty)
-              )
-                (text <| toDisplay s.state.types s.state.identifiers s.state.configs scope)
+            , halfCard (onInput Empty) s.state.types s.state.configs s.state.identifiers scope
             ]
         , if scope == Empty then
             column [ spacing 10 ]
@@ -102,48 +112,41 @@ selectScope s onInput scope =
                 HasType (Type.TType tt) ->
                     (h3 <| "of type:")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, _ ) -> t == Type.HType (TType.toHierarchic tt))
-                                |> Dict.keys
+                                |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType (TType.toHierarchic tt))
+                                |> Dict.values
                                 |> List.map
-                                    (\kuuid ->
-                                        Uuid.fromString kuuid
-                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType (TType.toHierarchic tt)) uuid (HasUserType (Type.HType (TType.toHierarchic tt)) uuid))
-                                            |> Maybe.withDefault none
-                                    )
+                                    (\( uuid, _, _ ) -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType (TType.toHierarchic tt)) uuid (HasUserType (Type.TType tt) uuid))
                            )
 
                 HasType (Type.HType ht) ->
                     (h3 <| "of type:")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, _ ) -> t == Type.HType ht)
-                                |> Dict.keys
+                                |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType ht)
+                                |> Dict.values
                                 |> List.map
-                                    (\kuuid ->
-                                        Uuid.fromString kuuid
-                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid (HasUserType (Type.HType ht) uuid))
-                                            |> Maybe.withDefault none
-                                    )
+                                    (\( uuid, _, _ ) -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid (HasUserType (Type.HType ht) uuid))
                            )
 
                 _ ->
                     []
+
+        -- then the possible choice of a specific entity as a IsItem
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
-                -- FIXME the 2 cases below now look the same (merge?)
                 HasUserType (Type.HType ht) puuid ->
                     (h3 <| "You can select a specific one (otherwise click Next):")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
+                                |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.HType ht && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values
-                                |> List.map (\( _, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid) |> Maybe.withDefault none)
+                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid)
                            )
 
                 HasUserType (Type.TType tt) puuid ->
                     (h3 <| "You can select a specific one (otherwise click Next):")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
+                                |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.TType tt && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values
-                                |> List.map (\( _, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.TType tt) uuid) |> Maybe.withDefault none)
+                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.TType tt) uuid)
                            )
 
                 _ ->

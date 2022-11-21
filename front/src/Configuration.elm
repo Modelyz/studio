@@ -25,7 +25,7 @@ getConfig configs scope =
     List.head <| Dict.values <| Dict.filter (\_ (ZoneConfig _ _ s) -> s == scope) configs
 
 
-getMostSpecific : Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
+getMostSpecific : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
 getMostSpecific types configs zone scope =
     -- returns the most specific config for a given zone and scope
     findFirst configs (List.reverse <| getUpperList types scope [])

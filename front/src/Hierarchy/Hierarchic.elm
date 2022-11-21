@@ -17,14 +17,14 @@ type alias Hierarchic a =
     }
 
 
-isAscendantOf : Uuid -> Dict String ( Type, Maybe Uuid ) -> Uuid -> Bool
+isAscendantOf : Uuid -> Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Bool
 isAscendantOf childUuid types parentUuid =
     if childUuid == parentUuid then
         True
 
     else
         Dict.get (Uuid.toString childUuid) types
-            |> Maybe.andThen (\( _, mp ) -> Maybe.map (\p -> isAscendantOf p types parentUuid) mp)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\p -> isAscendantOf p types parentUuid) mpuuid)
             |> Maybe.withDefault False
 
 

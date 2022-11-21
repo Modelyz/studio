@@ -25,7 +25,7 @@ type alias IdentifierType =
     }
 
 
-initIdentifiers : Dict String ( Type, Maybe Uuid ) -> Dict String IdentifierType -> Type -> Maybe Uuid -> Uuid -> Bool -> Dict String Identifier
+initIdentifiers : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String IdentifierType -> Type -> Maybe Uuid -> Uuid -> Bool -> Dict String Identifier
 initIdentifiers types its t muuid uuid isNew =
     {- build the empty identifiers corresponding to the chosen type, possible user type, and uuid of the added/edited entity
        if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.

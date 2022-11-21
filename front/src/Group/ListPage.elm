@@ -123,7 +123,7 @@ viewContent model s =
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
                             Dict.values s.state.groups
-                                |> List.map (\g -> ( Type.TType g.what, Just g.uuid ))
+                                |> List.map (\g -> ( g.uuid, Type.TType g.what, Just g.uuid ))
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values

@@ -1,4 +1,4 @@
-module View.Smallcard exposing (clickableCard, clickableRemovableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, hViewHalfCard, sClickableCard, tClickableCard, tClickableRemovableCard, tItemClickableCard, tViewHalfCard, viewHalfCard, viewSmallCard)
+module View.Smallcard exposing (clickableCard, clickableRemovableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, halfCard, sClickableCard, tClickableCard, tClickableRemovableCard, tItemClickableCard, viewHalfCard, viewSmallCard)
 
 import Configuration as Config exposing (Configuration)
 import Dict exposing (Dict)
@@ -56,32 +56,26 @@ clickableCard onInput title description =
         ]
 
 
-viewHalfCard : Maybe msg -> Element msg -> Element msg
-viewHalfCard maybeOnDelete title =
+halfCard : msg -> Element msg -> Element msg
+halfCard onDelete title =
+    row [ Background.color color.item.selected ] [ el [ padding 10 ] title, button.secondary onDelete "×" ]
+
+
+viewHalfCard : Maybe msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+viewHalfCard maybeOnDelete types configs ids t uuid =
     row [ Background.color color.item.selected ]
-        [ el [ padding 10 ] title
+        [ el [ padding 10 ] (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         , Maybe.map (\onDelete -> button.secondary onDelete "×") maybeOnDelete |> Maybe.withDefault none
         ]
 
 
-tViewHalfCard : msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
-tViewHalfCard onDelete types configs ids t uuid =
-    viewHalfCard
-        (Just onDelete)
-        (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
-
-
-hViewHalfCard =
-    tViewHalfCard
-
-
-tItemClickableCard : (Scope -> msg) -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tItemClickableCard : (Scope -> msg) -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
 tItemClickableCard onInput types configs ids t uuid =
     clickableCard
         (onInput (IsItem t uuid))
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
             |> Maybe.withDefault ""
             |> text
         )
@@ -91,25 +85,25 @@ hItemClickableCard =
     tItemClickableCard
 
 
-sClickableCard : (Scope -> msg) -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Scope -> Element msg
+sClickableCard : (Scope -> msg) -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Scope -> Element msg
 sClickableCard onInput types configs ids t uuid scope =
     clickableCard
         (onInput scope)
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
             |> Maybe.withDefault ""
             |> text
         )
 
 
-tClickableCard : msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tClickableCard : msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
 tClickableCard onInput types configs ids t uuid =
     clickableCard
         onInput
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
             |> Maybe.withDefault ""
             |> text
         )
@@ -119,14 +113,14 @@ hClickableCard =
     tClickableCard
 
 
-tClickableRemovableCard : msg -> msg -> Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
+tClickableRemovableCard : msg -> msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
 tClickableRemovableCard onChoose onDelete types configs ids t uuid =
     clickableRemovableCard
         onChoose
         onDelete
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
             |> Maybe.withDefault ""
             |> text
         )

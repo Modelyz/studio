@@ -16,7 +16,7 @@ import Zone.Fragment as ZoneFragment
 import Zone.Zone as Zone exposing (Zone)
 
 
-display : Dict String ( Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Dict String Identifier -> Type -> Uuid -> String
+display : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Dict String Identifier -> Type -> Uuid -> String
 display types configs zone identifiers t uuid =
     Config.getMostSpecific types configs zone (IsItem t uuid)
         |> Maybe.map (\(ZoneConfig _ fragments _) -> ZoneFragment.display identifiers fragments)

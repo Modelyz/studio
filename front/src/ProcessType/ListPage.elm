@@ -124,7 +124,7 @@ viewContent model s =
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
                             Dict.values s.state.processTypes
-                                |> List.map (\a -> ( Type.HType a.what, Just a.uuid ))
+                                |> List.map (\a -> ( a.uuid, Type.HType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values

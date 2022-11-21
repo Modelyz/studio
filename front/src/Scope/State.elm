@@ -10,7 +10,7 @@ import Typed.Typed as T exposing (Typed)
 import Util exposing (otherwise)
 
 
-getUpperList : Dict String ( Type, Maybe Uuid ) -> Scope -> List Scope -> List Scope
+getUpperList : Dict String ( Uuid, Type, Maybe Uuid ) -> Scope -> List Scope -> List Scope
 getUpperList types scope oldList =
     let
         newList =
@@ -21,7 +21,7 @@ getUpperList types scope oldList =
         |> Maybe.withDefault newList
 
 
-containsScope : Dict String ( Type, Maybe Uuid ) -> Scope -> Scope -> Bool
+containsScope : Dict String ( Uuid, Type, Maybe Uuid ) -> Scope -> Scope -> Bool
 containsScope types inscope outscope =
     case outscope of
         Empty ->
@@ -122,18 +122,18 @@ containsScope types inscope outscope =
             False
 
 
-getUpper : Dict String ( Type, Maybe Uuid ) -> Scope -> Maybe Scope
+getUpper : Dict String ( Uuid, Type, Maybe Uuid ) -> Scope -> Maybe Scope
 getUpper types scope =
     case scope of
         IsItem (Type.HType ht) uuid ->
             Dict.get (Uuid.toString uuid) types
-                |> Maybe.andThen (\( _, mpuuid ) -> Maybe.map (HasUserType (Type.HType ht)) mpuuid)
+                |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (HasUserType (Type.HType ht)) mpuuid)
                 |> Maybe.withDefault (HasType (Type.HType ht))
                 |> Just
 
         IsItem (Type.TType tt) uuid ->
             Dict.get (Uuid.toString uuid) types
-                |> Maybe.andThen (\( _, mpuuid ) -> Maybe.map (HasUserType (Type.TType tt)) mpuuid)
+                |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (HasUserType (Type.TType tt)) mpuuid)
                 |> Maybe.withDefault (HasType (Type.TType tt))
                 |> Just
 
@@ -143,7 +143,7 @@ getUpper types scope =
         HasUserType t typeUuid ->
             Dict.get (Uuid.toString typeUuid) types
                 |> Maybe.map
-                    (\( _, mpuuid ) ->
+                    (\( _, _, mpuuid ) ->
                         case mpuuid of
                             Just puuid ->
                                 Just (HasUserType t puuid)

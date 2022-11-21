@@ -28,23 +28,17 @@ displayIdentifierDict default data =
         text default
 
 
-identifierColumn : Shared.Model -> IdentifierType -> Column ( Type, Maybe Uuid ) msg
+identifierColumn : Shared.Model -> IdentifierType -> Column ( Uuid, Type, Maybe Uuid ) msg
 identifierColumn s it =
     { header = headerCell color.table.header.background it.name
     , width = fill
     , view =
-        -- FIXME unused t and muuid??
-        \( t, muuid ) ->
-            muuid
-                |> Maybe.map
-                    (\uuid ->
-                        s.state.identifiers
-                            |> Dict.values
-                            |> List.filter (\id -> id.name == it.name && id.identifiable == uuid)
-                            |> List.map Identifier.toValue
-                            |> List.head
-                            |> Maybe.withDefault ""
-                            |> innerCell
-                    )
-                |> Maybe.withDefault none
+        \( uuid, _, _ ) ->
+            s.state.identifiers
+                |> Dict.values
+                |> List.filter (\id -> id.name == it.name && id.identifiable == uuid)
+                |> List.map Identifier.toValue
+                |> List.head
+                |> Maybe.withDefault ""
+                |> innerCell
     }

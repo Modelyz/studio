@@ -10,7 +10,7 @@ import Value.Value as Value exposing (Value)
 import Value.ValueType exposing (ValueType, initValues)
 
 
-withValues : Dict String ( Type, Maybe Uuid ) -> Dict String ValueType -> Dict String Value -> Item i -> Item i
+withValues : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String ValueType -> Dict String Value -> Item i -> Item i
 withValues types allVts allVs v =
     -- fill with empty identifiers from identifierTypes, then merge with existing identifiers
     { v
@@ -20,7 +20,7 @@ withValues types allVts allVs v =
     }
 
 
-getValues : Dict String ( Type, Maybe Uuid ) -> Dict String ValueType -> Dict String Value -> Type -> Uuid -> Dict String Value
+getValues : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String ValueType -> Dict String Value -> Type -> Uuid -> Dict String Value
 getValues types allVts allVs t uuid =
     -- start with empty identifiers from identifierTypes, then merge with existing identifiers
     initValues types allVts t (Just uuid) uuid False

@@ -11,7 +11,7 @@ import Shared
 import Type exposing (Type)
 import Value.ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, viewHalfCard)
+import View.Smallcard exposing (clickableCard, halfCard)
 import View.Style exposing (..)
 
 
@@ -109,7 +109,7 @@ view s model =
 
             ScopeAndValue scope name ->
                 [ selectScope s InputScope scope
-                , viewHalfCard (Just <| InputScope scope) (text name)
+                , halfCard (InputScope scope) (text name)
                 ]
         )
 

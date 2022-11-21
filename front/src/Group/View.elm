@@ -33,20 +33,15 @@ displayGroupTable default groups =
         text default
 
 
-groupsColumn : Shared.Model -> Column ( Type, Maybe Uuid ) msg
+groupsColumn : Shared.Model -> Column ( Uuid, Type, Maybe Uuid ) msg
 groupsColumn s =
     { header = headerCell color.table.header.background2 "Groups"
     , width = fill
     , view =
-        \( _, muuid ) ->
-            muuid
-                |> Maybe.map
-                    (\uuid ->
-                        getGroups s.state.grouped uuid
-                            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
-                            |> String.join "\n"
-                            |> text
-                            |> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
-                    )
-                |> Maybe.withDefault none
+        \( uuid, _, _ ) ->
+            getGroups s.state.grouped uuid
+                |> List.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group))
+                |> String.join "\n"
+                |> text
+                |> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
     }

@@ -159,7 +159,7 @@ init s f =
                             |> Dict.fromList
                 in
                 { adding
-                    | type_ = Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen Tuple.second
+                    | type_ = Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
                     , uuid = uuid
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid

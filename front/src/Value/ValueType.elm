@@ -22,7 +22,7 @@ type alias ValueType =
     }
 
 
-initValues : Dict String ( Type, Maybe Uuid ) -> Dict String ValueType -> Type -> Maybe Uuid -> Uuid -> Bool -> Dict String Value
+initValues : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String ValueType -> Type -> Maybe Uuid -> Uuid -> Bool -> Dict String Value
 initValues types vts t muuid uuid isNew =
     -- build the empty values corresponding to the chosen type, possible user type, and uuid of the added/edited entity
     -- if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
