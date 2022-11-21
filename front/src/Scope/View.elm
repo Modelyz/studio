@@ -9,9 +9,9 @@ import Group.Group exposing (Group)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (withIdentifiers)
-import Ident.Identifier exposing (Identifier)
+import Ident.Identifier as Identifier exposing (Identifier)
 import Item.Item as Item exposing (Item)
-import Prng.Uuid exposing (Uuid)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
@@ -35,16 +35,16 @@ toDisplay types ids configs scope =
             "Nothing"
 
         IsItem (Type.TType tt) uuid ->
-            (Type.toString (Type.TType tt) ++ ": ") ++ display types configs SmallcardTitle ids (Type.TType tt) uuid
+            (Type.toString (Type.TType tt) ++ ": ") ++ display types configs SmallcardTitle (Identifier.fromUuid uuid ids) (Type.TType tt) uuid
 
         IsItem (Type.HType ht) uuid ->
-            (Type.toString (Type.HType ht) ++ ": ") ++ display types configs SmallcardTitle ids (Type.HType ht) uuid
+            (Type.toString (Type.HType ht) ++ ": ") ++ display types configs SmallcardTitle (Identifier.fromUuid uuid ids) (Type.HType ht) uuid
 
         HasType t ->
             "All " ++ Type.toPluralString t
 
         HasUserType t tuid ->
-            "All " ++ Type.toPluralString t ++ " of type " ++ display types configs SmallcardTitle ids t tuid
+            "All " ++ Type.toPluralString t ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) t tuid
 
         Identified _ ->
             "Identified"
@@ -102,12 +102,12 @@ selectScope s onInput scope =
                 HasType (Type.TType tt) ->
                     (h3 <| "of type:")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, muuid ) -> t == Type.TType tt)
-                                |> Dict.values
+                                |> Dict.filter (\_ ( t, _ ) -> t == Type.HType (TType.toHierarchic tt))
+                                |> Dict.keys
                                 |> List.map
-                                    (\( t, muuid ) ->
-                                        muuid
-                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers t uuid (HasUserType (Type.TType tt) uuid))
+                                    (\kuuid ->
+                                        Uuid.fromString kuuid
+                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType (TType.toHierarchic tt)) uuid (HasUserType (Type.HType (TType.toHierarchic tt)) uuid))
                                             |> Maybe.withDefault none
                                     )
                            )
@@ -115,12 +115,12 @@ selectScope s onInput scope =
                 HasType (Type.HType ht) ->
                     (h3 <| "of type:")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, muuid ) -> t == Type.HType ht)
-                                |> Dict.values
+                                |> Dict.filter (\_ ( t, _ ) -> t == Type.HType ht)
+                                |> Dict.keys
                                 |> List.map
-                                    (\( t, muuid ) ->
-                                        muuid
-                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers t uuid (HasUserType (Type.HType ht) uuid))
+                                    (\kuuid ->
+                                        Uuid.fromString kuuid
+                                            |> Maybe.map (\uuid -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid (HasUserType (Type.HType ht) uuid))
                                             |> Maybe.withDefault none
                                     )
                            )
@@ -133,17 +133,17 @@ selectScope s onInput scope =
                 HasUserType (Type.HType ht) puuid ->
                     (h3 <| "You can select a specific one (otherwise click Next):")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, muuid ) -> muuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
+                                |> Dict.filter (\_ ( t, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
                                 |> Dict.values
-                                |> List.map (\( _, muuid ) -> muuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid) |> Maybe.withDefault none)
+                                |> List.map (\( _, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid) |> Maybe.withDefault none)
                            )
 
                 HasUserType (Type.TType tt) puuid ->
                     (h3 <| "You can select a specific one (otherwise click Next):")
                         :: (s.state.types
-                                |> Dict.filter (\_ ( t, muuid ) -> muuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
+                                |> Dict.filter (\_ ( t, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> uuid == puuid && containsScope s.state.types (IsItem t uuid) scope) |> Maybe.withDefault False)
                                 |> Dict.values
-                                |> List.map (\( _, muuid ) -> muuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.TType tt) uuid) |> Maybe.withDefault none)
+                                |> List.map (\( _, mpuuid ) -> mpuuid |> Maybe.map (\uuid -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.TType tt) uuid) |> Maybe.withDefault none)
                            )
 
                 _ ->
