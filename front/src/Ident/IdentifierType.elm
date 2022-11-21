@@ -31,7 +31,7 @@ initIdentifiers types its t muuid uuid isNew =
        if uuid is a newly generated one, we only have the Agent type t, the selected parent type and No uuid.
        So we must find all the it whose scope is ascendent of (HasUserType t h.what h.uuid).
     -}
-    its
+    (its
         |> Dict.filter
             (\_ it ->
                 if isNew then
@@ -44,6 +44,7 @@ initIdentifiers types its t muuid uuid isNew =
                 else
                     containsScope types (IsItem t uuid) it.scope
             )
+    )
         |> Dict.values
         |> List.map
             (\it ->

@@ -115,7 +115,7 @@ init s f =
             , type_ = Nothing
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
             , oldGroups = Dict.empty
             , groups = Dict.empty
@@ -134,11 +134,14 @@ init s f =
                             |> Dict.values
                             |> List.map (\link -> ( Uuid.toString link.group, link.group ))
                             |> Dict.fromList
+
+                    type_ =
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
                 in
                 { adding
-                    | type_ = Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+                    | type_ = type_
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
                     , oldGroups = oldGroups
                     , groups = oldGroups
@@ -155,7 +158,7 @@ update s msg model =
         InputType mh ->
             ( { model
                 | type_ = mh
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh False
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid
               }
             , Effect.none
@@ -257,7 +260,7 @@ viewContent model s =
                     inputGroups { onInput = InputGroups } s model.groups
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model

@@ -113,7 +113,7 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> text
         , h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid

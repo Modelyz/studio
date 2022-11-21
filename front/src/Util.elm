@@ -1,4 +1,4 @@
-module Util exposing (otherwise)
+module Util exposing (first, otherwise, second, third)
 
 
 otherwise : Maybe a -> Maybe a -> Maybe a
@@ -9,3 +9,18 @@ otherwise x y =
 
         Nothing ->
             y
+
+
+first : ( a, b, c ) -> a
+first =
+    \( x, _, _ ) -> x
+
+
+second : ( a, b, c ) -> b
+second =
+    \( _, x, _ ) -> x
+
+
+third : ( a, b, c ) -> c
+third =
+    \( _, _, x ) -> x

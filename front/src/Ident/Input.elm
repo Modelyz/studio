@@ -1,4 +1,4 @@
-module Ident.Input exposing (Config, Model, inputIdentifiers)
+module Ident.Input exposing (Config, inputIdentifiers)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -9,42 +9,38 @@ import Scope.Scope as Scope exposing (Scope)
 import View exposing (..)
 
 
-type alias Model a =
-    { a | identifiers : Dict String Identifier }
-
-
 type alias Config msg =
     { onEnter : msg
     , onInput : Identifier -> msg
     }
 
 
-inputIdentifiers : Config msg -> Model a -> Element msg
-inputIdentifiers c model =
+inputIdentifiers : Config msg -> Dict String Identifier -> Element msg
+inputIdentifiers c identifiers =
     -- display an input field for each relevant identifier
     column [ spacing 10 ]
         (h2 "Input identifiers"
-            :: (model.identifiers
+            :: (identifiers
                     |> Dict.values
                     |> List.map
-                        (\i -> inputIdentifier c model i)
+                        (\i -> inputIdentifier c i)
                     |> withDefaultContent (p <| "Apparently there are no identifiers defined for this entity. Please first create one.")
                 --TODO + link
                )
         )
 
 
-inputIdentifier : Config msg -> Model a -> Identifier -> Element msg
-inputIdentifier c model id =
+inputIdentifier : Config msg -> Identifier -> Element msg
+inputIdentifier c id =
     column []
         [ el [ paddingXY 0 10 ] <| text (id.name ++ " :")
         , row [ spacing 5 ] <|
-            List.indexedMap (\i f -> inputFragment c model i f id) id.fragments
+            List.indexedMap (\i f -> inputFragment c i f id) id.fragments
         ]
 
 
-inputFragment : Config msg -> Model a -> Int -> Fragment -> Identifier -> Element msg
-inputFragment c model index fragment ident =
+inputFragment : Config msg -> Int -> Fragment -> Identifier -> Element msg
+inputFragment c index fragment ident =
     case fragment of
         Free value ->
             Input.text
