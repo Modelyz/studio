@@ -7,7 +7,7 @@ import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
-import Ident.Identifier exposing (Identifier)
+import Ident.Identifier as Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
 import Type exposing (Type)
@@ -124,9 +124,9 @@ tClickableRemovableCard onChoose onDelete types configs ids t uuid =
     clickableRemovableCard
         onChoose
         onDelete
-        (text <| display types configs SmallcardTitle ids t uuid)
+        (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle ids pt puuid))
+            |> Maybe.andThen (\( pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
             |> Maybe.withDefault ""
             |> text
         )

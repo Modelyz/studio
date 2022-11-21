@@ -12,8 +12,8 @@ type Fragment
 
 
 toString : Fragment -> String
-toString f =
-    case f of
+toString fragment =
+    case fragment of
         IdentifierName name ->
             name
 
@@ -22,8 +22,8 @@ toString f =
 
 
 toValue : Dict String Identifier -> Fragment -> String
-toValue identifiers f =
-    case f of
+toValue identifiers fragment =
+    case fragment of
         IdentifierName name ->
             Identifier.select name identifiers |> Maybe.map Identifier.toValue |> Maybe.withDefault ("<" ++ name ++ ">")
 
@@ -38,8 +38,8 @@ display identifiers fragments =
 
 
 toDesc : Fragment -> String
-toDesc f =
-    case f of
+toDesc fragment =
+    case fragment of
         IdentifierName _ ->
             "Identifier"
 
@@ -48,8 +48,8 @@ toDesc f =
 
 
 encode : Fragment -> Encode.Value
-encode f =
-    case f of
+encode fragment =
+    case fragment of
         IdentifierName name ->
             Encode.object
                 [ ( "IdentifierName", Encode.string name ) ]
