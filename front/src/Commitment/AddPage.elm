@@ -244,7 +244,7 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     flatSelect s
-                        { what = Type.TType TType.Commitment
+                        { what = Type.HType HType.CommitmentType
                         , muuid = model.type_
                         , onInput = InputType
                         , title = "Type:"
