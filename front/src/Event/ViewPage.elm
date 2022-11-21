@@ -13,6 +13,7 @@ import Shared
 import Spa.Page
 import Type exposing (Type)
 import Typed.Type as TType
+import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
@@ -40,6 +41,7 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
+    , type_ : Maybe Uuid
     , groups : List ( Type, Uuid )
     }
 
@@ -74,6 +76,7 @@ init s f =
     ( { route = f.route
       , what = mainTType
       , uuid = f.uuid
+      , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
@@ -115,7 +118,7 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> text
         , h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid False
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid

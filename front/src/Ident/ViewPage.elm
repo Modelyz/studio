@@ -16,6 +16,7 @@ import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
+import Util exposing (third)
 import View exposing (..)
 import Zone.Zone exposing (Zone(..))
 

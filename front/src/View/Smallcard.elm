@@ -12,6 +12,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
 import Type exposing (Type)
 import Typed.Typed as T exposing (Typed)
+import Util exposing (third)
 import View exposing (..)
 import View.Style exposing (..)
 import Zone.View exposing (display)
@@ -75,7 +76,8 @@ tItemClickableCard onInput types configs ids t uuid =
         (onInput (IsItem t uuid))
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen third
+            |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
@@ -91,7 +93,8 @@ sClickableCard onInput types configs ids t uuid scope =
         (onInput scope)
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen third
+            |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
@@ -103,7 +106,8 @@ tClickableCard onInput types configs ids t uuid =
         onInput
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen third
+            |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
@@ -120,7 +124,8 @@ tClickableRemovableCard onChoose onDelete types configs ids t uuid =
         onDelete
         (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
         (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen (\( _, pt, mpuuid ) -> mpuuid |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) pt puuid))
+            |> Maybe.andThen third
+            |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
