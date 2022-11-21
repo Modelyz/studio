@@ -237,7 +237,7 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.EventType
-                        , muuid = Just model.uuid
+                        , muuid = model.type_
                         , onInput = InputType
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Event Type (it can be hierarchical)"

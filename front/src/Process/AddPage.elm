@@ -268,7 +268,7 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.TType TType.Process
-                        , muuid = Just model.uuid
+                        , muuid = model.type_
                         , onInput = InputType
                         , title = "Type:"
                         , explain = "Choose the type of the new Process:"
