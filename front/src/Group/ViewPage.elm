@@ -125,7 +125,7 @@ viewContent model s =
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
-        , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid
+        , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict "(none)" s.state.values
         , h2 "Groups:"
         , model.groups

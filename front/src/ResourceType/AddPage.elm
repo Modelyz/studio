@@ -114,7 +114,7 @@ init s f =
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
-            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -140,7 +140,7 @@ init s f =
                     | type_ = type_
                     , uuid = uuid
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -157,7 +157,7 @@ update s msg model =
             ( { model
                 | type_ = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh False
-                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid
+                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
             )
