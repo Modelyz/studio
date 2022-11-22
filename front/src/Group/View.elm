@@ -34,7 +34,7 @@ groupsColumn s =
     , width = fill
     , view =
         \( uuid, _, _ ) ->
-            Debug.log "getGroups" (getGroups s.state.grouped uuid)
+            getGroups s.state.grouped uuid
                 |> List.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group))
                 |> String.join "\n"
                 |> text

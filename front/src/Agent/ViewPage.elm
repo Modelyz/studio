@@ -42,7 +42,7 @@ type alias Model =
     , what : Type
     , uuid : Uuid
     , type_ : Maybe Uuid
-    , groups : List ( Type, Uuid )
+    , groups : List Uuid
     }
 
 
@@ -81,7 +81,7 @@ init s f =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
                 |> Dict.values
-                |> List.map (\link -> ( Type.TType TType.Group, link.group ))
+                |> List.map (\link -> link.group)
       }
     , closeMenu f s.menu
     )
@@ -125,6 +125,6 @@ viewContent model s =
             |> displayValueDict "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\( gt, guuid ) -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers gt guuid)
+            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]
