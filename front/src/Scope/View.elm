@@ -68,8 +68,8 @@ halfCard onDelete types configs ids scope =
         ]
 
 
-selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Element msg
-selectScope s onInput scope =
+selectScope : Shared.Model -> (Scope -> msg) -> Scope -> String -> Element msg
+selectScope s onInput scope title =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
@@ -77,7 +77,7 @@ selectScope s onInput scope =
             ]
         , if scope == Empty then
             column [ spacing 10 ]
-                [ h2 <| "What should it apply to?"
+                [ h2 <| title
 
                 -- First the concrete types
                 , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]

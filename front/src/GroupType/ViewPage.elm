@@ -11,8 +11,8 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Typed.Type as TType
 import Type exposing (Type)
+import Typed.Type as TType
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
@@ -113,7 +113,7 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> text
         , h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+        , Debug.log "getIdentifiers" (getIdentifiers s.state.types s.state.identifierTypes (Debug.log "ids" s.state.identifiers) model.what model.uuid model.type_ False)
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False

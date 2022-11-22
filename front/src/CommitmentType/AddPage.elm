@@ -4,6 +4,7 @@ import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Flow exposing (Flow, checkNone)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -19,6 +20,7 @@ import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Type
+import Util exposing (checkMaybe, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -131,7 +133,7 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProviders, Step.Step StepReceivers, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
@@ -238,12 +240,6 @@ checkStep model =
         Step StepType ->
             Ok ()
 
-        Step StepIdentifiers ->
-            Ok ()
-
-        Step StepValues ->
-            Ok ()
-
         Step StepProviders ->
             Ok ()
 
@@ -253,13 +249,19 @@ checkStep model =
         Step StepFlow ->
             Ok ()
 
+        Step StepIdentifiers ->
+            Ok ()
+
+        Step StepValues ->
+            Ok ()
+
         Step StepGroups ->
             Ok ()
 
 
 validate : Model -> Result String CommitmentType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flow
+    Ok (constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flow)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -279,13 +281,13 @@ viewContent model s =
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepProviders ->
-                    selectScope s SelectProviders model.providers
+                    selectScope s SelectProviders model.providers "Possible Provider Agents:"
 
                 Step.Step StepReceivers ->
-                    selectScope s SelectReceivers model.receivers
+                    selectScope s SelectReceivers model.receivers "Possible Receiver Agents:"
 
                 Step.Step StepFlow ->
-                    selectScope s SelectFlow model.flow
+                    selectScope s SelectFlow model.flow "Possible Resources or Resource Types:"
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups

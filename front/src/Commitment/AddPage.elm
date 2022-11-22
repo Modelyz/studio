@@ -248,7 +248,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            checkMaybe model.type_ "You must select an Commitment Type" |> Result.map (\_ -> ())
+            checkMaybe model.type_ "You must select a Commitment Type" |> Result.map (\_ -> ())
 
         Step StepProvider ->
             checkMaybe model.provider "You must select a Provider" |> Result.map (\_ -> ())
@@ -273,9 +273,9 @@ validate : Model -> Result String Commitment
 validate m =
     Result.map4
         (\type_ provider receiver flow -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow)
-        (checkMaybe m.type_ "You must select an Commitment Type")
-        (checkMaybe m.provider "You must select an Provider")
-        (checkMaybe m.receiver "You must select an Receiver")
+        (checkMaybe m.type_ "You must select a Commitment Type")
+        (checkMaybe m.provider "You must select a Provider")
+        (checkMaybe m.receiver "You must select a Receiver")
         (checkNone m.flow "You must input a Resource or Resource Type Flow")
 
 
