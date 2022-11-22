@@ -261,7 +261,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    containsScope s.state.types (Debug.log "model.scope" model.scope) (Debug.log "it.scope" it.scope)
+                                    containsScope s.state.types model.scope it.scope
                                 )
                         )
                             |> List.map (.name >> IdentifierName)

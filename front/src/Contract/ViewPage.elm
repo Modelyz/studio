@@ -81,7 +81,7 @@ init s f =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
                 |> Dict.values
-                |> List.map (\link -> ( link.what, link.groupable ))
+                |> List.map (\link -> ( link.what, link.group ))
       }
     , closeMenu f s.menu
     )
