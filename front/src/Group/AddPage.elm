@@ -160,7 +160,7 @@ init s f =
                 { adding
                     | type_ = type_
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ False
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid
                     , oldGroups = oldGroups
                     , groups = oldGroups
