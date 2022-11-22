@@ -2,7 +2,6 @@ module Configuration.View exposing (description, view)
 
 import Configuration exposing (Configuration(..))
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Scope.Scope as Scope
 import Scope.View
 import Shared

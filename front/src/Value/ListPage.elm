@@ -3,7 +3,6 @@ module Value.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope

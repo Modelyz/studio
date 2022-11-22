@@ -3,7 +3,6 @@ module Ident.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Ident.IdentifierType as IT exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)

@@ -9,7 +9,6 @@ import Element.Font as Font
 import Group.Group exposing (Group)
 import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (withIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Item.Item as Item exposing (Item)
 import Prng.Uuid as Uuid exposing (Uuid)

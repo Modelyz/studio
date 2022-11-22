@@ -3,7 +3,6 @@ module Value.ViewPage exposing (Flags, Model, Msg(..), match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Route exposing (Route, redirect)
 import Scope.View
 import Shared
