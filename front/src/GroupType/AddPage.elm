@@ -154,7 +154,7 @@ update s msg model =
         InputType mh ->
             ( { model
                 | type_ = mh
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh False
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
