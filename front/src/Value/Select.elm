@@ -1,17 +1,16 @@
-module Value.Select exposing (Model, Msg(..), init, selectValue, update, view)
+module Value.Select exposing (Model, Msg(..), SelectedValue, init, update, view)
 
 import Dict
 import Element exposing (..)
 import Element.Border as Border
-import Element.Font as Font
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
 import Value.ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, viewHalfCard)
+import View.Smallcard exposing (clickableCard, halfCard)
 import View.Style exposing (..)
 
 
@@ -51,7 +50,7 @@ update s msg model =
         InputScope scope ->
             ( { model | selection = OnlyScope scope }, Cmd.none )
 
-        InputValue type_ uuid name ->
+        InputValue _ _ name ->
             ( { model
                 | selection =
                     case model.selection of
@@ -93,7 +92,7 @@ view s model =
         ]
         (case model.selection of
             None ->
-                [ selectScope s InputScope Empty ]
+                [ selectScope s InputScope Scope.empty ]
 
             OnlyScope (IsItem type_ uuid) ->
                 let
@@ -109,7 +108,7 @@ view s model =
 
             ScopeAndValue scope name ->
                 [ selectScope s InputScope scope
-                , viewHalfCard (Just <| InputScope scope) (text name)
+                , halfCard (InputScope scope) (text name)
                 ]
         )
 

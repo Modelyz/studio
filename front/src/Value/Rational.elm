@@ -1,4 +1,4 @@
-module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromSlashString, fromString, inv, mul, multiply, neg, pow, rdecoder, toString)
+module Value.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromString, inv, multiply, neg, rdecoder, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -18,16 +18,6 @@ inv (Rational n d) =
     Rational d n
 
 
-mul : Rational -> Rational -> Rational
-mul (Rational n1 d1) (Rational n2 d2) =
-    Rational (n1 * n2) (d1 * d2)
-
-
-div : Rational -> Rational -> Rational
-div (Rational n1 d1) (Rational n2 d2) =
-    Rational (n1 * d2) (d1 * n2)
-
-
 add : Rational -> Rational -> Rational
 add (Rational n1 d1) (Rational n2 d2) =
     Rational ((n1 * d2) + (n2 * d1)) (d1 * d2)
@@ -36,34 +26,6 @@ add (Rational n1 d1) (Rational n2 d2) =
 multiply : Rational -> Rational -> Rational
 multiply (Rational n1 d1) (Rational n2 d2) =
     Rational (n1 * n2) (d1 * d2)
-
-
-sub : Rational -> Rational -> Rational
-sub (Rational n1 d1) (Rational n2 d2) =
-    Rational ((n1 * d2) - (n2 * d1)) (d1 * d2)
-
-
-pow : Int -> Rational -> Rational
-pow p (Rational n d) =
-    Rational (n ^ p) (d ^ p)
-
-
-gcd : Int -> Int -> Int
-gcd x y =
-    if x == 0 then
-        y
-
-    else
-        gcd (remainderBy x y) x
-
-
-lcm : Int -> Int -> Int
-lcm x y =
-    if x == 0 || y == 0 then
-        0
-
-    else
-        abs (toFloat x / toFloat (gcd x y * y) |> truncate)
 
 
 fromSlashString : String -> Result String Rational
@@ -92,15 +54,6 @@ fromSlashString =
            )
 
 
-sign : Int -> Int
-sign n =
-    if n >= 0 then
-        1
-
-    else
-        -1
-
-
 fromFloatString : String -> String -> Result String Rational
 fromFloatString sep =
     -- Parse a Float String to a Rational (with custom separator)
@@ -114,15 +67,12 @@ fromFloatString sep =
                                     (\tails ->
                                         let
                                             right =
-                                                String.join "" tails
-
-                                            ll =
-                                                String.length left
+                                                String.concat tails
 
                                             lr =
                                                 String.length right
                                         in
-                                        Maybe.map2 Rational (String.toInt (left ++ right)) (Just ((*) 1 (10 ^ lr)))
+                                        Maybe.map2 Rational (String.toInt (left ++ right)) (Just (10 ^ lr))
                                     )
                         )
            )
@@ -151,7 +101,7 @@ oneOf ds s =
                 Ok rat ->
                     Ok rat
 
-                Err err ->
+                Err _ ->
                     oneOf rest s
 
 
@@ -183,7 +133,7 @@ decoder =
                             Ok rational ->
                                 Decode.succeed rational
 
-                            Err msg ->
+                            Err _ ->
                                 Decode.fail "plop"
                    )
             )

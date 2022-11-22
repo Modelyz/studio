@@ -3,18 +3,13 @@ module Value.DeepLink.Select exposing (Model, Msg(..), init, update, view)
 import Dict
 import Element exposing (..)
 import Element.Border as Border
-import Hierarchy.Type as HType
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope.Scope exposing (Scope)
 import Scope.State exposing (containsScope)
 import Shared
-import State exposing (allHfromScope, allTfromScope)
-import Type exposing (Type)
 import Value.DeepLink as DeepLink exposing (DeepLink(..))
 import Value.HardLink as Hardlink exposing (HardLink)
-import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (ValueType)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, viewHalfCard)
+import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
 
 
@@ -97,31 +92,24 @@ view s model =
                 Null ->
                     List.map (\l -> button.primary (AddedHardlink l) (Hardlink.toString l)) (DeepLink.toChoice model.scope)
 
-                Link hl dl ->
+                Link hl _ ->
                     -- TODO replace Nothing with Just scope of the restricted scope of the hardlink
                     List.map (\l -> button.primary (AddedHardlink l) (Hardlink.toString l)) (Hardlink.toChoice hl)
 
-                EndPoint scope name ->
+                EndPoint _ _ ->
                     []
+        , let
+            sc =
+                DeepLink.toScope model.scope model.deeplink
+          in
+          column [ spacing 20 ]
+            [ h2 "Select the value you want to choose:"
+            , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                (s.state.valueTypes
+                    |> Dict.values
+                    |> List.filter (\vt -> containsScope s.state.types vt.scope sc)
+                    |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) none)
+                    |> withDefaultContent (text "(No Value Types are defined for this scope. Choose another entity or create a value for this entity)")
+                )
+            ]
         ]
-            ++ [ let
-                    sc =
-                        DeepLink.toScope model.scope model.deeplink
-
-                    allT =
-                        allTfromScope s.state sc
-
-                    allH =
-                        allHfromScope s.state sc
-                 in
-                 column [ spacing 20 ]
-                    [ h2 "Select the value you want to choose:"
-                    , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-                        (s.state.valueTypes
-                            |> Dict.values
-                            |> List.filter (\vt -> containsScope allT allH vt.scope sc)
-                            |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) none)
-                            |> withDefaultContent (text "(No Value Types are defined for this scope. Choose another entity or create a value for this entity)")
-                        )
-                    ]
-               ]

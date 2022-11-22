@@ -3,14 +3,11 @@ module Value.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
 import View.Smallcard exposing (clickableRemovableCard)
@@ -99,16 +96,7 @@ viewContent model s =
                             (Removed vt)
                             (text vt.name)
                             (row []
-                                [ text <|
-                                    "for "
-                                        ++ Scope.View.toDisplay
-                                            (allTfromScope s.state vt.scope
-                                                |> withIdentifiers s.state
-                                            )
-                                            (allHfromScope s.state vt.scope |> withIdentifiers s.state)
-                                            s.state.configs
-                                            vt.scope
-                                ]
+                                [ text <| "for " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs vt.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Value Types yet. Create your first one!")

@@ -1,11 +1,10 @@
-module Value.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope, toString)
+module Value.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope)
 
-import Dict
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope.Scope as Scope exposing (Scope(..))
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Value.HardLink as HardLink exposing (HardLink)
 
@@ -16,21 +15,6 @@ type DeepLink
       -- the endpoint corresponds to a ValueType
       -- the EndPoint scope is the restriction given by the last hardlink destination
     | EndPoint Scope String
-
-
-toString : DeepLink -> String
-toString v =
-    case v of
-        Link hl dl ->
-            "Link"
-
-        EndPoint _ name ->
-            -- FIXME
-            "EndPoint : " ++ name
-
-        Null ->
-            -- FIXME
-            "Null"
 
 
 encode : DeepLink -> Encode.Value
@@ -103,10 +87,10 @@ isComplete deeplink =
         Null ->
             False
 
-        Link hl dl ->
+        Link _ dl ->
             isComplete dl
 
-        EndPoint scope name ->
+        EndPoint _ _ ->
             True
 
 
@@ -148,14 +132,14 @@ toScope scope deeplink =
         Link hl dl ->
             toScope (HardLink.toScope hl) dl
 
-        EndPoint vtscope name ->
+        EndPoint _ _ ->
             scope
 
 
 toChoice : Scope -> List HardLink
 toChoice scope =
     case scope of
-        HasUserType t ht uuid ->
+        HasUserType t _ ->
             case t of
                 Type.TType TType.Resource ->
                     HardLink.allRL

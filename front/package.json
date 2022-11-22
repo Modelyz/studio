@@ -1,10 +1,8 @@
 {
-  "dependencies": {
-  },
   "devDependencies": {
     "elm-analyse": "^0.16.5",
-    "elm-go": "^5.0.14",
-    "elm-json": "^0.2.12",
-    "elm-review": "^2.7.5"
+    "elm-go": "^5.0.19",
+    "elm-json": "^0.2.13",
+    "elm-review": "^2.8.2"
   }
 }

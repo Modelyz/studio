@@ -11,12 +11,12 @@ import Element.Font as Font
 import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope.Scope as Scope exposing (Scope)
 import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import State
+import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
@@ -88,7 +88,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , zone = SmallcardTitle
-            , scope = Empty
+            , scope = Scope.empty
             , fragments = []
             , warning = ""
             }
@@ -164,7 +164,7 @@ validate m =
     Result.map3 ZoneConfig
         (Ok m.zone)
         (checkEmptyList m.fragments "You must choose at least an identifier")
-        (if m.scope == Empty then
+        (if m.scope == Scope.empty then
             Err "You must choose a scope"
 
          else
@@ -249,14 +249,7 @@ inputFragments s model =
                             )
                     )
         , h2 "Click on the items below to construct the format of the zone"
-        , let
-            allT =
-                Maybe.map (State.allTyped s.state) (Scope.mainTType model.scope) |> Maybe.withDefault Dict.empty
-
-            allH =
-                Maybe.map (State.allHierarchic s.state) (Scope.mainHType model.scope) |> Maybe.withDefault Dict.empty
-          in
-          wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
+        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             List.map
                 (\f ->
                     clickableCard
@@ -269,7 +262,7 @@ inputFragments s model =
                             |> Dict.values
                             |> List.filter
                                 (\it ->
-                                    containsScope allT allH model.scope it.scope
+                                    containsScope s.state.types model.scope it.scope
                                 )
                         )
                             |> List.map (.name >> IdentifierName)

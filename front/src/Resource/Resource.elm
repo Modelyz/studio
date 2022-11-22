@@ -1,30 +1,16 @@
-module Resource.Resource exposing (Resource, compare, decoder, encode)
+module Resource.Resource exposing (Resource, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 type alias Resource =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
-
-
-compare : Resource -> String
-compare =
-    .uuid >> Uuid.toString
 
 
 encode : Resource -> Encode.Value
@@ -38,11 +24,7 @@ encode r =
 
 decoder : Decoder Resource
 decoder =
-    Decode.map7 Resource
+    Decode.map3 Resource
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)

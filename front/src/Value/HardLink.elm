@@ -1,10 +1,10 @@
-module Value.HardLink exposing (..)
+module Value.HardLink exposing (AgentLink(..), AgentTypeLink(..), CommitmentLink(..), CommitmentTypeLink(..), ContractLink(..), ContractTypeLink(..), EventLink(..), EventTypeLink(..), GroupLink(..), GroupTypeLink(..), HardLink(..), ProcessLink(..), ProcessTypeLink(..), ResourceLink(..), ResourceTypeLink(..), allAL, allCmL, allCnL, allEL, allGL, allPL, allRL, decoder, encode, toChoice, toScope, toString)
 
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Scope.Scope as Scope exposing (Scope(..))
-import Type exposing (Type)
+import Scope.Scope exposing (Scope(..))
+import Type
 import Typed.Type as TType
 
 

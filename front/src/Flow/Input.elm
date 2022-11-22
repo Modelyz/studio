@@ -6,23 +6,26 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Flow exposing (Flow(..))
-import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
 import Ident.Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
 import Resource.Resource exposing (Resource)
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
-import Typed.Typed exposing (OnlyTyped, Typed)
+import Type
 import Value.Input
+import Value.Rational exposing (Rational)
 import Value.Value exposing (Value)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, hClickableCard, hViewHalfCard, tClickableCard, tViewHalfCard)
+import View.Smallcard exposing (clickableCard, tClickableCard)
 import View.Style exposing (..)
 
 
 type alias Config msg =
-    { mflow : Maybe Flow
-    , onInput : msg
+    { flow : Flow
+    , scope : Scope
+    , onInput : Flow -> msg
+    , onSelect : Flow -> msg
     , onEnter : msg
     , title : String
     , explain : String
@@ -32,76 +35,46 @@ type alias Config msg =
 
 input : Config msg -> Shared.Model -> Element msg
 input c s =
-    let
-        allTwithIdentifiers =
-            s.state.resources
-                |> Dict.map
-                    (\_ t ->
-                        { t
-                            | identifiers =
-                                s.state.identifiers
-                                    |> Dict.filter (\_ id -> t.uuid == id.identifiable)
-                        }
+    case c.flow of
+        ResourceFlow expr resource ->
+            column [ alignTop, spacing 10, width <| minimum 200 fill ]
+                [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                    [ h2 c.title
+
+                    -- TODO
+                    , text "edit r flow expr"
+
+                    {- Value.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr ) -}
+                    ]
+                , h2 c.explain
+                , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                    (s.state.resources
+                        |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) c.scope)
+                        |> Dict.values
+                        |> List.map (\r -> tClickableCard (c.onSelect (ResourceFlow expr r)) s.state.types s.state.configs s.state.identifiers (Type.TType r.what) r.uuid)
+                        |> withDefaultContent (p c.empty)
                     )
+                ]
 
-        allHwithIdentifiers =
-            s.state.resourceTypes
-                |> Dict.map
-                    (\_ t ->
-                        { t
-                            | identifiers =
-                                s.state.identifiers
-                                    |> Dict.filter (\_ id -> t.uuid == id.identifiable)
-                        }
+        ResourceTypeFlow expr resourceType ->
+            column [ alignTop, spacing 10, width <| minimum 200 fill ]
+                [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+                    [ h2 c.title
+
+                    -- TODO
+                    , text "edit rt flow expr"
+
+                    {- Value.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr ) -}
+                    ]
+                , h2 c.explain
+                , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                    (s.state.resourceTypes
+                        |> Dict.filter (\_ rt -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) c.scope)
+                        |> Dict.values
+                        |> List.map (\rt -> tClickableCard (c.onSelect (ResourceTypeFlow expr rt)) s.state.types s.state.configs s.state.identifiers (Type.HType rt.what) rt.uuid)
+                        |> withDefaultContent (p c.empty)
                     )
-    in
-    c.mflow
-        |> Maybe.map
-            (\flow ->
-                case flow of
-                    ResourceFlow expr resource ->
-                        column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                            [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                                [ h2 c.title
+                ]
 
-                                -- TODO
-                                , text "edit flow expr"
-
-                                {- Value.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr ) -}
-                                , c.mflow
-                                    |> Maybe.map (tWithIdentifiers allTwithIdentifiers allHwithIdentifiers s.state.identifierTypes s.state.identifiers)
-                                    |> Maybe.map (tViewHalfCard (Just c.onInput) allTwithIdentifiers allHwithIdentifiers s.state.configs)
-                                    |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
-                                ]
-                            , h2 c.explain
-                            , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
-                                (allTwithIdentifiers
-                                    |> Dict.values
-                                    |> List.map (\t -> tClickableCard c.onInput allTwithIdentifiers allHwithIdentifiers s.state.configs t)
-                                    |> withDefaultContent (p c.empty)
-                                )
-                            ]
-
-                    ResourceTypeFlow expr resource ->
-                        column [ alignTop, spacing 10, width <| minimum 200 fill ]
-                            [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
-                                [ h2 c.title
-
-                                -- TODO
-                                , text "edit flow expr"
-
-                                {- Value.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr ) -}
-                                , c.mstuff
-                                    |> Maybe.map (tWithIdentifiers allTwithIdentifiers allHwithIdentifiers s.state.identifierTypes s.state.identifiers)
-                                    |> Maybe.map (tViewHalfCard (Just c.onInput) allTwithIdentifiers allHwithIdentifiers s.state.configs)
-                                    |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
-                                ]
-                            , h2 c.explain
-                            , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
-                                (allTwithIdentifiers
-                                    |> Dict.values
-                                    |> List.map (tClickableCard c.onInput allTwithIdentifiers allHwithIdentifiers s.state.configs)
-                                    |> withDefaultContent (p c.empty)
-                                )
-                            ]
-            )
+        None ->
+            none

@@ -1,4 +1,4 @@
-module Value.Value exposing (..)
+module Value.Value exposing (Value, compare, decoder, encode, eval, fromUuid, getByUuid)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -6,8 +6,7 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 import Value.Expression as Expression exposing (Expression)
-import Value.HardLink exposing (HardLink, toString)
-import Value.Rational as R exposing (Rational(..))
+import Value.Rational exposing (Rational)
 
 
 type alias Value =

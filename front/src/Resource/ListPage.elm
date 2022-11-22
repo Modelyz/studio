@@ -4,28 +4,21 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
-import Group.View exposing (tGroupsColumn)
-import Group.WithGroups exposing (tWithGroups)
-import Ident.Identifiable exposing (hWithIdentifiers, tWithIdentifiers)
-import Ident.Identifier as Identifier
-import Ident.IdentifierType exposing (IdentifierType)
+import Group.View exposing (groupsColumn)
+import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Resource.Resource exposing (Resource)
-import Route exposing (Route, redirectView)
+import Route exposing (Route)
 import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Type exposing (Type(..))
+import Type
 import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
-import View.Type as ViewType exposing (Type(..))
-import Zone.View exposing (tWithDisplay)
-import Zone.Zone exposing (Zone(..))
+import View.Type as ViewType
 
 
 type alias Model =
@@ -67,7 +60,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route, viewtype = Smallcard }, closeMenu f s.menu )
+    ( { route = f.route, viewtype = ViewType.Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -97,68 +90,45 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    let
-        allT =
-            s.state.resources |> Dict.map (\_ t -> tWithIdentifiers s.state.resources Dict.empty s.state.identifierTypes s.state.identifiers t)
-
-        allH =
-            s.state.resourceTypes |> Dict.map (\_ v -> hWithIdentifiers s.state.resources s.state.resourceTypes s.state.identifierTypes s.state.identifiers v)
-    in
     case model.viewtype of
-        Smallcard ->
+        ViewType.Smallcard ->
             flatContainer s
                 Nothing
                 "Resources"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allT
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.resources allH s.state.configs t)
+                    (s.state.resources
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Resources yet. Add your first one!")
                     )
                 ]
 
-        Table ->
+        ViewType.Table ->
             flatContainer s
                 Nothing
                 "Resources"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            allT
-                                |> Dict.values
-                                |> List.map (tWithGroups s.state.grouped)
+                            Dict.values s.state.resources
+                                |> List.map (\a -> ( a.uuid, Type.TType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> containsScope s.state.resources s.state.resourceTypes it.scope (HasType (Type.TType TType.Resource)))
-                                |> List.map identifierColumn
+                                |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Resource)))
+                                |> List.map (identifierColumn s)
                             )
-                                ++ [ tGroupsColumn s ]
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
-
-
-identifierColumn : IdentifierType -> Column Resource msg
-identifierColumn it =
-    { header = headerCell color.table.header.background it.name
-    , width = fill
-    , view =
-        .identifiers
-            >> Dict.values
-            >> List.filter (\id -> id.name == it.name)
-            >> List.map Identifier.toValue
-            >> List.head
-            >> Maybe.withDefault ""
-            >> innerCell
-    }

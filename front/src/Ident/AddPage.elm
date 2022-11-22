@@ -12,10 +12,11 @@ import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope exposing (Scope(..))
+import Scope.Scope as Scope exposing (Scope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
+import Util exposing (checkEmptyList, checkEmptyString)
 import View exposing (..)
 import View.Step as Step exposing (Msg(..), Step(..), buttons)
 import View.Style exposing (..)
@@ -61,7 +62,7 @@ validate m =
     Result.map5 IdentifierType
         (checkEmptyString m.name "The name is Empty")
         (checkEmptyList m.fragments "Your identifier format is empty")
-        (if m.scope == Empty then
+        (if m.scope == Scope.empty then
             Err "You must choose a scope"
 
          else
@@ -86,7 +87,7 @@ checkStep model =
                 |> Result.map (\_ -> ())
 
         Step.Step StepScope ->
-            if model.scope == Empty then
+            if model.scope == Scope.empty then
                 Err "You must choose a scope"
 
             else
@@ -123,7 +124,7 @@ init s f =
         adding =
             { route = f.route
             , name = ""
-            , scope = Empty
+            , scope = Scope.empty
             , unique = False
             , mandatory = False
             , fragments = []
@@ -134,7 +135,7 @@ init s f =
             }
     in
     s.state.identifierTypes
-        |> Dict.filter (\k v -> k == f.itid)
+        |> Dict.filter (\k _ -> k == f.itid)
         |> Dict.values
         |> List.head
         |> Maybe.map

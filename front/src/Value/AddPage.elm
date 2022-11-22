@@ -1,35 +1,30 @@
-module Value.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
+module Value.AddPage exposing (Flags, Model, Msg(..), Step(..), Subpage, match, page)
 
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
 import Message
-import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import Task
-import Type exposing (Type)
+import Util exposing (checkEmptyString, checkListOne)
 import Value.DeepLink as DeepLink exposing (DeepLink)
 import Value.DeepLink.Select
 import Value.Expression as Expression exposing (BOperator, Expression(..), UOperator)
 import Value.Observable as Obs exposing (Observable(..))
-import Value.Rational as R exposing (Rational(..))
+import Value.Rational as R
 import Value.Select
-import Value.Value exposing (..)
-import Value.ValueSelection as VS exposing (ValueSelection(..))
-import Value.ValueType as VT exposing (ValueType)
+import Value.ValueSelection exposing (ValueSelection(..))
+import Value.ValueType exposing (ValueType)
 import View exposing (..)
-import View.Smallcard exposing (viewSmallCard)
-import View.Step as Step exposing (Msg(..), Step(..), buttons, isLast)
+import View.Step as Step exposing (Msg(..), Step(..), buttons)
 import View.Style exposing (..)
 
 
@@ -46,7 +41,6 @@ type Msg
     | SubMsg Value.Select.Msg
     | SubMsg2 Value.DeepLink.Select.Msg
     | Open Subpage Int (List Int)
-    | CloseSubpage
     | Warning String
     | Button Step.Msg
 
@@ -90,7 +84,7 @@ validate m =
     Result.map4 ValueType
         (checkEmptyString m.name "The name is Empty")
         (checkListOne m.stack "Your expression stack must have a single element")
-        (if m.scope == Empty then
+        (if m.scope == Scope.empty then
             Err "You must choose a scope"
 
          else
@@ -114,7 +108,7 @@ checkStep model =
                 |> Result.map (\_ -> ())
 
         Step.Step StepScope ->
-            if model.scope == Empty then
+            if model.scope == Scope.empty then
                 Err "You must choose a scope"
 
             else
@@ -153,10 +147,10 @@ init s f =
             , name = ""
             , mandatory = False
             , stack = []
-            , scope = Empty
+            , scope = Scope.empty
             , subpage = Nothing
             , submodel = Value.Select.init s
-            , submodel2 = Value.DeepLink.Select.init s Empty
+            , submodel2 = Value.DeepLink.Select.init s Scope.empty
             , warning = ""
             , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
             , step = Step.Step StepName
@@ -164,7 +158,7 @@ init s f =
             }
     in
     s.state.valueTypes
-        |> Dict.filter (\k v -> k == f.vtid)
+        |> Dict.filter (\k _ -> k == f.vtid)
         |> Dict.values
         |> List.head
         |> Maybe.map
@@ -251,14 +245,14 @@ update s msg model =
         Warning err ->
             ( { model | warning = err }, Effect.none )
 
-        Open (ValueSelector onSelect) stackNum targetPath ->
+        Open (ValueSelector onSelect) _ _ ->
             ( { model
                 | subpage = Just (ValueSelector onSelect)
               }
             , Effect.none
             )
 
-        Open (DeeplinkSelector onSelect) stackNum targetPath ->
+        Open (DeeplinkSelector onSelect) _ _ ->
             ( { model
                 | subpage = Just (DeeplinkSelector onSelect)
                 , submodel2 = Value.DeepLink.Select.init s model.scope
@@ -266,15 +260,12 @@ update s msg model =
             , Effect.none
             )
 
-        CloseSubpage ->
-            ( { model | subpage = Nothing }, Effect.none )
-
         SubMsg sub ->
             case model.subpage of
                 Nothing ->
                     ( model, Effect.none )
 
-                Just (ValueSelector onSelect) ->
+                Just (ValueSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
                             Value.Select.update s sub model.submodel
@@ -320,7 +311,7 @@ update s msg model =
                 Nothing ->
                     ( model, Effect.none )
 
-                Just (DeeplinkSelector onSelect) ->
+                Just (DeeplinkSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
                             Value.DeepLink.Select.update s sub model.submodel2
@@ -437,10 +428,10 @@ viewSubpage s model =
     Maybe.map
         (\subpage ->
             case subpage of
-                ValueSelector onSelect ->
+                ValueSelector _ ->
                     Element.map SubMsg <| Value.Select.view s model.submodel
 
-                DeeplinkSelector onSelect ->
+                DeeplinkSelector _ ->
                     Element.map SubMsg2 <| Value.DeepLink.Select.view s model.submodel2
         )
         model.subpage
@@ -461,13 +452,13 @@ undo stack =
         |> Maybe.map
             (\expr ->
                 case expr of
-                    Leaf obs ->
+                    Leaf _ ->
                         []
 
-                    Unary o e ->
+                    Unary _ e ->
                         [ e ]
 
-                    Binary o e1 e2 ->
+                    Binary _ e1 e2 ->
                         [ e1, e2 ]
             )
         |> Maybe.withDefault []
@@ -578,7 +569,7 @@ editObservable s model ( stackNum, exprPath ) obs =
                         [ button.primary (Open (DeeplinkSelector onSelect) stackNum exprPath) name
                         ]
 
-                DeepLink.Link hl dl ->
+                DeepLink.Link _ _ ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
                         [ button.primary (Open (DeeplinkSelector onSelect) stackNum exprPath) (DeepLink.toDisplay deeplink)
                         ]
@@ -599,11 +590,11 @@ buttonObservable obs =
 
 buttonUnaryOperator : Maybe Expression -> UOperator -> Element Msg
 buttonUnaryOperator me o =
-    Maybe.map (\e -> button.primary (UnaryOperator o) (Expression.uToString o)) me
+    Maybe.map (\_ -> button.primary (UnaryOperator o) (Expression.uToString o)) me
         |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (Expression.uToString o))
 
 
 buttonBinaryOperator : Maybe ( Expression, Expression ) -> BOperator -> Element Msg
 buttonBinaryOperator mt o =
-    Maybe.map (\t -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
+    Maybe.map (\_ -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
         |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (Expression.bToString o))

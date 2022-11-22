@@ -1,12 +1,12 @@
 module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic exposing (Hierarchic)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
-import Typed.Typed exposing (Typed)
+import Type exposing (Type)
 import Zone.Fragment as Fragment exposing (Fragment)
 import Zone.Zone as Zone exposing (Zone)
 
@@ -23,10 +23,10 @@ getConfig configs scope =
     List.head <| Dict.values <| Dict.filter (\_ (ZoneConfig _ _ s) -> s == scope) configs
 
 
-getMostSpecific : Dict String (Typed a) -> Dict String (Hierarchic b) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
-getMostSpecific allT allH configs zone scope =
+getMostSpecific : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
+getMostSpecific types configs zone scope =
     -- returns the most specific config for a given zone and scope
-    findFirst configs (List.reverse <| getUpperList allT allH scope [])
+    findFirst configs (List.reverse <| getUpperList types scope [])
 
 
 findFirst : Dict String Configuration -> List Scope -> Maybe Configuration

@@ -1,50 +1,43 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (gWithIdentifiers, hWithIdentifiers, tWithIdentifiers)
+import Hierarchy.Type as HType
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Value.Input exposing (inputValues)
-import Value.Valuable exposing (hWithValues, withValues)
-import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
+import Typed.Type as TType
+import Type exposing (Type)
+import Util exposing (third)
+import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Zone.View exposing (hWithDisplay, tWithDisplay)
+import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
-allT : Shared.Model -> Dict String Process
-allT =
-    .state >> .processes
-
-
-allH : Shared.Model -> Dict String ProcessType
-allH =
-    .state >> .processTypes
+mainHType : Type
+mainHType =
+    Type.HType HType.ProcessType
 
 
 type alias Flags =
     { route : Route
-    , uuid : Maybe Uuid
+    , uuid : Uuid
     }
 
 
 type alias Model =
     { route : Route
-    , processType : Maybe ProcessType
-    , groups : Dict String Group
+    , what : Type
+    , uuid : Uuid
+    , type_ : Maybe Uuid
+    , groups : List Uuid
     }
 
 
@@ -67,7 +60,7 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Entity Route.ProcessType (Route.View uuid) ->
-            Just { route = route, uuid = Uuid.fromString uuid }
+            Uuid.fromString uuid |> Maybe.map (Flags route)
 
         _ ->
             Nothing
@@ -75,21 +68,15 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    let
-        mprocessType =
-            f.uuid |> Maybe.andThen (H.find s.state.processTypes)
-    in
     ( { route = f.route
-      , processType = f.uuid |> Maybe.andThen (H.find s.state.processTypes)
+      , what = mainHType
+      , uuid = f.uuid
+      , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
-            mprocessType
-                |> Maybe.map
-                    (\process ->
-                        s.state.grouped
-                            |> Dict.filter (\_ v -> process.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
-                    )
-                |> Maybe.withDefault Dict.empty
+            s.state.grouped
+                |> Dict.filter (\_ link -> link.groupable == f.uuid)
+                |> Dict.values
+                |> List.map (\link -> link.group)
       }
     , closeMenu f s.menu
     )
@@ -102,17 +89,12 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.List Nothing )
 
         Edit ->
-            model.processType
-                |> Maybe.map
-                    (\h ->
-                        ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.Edit (Uuid.toString h.uuid) )
-                    )
-                |> Maybe.withDefault ( model, Effect.none )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.Edit (Uuid.toString model.uuid) )
 
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Process Type"
+    { title = "Process Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -121,46 +103,23 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    model.processType
-        |> Maybe.map
-            (\h ->
-                floatingContainer s
-                    (Just Close)
-                    "ProcessType"
-                    [ button.primary Edit "Edit" ]
-                    [ h2 "Parent type:"
-                    , h.parent
-                        |> Maybe.andThen (H.find s.state.processTypes)
-                        |> Maybe.map (hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers)
-                        |> Maybe.map (hWithDisplay s.state.processes s.state.processTypes s.state.configs SmallcardTitle)
-                        |> Maybe.map .display
-                        |> Maybe.andThen (Dict.get "SmallcardTitle")
-                        |> Maybe.withDefault "(none)"
-                        |> text
-                    , h2 "Identifiers:"
-                    , h
-                        |> hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers
-                        |> .identifiers
-                        |> displayIdentifierDict "(none)"
-                    , h2 "Values:"
-                    , h
-                        |> hWithValues s.state.processes s.state.processTypes s.state.valueTypes s.state.values
-                        |> .values
-                        |> displayValueDict "(none)" s.state.values
-                    , h2 "Groups:"
-                    , model.groups
-                        |> Dict.values
-                        |> List.map (gWithIdentifiers s.state.groups s.state.groupTypes s.state.identifierTypes s.state.identifiers)
-                        |> List.map (tWithDisplay s.state.groups s.state.groupTypes s.state.configs SmallcardTitle)
-                        |> List.map .display
-                        |> List.map (Dict.get "SmallcardTitle" >> Maybe.withDefault "(none)")
-                        |> displayGroupTable "(none)"
-                    ]
-            )
-        |> Maybe.withDefault
-            (floatingContainer s
-                (Just Close)
-                "ProcessType"
-                []
-                [ h1 "Not found", text "The current URL does not correspond to anything" ]
-            )
+    floatingContainer s
+        (Just Close)
+        "Process Type"
+        [ button.primary Edit "Edit" ]
+        [ h2 "Type:"
+        , Dict.get (Uuid.toString model.uuid) s.state.types
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
+            |> Maybe.withDefault ""
+            |> text
+        , h2 "Identifiers:"
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+            |> displayIdentifierDict "(none)"
+        , h2 "Values:"
+        , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
+            |> displayValueDict "(none)" s.state.values
+        , h2 "Groups:"
+        , model.groups
+            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
+            |> displayGroupTable "(none)"
+        ]

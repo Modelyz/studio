@@ -1,37 +1,14 @@
 module Ident.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
-import Group.View exposing (displayGroupTable)
-import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (withIdentifiers)
-import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as VT exposing (IdentifierType)
-import Ident.Input exposing (inputIdentifiers)
-import Ident.View exposing (displayIdentifierDict)
-import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import View exposing (..)
-import Zone.View exposing (hWithDisplay, tWithDisplay)
-import Zone.Zone exposing (Zone(..))
-
-
-allT : Shared.Model -> Dict String Identifier
-allT =
-    .state >> .identifiers
-
-
-allH : Shared.Model -> Dict String IdentifierType
-allH =
-    .state >> .identifierTypes
 
 
 type alias Flags =
@@ -114,15 +91,7 @@ viewContent model s =
                     "IdentifierType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| it.name
-                    , text <|
-                        "Scope: "
-                            ++ Scope.View.toDisplay
-                                (allTfromScope s.state it.scope
-                                    |> withIdentifiers s.state
-                                )
-                                (allHfromScope s.state it.scope |> withIdentifiers s.state)
-                                s.state.configs
-                                it.scope
+                    , text <| "Scope: " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs it.scope
                     ]
             )
         |> Maybe.withDefault

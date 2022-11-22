@@ -4,27 +4,21 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
-import Group.View exposing (hGroupsColumn)
-import Group.WithGroups exposing (hWithGroups)
+import Group.View exposing (groupsColumn)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers)
-import Ident.Identifier as Identifier
-import Ident.IdentifierType exposing (IdentifierType)
+import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import ProcessType.ProcessType exposing (ProcessType)
-import Route exposing (Route, redirectView)
-import Scope.Scope as Scope exposing (Scope(..))
+import Route exposing (Route)
+import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Type exposing (Type(..))
+import Type
 import View exposing (..)
-import View.Smallcard exposing (hClickableRemovableCard)
+import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
-import View.Type as ViewType exposing (Type(..))
-import Zone.Zone exposing (Zone(..))
+import View.Type as ViewType
 
 
 type alias Model =
@@ -66,11 +60,7 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
-    ( { route = f.route
-      , viewtype = Smallcard
-      }
-    , closeMenu f s.menu
-    )
+    ( { route = f.route, viewtype = ViewType.Smallcard }, closeMenu f s.menu )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -100,66 +90,45 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    let
-        allH =
-            s.state.processTypes
-                |> Dict.map (\_ v -> hWithIdentifiers s.state.processes s.state.processTypes s.state.identifierTypes s.state.identifiers v)
-    in
     case model.viewtype of
-        Smallcard ->
+        ViewType.Smallcard ->
             flatContainer s
                 Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (allH
+                    (s.state.processTypes
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.HType t.what) t.uuid)
                         |> Dict.values
-                        |> List.map (\h -> hClickableRemovableCard (View h.uuid) (Removed h.uuid) s.state.processes allH s.state.configs h)
-                        |> withDefaultContent (p "There are no Processes yet. Add your first one!")
+                        |> withDefaultContent (p "There are no Process Types yet. Add your first one!")
                     )
                 ]
 
-        Table ->
+        ViewType.Table ->
             flatContainer s
                 Nothing
                 "Process Types"
                 [ button.primary Add "Add..."
                 ]
                 none
-                (View.viewSelector [ Smallcard, Table ] model.viewtype ChangeView)
+                (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            allH
-                                |> Dict.values
-                                |> List.map (hWithGroups s.state.grouped)
+                            Dict.values s.state.processTypes
+                                |> List.map (\a -> ( a.uuid, Type.HType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes
                                 |> Dict.values
-                                |> List.filter (\it -> containsScope s.state.processes s.state.processTypes it.scope (HasType (Type.HType HType.ProcessType)))
-                                |> List.map identifierColumn
+                                |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.HType HType.ProcessType)))
+                                |> List.map (identifierColumn s)
                             )
-                                ++ [ hGroupsColumn s ]
+                                ++ [ groupsColumn s ]
                         }
                     ]
                 ]
-
-
-identifierColumn : IdentifierType -> Column ProcessType msg
-identifierColumn it =
-    { header = headerCell color.table.header.background it.name
-    , width = fill
-    , view =
-        .identifiers
-            >> Dict.values
-            >> List.filter (\id -> id.name == it.name)
-            >> List.map Identifier.toValue
-            >> List.head
-            >> Maybe.withDefault "(no identifier)"
-            >> innerCell
-    }

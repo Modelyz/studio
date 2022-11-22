@@ -8,43 +8,34 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
-import Flow exposing (Flow)
+import Flow exposing (Flow, checkNone)
 import Flow.Input
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Group.Link exposing (Link)
+import Hierarchy.Type as HType
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope exposing (Scope(..))
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Typed.Typed as T
+import Util exposing (checkMaybe, third)
 import Value.Input exposing (inputValues)
+import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hFlatselect, tFlatselect)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard)
+import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import View.Style exposing (..)
-
-
-type alias TypedType =
-    Commitment
-
-
-type alias HierarchicType =
-    CommitmentType
 
 
 constructor =
@@ -61,21 +52,6 @@ hereType =
     Type.TType TType.Commitment
 
 
-mkMessage : TypedType -> Message.Payload
-mkMessage =
-    Message.AddedCommitment
-
-
-allT : Shared.Model -> Dict String Commitment
-allT =
-    .state >> .commitments
-
-
-allH : Shared.Model -> Dict String CommitmentType
-allH =
-    .state >> .commitmentTypes
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -85,14 +61,14 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , type_ : Maybe HierarchicType
-    , provider : Maybe Agent
-    , receiver : Maybe Agent
-    , flow : Maybe Flow
+    , type_ : Maybe Uuid
+    , provider : Maybe Uuid
+    , receiver : Maybe Uuid
+    , flow : Flow
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Group
-    , groups : Dict String Group
+    , oldGroups : Dict String Uuid
+    , groups : Dict String Uuid
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -110,13 +86,13 @@ type Step
 
 
 type Msg
-    = SelectType (Maybe HierarchicType)
-    | SelectProvider (Maybe Agent)
-    | SelectReceiver (Maybe Agent)
-    | InputFlow (Maybe Flow)
+    = SelectType (Maybe Uuid)
+    | SelectProvider (Maybe Uuid)
+    | SelectReceiver (Maybe Uuid)
+    | InputFlow Flow
     | InputIdentifier Identifier
     | InputValue Value
-    | SelectGroups (Dict String Group)
+    | InputGroups (Dict String Uuid)
     | Button Step.Msg
 
 
@@ -158,40 +134,37 @@ init s f =
             , type_ = Nothing
             , provider = Nothing
             , receiver = Nothing
-            , flow = Nothing
+            , flow = Flow.None
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
-            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid isNew
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
-        |> Maybe.andThen (T.find (allT s))
         |> Maybe.map
-            (\t ->
+            (\uuid ->
                 let
                     oldGroups =
                         s.state.grouped
-                            |> Dict.filter (\_ v -> t.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+                            |> Dict.filter (\_ link -> uuid == link.groupable)
+                            |> Dict.values
+                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
+                            |> Dict.fromList
 
-                    parent =
-                        H.find (allH s) t.type_
+                    type_ =
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
                 in
                 { adding
-                    | type_ = parent
-                    , uuid = t.uuid
-                    , identifiers =
-                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType parent t.uuid adding.isNew
-                            |> Dict.union (Identifier.fromUuid t.uuid s.state.identifiers)
-                    , values =
-                        initValues (allT s) (allH s) s.state.valueTypes hereType parent t.uuid adding.isNew
-                            |> Dict.union (Value.fromUuid t.uuid s.state.values)
+                    | type_ = type_
+                    , uuid = uuid
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -204,24 +177,23 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        SelectType h ->
+        SelectType mh ->
             ( { model
-                | type_ = h
-                , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType h model.uuid model.isNew
-                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
-                , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType h model.uuid model.isNew
-                        |> Dict.union (Value.fromUuid model.uuid s.state.values)
+                | type_ = mh
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
+                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
             )
 
-        SelectProvider a ->
-            ( { model | provider = a }, Effect.none )
+        SelectProvider uuid ->
+            ( { model | provider = uuid }, Effect.none )
 
-        SelectReceiver a ->
-            ( { model | receiver = a }, Effect.none )
+        SelectReceiver uuid ->
+            ( { model | receiver = uuid }, Effect.none )
+
+        InputFlow flow ->
+            ( { model | flow = flow }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -229,8 +201,8 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        SelectGroups gs ->
-            ( { model | groups = gs }, Effect.none )
+        InputGroups uuids ->
+            ( { model | groups = uuids }, Effect.none )
 
         Button Step.Added ->
             case validate model of
@@ -248,8 +220,8 @@ update s msg model =
                             (Message.AddedCommitment t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\g -> Message.Grouped (Groupable.Cm t) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.Cm t) g) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
                         , redirect s.navkey (Route.Entity Route.Commitment (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
                         ]
@@ -265,7 +237,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Commitment Type"
+    { title = "Adding an Commitment"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -276,16 +248,16 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Commitment Type")
+            checkMaybe model.type_ "You must select an Commitment Type" |> Result.map (\_ -> ())
 
         Step StepProvider ->
-            Maybe.map (\_ -> Ok ()) model.provider |> Maybe.withDefault (Err "You must select a Provider")
+            checkMaybe model.provider "You must select a Provider" |> Result.map (\_ -> ())
 
         Step StepReceiver ->
-            Maybe.map (\_ -> Ok ()) model.receiver |> Maybe.withDefault (Err "You must select a Receiver")
+            checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
         Step StepFlow ->
-            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Resource or Resource Type")
+            checkNone model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
         Step StepIdentifiers ->
             Ok ()
@@ -299,99 +271,107 @@ checkStep model =
 
 validate : Model -> Result String Commitment
 validate m =
-    -- TODO check that TType thing is useful
-    Maybe.map4
-        (\type_ provider receiver flow ->
-            constructor
-                typedConstructor
-                m.uuid
-                type_
-                (millisToPosix 0)
-                provider.uuid
-                receiver.uuid
-                flow
-                Dict.empty
-                Dict.empty
-                Dict.empty
-                Dict.empty
-        )
-        (Maybe.map .uuid m.type_)
-        m.provider
-        m.receiver
-        m.flow
-        |> Result.fromMaybe "You must select a Commitment Type"
+    Result.map4
+        (\type_ provider receiver flow -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow)
+        (checkMaybe m.type_ "You must select an Commitment Type")
+        (checkMaybe m.provider "You must select an Provider")
+        (checkMaybe m.receiver "You must select an Receiver")
+        (checkNone m.flow "You must input a Resource or Resource Type Flow")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
+        mct =
+            model.type_ |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.commitmentTypes)
+
         step =
             case model.step of
                 Step.Step StepType ->
-                    hFlatselect
-                        { allT = allT
-                        , allH = allH
-                        , mstuff = model.type_
+                    flatSelect s
+                        { what = Type.HType HType.CommitmentType
+                        , muuid = model.type_
                         , onInput = SelectType
-                        , title = "Type"
-                        , explain = "Choose the type of the commitment:"
+                        , title = "Type:"
+                        , explain = "Choose the type of the new Commitment:"
                         , empty = "(There are no Commitment Types yet to choose from)"
                         }
-                        s
+                        (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepProvider ->
-                    column [ spacing 20 ]
-                        [ tFlatselect
-                            { allT = .state >> .agents
-                            , allH = .state >> .agentTypes
-                            , mstuff = model.provider
-                            , onInput = SelectProvider
-                            , title = "Provider:"
-                            , explain = "Choose the provider of the commitment:"
-                            , empty = "(There are no agents yet to choose from)"
-                            }
-                            s
-                        ]
+                    Maybe.map
+                        (\ct ->
+                            column [ spacing 20 ]
+                                [ flatSelect s
+                                    { what = Type.TType TType.Agent
+                                    , muuid = model.provider
+                                    , onInput = SelectProvider
+                                    , title = "Provider:"
+                                    , explain = "Choose the provider of the commitment:"
+                                    , empty = "(There are no agents yet to choose from)"
+                                    }
+                                    (s.state.agents
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers)
+                                        |> Dict.map (\_ a -> a.uuid)
+                                    )
+                                ]
+                        )
+                        mct
+                        |> Maybe.withDefault none
 
                 Step.Step StepReceiver ->
-                    column [ spacing 20 ]
-                        [ tFlatselect
-                            { allT = .state >> .agents
-                            , allH = .state >> .agentTypes
-                            , mstuff = model.receiver
-                            , onInput = SelectReceiver
-                            , title = "Receiver:"
-                            , explain = "Choose the receiver of the commitment:"
-                            , empty = "(There are no agents yet to choose from)"
-                            }
-                            s
-                        ]
+                    Maybe.map
+                        (\ct ->
+                            column [ spacing 20 ]
+                                [ flatSelect s
+                                    { what = Type.TType TType.Agent
+                                    , muuid = model.receiver
+                                    , onInput = SelectReceiver
+                                    , title = "Receiver:"
+                                    , explain = "Choose the receiver of the commitment:"
+                                    , empty = "(There are no agents yet to choose from)"
+                                    }
+                                    (s.state.agents
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers)
+                                        |> Dict.map (\_ a -> a.uuid)
+                                    )
+                                ]
+                        )
+                        mct
+                        |> Maybe.withDefault none
 
                 Step.Step StepFlow ->
-                    column [ spacing 20 ]
-                        [ Flow.Input.input
-                            { flow = model.flow
-                            , onInput = InputFlow
-                            , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                            , title = "Resource:"
-                            , explain = "Choose the Resource expected to flow from the provider to the receiver"
-                            , empty = "(There are no resources yet to choose from"
-                            }
-                            s
-                        ]
+                    Maybe.map
+                        (\ct ->
+                            column [ spacing 20 ]
+                                [ Flow.Input.input
+                                    { flow = model.flow
+                                    , scope = mct |> Maybe.map .flow |> Maybe.withDefault Scope.empty
+                                    , onInput = InputFlow
+                                    , onSelect = InputFlow
+                                    , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                    , title = "Resource:"
+                                    , explain = "Choose the Resource expected to flow from the provider to the receiver"
+                                    , empty = "(There are no resources yet to choose from"
+                                    }
+                                    s
+                                ]
+                        )
+                        mct
+                        |> Maybe.withDefault none
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = SelectGroups } s model
+                    inputGroups { onInput = InputGroups } s model.groups
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)
-        "Adding a Commitment"
+        "Adding an Commitment"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

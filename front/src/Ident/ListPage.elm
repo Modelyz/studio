@@ -3,17 +3,14 @@ module Ident.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Ident.IdentifierType as IT exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import View exposing (..)
-import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard)
 
 
 type alias Model =
@@ -99,16 +96,7 @@ viewContent model s =
                             (Removed it)
                             (text it.name)
                             (row []
-                                [ text <|
-                                    "for "
-                                        ++ Scope.View.toDisplay
-                                            (allTfromScope s.state it.scope
-                                                |> withIdentifiers s.state
-                                            )
-                                            (allHfromScope s.state it.scope |> withIdentifiers s.state)
-                                            s.state.configs
-                                            it.scope
-                                ]
+                                [ text <| "for " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs it.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

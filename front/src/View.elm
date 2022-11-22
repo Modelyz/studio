@@ -1,4 +1,4 @@
-module View exposing (View, button, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
+module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -13,7 +13,6 @@ import Html.Events
 import Json.Decode as Decode
 import Route exposing (Route)
 import Shared
-import Value.Rational as R exposing (Rational(..))
 import View.Style as Style exposing (..)
 import View.Type as ViewType
 
@@ -220,53 +219,6 @@ onEnter msg =
 
 
 -- TODO ↓ move to Util
-
-
-checkNothing : Maybe a -> String -> Result String (Maybe a)
-checkNothing ma err =
-    case ma of
-        Nothing ->
-            Err err
-
-        Just x ->
-            Ok (Just x)
-
-
-checkMaybe : Maybe a -> String -> Result String a
-checkMaybe ma err =
-    case ma of
-        Nothing ->
-            Err err
-
-        Just x ->
-            Ok x
-
-
-checkEmptyString : String -> String -> Result String String
-checkEmptyString str err =
-    if String.isEmpty str then
-        Err err
-
-    else
-        Ok str
-
-
-checkEmptyList : List a -> String -> Result String (List a)
-checkEmptyList list err =
-    if List.isEmpty list then
-        Err err
-
-    else
-        Ok list
-
-
-checkListOne : List a -> String -> Result String a
-checkListOne list err =
-    if List.length list == 1 then
-        List.head list |> Result.fromMaybe ""
-
-    else
-        Err err
 
 
 headerCell : Color -> String -> Element msg

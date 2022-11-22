@@ -1,39 +1,30 @@
 module CommitmentType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Commitment.Commitment exposing (Commitment)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Border as Border
-import Element.Font as Font
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
-import Hierarchy.Hierarchic as H
+import Group.Link exposing (Link)
 import Hierarchy.Type as HType
-import Ident.Identifiable exposing (hWithIdentifiers)
+import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (initIdentifiers)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope exposing (Scope(..))
+import Scope.Scope as Scope exposing (Scope)
+import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import State exposing (State)
 import Type
-import Typed.Type as TType
 import Value.Input exposing (inputValues)
+import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
 import View exposing (..)
-import View.FlatSelect exposing (hFlatselect, tFlatselect)
-import View.Smallcard exposing (hClickableCard, hViewHalfCard)
+import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import View.Style exposing (..)
 
 
 hereType : Type.Type
@@ -41,31 +32,12 @@ hereType =
     Type.HType HType.CommitmentType
 
 
-type alias HierarchicType =
-    CommitmentType
-
-
-constructor =
-    CommitmentType
-
-
 hierarchicConstructor =
     HType.CommitmentType
 
 
-mkMessage : HierarchicType -> Message.Payload
-mkMessage =
-    Message.AddedCommitmentType
-
-
-allT : Shared.Model -> Dict String Commitment
-allT =
-    .state >> .commitments
-
-
-allH : Shared.Model -> Dict String CommitmentType
-allH =
-    .state >> .commitmentTypes
+constructor =
+    CommitmentType
 
 
 type alias Flags =
@@ -77,11 +49,14 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , parent : Maybe HierarchicType
+    , type_ : Maybe Uuid
+    , providers : Scope
+    , receivers : Scope
+    , flow : Scope
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Group
-    , groups : Dict String Group
+    , oldGroups : Dict String Uuid
+    , groups : Dict String Uuid
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -99,9 +74,12 @@ type Step
 
 
 type Msg
-    = InputType (Maybe HierarchicType)
+    = SelectType (Maybe Uuid)
+    | SelectProviders Scope
+    | SelectReceivers Scope
+    | SelectFlow Scope
     | InputIdentifier Identifier
-    | InputGroups (Dict String Group)
+    | InputGroups (Dict String Uuid)
     | InputValue Value
     | Button Step.Msg
 
@@ -141,11 +119,14 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , parent = Nothing
+            , type_ = Nothing
+            , providers = Scope.empty
+            , receivers = Scope.empty
+            , flow = Scope.empty
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType Nothing newUuid isNew
-            , values = initValues (allT s) (allH s) s.state.valueTypes hereType Nothing newUuid isNew
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -154,27 +135,24 @@ init s f =
             }
     in
     ( f.uuid
-        |> Maybe.andThen (H.find (allH s))
         |> Maybe.map
-            (\h ->
+            (\uuid ->
                 let
                     oldGroups =
                         s.state.grouped
-                            |> Dict.filter (\_ v -> h.uuid == Groupable.uuid v.groupable)
-                            |> Dict.foldl (\_ v d -> Dict.insert (Group.compare v.group) v.group d) Dict.empty
+                            |> Dict.filter (\_ link -> uuid == link.groupable)
+                            |> Dict.values
+                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
+                            |> Dict.fromList
 
-                    mp =
-                        h.parent |> Maybe.andThen (H.find (allH s))
+                    type_ =
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
                 in
                 { adding
-                    | parent = mp
-                    , uuid = h.uuid
-                    , identifiers =
-                        initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mp h.uuid adding.isNew
-                            |> Dict.union (Identifier.fromUuid h.uuid s.state.identifiers)
-                    , values =
-                        initValues (allT s) (allH s) s.state.valueTypes hereType mp h.uuid adding.isNew
-                            |> Dict.union (Value.fromUuid h.uuid s.state.values)
+                    | type_ = type_
+                    , uuid = uuid
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -187,18 +165,23 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mh ->
+        SelectType mh ->
             ( { model
-                | parent = mh
-                , identifiers =
-                    initIdentifiers (allT s) (allH s) s.state.identifierTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Identifier.fromUuid model.uuid s.state.identifiers)
-                , values =
-                    initValues (allT s) (allH s) s.state.valueTypes hereType mh model.uuid model.isNew
-                        |> Dict.union (Value.fromUuid model.uuid s.state.values)
+                | type_ = mh
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
+                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
             )
+
+        SelectProviders scope ->
+            ( { model | providers = scope }, Effect.none )
+
+        SelectReceivers scope ->
+            ( { model | receivers = scope }, Effect.none )
+
+        SelectFlow scope ->
+            ( { model | flow = scope }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -206,12 +189,12 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups gs ->
-            ( { model | groups = gs }, Effect.none )
+        InputGroups uuids ->
+            ( { model | groups = uuids }, Effect.none )
 
         Button Step.Added ->
             case validate model of
-                Ok h ->
+                Ok t ->
                     let
                         addedGroups =
                             Dict.diff model.groups model.oldGroups
@@ -222,12 +205,13 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (mkMessage h
+                            (Message.AddedCommitmentType t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
-                                ++ List.map (\g -> Message.Grouped (Groupable.RT h) g) (Dict.values addedGroups)
-                                ++ List.map (\g -> Message.Ungrouped (Groupable.RT h) g) (Dict.values removedGroups)
+                                ++ List.map Message.AddedValue (Dict.values model.values)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
-                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.CommitmentType (Route.View (Uuid.toString model.uuid))
+                        , redirect s.navkey (Route.Entity Route.CommitmentType (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
                         ]
                     )
 
@@ -241,7 +225,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Commitment Type"
+    { title = "Adding an Commitment Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -273,9 +257,9 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String HierarchicType
+validate : Model -> Result String CommitmentType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid (Maybe.map .uuid m.parent) Dict.empty Dict.empty Dict.empty Dict.empty
+    Ok <| constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flow
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -284,29 +268,37 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    hFlatselect
-                        { allT = allT
-                        , allH = allH
-                        , mstuff = model.parent
-                        , onInput = InputType
-                        , title = "Parent:"
+                    flatSelect s
+                        { what = Type.HType HType.CommitmentType
+                        , muuid = model.type_
+                        , onInput = SelectType
+                        , title = "Parent Type:"
                         , explain = "Optional parent type for the new Commitment Type (it can be hierarchical)"
                         , empty = "(There are no Commitment Types yet to choose from)"
                         }
-                        s
+                        (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
+
+                Step.Step StepProviders ->
+                    selectScope s SelectProviders model.providers
+
+                Step.Step StepReceivers ->
+                    selectScope s SelectReceivers model.receivers
+
+                Step.Step StepFlow ->
+                    selectScope s SelectFlow model.flow
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model
+                    inputGroups { onInput = InputGroups } s model.groups
 
                 Step.Step StepIdentifiers ->
-                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model
+                    inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)
-        "Adding a CommitmentType"
+        "Adding an Commitment Type"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

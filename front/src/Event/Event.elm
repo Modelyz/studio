@@ -1,15 +1,10 @@
-module Event.Event exposing (Event, compare, decoder, encode)
+module Event.Event exposing (Event, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 type alias Event =
@@ -17,10 +12,6 @@ type alias Event =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
 
     --    , qty: Float
     --    , rtype: ResourceType
@@ -41,17 +32,8 @@ encode e =
 
 decoder : Decoder Event
 decoder =
-    Decode.map8 Event
+    Decode.map4 Event
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-        (Decode.succeed Dict.empty)
-
-
-compare : Event -> String
-compare =
-    .uuid >> Uuid.toString

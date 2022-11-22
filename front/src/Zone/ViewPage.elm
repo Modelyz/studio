@@ -2,15 +2,12 @@ module Zone.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
 import Configuration exposing (Configuration)
 import Configuration.View
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Ident.Identifiable exposing (withIdentifiers)
 import Route exposing (Route, redirect)
-import Scope.View
 import Shared
 import Spa.Page
-import State exposing (allHfromScope, allTfromScope)
 import View exposing (..)
 
 

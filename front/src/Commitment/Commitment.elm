@@ -1,18 +1,12 @@
-module Commitment.Commitment exposing (Commitment, compare, decoder, encode)
+module Commitment.Commitment exposing (Commitment, decoder, encode)
 
 import Agent.Agent as Agent exposing (Agent)
-import Dict exposing (Dict)
 import Flow exposing (Flow)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Rational as Rational exposing (Rational(..))
-import Value.Value exposing (Value)
 
 
 type alias Commitment =
@@ -23,12 +17,6 @@ type alias Commitment =
     , provider : Uuid
     , receiver : Uuid
     , flow : Flow
-
-    -- TODO try to remove non intrinsic fields : identifiers, values, display
-    , identifiers : Dict String Identifier
-    , values : Dict String Value
-    , groups : Dict String Group
-    , display : Dict String String
     }
 
 
@@ -39,14 +27,19 @@ encode c =
         , ( "uuid", Uuid.encode c.uuid )
         , ( "type", Uuid.encode c.type_ )
         , ( "when", Encode.int <| posixToMillis c.when )
+        , ( "provider", Uuid.encode c.provider )
+        , ( "receiver", Uuid.encode c.receiver )
+        , ( "flow", Flow.encode c.flow )
         ]
 
 
 decoder : Decode.Decoder Commitment
 decoder =
     Decode.map7
-        (\what uuid type_ when provider receiver flow ->
-            Commitment what uuid type_ when provider receiver flow Dict.empty Dict.empty Dict.empty Dict.empty
+        (\what uuid type_ when ->
+            {- provider receiver flow -}
+            Commitment what uuid type_ when
+         {- provider receiver flow -}
         )
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
@@ -55,14 +48,3 @@ decoder =
         (Decode.field "provider" Uuid.decoder)
         (Decode.field "receiver" Uuid.decoder)
         (Decode.field "flow" Flow.decoder)
-
-
-
---(Decode.field "qty" Rational.decoder)
---(Decode.field "provider" Uuid.decoder)
---(Decode.field "receiver" Uuid.decoder)
-
-
-compare : Commitment -> String
-compare =
-    .uuid >> Uuid.toString
