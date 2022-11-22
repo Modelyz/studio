@@ -114,7 +114,7 @@ selectScope s onInput scope =
                                             htype =
                                                 Type.HType (TType.toHierarchic tt)
                                         in
-                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
+                                        tClickableCard (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
                                     )
                            )
 
