@@ -81,7 +81,7 @@ init s f =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
                 |> Dict.values
-                |> List.map (\link -> ( link.what, link.group ))
+                |> List.map (\link -> ( Type.TType TType.Group, link.group ))
       }
     , closeMenu f s.menu
     )
@@ -124,7 +124,7 @@ viewContent model s =
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict "(none)" s.state.values
         , h2 "Groups:"
-        , model.groups
+        , Debug.log "groups" model.groups
             |> List.map (\( gt, guuid ) -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers gt guuid)
             |> displayGroupTable "(none)"
         ]

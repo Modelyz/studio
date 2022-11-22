@@ -11,6 +11,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Typed.Type as TType
 import Type exposing (Type)
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
@@ -75,7 +76,7 @@ init s f =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
                 |> Dict.values
-                |> List.map (\link -> ( link.what, link.group ))
+                |> List.map (\link -> ( Type.TType TType.Group, link.group ))
       }
     , closeMenu f s.menu
     )
