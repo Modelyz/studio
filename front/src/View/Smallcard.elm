@@ -1,4 +1,4 @@
-module View.Smallcard exposing (clickableCard, clickableRemovableCard, hItemClickableCard, halfCard, sClickableCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
+module View.Smallcard exposing (clickableCard, clickableRemovableCard, hItemClickableCard, halfCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
 
 import Configuration exposing (Configuration)
 import Dict exposing (Dict)
@@ -71,19 +71,6 @@ tItemClickableCard onInput types configs ids t uuid =
 
 hItemClickableCard =
     tItemClickableCard
-
-
-sClickableCard : (Scope -> msg) -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Scope -> Element msg
-sClickableCard onInput types configs ids t uuid scope =
-    clickableCard
-        (onInput scope)
-        (text <| display types configs SmallcardTitle (Identifier.fromUuid uuid ids) t uuid)
-        (Dict.get (Uuid.toString uuid) types
-            |> Maybe.andThen third
-            |> Maybe.map (\puuid -> display types configs SmallcardTitle (Identifier.fromUuid puuid ids) (Type.toHierarchic t) puuid)
-            |> Maybe.withDefault ""
-            |> text
-        )
 
 
 tClickableCard : msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg

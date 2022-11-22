@@ -15,7 +15,7 @@ import Shared
 import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, hItemClickableCard, sClickableCard)
+import View.Smallcard exposing (clickableCard, hItemClickableCard, tClickableCard)
 import View.Style exposing (..)
 import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
@@ -104,11 +104,18 @@ selectScope s onInput scope =
             case scope of
                 HasType (Type.TType tt) ->
                     (h3 <| "of type:")
-                        :: (s.state.types
+                        :: ((s.state.types
                                 |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType (TType.toHierarchic tt))
+                            )
                                 |> Dict.values
                                 |> List.map
-                                    (\( uuid, _, _ ) -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType (TType.toHierarchic tt)) uuid (HasUserType (Type.TType tt) uuid))
+                                    (\( uuid, _, _ ) ->
+                                        let
+                                            htype =
+                                                Type.HType (TType.toHierarchic tt)
+                                        in
+                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
+                                    )
                            )
 
                 HasType (Type.HType ht) ->
@@ -117,7 +124,13 @@ selectScope s onInput scope =
                                 |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType ht)
                                 |> Dict.values
                                 |> List.map
-                                    (\( uuid, _, _ ) -> sClickableCard onInput s.state.types s.state.configs s.state.identifiers (Type.HType ht) uuid (HasUserType (Type.HType ht) uuid))
+                                    (\( uuid, _, _ ) ->
+                                        let
+                                            htype =
+                                                Type.HType ht
+                                        in
+                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
+                                    )
                            )
 
                 _ ->
