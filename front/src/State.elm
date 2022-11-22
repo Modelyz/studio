@@ -471,7 +471,7 @@ aggregate (Message b p) state =
         AddedGroupType gt ->
             { state
                 | groupTypes = Dict.insert (Uuid.toString gt.uuid) gt state.groupTypes
-                , types = Dict.insert (Uuid.toString gt.uuid) ( gt.uuid, Type.HType HType.CommitmentType, gt.parent ) state.types
+                , types = Dict.insert (Uuid.toString gt.uuid) ( gt.uuid, Type.HType HType.GroupType, gt.parent ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
@@ -489,7 +489,7 @@ aggregate (Message b p) state =
         DefinedGroup g ->
             { state
                 | groups = Dict.insert (Uuid.toString g.uuid) g state.groups
-                , types = Dict.insert (Uuid.toString g.uuid) ( g.uuid, Type.HType HType.CommitmentType, Just g.type_ ) state.types
+                , types = Dict.insert (Uuid.toString g.uuid) ( g.uuid, Type.TType TType.Group, Just g.type_ ) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
