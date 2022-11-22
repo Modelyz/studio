@@ -101,7 +101,7 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.agents
+                    (s.state.events
                         |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
@@ -120,7 +120,7 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            Dict.values s.state.agents
+                            Dict.values s.state.events
                                 |> List.map (\a -> ( a.uuid, Type.TType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes
