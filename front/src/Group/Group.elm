@@ -1,5 +1,7 @@
-module Group.Group exposing (Group, decoder, encode)
+module Group.Group exposing (Group, decoder, encode, getGroups)
 
+import Dict exposing (Dict)
+import Group.Link as GroupLink
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -15,6 +17,14 @@ type alias Group =
     -- TODO what's the scope of a group?
     , scope : Scope
     }
+
+
+getGroups : Dict String GroupLink.Link -> Uuid -> List Uuid
+getGroups links uuid =
+    links
+        |> Dict.filter (\_ link -> link.groupable == uuid)
+        |> Dict.values
+        |> List.map .group
 
 
 encode : Group -> Encode.Value

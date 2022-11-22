@@ -3,7 +3,7 @@ module Group.View exposing (displayGroupTable, groupsColumn)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.WithGroups exposing (getGroups)
+import Group.Group exposing (getGroups)
 import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
