@@ -209,7 +209,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    selectScope s InputScope model.scope "What should it apply to?"
+                    selectScope s InputScope model.scope Scope.empty "What should it apply to?"
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]

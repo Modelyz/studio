@@ -20,6 +20,7 @@ import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Type
+import Typed.Type as TType
 import Util exposing (checkMaybe, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
@@ -281,13 +282,13 @@ viewContent model s =
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepProviders ->
-                    selectScope s SelectProviders model.providers "Possible Provider Agents:"
+                    selectScope s SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Possible Provider Agents:"
 
                 Step.Step StepReceivers ->
-                    selectScope s SelectReceivers model.receivers "Possible Receiver Agents:"
+                    selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Possible Receiver Agents:"
 
                 Step.Step StepFlow ->
-                    selectScope s SelectFlow model.flow "Possible Resources or Resource Types:"
+                    selectScope s SelectFlow model.flow (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "Possible Resources or Resource Types:"
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups

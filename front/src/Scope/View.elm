@@ -68,19 +68,26 @@ halfCard onDelete types configs ids scope =
         ]
 
 
-selectScope : Shared.Model -> (Scope -> msg) -> Scope -> String -> Element msg
-selectScope s onInput scope title =
+selectScope : Shared.Model -> (Scope -> msg) -> Scope -> Scope -> String -> Element msg
+selectScope s onInput sc forceScope title =
+    let
+        scope =
+            if sc == Empty then
+                forceScope
+
+            else
+                sc
+    in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
             , halfCard (onInput Empty) s.state.types s.state.configs s.state.identifiers scope
             ]
+        , h2 title
         , if scope == Empty then
             column [ spacing 10 ]
-                [ h2 <| title
-
-                -- First the concrete types
-                , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                [ -- First the concrete types
+                  wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                     (TType.all
                         |> List.map
                             (\t ->

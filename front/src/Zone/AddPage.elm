@@ -193,7 +193,7 @@ viewContent model s =
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model
-        , selectScope s InputScope model.scope "What should it apply to?"
+        , selectScope s InputScope model.scope Scope.empty "What should it apply to?"
         , inputFragments s model
         ]
 

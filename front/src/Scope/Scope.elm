@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, decoder, empty, encode, toString)
+module Scope.Scope exposing (Scope(..), compare, decoder, empty, encode, or, toString)
 
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
@@ -32,6 +32,11 @@ type
 empty : Scope
 empty =
     Empty
+
+
+or : Scope -> Scope -> Scope
+or s1 s2 =
+    Or s1 s2
 
 
 encode : Scope -> Encode.Value
