@@ -1,27 +1,21 @@
 module Scope.View exposing (selectScope, toDisplay)
 
-import Configuration as Config exposing (Configuration)
+import Configuration exposing (Configuration)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Group.Group exposing (Group)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
+import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
-import Item.Item as Item exposing (Item)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
 import Shared
-import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
-import Typed.Typed as T exposing (OnlyTyped, Typed)
-import Value.Value exposing (Value)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, hItemClickableCard, sClickableCard, tItemClickableCard, viewHalfCard)
+import View.Smallcard exposing (clickableCard, hItemClickableCard, sClickableCard)
 import View.Style exposing (..)
 import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))

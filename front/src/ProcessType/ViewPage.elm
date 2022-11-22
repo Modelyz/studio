@@ -1,27 +1,19 @@
 module ProcessType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import State
 import Type exposing (Type)
 import Util exposing (third)
-import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
-import Value.Value as Value exposing (Value)
-import Value.ValueType exposing (initValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
 import Zone.View exposing (display)

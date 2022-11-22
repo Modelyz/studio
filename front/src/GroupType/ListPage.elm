@@ -1,4 +1,4 @@
-module GroupType.ListPage exposing (Flags, Model, Msg, init, match, page, update, view, viewContent)
+module GroupType.ListPage exposing (Flags, Model, Msg, match, page)
 
 import Dict
 import Effect exposing (Effect)
@@ -6,18 +6,15 @@ import Element exposing (..)
 import Element.Background as Background
 import Group.View exposing (groupsColumn)
 import Hierarchy.Type as HType
-import Ident.Identifier as Identifier
-import Ident.IdentifierType exposing (IdentifierType)
 import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
-import Route exposing (Route, redirectView)
+import Route exposing (Route)
 import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Type exposing (Type)
-import Typed.Type as TType
+import Type
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)

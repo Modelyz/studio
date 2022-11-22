@@ -1,14 +1,10 @@
-module Group.Group exposing (Group, compare, decoder, encode)
+module Group.Group exposing (Group, decoder, encode)
 
-import Dict exposing (Dict)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 type alias Group =
@@ -38,8 +34,3 @@ decoder =
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "scope" Scope.decoder)
-
-
-compare : Group -> String
-compare =
-    .uuid >> Uuid.toString

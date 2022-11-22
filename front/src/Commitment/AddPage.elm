@@ -1,7 +1,6 @@
 module Commitment.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
 import Commitment.Commitment exposing (Commitment)
-import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -18,7 +17,7 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)

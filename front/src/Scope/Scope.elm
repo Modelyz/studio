@@ -1,14 +1,10 @@
-module Scope.Scope exposing (Scope(..), compare, decoder, encode, mainHType, mainTType, toString)
+module Scope.Scope exposing (Scope(..), compare, decoder, encode, toString)
 
-import Dict exposing (Dict)
-import Hierarchy.Type as HType
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
-import Typed.Type as TType
-import Util exposing (otherwise)
 
 
 type
@@ -136,54 +132,3 @@ toString scope =
 compare : Scope -> String
 compare =
     toString
-
-
-mainTType : Scope -> Maybe TType.Type
-mainTType scope =
-    -- TODO try to remove this function (and the one below)
-    case scope of
-        HasType (Type.HType ht) ->
-            Just (TType.fromHierarchic ht)
-
-        HasType (Type.TType tt) ->
-            Just tt
-
-        HasUserType (Type.HType ht) _ ->
-            Just (TType.fromHierarchic ht)
-
-        HasUserType (Type.TType tt) _ ->
-            Just tt
-
-        And s1 s2 ->
-            otherwise (mainTType s1) (mainTType s2)
-
-        Or s1 s2 ->
-            otherwise (mainTType s1) (mainTType s2)
-
-        _ ->
-            Nothing
-
-
-mainHType : Scope -> Maybe HType.Type
-mainHType scope =
-    case scope of
-        HasType (Type.HType ht) ->
-            Just ht
-
-        HasType (Type.TType tt) ->
-            Just (TType.toHierarchic tt)
-
-        HasUserType (Type.HType ht) _ ->
-            Just ht
-
-        HasUserType (Type.TType tt) _ ->
-            Just (TType.toHierarchic tt)
-
-        And s1 s2 ->
-            otherwise (mainHType s1) (mainHType s2)
-
-        Or s1 s2 ->
-            otherwise (mainHType s1) (mainHType s2)
-
-        _ ->
-            Nothing

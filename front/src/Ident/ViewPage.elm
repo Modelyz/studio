@@ -1,34 +1,14 @@
 module Ident.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
-import Group.View exposing (displayGroupTable)
-import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as VT exposing (IdentifierType)
-import Ident.Input exposing (inputIdentifiers)
-import Ident.View exposing (displayIdentifierDict)
-import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
-import Util exposing (third)
 import View exposing (..)
-import Zone.Zone exposing (Zone(..))
-
-
-allT : Shared.Model -> Dict String Identifier
-allT =
-    .state >> .identifiers
-
-
-allH : Shared.Model -> Dict String IdentifierType
-allH =
-    .state >> .identifierTypes
 
 
 type alias Flags =

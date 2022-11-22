@@ -2,19 +2,13 @@ module View.FlatSelect exposing (Config, flatSelect)
 
 import Dict exposing (Dict)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifiable exposing (getIdentifiers)
-import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (IdentifierType)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
-import Typed.Typed exposing (OnlyTyped, Typed)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, hClickableCard, tClickableCard, viewHalfCard)
+import View.Smallcard exposing (tClickableCard, viewHalfCard)
 import View.Style exposing (..)
 
 

@@ -5,7 +5,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
 import View exposing (headerCell, innerCell)

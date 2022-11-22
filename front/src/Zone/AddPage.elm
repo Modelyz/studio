@@ -11,12 +11,11 @@ import Element.Font as Font
 import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope.Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import State
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)

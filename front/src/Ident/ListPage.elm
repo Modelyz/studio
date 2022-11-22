@@ -6,12 +6,11 @@ import Element exposing (..)
 import Ident.IdentifierType as IT exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard)
 
 
 type alias Model =

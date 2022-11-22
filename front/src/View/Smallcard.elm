@@ -1,17 +1,15 @@
-module View.Smallcard exposing (clickableCard, clickableRemovableCard, hClickableCard, hClickableRemovableCard, hItemClickableCard, halfCard, sClickableCard, tClickableCard, tClickableRemovableCard, tItemClickableCard, viewHalfCard, viewSmallCard)
+module View.Smallcard exposing (clickableCard, clickableRemovableCard, hItemClickableCard, halfCard, sClickableCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
 
-import Configuration as Config exposing (Configuration)
+import Configuration exposing (Configuration)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..))
 import Type exposing (Type)
-import Typed.Typed as T exposing (Typed)
 import Util exposing (third)
 import View exposing (..)
 import View.Style exposing (..)
@@ -21,18 +19,6 @@ import Zone.Zone exposing (Zone(..))
 
 
 -- TODO merge/refactor all this
-
-
-viewSmallCard : msg -> Element msg -> Element msg -> Element msg
-viewSmallCard onDelete title description =
-    -- TODO rename to removableCard
-    column [ Background.color color.item.background ]
-        [ row [ spacing 10, width fill ]
-            [ row [ Font.size size.text.main, padding 10 ] [ title ]
-            , el [ alignRight ] (button.primary onDelete "×")
-            ]
-        , row [ padding 10, Font.size size.text.small ] [ description ]
-        ]
 
 
 clickableRemovableCard : msg -> msg -> Element msg -> Element msg -> Element msg
@@ -113,10 +99,6 @@ tClickableCard onInput types configs ids t uuid =
         )
 
 
-hClickableCard =
-    tClickableCard
-
-
 tClickableRemovableCard : msg -> msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Type -> Uuid -> Element msg
 tClickableRemovableCard onChoose onDelete types configs ids t uuid =
     clickableRemovableCard
@@ -129,7 +111,3 @@ tClickableRemovableCard onChoose onDelete types configs ids t uuid =
             |> Maybe.withDefault ""
             |> text
         )
-
-
-hClickableRemovableCard =
-    tClickableRemovableCard

@@ -5,7 +5,6 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
 import Scope.View
 import Shared
 import Spa.Page

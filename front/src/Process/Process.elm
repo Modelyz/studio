@@ -1,15 +1,10 @@
-module Process.Process exposing (Process, compare, decoder, encode)
+module Process.Process exposing (Process, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 
@@ -24,11 +19,6 @@ type alias Process =
     , type_ : Uuid
     , when : Time.Posix
     }
-
-
-compare : Process -> String
-compare =
-    .uuid >> Uuid.toString
 
 
 encode : Process -> Encode.Value

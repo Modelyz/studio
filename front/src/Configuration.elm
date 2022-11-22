@@ -1,14 +1,12 @@
 module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic exposing (Hierarchic)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
 import Type exposing (Type)
-import Typed.Typed exposing (Typed)
 import Zone.Fragment as Fragment exposing (Fragment)
 import Zone.Zone as Zone exposing (Zone)
 

@@ -1,14 +1,14 @@
-module Value.Expression exposing (..)
+module Value.Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, updateExpr)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
-import Value.DeepLink as DL exposing (DeepLink(..))
+import Value.DeepLink exposing (DeepLink(..))
 import Value.Observable as Obs exposing (Observable(..))
-import Value.Rational as R exposing (Rational(..))
-import Value.ValueSelection as VS exposing (ValueSelection(..))
+import Value.Rational as R exposing (Rational)
+import Value.ValueSelection exposing (ValueSelection(..))
 
 
 type Expression
@@ -37,7 +37,7 @@ updateExpr : List Int -> List Int -> Expression -> Expression -> Expression
 updateExpr targetPath currentPath subExpr expr =
     -- we replace the expr at the given path
     case expr of
-        Leaf obs ->
+        Leaf _ ->
             if currentPath == targetPath then
                 subExpr
 
@@ -112,21 +112,6 @@ or n d c =
     Or { name = n, desc = d, choice = Result.fromMaybe "No choice made" c }
 
 
-add : Expression -> Expression -> Expression
-add e f =
-    Binary Add e f
-
-
-multiply : Expression -> Expression -> Expression
-multiply e f =
-    Binary Multiply e f
-
-
-neg : Expression -> Expression
-neg e =
-    Unary Neg e
-
-
 eval : Dict String Value -> Expression -> Result String Rational
 eval allVals expr =
     case expr of
@@ -153,11 +138,11 @@ eval allVals expr =
                         Null ->
                             Err "Unselected value"
 
-                        EndPoint scope value ->
+                        EndPoint _ _ ->
                             -- FIXME
                             Err "Undefined"
 
-                        Link hl dl ->
+                        Link _ _ ->
                             -- FIXME
                             Err "Undefined"
 

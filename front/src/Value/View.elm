@@ -7,7 +7,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Value.Expression as Expression
 import Value.Rational as Rational
-import Value.Value as Value exposing (Value)
+import Value.Value exposing (Value)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
 

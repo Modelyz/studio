@@ -1,12 +1,9 @@
 module GroupType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.View exposing (displayGroupTable)
-import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
@@ -14,7 +11,6 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import State
 import Type exposing (Type)
 import Util exposing (third)
 import Value.Valuable exposing (getValues)

@@ -1,6 +1,6 @@
 module Agent.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.View exposing (displayGroupTable)

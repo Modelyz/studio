@@ -3,14 +3,11 @@ module Value.Input exposing (Config, Model, inputValues)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
-import Scope.Scope as Scope exposing (Scope)
 import Shared
-import Value.DeepLink as DeepLink
 import Value.Expression as Expression exposing (Expression(..))
-import Value.Observable as Observable exposing (Observable(..))
+import Value.Observable exposing (Observable(..))
 import Value.Rational as Rational
 import Value.Value as Value exposing (..)
 import Value.ValueSelection as ValueSelection
@@ -93,7 +90,7 @@ inputObservable c s model targetPath obs v =
                 , htmlAttribute <| Attr.title n.input
                 , Background.color
                     (case n.val of
-                        Ok r ->
+                        Ok _ ->
                             color.content.background
 
                         Err "" ->
@@ -127,7 +124,7 @@ inputObservable c s model targetPath obs v =
                 }
 
         -- TODO
-        ObsValue (ValueSelection.SelectedValue what for name) ->
+        ObsValue (ValueSelection.SelectedValue _ for name) ->
             row [ height fill, htmlAttribute <| Attr.title name ]
                 [ text <|
                     case
@@ -144,7 +141,7 @@ inputObservable c s model targetPath obs v =
         ObsValue ValueSelection.UndefinedValue ->
             row [ height fill ] [ text "Unselected value" ]
 
-        ObsLink deeplink ->
+        ObsLink _ ->
             row [ height fill ]
                 [ text <|
                     case

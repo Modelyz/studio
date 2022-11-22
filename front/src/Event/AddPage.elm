@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Event.Event exposing (Event)
-import EventType.EventType exposing (EventType)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -18,7 +17,7 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)

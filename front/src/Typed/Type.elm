@@ -1,4 +1,4 @@
-module Typed.Type exposing (Type(..), all, decoder, encode, fromHierarchic, fromString, toHierarchic, toPluralString, toString)
+module Typed.Type exposing (Type(..), all, decoder, encode, fromString, toHierarchic, toPluralString, toString)
 
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
@@ -20,31 +20,6 @@ type
 all : List Type
 all =
     [ Resource, Event, Agent, Commitment, Contract, Process, Group ]
-
-
-fromHierarchic : HType.Type -> Type
-fromHierarchic ht =
-    case ht of
-        HType.ResourceType ->
-            Resource
-
-        HType.EventType ->
-            Event
-
-        HType.AgentType ->
-            Agent
-
-        HType.CommitmentType ->
-            Commitment
-
-        HType.ContractType ->
-            Contract
-
-        HType.ProcessType ->
-            Process
-
-        HType.GroupType ->
-            Group
 
 
 toHierarchic : Type -> HType.Type

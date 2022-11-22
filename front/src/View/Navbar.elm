@@ -9,7 +9,6 @@ import IOStatus as IO
 import Prng.Uuid as Uuid
 import Route exposing (Route, toString)
 import Shared
-import Time exposing (posixToMillis)
 import View exposing (hamburger, separator)
 import View.Style as Style exposing (color, navbarHoverstyle)
 import Websocket as WS

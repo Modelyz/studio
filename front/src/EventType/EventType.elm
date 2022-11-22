@@ -1,15 +1,10 @@
-module EventType.EventType exposing (EventType, compare, decoder, encode)
+module EventType.EventType exposing (EventType, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
 import Hierarchy.Type as HType
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Type exposing (Type)
-import Value.Value exposing (Value)
 
 
 type alias EventType =
@@ -34,13 +29,3 @@ decoder =
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
-
-
-compare : EventType -> String
-compare =
-    toString
-
-
-toString : EventType -> String
-toString =
-    .uuid >> Uuid.toString

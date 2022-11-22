@@ -7,11 +7,10 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Message
 import Route exposing (Route, redirect)
-import Scope.View
 import Shared
 import Spa.Page
 import View exposing (..)
-import View.Smallcard exposing (clickableRemovableCard, viewSmallCard)
+import View.Smallcard exposing (clickableRemovableCard)
 
 
 type alias Model =

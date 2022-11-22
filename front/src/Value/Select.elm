@@ -1,11 +1,10 @@
-module Value.Select exposing (Model, Msg(..), init, selectValue, update, view)
+module Value.Select exposing (Model, Msg(..), SelectedValue, init, update, view)
 
 import Dict
 import Element exposing (..)
 import Element.Border as Border
-import Element.Font as Font
-import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope as Scope exposing (Scope(..))
+import Prng.Uuid exposing (Uuid)
+import Scope.Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
@@ -51,7 +50,7 @@ update s msg model =
         InputScope scope ->
             ( { model | selection = OnlyScope scope }, Cmd.none )
 
-        InputValue type_ uuid name ->
+        InputValue _ _ name ->
             ( { model
                 | selection =
                     case model.selection of

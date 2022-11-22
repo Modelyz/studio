@@ -1,18 +1,13 @@
 module Group.View exposing (displayGroupTable, groupsColumn)
 
-import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Group.WithGroups exposing (getGroups)
-import Hierarchy.Hierarchic exposing (Hierarchic)
-import Ident.Identifiable exposing (getIdentifiers)
-import Item.Item exposing (Item)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
 import Typed.Type as TType
-import Typed.Typed exposing (Typed)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
 import Zone.View exposing (display)

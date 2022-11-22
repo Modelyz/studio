@@ -1,4 +1,4 @@
-module Monad.Reader exposing (..)
+module Monad.Reader exposing (Reader(..), andThen, ask, join, map, reader, return, run, unwrap)
 
 
 type Reader s a

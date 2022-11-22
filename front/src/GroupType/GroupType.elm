@@ -1,15 +1,10 @@
 module GroupType.GroupType exposing (GroupType, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
 import Hierarchy.Type as HType
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Type exposing (Type)
-import Value.Value exposing (Value)
 
 
 type alias GroupType =

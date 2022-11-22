@@ -1,18 +1,10 @@
-module Commitment.Commitment exposing (Commitment, compare, decoder, encode)
+module Commitment.Commitment exposing (Commitment, decoder, encode)
 
-import Agent.Agent as Agent exposing (Agent)
-import Dict exposing (Dict)
-import Flow exposing (Flow)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Rational as Rational exposing (Rational(..))
-import Value.Value exposing (Value)
 
 
 type alias Commitment =
@@ -57,8 +49,3 @@ decoder =
    (Decode.field "receiver" Uuid.decoder)
    (Decode.field "flow" Flow.decoder)
 -}
-
-
-compare : Commitment -> String
-compare =
-    .uuid >> Uuid.toString

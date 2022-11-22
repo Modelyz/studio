@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
-import Group.Group exposing (Group)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
 import Type
@@ -12,8 +11,6 @@ import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (tClickableCard, viewHalfCard)
 import View.Style exposing (..)
-import Zone.View exposing (display)
-import Zone.Zone exposing (Zone(..))
 
 
 type alias Config msg =

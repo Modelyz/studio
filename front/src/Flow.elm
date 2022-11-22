@@ -1,10 +1,10 @@
-module Flow exposing (..)
+module Flow exposing (Flow(..), decoder, encode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
-import Value.Rational as Rational exposing (Rational(..))
+import Value.Rational as Rational exposing (Rational)
 
 
 type Flow

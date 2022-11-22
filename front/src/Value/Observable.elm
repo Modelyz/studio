@@ -1,14 +1,11 @@
-module Value.Observable exposing (..)
+module Value.Observable exposing (Observable(..), allObs, decoder, encode, toString)
 
-import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope as Scope
-import Type exposing (Type)
+import Prng.Uuid as Uuid
+import Type
 import Value.DeepLink as DeepLink exposing (DeepLink(..))
-import Value.HardLink as HardLink
-import Value.Rational as Rational exposing (Rational(..))
+import Value.Rational as Rational exposing (Rational)
 import Value.ValueSelection as VS exposing (ValueSelection(..))
 
 

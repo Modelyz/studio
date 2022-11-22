@@ -13,11 +13,9 @@ import EventType.EventType exposing (EventType)
 import Group.Group exposing (Group)
 import Group.Link as GroupLink
 import GroupType.GroupType exposing (GroupType)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Item.Item exposing (Item)
 import Message exposing (Message(..), Payload(..), base)
 import MessageFlow exposing (MessageFlow(..))
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -32,7 +30,6 @@ import Scope.State exposing (containsScope)
 import Time exposing (millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
-import Typed.Typed as T exposing (OnlyTyped, Typed)
 import Value.Value as Value exposing (Value)
 import Value.ValueType as ValueType exposing (ValueType)
 

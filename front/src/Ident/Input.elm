@@ -5,7 +5,6 @@ import Element exposing (..)
 import Element.Input as Input
 import Ident.Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
-import Scope.Scope as Scope exposing (Scope)
 import View exposing (..)
 
 

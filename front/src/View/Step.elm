@@ -1,9 +1,9 @@
-module View.Step exposing (Model, Msg(..), Step(..), buttonNextOrValidate, buttons, isLast, nextMsg, onEnter, update)
+module View.Step exposing (Model, Msg(..), Step(..), buttons, nextMsg, onEnter, update)
 
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Font as Font
-import Route exposing (Route, redirectView)
+import Route exposing (Route)
 import Shared
 import View exposing (..)
 import View.Style exposing (color)
@@ -27,20 +27,6 @@ type alias Model model step =
         , steps : List (Step step)
         , warning : String
     }
-
-
-buttonNext : Model model step -> Result String () -> Element Msg
-buttonNext model result =
-    case result of
-        Ok _ ->
-            if isLast model.step model.steps then
-                none
-
-            else
-                button.primary NextPage "Next →"
-
-        Err err ->
-            button.disabled err "Next →"
 
 
 buttonNextOrValidate : msg -> Model model step -> Result String field -> Element Msg

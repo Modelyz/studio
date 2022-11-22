@@ -6,7 +6,6 @@ import Element exposing (..)
 import Group.Group exposing (Group)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
-import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
@@ -18,7 +17,7 @@ import Route exposing (Route, redirect)
 import Scope.Scope exposing (Scope(..))
 import Shared
 import Spa.Page
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
@@ -44,21 +43,6 @@ typedConstructor =
 hereType : Type.Type
 hereType =
     Type.TType TType.Group
-
-
-mkMessage : TypedType -> Message.Payload
-mkMessage =
-    Message.DefinedGroup
-
-
-allT : Shared.Model -> Dict String Group
-allT =
-    .state >> .groups
-
-
-allH : Shared.Model -> Dict String GroupType
-allH =
-    .state >> .groupTypes
 
 
 type alias Flags =

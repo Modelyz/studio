@@ -1,6 +1,5 @@
 module ContractType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Contract.Contract exposing (Contract)
 import ContractType.ContractType exposing (ContractType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -17,8 +16,7 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Type exposing (Type)
-import Typed.Type as TType
+import Type
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)

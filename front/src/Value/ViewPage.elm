@@ -1,13 +1,12 @@
 module Value.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict exposing (Dict)
+import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Route exposing (Route, redirect)
 import Scope.View
 import Shared
 import Spa.Page
-import Value.Value as Value exposing (Value)
 import Value.ValueType as VT exposing (ValueType)
 import View exposing (..)
 

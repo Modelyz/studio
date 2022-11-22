@@ -1,14 +1,12 @@
 module Value.ValueType exposing (ValueType, compare, decoder, encode, initValues)
 
 import Dict exposing (Dict)
-import Hierarchy.Hierarchic exposing (Hierarchic)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Type exposing (Type)
-import Typed.Typed exposing (Typed)
 import Value.Expression as Expression exposing (Expression)
 import Value.Value as Value exposing (Value)
 

@@ -134,7 +134,7 @@ init s f =
             }
     in
     s.state.identifierTypes
-        |> Dict.filter (\k v -> k == f.itid)
+        |> Dict.filter (\k _ -> k == f.itid)
         |> Dict.values
         |> List.head
         |> Maybe.map

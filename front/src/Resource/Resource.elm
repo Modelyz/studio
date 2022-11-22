@@ -1,14 +1,9 @@
-module Resource.Resource exposing (Resource, compare, decoder, encode)
+module Resource.Resource exposing (Resource, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 type alias Resource =
@@ -16,11 +11,6 @@ type alias Resource =
     , uuid : Uuid
     , type_ : Uuid
     }
-
-
-compare : Resource -> String
-compare =
-    .uuid >> Uuid.toString
 
 
 encode : Resource -> Encode.Value

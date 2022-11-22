@@ -1,6 +1,5 @@
 module AgentType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Agent.Agent exposing (Agent)
 import AgentType.AgentType exposing (AgentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -17,8 +16,7 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Type exposing (Type)
-import Typed.Type as TType
+import Type
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)

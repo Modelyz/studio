@@ -1,10 +1,9 @@
-module Route exposing (EntitySegment(..), Route(..), View(..), all, entityToString, goBack, redirect, redirectAdd, redirectView, toDesc, toRoute, toString)
+module Route exposing (EntitySegment(..), Route(..), View(..), all, goBack, redirect, redirectAdd, toDesc, toRoute, toString)
 
 import Browser.Navigation as Nav
-import Prng.Uuid as Uuid exposing (Uuid)
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (QueryParameter, absolute)
-import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, string, top)
+import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
 
 
@@ -68,61 +67,6 @@ type View
 entityParser : Parser (EntitySegment -> a) a
 entityParser =
     oneOf <| List.map (\e -> map e (s (entityToUrl e))) all
-
-
-entityToString : EntitySegment -> String
-entityToString e =
-    case e of
-        Resource ->
-            "Resource"
-
-        Event ->
-            "Event"
-
-        Agent ->
-            "Agent"
-
-        Commitment ->
-            "Commitment"
-
-        Contract ->
-            "Contract"
-
-        Process ->
-            "Process"
-
-        Group ->
-            "Group"
-
-        ResourceType ->
-            "ResourceType"
-
-        EventType ->
-            "EventType"
-
-        AgentType ->
-            "AgentType"
-
-        CommitmentType ->
-            "CommitmentType"
-
-        ContractType ->
-            "ContractType"
-
-        ProcessType ->
-            "ProcessType"
-
-        GroupType ->
-            "GroupType"
-
-        ValueType ->
-            "ValueType"
-
-        IdentifierType ->
-            "IdentifierType"
-
-        Configuration ->
-            "Configuration"
 
 
 entityToDesc : EntitySegment -> String
@@ -306,13 +250,8 @@ toDesc r =
         Home ->
             "Home"
 
-        Entity e v ->
+        Entity e _ ->
             entityToDesc e
-
-
-upper : Route -> String
-upper =
-    toString >> String.split "/" >> List.reverse >> List.drop 1 >> List.reverse >> String.join "/"
 
 
 redirect : Nav.Key -> Route -> Cmd msg
@@ -333,21 +272,6 @@ redirectAdd navkey route =
                     Home
 
 
-redirectView : Nav.Key -> Route -> Cmd msg
-redirectView navkey route =
-    Nav.pushUrl navkey <|
-        toString <|
-            case route of
-                Entity e (Edit s) ->
-                    Entity e (View s)
-
-                Entity e (View s) ->
-                    Entity e (View s)
-
-                _ ->
-                    Home
-
-
 goBack : Nav.Key -> Route -> Cmd msg
 goBack navkey route =
     Nav.pushUrl navkey <|
@@ -361,7 +285,7 @@ goBack navkey route =
                         Edit s ->
                             Entity e (View s)
 
-                        View s ->
+                        View _ ->
                             Entity e (List Nothing)
 
                         Add ->

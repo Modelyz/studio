@@ -12,13 +12,12 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
-import ProcessType.ProcessType exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
-import Type exposing (Type)
+import Type
 import Typed.Type as TType
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
@@ -26,14 +25,6 @@ import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
-
-
-type alias TypedType =
-    Process
-
-
-type alias HierarchicType =
-    ProcessType
 
 
 constructor =
@@ -48,21 +39,6 @@ typedConstructor =
 hereType : Type.Type
 hereType =
     Type.TType TType.Process
-
-
-mkMessage : TypedType -> Message.Payload
-mkMessage =
-    Message.AddedProcess
-
-
-allT : Shared.Model -> Dict String Process
-allT =
-    .state >> .processes
-
-
-allH : Shared.Model -> Dict String ProcessType
-allH =
-    .state >> .processTypes
 
 
 type alias Flags =

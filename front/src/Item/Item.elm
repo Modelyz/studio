@@ -1,4 +1,4 @@
-module Item.Item exposing (Item, find)
+module Item.Item exposing (Item)
 
 import Dict exposing (Dict)
 import Ident.Identifier exposing (Identifier)
@@ -16,10 +16,3 @@ type alias Item a =
         , values : Dict String Value
         , display : Dict String String
     }
-
-
-find : Dict String (Item a) -> Uuid -> Maybe (Item a)
-find es uuid =
-    Dict.filter (\_ e -> e.uuid == uuid) es
-        |> Dict.values
-        |> List.head

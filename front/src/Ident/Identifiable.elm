@@ -3,7 +3,7 @@ module Ident.Identifiable exposing (getIdentifiers)
 import Dict exposing (Dict)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType, initIdentifiers)
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
 
 

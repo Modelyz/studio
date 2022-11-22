@@ -1,8 +1,6 @@
 module Ident.IdentifierType exposing (IdentifierType, compare, decoder, encode, initIdentifiers)
 
 import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Hierarchy.Hierarchic as H exposing (Hierarchic)
 import Ident.Fragment as Fragment exposing (Fragment)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
@@ -11,8 +9,6 @@ import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Type exposing (Type)
-import Typed.Type as TType
-import Typed.Typed exposing (Typed)
 
 
 type alias IdentifierType =

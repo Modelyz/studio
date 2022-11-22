@@ -11,7 +11,6 @@ import Dict exposing (Dict)
 import Event.Event as Event exposing (Event)
 import EventType.EventType as EventType exposing (EventType)
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable exposing (Groupable)
 import Group.Link as GroupLink
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.Identifier as Identifier exposing (Identifier)

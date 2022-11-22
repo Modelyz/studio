@@ -1,15 +1,10 @@
-module Event.Event exposing (Event, compare, decoder, encode)
+module Event.Event exposing (Event, decoder, encode)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (millisToPosix, posixToMillis)
-import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value exposing (Value)
 
 
 type alias Event =
@@ -42,8 +37,3 @@ decoder =
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
-
-
-compare : Event -> String
-compare =
-    .uuid >> Uuid.toString
