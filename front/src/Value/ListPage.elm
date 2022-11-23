@@ -96,7 +96,7 @@ viewContent model s =
                             (Removed vt)
                             (text vt.name)
                             (row []
-                                [ text <| "for " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs vt.scope ]
+                                [ text <| "for " ++ Scope.View.toDisplay s vt.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Value Types yet. Create your first one!")

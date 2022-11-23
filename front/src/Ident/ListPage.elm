@@ -96,7 +96,7 @@ viewContent model s =
                             (Removed it)
                             (text it.name)
                             (row []
-                                [ text <| "for " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs it.scope ]
+                                [ text <| "for " ++ Scope.View.toDisplay s it.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

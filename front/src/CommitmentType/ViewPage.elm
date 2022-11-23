@@ -1,5 +1,6 @@
 module CommitmentType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -9,10 +10,11 @@ import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
+import Scope.View
 import Shared
 import Spa.Page
-import Typed.Type as TType
 import Type exposing (Type)
+import Typed.Type as TType
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
@@ -36,6 +38,7 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
+    , ct : Maybe CommitmentType
     , type_ : Maybe Uuid
     , groups : List Uuid
     }
@@ -71,6 +74,7 @@ init s f =
     ( { route = f.route
       , what = mainHType
       , uuid = f.uuid
+      , ct = Dict.get (Uuid.toString f.uuid) s.state.commitmentTypes
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped
@@ -107,14 +111,14 @@ viewContent model s =
         (Just Close)
         "Commitment Type"
         [ button.primary Edit "Edit" ]
-        [ h2 "Type:"
+        [ h2 "Identifiers:"
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+            |> displayIdentifierDict "(none)"
+        , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
-        , h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
-            |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict "(none)" s.state.values
@@ -122,4 +126,10 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
+        , h2 "Restricted to the transfer of:"
+        , Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
+        , h2 "From:"
+        , Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
+        , h2 "To:"
+        , Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
         ]

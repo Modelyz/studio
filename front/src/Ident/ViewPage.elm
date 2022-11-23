@@ -91,7 +91,7 @@ viewContent model s =
                     "IdentifierType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| it.name
-                    , text <| "Scope: " ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs it.scope
+                    , text <| "Scope: " ++ Scope.View.toDisplay s it.scope
                     ]
             )
         |> Maybe.withDefault

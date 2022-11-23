@@ -21,9 +21,19 @@ import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
 
-toDisplay : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Identifier -> Dict String Configuration -> Scope -> String
-toDisplay types ids configs scope =
+toDisplay : Shared.Model -> Scope -> String
+toDisplay s scope =
     -- TODO move to Scope.Scope?
+    let
+        types =
+            s.state.types
+
+        configs =
+            s.state.configs
+
+        ids =
+            s.state.identifiers
+    in
     case scope of
         Empty ->
             "Nothing"
@@ -47,19 +57,19 @@ toDisplay types ids configs scope =
             "Identified"
 
         And s1 s2 ->
-            "(" ++ toDisplay types ids configs s1 ++ ") And (" ++ toDisplay types ids configs s2 ++ ")"
+            "(" ++ toDisplay s s1 ++ ") And (" ++ toDisplay s s2 ++ ")"
 
         Or s1 s2 ->
-            "(" ++ toDisplay types ids configs s1 ++ ") Or (" ++ toDisplay types ids configs s2 ++ ")"
+            "(" ++ toDisplay s s1 ++ ") Or (" ++ toDisplay s s2 ++ ")"
 
-        Not s ->
-            "Not (" ++ toDisplay types ids configs s ++ ")"
+        Not sc ->
+            "Not (" ++ toDisplay s sc ++ ")"
 
 
-halfCard : msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Scope -> Element msg
-halfCard onDelete types configs ids scope =
+halfCard : msg -> Shared.Model -> Scope -> Element msg
+halfCard onDelete s scope =
     row [ Background.color color.item.selected ]
-        [ el [ padding 10 ] (text <| toDisplay types ids configs scope)
+        [ el [ padding 10 ] (text <| toDisplay s scope)
         , if scope == Empty then
             none
 
@@ -81,7 +91,7 @@ selectScope s onInput sc forceScope title =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
-            , halfCard (onInput Empty) s.state.types s.state.configs s.state.identifiers scope
+            , halfCard (onInput Empty) s scope
             ]
         , h2 title
         , if scope == Empty then
@@ -139,6 +149,40 @@ selectScope s onInput sc forceScope title =
                                         tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
                                     )
                            )
+
+                Or (HasType (Type.TType tt)) (HasType (Type.HType ht)) ->
+                    [ column [ alignTop, spacing 20, width <| minimum 200 fill ]
+                        [ h3 <| "You can restrict to a more specific " ++ TType.toString tt ++ " of Type:"
+                        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                            (s.state.types
+                                |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType (TType.toHierarchic tt))
+                                |> Dict.values
+                                |> List.map
+                                    (\( uuid, _, _ ) ->
+                                        let
+                                            htype =
+                                                Type.HType (TType.toHierarchic tt)
+                                        in
+                                        tClickableCard (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
+                                    )
+                            )
+                        , h3 <| "or restrict to a " ++ HType.toString ht ++ " of Type:"
+                        , wrappedRow
+                            [ padding 10, spacing 10, Border.color color.item.border ]
+                            (s.state.types
+                                |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType ht)
+                                |> Dict.values
+                                |> List.map
+                                    (\( uuid, _, _ ) ->
+                                        let
+                                            htype =
+                                                Type.HType ht
+                                        in
+                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
+                                    )
+                            )
+                        ]
+                    ]
 
                 _ ->
                     []

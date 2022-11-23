@@ -134,7 +134,15 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepProviders, Step.Step StepReceivers, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps =
+                [ Step.Step StepType
+                , Step.Step StepIdentifiers
+                , Step.Step StepValues
+                , Step.Step StepProviders
+                , Step.Step StepReceivers
+                , Step.Step StepFlow
+                , Step.Step StepGroups
+                ]
             }
     in
     ( f.uuid

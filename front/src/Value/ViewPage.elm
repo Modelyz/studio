@@ -93,7 +93,7 @@ viewContent model s =
                     [ h2 <| vt.name
                     , text <|
                         "Scope: "
-                            ++ Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs vt.scope
+                            ++ Scope.View.toDisplay s vt.scope
                     ]
             )
         |> Maybe.withDefault

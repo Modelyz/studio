@@ -21,4 +21,4 @@ description : Shared.Model -> Configuration -> String
 description s c =
     case c of
         ZoneConfig _ _ scope ->
-            Scope.View.toDisplay s.state.types s.state.identifiers s.state.configs scope
+            Scope.View.toDisplay s scope
