@@ -90,10 +90,9 @@ selectScope s onInput sc forceScope title =
     in
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text "Apply to: "
+            [ el [ paddingXY 10 0, Font.size size.text.h2 ] <| text title
             , halfCard (onInput Empty) s scope
             ]
-        , h2 title
         , if scope == Empty then
             column [ spacing 10 ]
                 [ -- First the concrete types
@@ -120,7 +119,7 @@ selectScope s onInput sc forceScope title =
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
                 HasType (Type.TType tt) ->
-                    (h3 <| "of type:")
+                    (h3 <| "Choose among:")
                         :: ((s.state.types
                                 |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType (TType.toHierarchic tt))
                             )
@@ -136,7 +135,7 @@ selectScope s onInput sc forceScope title =
                            )
 
                 HasType (Type.HType ht) ->
-                    (h3 <| "of type:")
+                    (h3 <| "Choose among:")
                         :: (s.state.types
                                 |> Dict.filter (\_ ( _, t, _ ) -> t == Type.HType ht)
                                 |> Dict.values
@@ -191,7 +190,7 @@ selectScope s onInput sc forceScope title =
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
             case scope of
                 HasUserType (Type.HType ht) puuid ->
-                    (h3 <| "You can select a specific one (otherwise click Next):")
+                    (h3 <| "You may select a specific one (otherwise click Next):")
                         :: (s.state.types
                                 |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.HType ht && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values
@@ -199,7 +198,7 @@ selectScope s onInput sc forceScope title =
                            )
 
                 HasUserType (Type.TType tt) puuid ->
-                    (h3 <| "You can select a specific one (otherwise click Next):")
+                    (h3 <| "You may select a specific one (otherwise click Next):")
                         :: (s.state.types
                                 |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.TType tt && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values

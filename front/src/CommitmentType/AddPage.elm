@@ -290,16 +290,16 @@ viewContent model s =
                         , muuid = model.mpuuid
                         , onInput = SelectType
                         , title = "Parent Type:"
-                        , explain = "Optional parent type for the new Commitment Type (it can be hierarchical)"
+                        , explain = "You can choose among the following types:"
                         , empty = "(There are no Commitment Types yet to choose from)"
                         }
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepProviders ->
-                    selectScope s SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Possible Provider Agents:"
+                    selectScope s SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Provider Agents:"
 
                 Step.Step StepReceivers ->
-                    selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Possible Receiver Agents:"
+                    selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
 
                 Step.Step StepFlow ->
                     selectScope s SelectFlow model.flow (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "Possible Resources or Resource Types:"

@@ -31,11 +31,15 @@ flatSelect s c uuids =
                 |> Maybe.map (\uuid -> viewHalfCard (Just <| c.onInput Nothing) s.state.types s.state.configs s.state.identifiers c.what uuid)
                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
             ]
-        , h2 c.explain
-        , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
-            (uuids
-                |> Dict.values
-                |> List.map (\uuid -> tClickableCard (c.onInput (Just uuid)) s.state.types s.state.configs s.state.identifiers c.what uuid)
-                |> withDefaultContent (p c.empty)
-            )
+        , c.muuid |> Maybe.map (\_ -> none) |> Maybe.withDefault (h2 c.explain)
+        , c.muuid
+            |> Maybe.map (\_ -> none)
+            |> Maybe.withDefault
+                (wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                    (uuids
+                        |> Dict.values
+                        |> List.map (\uuid -> tClickableCard (c.onInput (Just uuid)) s.state.types s.state.configs s.state.identifiers c.what uuid)
+                        |> withDefaultContent (p c.empty)
+                    )
+                )
         ]

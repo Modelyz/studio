@@ -302,9 +302,6 @@ validate m =
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
-        mct =
-            model.type_ |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.commitmentTypes)
-
         step =
             case model.step of
                 Step.Step StepType ->
@@ -336,7 +333,7 @@ viewContent model s =
                                     )
                                 ]
                         )
-                        mct
+                        model.commitmentType
                         |> Maybe.withDefault none
 
                 Step.Step StepReceiver ->
@@ -357,7 +354,7 @@ viewContent model s =
                                     )
                                 ]
                         )
-                        mct
+                        model.commitmentType
                         |> Maybe.withDefault none
 
                 Step.Step StepFlow ->
@@ -366,7 +363,7 @@ viewContent model s =
                             column [ spacing 20 ]
                                 [ Flow.Input.input
                                     { flow = model.flow
-                                    , scope = mct |> Maybe.map .flow |> Maybe.withDefault Scope.empty
+                                    , scope = ct.flow
                                     , onInput = InputFlow
                                     , onSelect = InputFlow
                                     , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
@@ -377,7 +374,7 @@ viewContent model s =
                                     s
                                 ]
                         )
-                        mct
+                        model.commitmentType
                         |> Maybe.withDefault none
 
                 Step.Step StepGroups ->

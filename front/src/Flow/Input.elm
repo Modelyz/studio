@@ -77,4 +77,4 @@ input c s =
                 ]
 
         None ->
-            none
+            text "none"

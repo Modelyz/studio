@@ -4,6 +4,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
+import Scope.Scope
 import Value.Expression as Expression exposing (Expression)
 import Value.Rational as Rational exposing (Rational)
 import Value.Value as Value exposing (Value)
