@@ -52,7 +52,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , type_ : Maybe Uuid
+    , mpuuid : Maybe Uuid
     , providers : Scope
     , receivers : Scope
     , flow : Scope
@@ -122,7 +122,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , type_ = Nothing
+            , mpuuid = Nothing
             , providers = Scope.empty
             , receivers = Scope.empty
             , flow = Scope.empty
@@ -156,14 +156,20 @@ init s f =
                             |> List.map (\link -> ( Uuid.toString link.group, link.group ))
                             |> Dict.fromList
 
-                    type_ =
+                    mpuuid =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+
+                    ct =
+                        Dict.get (Uuid.toString uuid) s.state.commitmentTypes
                 in
                 { adding
-                    | type_ = type_
+                    | mpuuid = mpuuid
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
+                    , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
+                    , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
+                    , flow = Maybe.map .flow ct |> Maybe.withDefault Scope.empty
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid mpuuid False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid mpuuid False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }
@@ -178,7 +184,7 @@ update s msg model =
     case msg of
         SelectType mh ->
             ( { model
-                | type_ = mh
+                | mpuuid = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
@@ -270,7 +276,7 @@ checkStep model =
 
 validate : Model -> Result String CommitmentType
 validate m =
-    Ok (constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flow)
+    Ok (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flow)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -281,7 +287,7 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.CommitmentType
-                        , muuid = model.type_
+                        , muuid = model.mpuuid
                         , onInput = SelectType
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Commitment Type (it can be hierarchical)"
