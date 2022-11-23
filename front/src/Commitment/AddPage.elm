@@ -29,7 +29,7 @@ import Spa.Page
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (checkMaybe, third)
+import Util exposing (checkMaybe, chooseIfSingleton, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -62,6 +62,7 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
+    , commitmentType : Maybe CommitmentType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
     , flow : Flow
@@ -132,6 +133,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = Nothing
+            , commitmentType = Nothing
             , provider = Nothing
             , receiver = Nothing
             , flow = Flow.None
@@ -143,7 +145,7 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
@@ -163,6 +165,7 @@ init s f =
                 { adding
                     | type_ = type_
                     , uuid = uuid
+                    , commitmentType = type_ |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.commitmentTypes)
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
@@ -178,8 +181,25 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         SelectType mh ->
+            let
+                mct =
+                    mh |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.commitmentTypes)
+            in
             ( { model
                 | type_ = mh
+                , commitmentType = mct
+                , provider =
+                    chooseIfSingleton
+                        (s.state.agents
+                            |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                            |> Dict.map (\_ a -> a.uuid)
+                        )
+                , receiver =
+                    chooseIfSingleton
+                        (s.state.agents
+                            |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                            |> Dict.map (\_ a -> a.uuid)
+                        )
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }

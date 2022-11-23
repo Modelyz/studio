@@ -1,4 +1,6 @@
-module Util exposing (checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, flip, otherwise, third)
+module Util exposing (checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, third)
+
+import Dict exposing (Dict)
 
 
 otherwise : Maybe a -> Maybe a -> Maybe a
@@ -66,3 +68,12 @@ checkListOne list err =
 flip : (a -> b -> c) -> (b -> a -> c)
 flip f x y =
     f y x
+
+
+chooseIfSingleton : Dict a b -> Maybe b
+chooseIfSingleton xs =
+    if Dict.size xs == 1 then
+        List.head <| Dict.values xs
+
+    else
+        Nothing
