@@ -1,4 +1,4 @@
-module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
+module View exposing (View, button, closeMenu, commitment, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -13,6 +13,9 @@ import Html.Events
 import Json.Decode as Decode
 import Route exposing (Route)
 import Shared
+import Svg as S
+import Svg.Attributes as A
+import Util exposing (flip)
 import View.Style as Style exposing (..)
 import View.Type as ViewType
 
@@ -248,3 +251,26 @@ viewSelector all selected change =
 
 zero =
     { top = 0, right = 0, bottom = 0, left = 0 }
+
+
+bound : Int -> Int -> Int -> Int
+bound m mm x =
+    min mm (max m x)
+
+
+lenToPx : String -> String
+lenToPx str =
+    bound 14 30 (35 - String.length str) |> String.fromInt |> flip (++) "px"
+
+
+commitment : String -> String -> String -> Element msg
+commitment from what to =
+    html <|
+        S.svg [ A.width "800", A.height "200", A.viewBox "0 0 800 200" ]
+            [ S.rect [ A.fill Style.strcolor, A.x "0", A.y "52.5", A.width "245", A.height "95", A.rx "10", A.ry "10" ] []
+            , S.rect [ A.fill Style.strcolor, A.x "555", A.y "52.5", A.width "245", A.height "95", A.rx "10", A.ry "10" ] []
+            , S.path [ A.fill Style.strcolor, A.x "100", A.y "10", A.width "100", A.height "70", A.d "m 440.86545,32.919698 v 31.887225 h -189.40321 v 70.388317 h 189.40321 v 31.88506 l 107.6723,-67.07922 z" ] []
+            , S.text_ [ A.x "123", A.y "106", A.fill "black", A.color "black", A.fontSize <| lenToPx from, A.style "text-anchor: middle; text-align: center" ] [ S.text from ]
+            , S.text_ [ A.x "389", A.y "106", A.fill "black", A.color "black", A.fontSize <| lenToPx what, A.style "text-anchor: middle; text-align: center" ] [ S.text what ]
+            , S.text_ [ A.x "667", A.y "106", A.fill "black", A.color "black", A.fontSize <| lenToPx to, A.style "text-anchor: middle; text-align: center" ] [ S.text to ]
+            ]

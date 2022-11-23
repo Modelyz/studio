@@ -3,7 +3,7 @@ module CommitmentType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict
 import Effect exposing (Effect)
-import Element exposing (..)
+import Element as E exposing (..)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -13,12 +13,15 @@ import Route exposing (Route, redirect)
 import Scope.View
 import Shared
 import Spa.Page
+import Svg as S
+import Svg.Attributes as A
 import Type exposing (Type)
 import Typed.Type as TType
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
+import View.Style as Style
 import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
@@ -126,10 +129,11 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
-        , h2 "Restricted to the transfer of:"
-        , Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
-        , h2 "From:"
-        , Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
-        , h2 "To:"
-        , Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)" |> text
+        , h2 "Restrictions:"
+
+        -- TODO what about resource conversions?
+        , commitment
+            (Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
         ]

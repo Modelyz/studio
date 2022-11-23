@@ -1,4 +1,4 @@
-module Util exposing (checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, otherwise, third)
+module Util exposing (checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, flip, otherwise, third)
 
 
 otherwise : Maybe a -> Maybe a -> Maybe a
@@ -61,3 +61,8 @@ checkListOne list err =
 
     else
         Err err
+
+
+flip : (a -> b -> c) -> (b -> a -> c)
+flip f x y =
+    f y x

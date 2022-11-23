@@ -45,13 +45,13 @@ toDisplay s scope =
             (Type.toString (Type.HType ht) ++ ": ") ++ display types configs SmallcardTitle (Identifier.fromUuid uuid ids) (Type.HType ht) uuid
 
         HasType t ->
-            "All " ++ Type.toPluralString t
+            Type.toPluralString t
 
         HasUserType (Type.TType tt) tuid ->
-            "All " ++ TType.toPluralString tt ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType (TType.toHierarchic tt)) tuid
+            TType.toPluralString tt ++ " of type: " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType (TType.toHierarchic tt)) tuid
 
         HasUserType (Type.HType ht) tuid ->
-            "All " ++ HType.toPluralString ht ++ " of type " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType ht) tuid
+            HType.toPluralString ht ++ " of type: " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) (Type.HType ht) tuid
 
         Identified _ ->
             "Identified"

@@ -1,4 +1,4 @@
-module View.Style exposing (Menu(..), WindowSize, color, isMobile, itemHoverstyle, navbarHoverstyle, shadowStyle, size)
+module View.Style exposing (Menu(..), WindowSize, color, isMobile, itemHoverstyle, navbarHoverstyle, shadowStyle, size, strcolor)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -32,6 +32,11 @@ size =
         , topbar = 20
         }
     }
+
+
+strcolor : String
+strcolor =
+    "#c5e8f7"
 
 
 color =
