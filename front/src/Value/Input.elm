@@ -42,7 +42,7 @@ inputValue c s v =
     column []
         [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
         , row [ spacing 5 ]
-            [ inputExpression c s ( [], v.expr ) v.expr v
+            [ inputExpression { onEnter = c.onEnter, onInput = \expr -> c.onInput { v | expr = expr } } s ( [], v.expr ) v.expr
 
             -- display the evaluated expression:
             , case v.expr of

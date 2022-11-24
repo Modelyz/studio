@@ -17,6 +17,8 @@ type alias CommitmentType =
     , parent : Maybe Uuid
     , providers : Scope
     , receivers : Scope
+
+    -- TODO rename flow to flowscope
     , flow : Scope
     , qty : Expression
     }

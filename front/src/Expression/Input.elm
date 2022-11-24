@@ -15,7 +15,6 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Value.Rational as Rational
-import Value.Select
 import Value.Value as Value exposing (..)
 import Value.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
@@ -24,26 +23,26 @@ import View.Style exposing (..)
 
 type alias Config msg =
     { onEnter : msg
-    , onInput : Value -> msg
+    , onInput : Expression -> msg
     }
 
 
-inputExpression : Config msg -> Shared.Model -> ( List Int, Expression ) -> Expression -> Value -> Element msg
-inputExpression c s ( currentPath, expr ) ex v =
+inputExpression : Config msg -> Shared.Model -> ( List Int, Expression ) -> Expression -> Element msg
+inputExpression c s ( currentPath, expr ) ex =
     -- used to input values into an expression
     case expr of
         Leaf obs ->
-            inputObservable c s currentPath obs ex v
+            inputObservable c s currentPath obs ex
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) e v ]
+            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) e ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) ex v, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) ex v, text " )" ]
+            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) ex, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) ex, text " )" ]
 
 
-inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Value -> Element msg
-inputObservable c s targetPath obs expr v =
+inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Element msg
+inputObservable c s targetPath obs expr =
     case obs of
         ObsNumber n ->
             Input.text
@@ -63,7 +62,7 @@ inputObservable c s targetPath obs expr v =
                 ]
                 { onChange =
                     \str ->
-                        c.onInput { v | expr = Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str, val = Rational.fromString str |> Result.map Tuple.first }) expr }
+                        c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str, val = Rational.fromString str |> Result.map Tuple.first }) expr
                 , text =
                     n.input
                 , placeholder =

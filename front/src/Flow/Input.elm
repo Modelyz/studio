@@ -5,6 +5,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Expression.Input
 import Flow exposing (Flow(..))
 import Ident.Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
@@ -41,10 +42,7 @@ input c s =
                 [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
                     [ h2 c.title
 
-                    -- TODO
-                    , text "edit r flow expr"
-
-                    {- Value.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr ) -}
+                    --, Expression.Input.inputExpression { onEnter = c.onEnter, onInput = c.onInput } s ( [], expr )
                     ]
                 , h2 c.explain
                 , wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
