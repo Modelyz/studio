@@ -1,13 +1,13 @@
-module Value.DeepLink.Select exposing (Model, Msg(..), init, update, view)
+module Expression.DeepLink.Select exposing (Model, Msg(..), init, update, view)
 
 import Dict
 import Element exposing (..)
 import Element.Border as Border
+import Expression.DeepLink as DeepLink exposing (DeepLink(..))
+import Expression.HardLink as Hardlink exposing (HardLink)
 import Scope.Scope exposing (Scope)
 import Scope.State exposing (containsScope)
 import Shared
-import Value.DeepLink as DeepLink exposing (DeepLink(..))
-import Value.HardLink as Hardlink exposing (HardLink)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)

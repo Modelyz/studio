@@ -1,12 +1,12 @@
-module Value.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope)
+module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope)
 
+import Expression.HardLink as HardLink exposing (HardLink)
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope.Scope as Scope exposing (Scope(..))
 import Type
 import Typed.Type as TType
-import Value.HardLink as HardLink exposing (HardLink)
 
 
 type DeepLink

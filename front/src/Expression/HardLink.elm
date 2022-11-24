@@ -1,4 +1,4 @@
-module Value.HardLink exposing (AgentLink(..), AgentTypeLink(..), CommitmentLink(..), CommitmentTypeLink(..), ContractLink(..), ContractTypeLink(..), EventLink(..), EventTypeLink(..), GroupLink(..), GroupTypeLink(..), HardLink(..), ProcessLink(..), ProcessTypeLink(..), ResourceLink(..), ResourceTypeLink(..), allAL, allCmL, allCnL, allEL, allGL, allPL, allRL, decoder, encode, toChoice, toScope, toString)
+module Expression.HardLink exposing (AgentLink(..), AgentTypeLink(..), CommitmentLink(..), CommitmentTypeLink(..), ContractLink(..), ContractTypeLink(..), EventLink(..), EventTypeLink(..), GroupLink(..), GroupTypeLink(..), HardLink(..), ProcessLink(..), ProcessTypeLink(..), ResourceLink(..), ResourceTypeLink(..), allAL, allCmL, allCnL, allEL, allGL, allPL, allRL, decoder, encode, toChoice, toScope, toString)
 
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)

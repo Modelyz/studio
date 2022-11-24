@@ -1,12 +1,12 @@
 module Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, updateExpr)
 
 import Dict exposing (Dict)
+import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
-import Value.DeepLink exposing (DeepLink(..))
 import Value.Rational as R exposing (Rational)
 import Value.ValueSelection exposing (ValueSelection(..))
 

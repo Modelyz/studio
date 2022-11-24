@@ -8,6 +8,8 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression.DeepLink as DeepLink exposing (DeepLink)
+import Expression.DeepLink.Select
 import Expression.Observable as Obs exposing (Observable(..))
 import Html.Attributes as Attr
 import Message
@@ -17,8 +19,6 @@ import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Util exposing (checkEmptyString, checkListOne)
-import Value.DeepLink as DeepLink exposing (DeepLink)
-import Value.DeepLink.Select
 import Value.Rational as R
 import Value.Select
 import Value.ValueSelection exposing (ValueSelection(..))
@@ -39,7 +39,7 @@ type Msg
     | RemoveExpression Int
     | Undo
     | SubMsg Value.Select.Msg
-    | SubMsg2 Value.DeepLink.Select.Msg
+    | SubMsg2 Expression.DeepLink.Select.Msg
     | Open Subpage Int (List Int)
     | Warning String
     | Button Step.Msg
@@ -59,7 +59,7 @@ type alias Model =
     , scope : Scope
     , subpage : Maybe Subpage
     , submodel : Value.Select.Model
-    , submodel2 : Value.DeepLink.Select.Model
+    , submodel2 : Expression.DeepLink.Select.Model
     , warning : String
     , steps : List (Step.Step Step)
     , step : Step.Step Step
@@ -150,7 +150,7 @@ init s f =
             , scope = Scope.empty
             , subpage = Nothing
             , submodel = Value.Select.init s
-            , submodel2 = Value.DeepLink.Select.init s Scope.empty
+            , submodel2 = Expression.DeepLink.Select.init s Scope.empty
             , warning = ""
             , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
             , step = Step.Step StepName
@@ -255,7 +255,7 @@ update s msg model =
         Open (DeeplinkSelector onSelect) _ _ ->
             ( { model
                 | subpage = Just (DeeplinkSelector onSelect)
-                , submodel2 = Value.DeepLink.Select.init s model.scope
+                , submodel2 = Expression.DeepLink.Select.init s model.scope
               }
             , Effect.none
             )
@@ -314,13 +314,13 @@ update s msg model =
                 Just (DeeplinkSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
-                            Value.DeepLink.Select.update s sub model.submodel2
+                            Expression.DeepLink.Select.update s sub model.submodel2
                     in
                     case sub of
-                        Value.DeepLink.Select.Cancel ->
+                        Expression.DeepLink.Select.Cancel ->
                             ( { model | subpage = Nothing }, Effect.fromCmd (Cmd.map SubMsg2 subcmd) )
 
-                        Value.DeepLink.Select.Choose dl ->
+                        Expression.DeepLink.Select.Choose dl ->
                             -- TODO try to merge with InputExpression
                             ( { model
                                 | submodel2 = newsubmodel
@@ -432,7 +432,7 @@ viewSubpage s model =
                     Element.map SubMsg <| Value.Select.view s model.submodel
 
                 DeeplinkSelector _ ->
-                    Element.map SubMsg2 <| Value.DeepLink.Select.view s model.submodel2
+                    Element.map SubMsg2 <| Expression.DeepLink.Select.view s model.submodel2
         )
         model.subpage
 
