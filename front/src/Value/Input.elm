@@ -5,9 +5,9 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
+import Expression.Observable exposing (Observable(..))
 import Html.Attributes as Attr
 import Shared
-import Value.Observable exposing (Observable(..))
 import Value.Rational as Rational
 import Value.Value as Value exposing (..)
 import Value.ValueSelection as ValueSelection

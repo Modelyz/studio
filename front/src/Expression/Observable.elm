@@ -1,4 +1,4 @@
-module Value.Observable exposing (Observable(..), allObs, decoder, encode, toString)
+module Expression.Observable exposing (Observable(..), allObs, decoder, encode, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

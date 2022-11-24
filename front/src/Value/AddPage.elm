@@ -8,6 +8,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression.Observable as Obs exposing (Observable(..))
 import Html.Attributes as Attr
 import Message
 import Route exposing (Route, redirect)
@@ -18,7 +19,6 @@ import Spa.Page
 import Util exposing (checkEmptyString, checkListOne)
 import Value.DeepLink as DeepLink exposing (DeepLink)
 import Value.DeepLink.Select
-import Value.Observable as Obs exposing (Observable(..))
 import Value.Rational as R
 import Value.Select
 import Value.ValueSelection exposing (ValueSelection(..))
