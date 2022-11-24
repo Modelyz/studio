@@ -1,6 +1,7 @@
 module CommitmentType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
 import CommitmentType.CommitmentType exposing (CommitmentType)
+import CommitmentType.View
 import Dict
 import Effect exposing (Effect)
 import Element as E exposing (..)
@@ -132,7 +133,7 @@ viewContent model s =
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?
-        , commitment
+        , CommitmentType.View.svg
             (Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
             (Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
             (Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")

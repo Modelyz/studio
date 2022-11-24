@@ -31,7 +31,7 @@ encode ct =
         , ( "providers", Scope.encode ct.providers )
         , ( "receivers", Scope.encode ct.receivers )
         , ( "flow", Scope.encode ct.flow )
-        , ( "expression", Expression.encode ct.qty )
+        , ( "qty", Expression.encode ct.qty )
         ]
 
 

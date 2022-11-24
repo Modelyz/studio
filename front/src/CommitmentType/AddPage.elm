@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression.Editor exposing (view)
 import Flow exposing (Flow, checkNone)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -16,7 +17,7 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope)
+import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -57,6 +58,7 @@ type alias Model =
     , providers : Scope
     , receivers : Scope
     , flowscope : Scope
+    , editor : Expression.Editor.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -64,7 +66,6 @@ type alias Model =
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
-    , stack : List Expression
     }
 
 
@@ -87,6 +88,7 @@ type Msg
     | InputGroups (Dict String Uuid)
     | InputValue Value
     | Button Step.Msg
+    | EditorMsg Expression.Editor.Msg
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -128,7 +130,7 @@ init s f =
             , providers = Scope.empty
             , receivers = Scope.empty
             , flowscope = Scope.empty
-            , stack = []
+            , editor = Expression.Editor.init s (HasType (Type.TType TType.Commitment)) []
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -166,7 +168,7 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.commitmentTypes
 
                     flowscope =
-                        Maybe.map .flow ct |> Maybe.withDefault Scope.empty
+                        Maybe.map .flow ct |> Maybe.withDefault (HasType (Type.TType TType.Commitment))
                 in
                 { adding
                     | mpuuid = mpuuid
@@ -178,7 +180,10 @@ init s f =
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid mpuuid False
                     , oldGroups = oldGroups
                     , groups = oldGroups
-                    , stack = ct |> Maybe.map .qty |> Maybe.map List.singleton |> Maybe.withDefault []
+                    , editor =
+                        Expression.Editor.init s
+                            flowscope
+                            (ct |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
                 }
             )
         |> Maybe.withDefault adding
@@ -194,6 +199,7 @@ update s msg model =
                 | mpuuid = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
+                , editor = Expression.Editor.init s (Maybe.map (HasUserType (Type.TType TType.Commitment)) mh |> Maybe.withDefault (HasType (Type.TType TType.Commitment))) []
               }
             , Effect.none
             )
@@ -205,7 +211,11 @@ update s msg model =
             ( { model | receivers = scope }, Effect.none )
 
         SelectFlow scope ->
-            ( { model | flowscope = scope }, Effect.none )
+            ( { model
+                | flowscope = scope
+              }
+            , Effect.none
+            )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -246,6 +256,10 @@ update s msg model =
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
+        EditorMsg editormsg ->
+            Expression.Editor.update s editormsg model.editor
+                |> (\( x, y ) -> ( { model | editor = x }, Effect.map EditorMsg <| Effect.fromCmd y ))
+
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -285,7 +299,7 @@ validate : Model -> Result String CommitmentType
 validate m =
     Result.map
         (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flowscope)
-        (checkListOne m.stack "Your expression stack must have a single element")
+        (Expression.Editor.checkExpression m.editor)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -311,11 +325,10 @@ viewContent model s =
                     selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
 
                 Step.Step StepFlow ->
-                    column []
-                        [ {- expressionEditor s model
-                             ,
-                          -}
-                          selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "Resources or Resource Types:"
+                    column [ alignTop, width <| minimum 200 fill, spacing 10 ]
+                        [ selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
+                        , h2 "Build an expression for the quantity exchanged:"
+                        , Element.map EditorMsg <| Expression.Editor.view s model.editor
                         ]
 
                 Step.Step StepGroups ->
@@ -327,9 +340,10 @@ viewContent model s =
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
     in
-    floatingContainer s
+    floatingContainer2 s
         (Just <| Button Step.Cancel)
         "Adding an Commitment Type"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]
+        (Maybe.map (Element.map EditorMsg) <| Expression.Editor.viewSubpage s model.editor)
