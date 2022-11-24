@@ -1,5 +1,6 @@
 module CommitmentType.CommitmentType exposing (CommitmentType, decoder, encode)
 
+import Expression as Expression exposing (Expression)
 import Hierarchy.Type as HType
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -17,6 +18,7 @@ type alias CommitmentType =
     , providers : Scope
     , receivers : Scope
     , flow : Scope
+    , qty : Expression
     }
 
 
@@ -29,6 +31,7 @@ encode ct =
         , ( "providers", Scope.encode ct.providers )
         , ( "receivers", Scope.encode ct.receivers )
         , ( "flow", Scope.encode ct.flow )
+        , ( "expression", Expression.encode ct.qty )
         ]
 
 
@@ -44,10 +47,11 @@ toString =
 
 decoder : Decode.Decoder CommitmentType
 decoder =
-    Decode.map6 CommitmentType
+    Decode.map7 CommitmentType
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "providers" Scope.decoder)
         (Decode.field "receivers" Scope.decoder)
         (Decode.field "flow" Scope.decoder)
+        (Decode.field "qty" Expression.decoder)

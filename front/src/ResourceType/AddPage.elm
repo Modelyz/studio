@@ -3,6 +3,7 @@ module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, pa
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Expression as Expression exposing (Expression)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -18,7 +19,6 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Value.Expression as Expression exposing (Expression)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)

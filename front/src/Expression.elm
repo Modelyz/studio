@@ -1,4 +1,4 @@
-module Value.Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, updateExpr)
+module Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, updateExpr)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)

@@ -5,7 +5,7 @@ module Value.View exposing (displayValueDict)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Value.Expression as Expression
+import Expression as Expression
 import Value.Rational as Rational
 import Value.Value exposing (Value)
 import View exposing (headerCell, innerCell)

@@ -1,11 +1,11 @@
-module Flow exposing (Flow(..), checkNone, decoder, encode)
+module Flow exposing (Flow(..), checkNone, decoder, encode, exprFrom)
 
+import Expression as Expression exposing (Expression)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Scope.Scope
-import Value.Expression as Expression exposing (Expression)
 import Value.Rational as Rational exposing (Rational)
 import Value.Value as Value exposing (Value)
 
@@ -14,6 +14,19 @@ type Flow
     = ResourceFlow Expression Resource
     | ResourceTypeFlow Expression ResourceType
     | None
+
+
+exprFrom : Flow -> Maybe Expression
+exprFrom flow =
+    case flow of
+        ResourceFlow expr _ ->
+            Just expr
+
+        ResourceTypeFlow expr _ ->
+            Just expr
+
+        None ->
+            Nothing
 
 
 checkNone : Flow -> String -> Result String Flow

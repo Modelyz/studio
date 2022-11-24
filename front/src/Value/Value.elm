@@ -1,11 +1,11 @@
 module Value.Value exposing (Value, compare, decoder, encode, eval, fromUuid, getByUuid)
 
 import Dict exposing (Dict)
+import Expression as Expression exposing (Expression)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
-import Value.Expression as Expression exposing (Expression)
 import Value.Rational exposing (Rational)
 
 

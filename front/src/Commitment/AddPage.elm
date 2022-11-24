@@ -200,6 +200,17 @@ update s msg model =
                             |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
                         )
+
+                {- , flow = mct |> Maybe.map (\ct -> case ct.flow of
+                   t ->
+                       u
+                   case
+                   chooseIfSingleton
+                       (s.state.agents
+                           |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                           |> Dict.map (\_ a -> a.uuid)
+                           )
+                -}
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }

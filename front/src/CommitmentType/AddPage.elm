@@ -4,6 +4,7 @@ import CommitmentType.CommitmentType exposing (CommitmentType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Expression as Expression exposing (BOperator, Expression(..), UOperator)
 import Flow exposing (Flow, checkNone)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -21,7 +22,7 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (checkMaybe, third)
+import Util exposing (checkEmptyString, checkListOne, checkMaybe, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -55,7 +56,7 @@ type alias Model =
     , mpuuid : Maybe Uuid
     , providers : Scope
     , receivers : Scope
-    , flow : Scope
+    , flowscope : Scope
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -63,6 +64,7 @@ type alias Model =
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
+    , stack : List Expression
     }
 
 
@@ -125,7 +127,8 @@ init s f =
             , mpuuid = Nothing
             , providers = Scope.empty
             , receivers = Scope.empty
-            , flow = Scope.empty
+            , flowscope = Scope.empty
+            , stack = []
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -161,17 +164,21 @@ init s f =
 
                     ct =
                         Dict.get (Uuid.toString uuid) s.state.commitmentTypes
+
+                    flowscope =
+                        Maybe.map .flow ct |> Maybe.withDefault Scope.empty
                 in
                 { adding
                     | mpuuid = mpuuid
                     , uuid = uuid
                     , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
                     , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
-                    , flow = Maybe.map .flow ct |> Maybe.withDefault Scope.empty
+                    , flowscope = flowscope
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid mpuuid False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid mpuuid False
                     , oldGroups = oldGroups
                     , groups = oldGroups
+                    , stack = ct |> Maybe.map .qty |> Maybe.map List.singleton |> Maybe.withDefault []
                 }
             )
         |> Maybe.withDefault adding
@@ -198,7 +205,7 @@ update s msg model =
             ( { model | receivers = scope }, Effect.none )
 
         SelectFlow scope ->
-            ( { model | flow = scope }, Effect.none )
+            ( { model | flowscope = scope }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -276,7 +283,9 @@ checkStep model =
 
 validate : Model -> Result String CommitmentType
 validate m =
-    Ok (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flow)
+    Result.map
+        (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flowscope)
+        (checkListOne m.stack "Your expression stack must have a single element")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -302,7 +311,12 @@ viewContent model s =
                     selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
 
                 Step.Step StepFlow ->
-                    selectScope s SelectFlow model.flow (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "Possible Resources or Resource Types:"
+                    column []
+                        [ {- expressionEditor s model
+                             ,
+                          -}
+                          selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "Resources or Resource Types:"
+                        ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups
