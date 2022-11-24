@@ -10,12 +10,12 @@ import Expression as Expression exposing (BOperator, Expression(..), UOperator)
 import Expression.DeepLink as DeepLink exposing (DeepLink)
 import Expression.DeepLink.Select
 import Expression.Observable as Obs exposing (Observable(..))
+import Expression.Rational as Rational
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Util exposing (checkEmptyString, checkListOne)
-import Value.Rational as Rational
 import Value.Select
 import Value.Value as Value exposing (..)
 import Value.ValueSelection as ValueSelection exposing (ValueSelection(..))

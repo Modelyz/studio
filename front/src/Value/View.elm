@@ -6,7 +6,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Expression as Expression
-import Value.Rational as Rational
+import Expression.Rational as Rational
 import Value.Value exposing (Value)
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)

@@ -7,9 +7,9 @@ import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
 import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
+import Expression.Rational as Rational
 import Html.Attributes as Attr
 import Shared
-import Value.Rational as Rational
 import Value.Value as Value exposing (..)
 import Value.ValueSelection as ValueSelection
 import View exposing (..)

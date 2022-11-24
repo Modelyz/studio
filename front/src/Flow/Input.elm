@@ -6,6 +6,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Expression.Input
+import Expression.Rational exposing (Rational)
 import Flow exposing (Flow(..))
 import Ident.Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
@@ -15,7 +16,6 @@ import Scope.State exposing (containsScope)
 import Shared
 import Type
 import Value.Input
-import Value.Rational exposing (Rational)
 import Value.Value exposing (Value)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, tClickableCard)
