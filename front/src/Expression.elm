@@ -1,4 +1,4 @@
-module Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, updateExpr)
+module Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, applyB, applyU, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, undo, updateExpr)
 
 import Dict exposing (Dict)
 import Expression.DeepLink exposing (DeepLink(..))
@@ -49,6 +49,16 @@ updateExpr targetPath currentPath subExpr expr =
 
         Binary o e1 e2 ->
             Binary o (updateExpr targetPath (2 :: currentPath) subExpr e1) (updateExpr targetPath (3 :: currentPath) subExpr e2)
+
+
+applyU : UOperator -> List Expression -> List Expression
+applyU o stack =
+    Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
+
+
+applyB : BOperator -> List Expression -> List Expression
+applyB o stack =
+    Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
 
 uToString : UOperator -> String
@@ -294,3 +304,23 @@ bDecoder =
                     _ ->
                         Decode.fail "Unknown Unary Operator"
             )
+
+
+undo : List Expression -> List Expression
+undo stack =
+    (List.head stack
+        |> Maybe.map
+            (\expr ->
+                case expr of
+                    Leaf _ ->
+                        []
+
+                    Unary _ e ->
+                        [ e ]
+
+                    Binary _ e1 e2 ->
+                        [ e1, e2 ]
+            )
+        |> Maybe.withDefault []
+    )
+        ++ (List.tail stack |> Maybe.withDefault [])

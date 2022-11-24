@@ -1,4 +1,4 @@
-module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toChoice, toDisplay, toScope)
+module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toDisplay, toScope)
 
 import Expression.HardLink as HardLink exposing (HardLink)
 import Hierarchy.Type as HType
@@ -134,54 +134,3 @@ toScope scope deeplink =
 
         EndPoint _ _ ->
             scope
-
-
-toChoice : Scope -> List HardLink
-toChoice scope =
-    case scope of
-        HasUserType t _ ->
-            case t of
-                Type.TType TType.Resource ->
-                    HardLink.allRL
-
-                Type.TType TType.Event ->
-                    HardLink.allEL
-
-                Type.TType TType.Agent ->
-                    HardLink.allAL
-
-                Type.TType TType.Commitment ->
-                    HardLink.allCmL
-
-                Type.TType TType.Contract ->
-                    HardLink.allCnL
-
-                Type.TType TType.Process ->
-                    HardLink.allPL
-
-                Type.TType TType.Group ->
-                    HardLink.allGL
-
-                Type.HType HType.ResourceType ->
-                    HardLink.allRL
-
-                Type.HType HType.EventType ->
-                    HardLink.allEL
-
-                Type.HType HType.AgentType ->
-                    HardLink.allAL
-
-                Type.HType HType.CommitmentType ->
-                    HardLink.allCmL
-
-                Type.HType HType.ContractType ->
-                    HardLink.allCnL
-
-                Type.HType HType.ProcessType ->
-                    HardLink.allPL
-
-                Type.HType HType.GroupType ->
-                    HardLink.allGL
-
-        _ ->
-            []

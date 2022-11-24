@@ -3,8 +3,8 @@ module Expression.DeepLink.Select exposing (Model, Msg(..), init, update, view)
 import Dict
 import Element exposing (..)
 import Element.Border as Border
-import Expression.DeepLink as DeepLink exposing (DeepLink(..))
-import Expression.HardLink as Hardlink exposing (HardLink)
+import Expression.DeepLink as DL exposing (DeepLink(..))
+import Expression.HardLink as HL exposing (HardLink)
 import Scope.Scope exposing (Scope)
 import Scope.State exposing (containsScope)
 import Shared
@@ -42,10 +42,15 @@ update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update s msg model =
     case msg of
         Terminate scope name ->
-            ( { model | deeplink = DeepLink.terminate scope name model.deeplink }, Cmd.none )
+            ( { model | deeplink = DL.terminate scope name model.deeplink }, Cmd.none )
 
         AddedHardlink hardLink ->
-            ( { model | deeplink = DeepLink.addTail hardLink model.deeplink }, Cmd.none )
+            ( { model
+                | deeplink = DL.addTail hardLink model.deeplink
+                , scope = HL.toScope hardLink
+              }
+            , Cmd.none
+            )
 
         _ ->
             ( model, Cmd.none )
@@ -58,7 +63,7 @@ view s model =
         "Building a link to another Value"
         [ wrappedRow [ width fill, spacing 20 ]
             [ button.secondary Cancel "Cancel"
-            , if DeepLink.isComplete model.deeplink then
+            , if DL.isComplete model.deeplink then
                 button.primary (Choose model.deeplink) "Choose"
 
               else
@@ -66,7 +71,7 @@ view s model =
             ]
         ]
     <|
-        [ {- TODO turn into a chain of smallcards -} text <| DeepLink.toDisplay model.deeplink
+        [ {- TODO turn into a chain of smallcards -} text <| DL.toDisplay model.deeplink
         , h2 "Choose between:"
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of
@@ -90,24 +95,24 @@ view s model =
                        affiche le bouton Choose.
                 -}
                 Null ->
-                    List.map (\l -> button.primary (AddedHardlink l) (Hardlink.toString l)) (DeepLink.toChoice model.scope)
+                    List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
                 Link hl _ ->
                     -- TODO replace Nothing with Just scope of the restricted scope of the hardlink
-                    List.map (\l -> button.primary (AddedHardlink l) (Hardlink.toString l)) (Hardlink.toChoice hl)
+                    List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
                 EndPoint _ _ ->
                     []
         , let
             sc =
-                DeepLink.toScope model.scope model.deeplink
+                DL.toScope model.scope model.deeplink
           in
           column [ spacing 20 ]
             [ h2 "Select the value you want to choose:"
             , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                 (s.state.valueTypes
                     |> Dict.values
-                    |> List.filter (\vt -> containsScope s.state.types vt.scope sc)
+                    |> List.filter (\vt -> containsScope s.state.types vt.scope model.scope)
                     |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) none)
                     |> withDefaultContent (text "(No Value Types are defined for this scope. Choose another entity or create a value for this entity)")
                 )

@@ -132,6 +132,7 @@ selectScope s onInput sc forceScope title =
                                         in
                                         tClickableCard (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
                                     )
+                                |> withDefaultContent (text <| "(There are no " ++ TType.toString tt ++ " Types defined)")
                            )
 
                 HasType (Type.HType ht) ->
@@ -147,6 +148,7 @@ selectScope s onInput sc forceScope title =
                                         in
                                         tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers htype uuid
                                     )
+                                |> withDefaultContent (text <| "(There are no " ++ HType.toString ht ++ " defined)")
                            )
 
                 Or (HasType (Type.TType tt)) (HasType (Type.HType ht)) ->

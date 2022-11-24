@@ -1,10 +1,10 @@
-module Expression.HardLink exposing (AgentLink(..), AgentTypeLink(..), CommitmentLink(..), CommitmentTypeLink(..), ContractLink(..), ContractTypeLink(..), EventLink(..), EventTypeLink(..), GroupLink(..), GroupTypeLink(..), HardLink(..), ProcessLink(..), ProcessTypeLink(..), ResourceLink(..), ResourceTypeLink(..), allAL, allCmL, allCnL, allEL, allGL, allPL, allRL, decoder, encode, toChoice, toScope, toString)
+module Expression.HardLink exposing (AgentLink(..), AgentTypeLink(..), CommitmentLink(..), CommitmentTypeLink(..), ContractLink(..), ContractTypeLink(..), EventLink(..), EventTypeLink(..), GroupLink(..), GroupTypeLink(..), HardLink(..), ProcessLink(..), ProcessTypeLink(..), ResourceLink(..), ResourceTypeLink(..), chooseFromScope, decoder, encode, toChoice, toScope, toString)
 
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope.Scope exposing (Scope(..))
-import Type
+import Type exposing (Type)
 import Typed.Type as TType
 
 
@@ -28,8 +28,8 @@ type
 
 
 toString : HardLink -> String
-toString x =
-    case x of
+toString hardlink =
+    case hardlink of
         ResourceLink ResourceGroup ->
             "Resource Group"
 
@@ -713,8 +713,8 @@ gtlToChoice hl =
 
 
 toScope : HardLink -> Scope
-toScope x =
-    case x of
+toScope hardlink =
+    case hardlink of
         ResourceLink y ->
             rlToScope y
 
@@ -759,8 +759,8 @@ toScope x =
 
 
 rlToScope : ResourceLink -> Scope
-rlToScope x =
-    case x of
+rlToScope hardlink =
+    case hardlink of
         ResourceGroup ->
             HasType (Type.TType TType.Group)
 
@@ -769,8 +769,8 @@ rlToScope x =
 
 
 elToScope : EventLink -> Scope
-elToScope x =
-    case x of
+elToScope hardlink =
+    case hardlink of
         EventProvider ->
             HasType (Type.TType TType.Agent)
 
@@ -791,8 +791,8 @@ elToScope x =
 
 
 alToScope : AgentLink -> Scope
-alToScope x =
-    case x of
+alToScope hardlink =
+    case hardlink of
         AgentGroup ->
             HasType (Type.TType TType.Group)
 
@@ -801,8 +801,8 @@ alToScope x =
 
 
 cmlToScope : CommitmentLink -> Scope
-cmlToScope x =
-    case x of
+cmlToScope hardlink =
+    case hardlink of
         CommitmentProvider ->
             HasType (Type.TType TType.Agent)
 
@@ -823,8 +823,8 @@ cmlToScope x =
 
 
 cnlToScope : ContractLink -> Scope
-cnlToScope x =
-    case x of
+cnlToScope hardlink =
+    case hardlink of
         ContractGroup ->
             HasType (Type.TType TType.Group)
 
@@ -833,8 +833,8 @@ cnlToScope x =
 
 
 plToScope : ProcessLink -> Scope
-plToScope x =
-    case x of
+plToScope hardlink =
+    case hardlink of
         ProcessGroup ->
             HasType (Type.TType TType.Group)
 
@@ -843,8 +843,8 @@ plToScope x =
 
 
 glToScope : GroupLink -> Scope
-glToScope x =
-    case x of
+glToScope hardlink =
+    case hardlink of
         GroupGroup ->
             HasType (Type.TType TType.Group)
 
@@ -853,8 +853,8 @@ glToScope x =
 
 
 rtlToScope : ResourceTypeLink -> Scope
-rtlToScope x =
-    case x of
+rtlToScope hardlink =
+    case hardlink of
         ResourceTypeGroup ->
             HasType (Type.TType TType.Group)
 
@@ -863,8 +863,8 @@ rtlToScope x =
 
 
 etlToScope : EventTypeLink -> Scope
-etlToScope x =
-    case x of
+etlToScope hardlink =
+    case hardlink of
         EventTypeProvider ->
             HasType (Type.TType TType.Agent)
 
@@ -886,8 +886,8 @@ etlToScope x =
 
 
 atlToScope : AgentTypeLink -> Scope
-atlToScope x =
-    case x of
+atlToScope hardlink =
+    case hardlink of
         AgentTypeGroup ->
             HasType (Type.TType TType.Group)
 
@@ -896,8 +896,8 @@ atlToScope x =
 
 
 cmtlToScope : CommitmentTypeLink -> Scope
-cmtlToScope x =
-    case x of
+cmtlToScope hardlink =
+    case hardlink of
         CommitmentTypeProvider ->
             HasType (Type.TType TType.Agent)
 
@@ -918,8 +918,8 @@ cmtlToScope x =
 
 
 cntlToScope : ContractTypeLink -> Scope
-cntlToScope x =
-    case x of
+cntlToScope hardlink =
+    case hardlink of
         ContractTypeGroup ->
             HasType (Type.TType TType.Group)
 
@@ -928,8 +928,8 @@ cntlToScope x =
 
 
 ptlToScope : ProcessTypeLink -> Scope
-ptlToScope x =
-    case x of
+ptlToScope hardlink =
+    case hardlink of
         ProcessTypeGroup ->
             HasType (Type.TType TType.Group)
 
@@ -938,10 +938,69 @@ ptlToScope x =
 
 
 gtlToScope : GroupTypeLink -> Scope
-gtlToScope x =
-    case x of
+gtlToScope hardlink =
+    case hardlink of
         GroupTypeGroup ->
             HasType (Type.TType TType.Group)
 
         GroupTypeParent ->
             HasType (Type.HType HType.GroupType)
+
+
+chooseFromType : Type -> List HardLink
+chooseFromType t =
+    case t of
+        Type.TType TType.Resource ->
+            allRL
+
+        Type.TType TType.Event ->
+            allEL
+
+        Type.TType TType.Agent ->
+            allAL
+
+        Type.TType TType.Commitment ->
+            allCmL
+
+        Type.TType TType.Contract ->
+            allCnL
+
+        Type.TType TType.Process ->
+            allPL
+
+        Type.TType TType.Group ->
+            allGL
+
+        Type.HType HType.ResourceType ->
+            allRTL
+
+        Type.HType HType.EventType ->
+            allETL
+
+        Type.HType HType.AgentType ->
+            allATL
+
+        Type.HType HType.CommitmentType ->
+            allCmTL
+
+        Type.HType HType.ContractType ->
+            allCnTL
+
+        Type.HType HType.ProcessType ->
+            allPTL
+
+        Type.HType HType.GroupType ->
+            allGTL
+
+
+chooseFromScope : Scope -> List HardLink
+chooseFromScope scope =
+    case scope of
+        HasType t ->
+            chooseFromType t
+
+        HasUserType t _ ->
+            chooseFromType t
+
+        _ ->
+            []

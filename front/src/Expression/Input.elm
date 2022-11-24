@@ -3,14 +3,21 @@ module Expression.Input exposing (Config, inputExpression)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (Expression(..))
-import Expression.Observable exposing (Observable(..))
+import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression.DeepLink as DeepLink exposing (DeepLink)
+import Expression.DeepLink.Select
+import Expression.Observable as Obs exposing (Observable(..))
 import Html.Attributes as Attr
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.View exposing (selectScope)
 import Shared
 import Value.Rational as Rational
+import Value.Select
 import Value.Value as Value exposing (..)
-import Value.ValueSelection as ValueSelection
+import Value.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
 import View.Style exposing (..)
 
