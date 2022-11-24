@@ -1,4 +1,4 @@
-module Value.Input exposing (Config, inputExpression, inputValues)
+module Expression.Input exposing (Config, inputExpression)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -19,48 +19,6 @@ type alias Config msg =
     { onEnter : msg
     , onInput : Value -> msg
     }
-
-
-inputValues : Config msg -> Shared.Model -> Dict String Value -> Element msg
-inputValues c s values =
-    -- display the expression with input fields for each relevant valueType
-    column [ spacing 10 ]
-        (h2 "Input values"
-            :: (values
-                    |> Dict.values
-                    |> List.map
-                        (inputValue c s)
-                    |> withDefaultContent (p <| "Apparently there are no values defined for this entity. Please first create one.")
-                --TODO + link
-               )
-        )
-
-
-inputValue : Config msg -> Shared.Model -> Value -> Element msg
-inputValue c s v =
-    column []
-        [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
-        , row [ spacing 5 ]
-            [ inputExpression c s ( [], v.expr ) v.expr v
-
-            -- display the evaluated expression:
-            , case v.expr of
-                Leaf (ObsNumber _) ->
-                    -- don't repeat the single number...
-                    none
-
-                _ ->
-                    Expression.eval s.state.values v.expr
-                        |> (\r ->
-                                case r of
-                                    Ok val ->
-                                        text <| "= " ++ Rational.toString val
-
-                                    Err err ->
-                                        text <| "= error : " ++ err
-                           )
-            ]
-        ]
 
 
 inputExpression : Config msg -> Shared.Model -> ( List Int, Expression ) -> Expression -> Value -> Element msg
