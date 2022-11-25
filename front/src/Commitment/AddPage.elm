@@ -8,7 +8,9 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
-import Flow exposing (Flow, checkNone)
+import Expression exposing (Expression)
+import Expression.Input
+import Flow exposing (Flow)
 import Flow.Input
 import Group.Group as Group exposing (Group)
 import Group.Groupable as Groupable
@@ -65,7 +67,8 @@ type alias Model =
     , commitmentType : Maybe CommitmentType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
-    , flow : Flow
+    , qty : Maybe Expression
+    , flow : Maybe Flow
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -90,7 +93,8 @@ type Msg
     = SelectType (Maybe Uuid)
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
-    | InputFlow Flow
+    | InputQty Expression
+    | InputFlow (Maybe Flow)
     | InputIdentifier Identifier
     | InputValue Value
     | InputGroups (Dict String Uuid)
@@ -136,7 +140,8 @@ init s f =
             , commitmentType = Nothing
             , provider = Nothing
             , receiver = Nothing
-            , flow = Flow.None
+            , qty = Nothing
+            , flow = Nothing
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -200,6 +205,7 @@ update s msg model =
                             |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
                         )
+                , qty = Maybe.map .qty mct
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
@@ -211,6 +217,9 @@ update s msg model =
 
         SelectReceiver uuid ->
             ( { model | receiver = uuid }, Effect.none )
+
+        InputQty qty ->
+            ( { model | qty = Just qty }, Effect.none )
 
         InputFlow flow ->
             ( { model | flow = flow }, Effect.none )
@@ -277,7 +286,7 @@ checkStep model =
             checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
         Step StepFlow ->
-            checkNone model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
+            checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
         Step StepIdentifiers ->
             Ok ()
@@ -291,12 +300,13 @@ checkStep model =
 
 validate : Model -> Result String Commitment
 validate m =
-    Result.map4
-        (\type_ provider receiver flow -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow)
+    Result.map5
+        (\type_ provider receiver flow qty -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow qty)
         (checkMaybe m.type_ "You must select a Commitment Type")
         (checkMaybe m.provider "You must select a Provider")
         (checkMaybe m.receiver "You must select a Receiver")
-        (checkNone m.flow "You must input a Resource or Resource Type Flow")
+        (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+        (checkMaybe m.qty "The quantity is invalid")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -358,24 +368,28 @@ viewContent model s =
                         |> Maybe.withDefault none
 
                 Step.Step StepFlow ->
-                    Maybe.map
-                        (\ct ->
+                    Maybe.map2
+                        (\ct qty ->
                             column [ spacing 20 ]
-                                -- on dispose d'un scope et d'une expression provenant du ct. Donc on permet de saisir les observables de l'expression, et de choisir la R ou RT en fonction du type de Flow.
-                                [ Flow.Input.input
+                                [ h2 "Flow from the provider to the receiver"
+                                , Expression.Input.inputExpression
+                                    { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                    , onInput = InputQty
+                                    }
+                                    s
+                                    ( [], qty )
+                                    qty
+                                , Flow.Input.input
                                     { flow = model.flow
                                     , scope = ct.flow
-                                    , onInput = InputFlow
                                     , onSelect = InputFlow
                                     , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                                    , title = "Resource:"
-                                    , explain = "Choose the Resource expected to flow from the provider to the receiver"
-                                    , empty = "(There are no resources yet to choose from"
                                     }
                                     s
                                 ]
                         )
                         model.commitmentType
+                        model.qty
                         |> Maybe.withDefault none
 
                 Step.Step StepGroups ->

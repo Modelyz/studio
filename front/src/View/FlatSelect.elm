@@ -25,7 +25,7 @@ type alias Config msg =
 flatSelect : Shared.Model -> Config msg -> Dict String Uuid -> Element msg
 flatSelect s c uuids =
     column [ alignTop, spacing 10, width <| minimum 200 fill ]
-        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
+        [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
             [ h2 c.title
             , c.muuid
                 |> Maybe.map (\uuid -> viewHalfCard (Just <| c.onInput Nothing) s.state.types s.state.configs s.state.identifiers c.what uuid)
@@ -35,7 +35,7 @@ flatSelect s c uuids =
         , c.muuid
             |> Maybe.map (\_ -> none)
             |> Maybe.withDefault
-                (wrappedRow [ Border.width 2, padding 10, spacing 10, Border.color color.item.border ]
+                (wrappedRow [ padding 10, spacing 10 ]
                     (uuids
                         |> Dict.values
                         |> List.map (\uuid -> tClickableCard (c.onInput (Just uuid)) s.state.types s.state.configs s.state.identifiers c.what uuid)

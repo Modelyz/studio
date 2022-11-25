@@ -28,17 +28,17 @@ type alias Config msg =
 
 
 inputExpression : Config msg -> Shared.Model -> ( List Int, Expression ) -> Expression -> Element msg
-inputExpression c s ( currentPath, expr ) ex =
+inputExpression c s ( currentPath, currentExpr ) expr =
     -- used to input values into an expression
-    case expr of
+    case currentExpr of
         Leaf obs ->
-            inputObservable c s currentPath obs ex
+            inputObservable c s currentPath obs expr
 
         Unary o e ->
             row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) e ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) ex, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) ex, text " )" ]
+            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) expr, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) expr, text " )" ]
 
 
 inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Element msg

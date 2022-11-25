@@ -97,6 +97,7 @@ color =
     , content =
         { separator = rgb255 0xE0 0xE0 0xE0
         , background = rgb255 0xFF 0xFF 0xFF
+        , choice = rgb255 0xF9 0xF9 0xF9
         }
     }
 

@@ -1,6 +1,7 @@
 module Commitment.Commitment exposing (Commitment, decoder, encode)
 
 import Agent.Agent as Agent exposing (Agent)
+import Expression exposing (Expression)
 import Flow exposing (Flow)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -17,6 +18,7 @@ type alias Commitment =
     , provider : Uuid
     , receiver : Uuid
     , flow : Flow
+    , qty : Expression
     }
 
 
@@ -30,12 +32,13 @@ encode c =
         , ( "provider", Uuid.encode c.provider )
         , ( "receiver", Uuid.encode c.receiver )
         , ( "flow", Flow.encode c.flow )
+        , ( "qty", Expression.encode c.qty )
         ]
 
 
 decoder : Decode.Decoder Commitment
 decoder =
-    Decode.map7
+    Decode.map8
         (\what uuid type_ when ->
             {- provider receiver flow -}
             Commitment what uuid type_ when
@@ -48,3 +51,4 @@ decoder =
         (Decode.field "provider" Uuid.decoder)
         (Decode.field "receiver" Uuid.decoder)
         (Decode.field "flow" Flow.decoder)
+        (Decode.field "qty" Expression.decoder)

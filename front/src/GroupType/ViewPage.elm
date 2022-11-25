@@ -107,14 +107,14 @@ viewContent model s =
         (Just Close)
         "Group Type"
         [ button.primary Edit "Edit" ]
-        [ h2 "Type:"
+        [ h2 "Identifiers:"
+        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+            |> displayIdentifierDict "(none)"
+        , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
-        , h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
-            |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict "(none)" s.state.values

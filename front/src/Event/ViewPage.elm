@@ -112,12 +112,10 @@ viewContent model s =
         (Just Close)
         "Event"
         [ button.primary Edit "Edit" ]
-        [ h2 "Type:"
-        , Dict.get (Uuid.toString model.uuid) s.state.types
+        [ Dict.get (Uuid.toString model.uuid) s.state.types
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
-            |> text
-        , h2 "Identifiers:"
+            |> h1
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"

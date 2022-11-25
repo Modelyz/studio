@@ -6,7 +6,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Expression as Expression exposing (BOperator, Expression(..), UOperator)
 import Expression.Editor exposing (view)
-import Flow exposing (Flow, checkNone)
+import Flow exposing (Flow)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
