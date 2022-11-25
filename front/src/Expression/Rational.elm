@@ -1,4 +1,4 @@
-module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromString, inv, multiply, neg, rdecoder, toRString, toString)
+module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, rdecoder, toFloatString, toRString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -114,6 +114,11 @@ toString (Rational n d) =
             else
                 "/" ++ String.fromInt d
            )
+
+
+toFloatString : Rational -> String
+toFloatString (Rational n d) =
+    String.fromFloat (toFloat n / toFloat d)
 
 
 toRString : Result String Rational -> String

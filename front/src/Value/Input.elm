@@ -55,7 +55,7 @@ inputValue c s v =
                         |> (\r ->
                                 case r of
                                     Ok val ->
-                                        text <| "= " ++ Rational.toString val
+                                        text <| "= " ++ Rational.toFloatString val
 
                                     Err err ->
                                         text <| "= error : " ++ err

@@ -19,7 +19,7 @@ displayValueDict default allV data =
             { data = Dict.values data
             , columns =
                 [ { header = none, width = fill, view = .name >> innerCell }
-                , { header = none, width = fill, view = .expr >> Expression.eval allV >> Result.map Rational.toString >> Result.withDefault "(undefined)" >> innerCell }
+                , { header = none, width = fill, view = .expr >> Expression.eval allV >> Result.map Rational.toFloatString >> Result.withDefault "(undefined)" >> innerCell }
                 ]
             }
 
