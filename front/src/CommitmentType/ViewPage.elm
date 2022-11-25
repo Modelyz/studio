@@ -5,6 +5,7 @@ import CommitmentType.View
 import Dict
 import Effect exposing (Effect)
 import Element as E exposing (..)
+import Expression.View
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -130,6 +131,8 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
+        , h2 "Default quantity"
+        , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s) |> Maybe.withDefault (text "(none)")
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?
