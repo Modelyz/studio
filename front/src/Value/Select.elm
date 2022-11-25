@@ -35,12 +35,12 @@ type Msg
     | Selected ValueSelection
 
 
-init : Shared.Model -> Model
-init s =
+init : Shared.Model -> Int -> List Int -> Model
+init s stackNum targetPath =
     { selection = None
     , onSelect = Selected
-    , stackNum = 0
-    , targetPath = []
+    , stackNum = stackNum
+    , targetPath = targetPath
     }
 
 

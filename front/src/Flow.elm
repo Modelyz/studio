@@ -19,10 +19,10 @@ encode : Flow -> Encode.Value
 encode flow =
     case flow of
         ResourceFlow resource ->
-            Encode.string "resource"
+            Encode.object [ ( "type", Encode.string "ResourceFlow" ), ( "resource", Resource.encode resource ) ]
 
         ResourceTypeFlow resourceType ->
-            Encode.string "resourceType"
+            Encode.object [ ( "type", Encode.string "ResourceTypeFlow" ), ( "resourceType", ResourceType.encode resourceType ) ]
 
 
 decoder : Decoder Flow

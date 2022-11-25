@@ -59,7 +59,7 @@ init s scope stack =
     { scope = scope
     , stack = stack
     , subpage = Nothing
-    , vlselector = Value.Select.init s
+    , vlselector = Value.Select.init s 0 []
     , dlselector = Expression.DeepLink.Select.init s scope
     }
 
@@ -67,9 +67,10 @@ init s scope stack =
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update s msg model =
     case msg of
-        Open (ValueSelector onSelect) _ _ ->
+        Open (ValueSelector onSelect) stackNum targetPath ->
             ( { model
                 | subpage = Just (ValueSelector onSelect)
+                , vlselector = Value.Select.init s stackNum targetPath
               }
             , Cmd.none
             )
@@ -123,17 +124,14 @@ update s msg model =
         Undo ->
             ( { model | stack = Expression.undo model.stack }, Cmd.none )
 
-        SubMsg sub ->
+        SubMsg vlmsg ->
             case model.subpage of
-                Nothing ->
-                    ( model, Cmd.none )
-
                 Just (ValueSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
-                            Value.Select.update s sub model.vlselector
+                            Value.Select.update s vlmsg model.vlselector
                     in
-                    case sub of
+                    case vlmsg of
                         Value.Select.Cancel ->
                             ( { model | subpage = Nothing }, Cmd.map SubMsg subcmd )
 
@@ -160,26 +158,26 @@ update s msg model =
                                     , Cmd.map SubMsg subcmd
                                     )
 
-                                _ ->
+                                UndefinedValue ->
                                     ( model, Cmd.none )
 
-                        _ ->
+                        Value.Select.InputValue _ _ _ ->
+                            ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
+
+                        Value.Select.InputScope _ ->
                             ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
 
                 _ ->
                     ( model, Cmd.none )
 
-        SubMsg2 sub ->
+        SubMsg2 dlmsg ->
             case model.subpage of
-                Nothing ->
-                    ( model, Cmd.none )
-
                 Just (DeeplinkSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
-                            Expression.DeepLink.Select.update s sub model.dlselector
+                            Expression.DeepLink.Select.update s dlmsg model.dlselector
                     in
-                    case sub of
+                    case dlmsg of
                         Expression.DeepLink.Select.Cancel ->
                             ( { model | subpage = Nothing }, Cmd.map SubMsg2 subcmd )
 
