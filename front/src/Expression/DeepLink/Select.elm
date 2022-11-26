@@ -28,13 +28,13 @@ type Msg
     | Choose DeepLink
 
 
-init : Shared.Model -> Scope -> Model
-init s scope =
+init : Shared.Model -> Scope -> Int -> List Int -> Model
+init s scope stackNum targetPath =
     -- scope is the scope of the Value being added
     { scope = scope
     , deeplink = Null
-    , stackNum = 0
-    , targetPath = []
+    , stackNum = stackNum
+    , targetPath = targetPath
     }
 
 

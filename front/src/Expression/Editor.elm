@@ -60,7 +60,7 @@ init s scope stack =
     , stack = stack
     , subpage = Nothing
     , vlselector = Expression.Value.Select.init s 0 []
-    , dlselector = Expression.DeepLink.Select.init s scope
+    , dlselector = Expression.DeepLink.Select.init s scope 0 []
     }
 
 
@@ -75,10 +75,10 @@ update s msg model =
             , Cmd.none
             )
 
-        Open (DeeplinkSelector onSelect) _ _ ->
+        Open (DeeplinkSelector onSelect) stackNum targetPath ->
             ( { model
                 | subpage = Just (DeeplinkSelector onSelect)
-                , dlselector = Expression.DeepLink.Select.init s model.scope
+                , dlselector = Expression.DeepLink.Select.init s model.scope stackNum targetPath
               }
             , Cmd.none
             )
@@ -189,9 +189,9 @@ update s msg model =
                                 , stack =
                                     List.indexedMap
                                         (\i e ->
-                                            if model.vlselector.stackNum == i then
+                                            if model.dlselector.stackNum == i then
                                                 -- update the expression with the subexpr at given path
-                                                Expression.updateExpr model.vlselector.targetPath [] (Leaf <| ObsLink dl) e
+                                                Expression.updateExpr model.dlselector.targetPath [] (Leaf <| ObsLink dl) e
 
                                             else
                                                 e
