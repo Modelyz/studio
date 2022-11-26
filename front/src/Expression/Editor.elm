@@ -11,13 +11,13 @@ import Expression.DeepLink as DeepLink exposing (DeepLink)
 import Expression.DeepLink.Select
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.Value.Select
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Util exposing (checkEmptyString, checkListOne)
-import Value.Select
 import Value.Value as Value exposing (..)
 import View exposing (..)
 import View.Style exposing (..)
@@ -30,7 +30,7 @@ type Msg
     | BinaryOperator BOperator
     | RemoveExpression Int
     | Undo
-    | SubMsg Value.Select.Msg
+    | SubMsg Expression.Value.Select.Msg
     | SubMsg2 Expression.DeepLink.Select.Msg
     | Open Subpage Int (List Int)
 
@@ -39,7 +39,7 @@ type alias Model =
     { scope : Scope
     , stack : List Expression
     , subpage : Maybe Subpage
-    , vlselector : Value.Select.Model
+    , vlselector : Expression.Value.Select.Model
     , dlselector : Expression.DeepLink.Select.Model
     }
 
@@ -59,7 +59,7 @@ init s scope stack =
     { scope = scope
     , stack = stack
     , subpage = Nothing
-    , vlselector = Value.Select.init s 0 []
+    , vlselector = Expression.Value.Select.init s 0 []
     , dlselector = Expression.DeepLink.Select.init s scope
     }
 
@@ -70,7 +70,7 @@ update s msg model =
         Open (ValueSelector onSelect) stackNum targetPath ->
             ( { model
                 | subpage = Just (ValueSelector onSelect)
-                , vlselector = Value.Select.init s stackNum targetPath
+                , vlselector = Expression.Value.Select.init s stackNum targetPath
               }
             , Cmd.none
             )
@@ -129,13 +129,13 @@ update s msg model =
                 Just (ValueSelector _) ->
                     let
                         ( newsubmodel, subcmd ) =
-                            Value.Select.update s vlmsg model.vlselector
+                            Expression.Value.Select.update s vlmsg model.vlselector
                     in
                     case vlmsg of
-                        Value.Select.Cancel ->
+                        Expression.Value.Select.Cancel ->
                             ( { model | subpage = Nothing }, Cmd.map SubMsg subcmd )
 
-                        Value.Select.Selected vs ->
+                        Expression.Value.Select.Selected vs ->
                             -- TODO try to merge with InputExpression
                             case vs of
                                 SelectedValue _ _ _ ->
@@ -161,10 +161,10 @@ update s msg model =
                                 UndefinedValue ->
                                     ( model, Cmd.none )
 
-                        Value.Select.InputValue _ _ _ ->
+                        Expression.Value.Select.InputValue _ _ _ ->
                             ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
 
-                        Value.Select.InputScope _ ->
+                        Expression.Value.Select.InputScope _ ->
                             ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
 
                 _ ->
@@ -348,7 +348,7 @@ viewSubpage s model =
         (\subpage ->
             case subpage of
                 ValueSelector _ ->
-                    Element.map SubMsg <| Value.Select.view s model.vlselector
+                    Element.map SubMsg <| Expression.Value.Select.view s model.vlselector
 
                 DeeplinkSelector _ ->
                     Element.map SubMsg2 <| Expression.DeepLink.Select.view s model.dlselector
