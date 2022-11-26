@@ -2,11 +2,11 @@ module Expression.Observable exposing (Observable(..), allObs, decoder, encode, 
 
 import Expression.DeepLink as DeepLink exposing (DeepLink(..))
 import Expression.Rational as Rational exposing (Rational)
+import Expression.ValueSelection as VS exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid
 import Type
-import Value.ValueSelection as VS exposing (ValueSelection(..))
 
 
 type

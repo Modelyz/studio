@@ -4,11 +4,11 @@ import Dict exposing (Dict)
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as R exposing (Rational)
+import Expression.ValueSelection exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
 import Type exposing (Type)
-import Value.ValueSelection exposing (ValueSelection(..))
 
 
 type Expression

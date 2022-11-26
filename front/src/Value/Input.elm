@@ -2,18 +2,13 @@ module Value.Input exposing (Config, inputValues)
 
 import Dict exposing (Dict)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
 import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
-import Html.Attributes as Attr
 import Shared
 import Value.Value as Value exposing (..)
-import Value.ValueSelection as ValueSelection
 import View exposing (..)
-import View.Style exposing (..)
 
 
 type alias Config msg =

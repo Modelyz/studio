@@ -1,4 +1,4 @@
-module Value.ValueSelection exposing (ValueSelection(..), decoder, toString)
+module Expression.ValueSelection exposing (ValueSelection(..), decoder, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Prng.Uuid as Uuid exposing (Uuid)

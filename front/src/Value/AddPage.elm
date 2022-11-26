@@ -3,16 +3,9 @@ module Value.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (BOperator, Expression(..), UOperator)
-import Expression.DeepLink as DeepLink exposing (DeepLink)
-import Expression.DeepLink.Select
 import Expression.Editor exposing (view)
-import Expression.Observable as Obs exposing (Observable(..))
-import Html.Attributes as Attr
 import Message
 import Route exposing (Route, redirect)
 import Scope.Scope as Scope exposing (Scope(..))
@@ -20,8 +13,6 @@ import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Util exposing (checkEmptyString, checkListOne)
-import Value.Select
-import Value.ValueSelection exposing (ValueSelection(..))
 import Value.ValueType exposing (ValueType)
 import View exposing (..)
 import View.Step as Step exposing (Msg(..), Step(..), buttons)

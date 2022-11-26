@@ -3,12 +3,12 @@ module Value.Select exposing (Model, Msg(..), SelectedValue, init, update, view)
 import Dict
 import Element exposing (..)
 import Element.Border as Border
+import Expression.ValueSelection exposing (ValueSelection(..))
 import Prng.Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
-import Value.ValueSelection exposing (ValueSelection(..))
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, halfCard)
 import View.Style exposing (..)
