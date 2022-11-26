@@ -201,7 +201,10 @@ update s msg model =
                             , Cmd.map SubMsg2 subcmd
                             )
 
-                        _ ->
+                        Expression.DeepLink.Select.Terminate _ _ ->
+                            ( { model | dlselector = newsubmodel }, Cmd.map SubMsg2 subcmd )
+
+                        Expression.DeepLink.Select.AddedHardlink _ ->
                             ( { model | dlselector = newsubmodel }, Cmd.map SubMsg2 subcmd )
 
                 _ ->
