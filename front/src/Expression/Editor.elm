@@ -1,4 +1,4 @@
-module Expression.Editor exposing (Model, Msg, Subpage, checkExpression, init, update, view, viewSubpage)
+module Expression.Editor exposing (Model, Msg, checkExpression, init, update, view, viewSubpage)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -17,7 +17,7 @@ import Html.Attributes as Attr
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
-import Util exposing (checkEmptyString, checkListOne)
+import Util exposing (checkEmptyString, checkListOne, otherwise)
 import Value.Value as Value exposing (..)
 import View exposing (..)
 import View.Style exposing (..)
@@ -32,21 +32,16 @@ type Msg
     | Undo
     | SubMsg Expression.Value.Select.Msg
     | SubMsg2 Expression.DeepLink.Select.Msg
-    | Open Subpage Int (List Int)
+    | OpenValueSelector Int (List Int)
+    | OpenDeepLinkSelector Int (List Int)
 
 
 type alias Model =
     { scope : Scope
     , stack : List Expression
-    , subpage : Maybe Subpage
-    , vlselector : Expression.Value.Select.Model
-    , dlselector : Expression.DeepLink.Select.Model
+    , vlselector : Maybe Expression.Value.Select.Model
+    , dlselector : Maybe Expression.DeepLink.Select.Model
     }
-
-
-type Subpage
-    = ValueSelector (ValueSelection -> Msg)
-    | DeeplinkSelector (DeepLink -> Msg)
 
 
 checkExpression : Model -> Result String Expression
@@ -58,31 +53,14 @@ init : Shared.Model -> Scope -> List Expression -> Model
 init s scope stack =
     { scope = scope
     , stack = stack
-    , subpage = Nothing
-    , vlselector = Expression.Value.Select.init s 0 []
-    , dlselector = Expression.DeepLink.Select.init s scope 0 []
+    , vlselector = Nothing
+    , dlselector = Nothing
     }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update s msg model =
     case msg of
-        Open (ValueSelector onSelect) stackNum targetPath ->
-            ( { model
-                | subpage = Just (ValueSelector onSelect)
-                , vlselector = Expression.Value.Select.init s stackNum targetPath
-              }
-            , Cmd.none
-            )
-
-        Open (DeeplinkSelector onSelect) stackNum targetPath ->
-            ( { model
-                | subpage = Just (DeeplinkSelector onSelect)
-                , dlselector = Expression.DeepLink.Select.init s model.scope stackNum targetPath
-              }
-            , Cmd.none
-            )
-
         AddExpression expr ->
             ( { model | stack = expr :: model.stack }, Cmd.none )
 
@@ -124,91 +102,91 @@ update s msg model =
         Undo ->
             ( { model | stack = Expression.undo model.stack }, Cmd.none )
 
-        SubMsg vlmsg ->
-            case model.subpage of
-                Just (ValueSelector _) ->
-                    let
-                        ( newsubmodel, subcmd ) =
-                            Expression.Value.Select.update s vlmsg model.vlselector
-                    in
-                    case vlmsg of
-                        Expression.Value.Select.Cancel ->
-                            ( { model | subpage = Nothing }, Cmd.map SubMsg subcmd )
+        OpenValueSelector stackNum targetPath ->
+            ( { model
+                | vlselector = Just <| Expression.Value.Select.init s stackNum targetPath
+              }
+            , Cmd.none
+            )
 
-                        Expression.Value.Select.Selected vs ->
-                            -- TODO try to merge with InputExpression
-                            case vs of
-                                SelectedValue _ _ _ ->
-                                    -- TODO we don't use the selected value?
-                                    ( { model
-                                        | vlselector = newsubmodel
-                                        , subpage = Nothing
-                                        , stack =
-                                            List.indexedMap
-                                                (\i e ->
-                                                    if model.vlselector.stackNum == i then
-                                                        -- update the expression with the subexpr at given path
-                                                        Expression.updateExpr model.vlselector.targetPath [] (Leaf <| ObsValue vs) e
+        SubMsg Expression.Value.Select.Cancel ->
+            ( { model | vlselector = Nothing }, Cmd.none )
 
-                                                    else
-                                                        e
-                                                )
-                                                model.stack
-                                      }
-                                    , Cmd.map SubMsg subcmd
-                                    )
+        SubMsg (Expression.Value.Select.Choose vs stackNum targetPath) ->
+            case vs of
+                SelectedValue _ _ _ ->
+                    -- TODO we don't use the selected value?
+                    ( { model
+                        | vlselector = Nothing
+                        , stack =
+                            List.indexedMap
+                                (\i e ->
+                                    if stackNum == i then
+                                        -- update the expression with the subexpr at given path
+                                        Expression.updateExpr targetPath [] (Leaf <| ObsValue vs) e
 
-                                UndefinedValue ->
-                                    ( model, Cmd.none )
+                                    else
+                                        e
+                                )
+                                model.stack
+                      }
+                    , Cmd.none
+                    )
 
-                        Expression.Value.Select.InputValue _ _ _ ->
-                            ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
-
-                        Expression.Value.Select.InputScope _ ->
-                            ( { model | vlselector = newsubmodel }, Cmd.map SubMsg subcmd )
-
-                _ ->
+                UndefinedValue ->
                     ( model, Cmd.none )
+
+        SubMsg vlmsg ->
+            model.vlselector
+                |> Maybe.map
+                    (\vlselector ->
+                        let
+                            ( newsubmodel, subcmd ) =
+                                Expression.Value.Select.update s vlmsg vlselector
+                        in
+                        ( { model | vlselector = Just newsubmodel }, Cmd.map SubMsg subcmd )
+                    )
+                |> Maybe.withDefault ( { model | vlselector = Nothing }, Cmd.none )
+
+        OpenDeepLinkSelector stackNum targetPath ->
+            ( { model
+                | dlselector = Just <| Expression.DeepLink.Select.init s model.scope stackNum targetPath
+              }
+            , Cmd.none
+            )
+
+        SubMsg2 Expression.DeepLink.Select.Cancel ->
+            ( { model | vlselector = Nothing }, Cmd.none )
+
+        SubMsg2 (Expression.DeepLink.Select.Choose dl stackNum targetPath) ->
+            ( { model
+                | dlselector = Nothing
+                , stack =
+                    List.indexedMap
+                        (\i e ->
+                            if stackNum == i then
+                                -- update the expression with the subexpr at given path
+                                Expression.updateExpr targetPath [] (Leaf <| ObsLink dl) e
+
+                            else
+                                e
+                        )
+                        model.stack
+              }
+            , Cmd.none
+            )
 
         SubMsg2 dlmsg ->
-            case model.subpage of
-                Just (DeeplinkSelector _) ->
-                    let
-                        ( newsubmodel, subcmd ) =
-                            Expression.DeepLink.Select.update s dlmsg model.dlselector
-                    in
-                    case dlmsg of
-                        Expression.DeepLink.Select.Cancel ->
-                            ( { model | subpage = Nothing }, Cmd.map SubMsg2 subcmd )
-
-                        Expression.DeepLink.Select.Choose dl ->
-                            -- TODO try to merge with InputExpression
-                            ( { model
-                                | dlselector = newsubmodel
-                                , subpage = Nothing
-                                , stack =
-                                    List.indexedMap
-                                        (\i e ->
-                                            if model.dlselector.stackNum == i then
-                                                -- update the expression with the subexpr at given path
-                                                Expression.updateExpr model.dlselector.targetPath [] (Leaf <| ObsLink dl) e
-
-                                            else
-                                                e
-                                        )
-                                        model.stack
-                              }
-                            , Cmd.map SubMsg2 subcmd
-                            )
-
-                        Expression.DeepLink.Select.Terminate _ _ ->
-                            ( { model | dlselector = newsubmodel }, Cmd.map SubMsg2 subcmd )
-
-                        Expression.DeepLink.Select.AddedHardlink _ ->
-                            ( { model | dlselector = newsubmodel }, Cmd.map SubMsg2 subcmd )
-
-                _ ->
-                    ( model, Cmd.none )
+            model.dlselector
+                |> Maybe.map
+                    (\dlselector ->
+                        let
+                            ( newsubmodel, subcmd ) =
+                                Expression.DeepLink.Select.update s dlmsg dlselector
+                        in
+                        ( { model | dlselector = Just newsubmodel }, Cmd.map SubMsg2 subcmd )
+                    )
+                |> Maybe.withDefault ( { model | vlselector = Nothing }, Cmd.none )
 
 
 view : Shared.Model -> Model -> Element Msg
@@ -289,12 +267,12 @@ editObservable s model ( stackNum, exprPath ) obs =
             case vs of
                 UndefinedValue ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (ValueSelector onSelect) stackNum exprPath) "Choose value..."
+                        [ button.primary (OpenValueSelector stackNum exprPath) "Choose value..."
                         ]
 
                 SelectedValue _ _ name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (ValueSelector onSelect) stackNum exprPath) name
+                        [ button.primary (OpenValueSelector stackNum exprPath) name
                         ]
 
         ObsLink deeplink ->
@@ -306,17 +284,17 @@ editObservable s model ( stackNum, exprPath ) obs =
             case deeplink of
                 DeepLink.Null ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (DeeplinkSelector onSelect) stackNum exprPath) "Choose link..."
+                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) "Choose link..."
                         ]
 
                 DeepLink.EndPoint scope name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill, htmlAttribute <| Attr.title <| Scope.toString scope ]
-                        [ button.primary (Open (DeeplinkSelector onSelect) stackNum exprPath) name
+                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) name
                         ]
 
                 DeepLink.Link _ _ ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Open (DeeplinkSelector onSelect) stackNum exprPath) (DeepLink.toDisplay deeplink)
+                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (DeepLink.toDisplay deeplink)
                         ]
 
 
@@ -347,16 +325,8 @@ buttonBinaryOperator mt o =
 
 viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)
 viewSubpage s model =
-    Maybe.map
-        (\subpage ->
-            case subpage of
-                ValueSelector _ ->
-                    Element.map SubMsg <| Expression.Value.Select.view s model.vlselector
-
-                DeeplinkSelector _ ->
-                    Element.map SubMsg2 <| Expression.DeepLink.Select.view s model.dlselector
-        )
-        model.subpage
+    (model.vlselector |> Maybe.map (Element.map SubMsg << Expression.Value.Select.view s))
+        |> otherwise (model.dlselector |> Maybe.map (Element.map SubMsg2 << Expression.DeepLink.Select.view s))
 
 
 buttonUndo : Model -> Element Msg

@@ -25,7 +25,7 @@ type Msg
     = AddedHardlink HardLink
     | Cancel
     | Terminate Scope String
-    | Choose DeepLink
+    | Choose DeepLink Int (List Int)
 
 
 init : Shared.Model -> Scope -> Int -> List Int -> Model
@@ -64,7 +64,7 @@ view s model =
         [ wrappedRow [ width fill, spacing 20 ]
             [ button.secondary Cancel "Cancel"
             , if DL.isComplete model.deeplink then
-                button.primary (Choose model.deeplink) "Choose"
+                button.primary (Choose model.deeplink model.stackNum model.targetPath) "Choose"
 
               else
                 button.disabled "Please select a Value Type" "Choose"

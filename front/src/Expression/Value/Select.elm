@@ -22,7 +22,6 @@ type SelectedValue
 
 type alias Model =
     { selection : SelectedValue
-    , onSelect : ValueSelection -> Msg
     , stackNum : Int
     , targetPath : List Int
     }
@@ -32,13 +31,12 @@ type Msg
     = InputScope Scope
     | InputValue Type Uuid String
     | Cancel
-    | Selected ValueSelection
+    | Choose ValueSelection Int (List Int)
 
 
 init : Shared.Model -> Int -> List Int -> Model
 init s stackNum targetPath =
     { selection = None
-    , onSelect = Selected
     , stackNum = stackNum
     , targetPath = targetPath
     }
@@ -66,13 +64,8 @@ update s msg model =
         Cancel ->
             ( { model | selection = None }, Cmd.none )
 
-        Selected vs ->
-            case vs of
-                UndefinedValue ->
-                    ( model, Cmd.none )
-
-                SelectedValue _ _ _ ->
-                    ( model, Cmd.none )
+        Choose _ _ _ ->
+            ( { model | selection = None }, Cmd.none )
 
 
 view : Shared.Model -> Model -> Element Msg
@@ -84,7 +77,7 @@ view s model =
             [ button.secondary Cancel "Cancel"
             , case model.selection of
                 ScopeAndValue (IsItem type_ uuid) name ->
-                    button.primary (model.onSelect <| SelectedValue type_ uuid name) "Choose"
+                    button.primary (Choose (SelectedValue type_ uuid name) model.stackNum model.targetPath) "Choose"
 
                 _ ->
                     button.disabled "Please select a value" "Choose"
