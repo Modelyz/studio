@@ -47,7 +47,6 @@ viewObservable s obs =
         ObsNumber n ->
             text <| Rational.toRString n.val
 
-        -- TODO
         ObsValue (ValueSelection.SelectedValue _ for name) ->
             row [ height fill, htmlAttribute <| Attr.title name ]
                 [ text <|

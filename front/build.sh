@@ -27,8 +27,10 @@ if [ "$1" == "-o" ]; then
     && rm ../build/tmp.js
     export APP=app.${APPVERSION}.$( md5sum ../build/static/app.js | cut -d' ' -f1 )
     mv ../build/static/app.js ../build/static/${APP}.js
+    echo "    SIZE = `ls -lh ../build/static/${APP}.js | cut -d' ' -f5`"
 else
     elm make --output ../build/static/app.js src/Main.elm
+    echo "    SIZE = `ls -lh ../build/static/app.js | cut -d' ' -f5`"
     export APP=app
 fi
 
