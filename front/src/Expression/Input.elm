@@ -68,19 +68,12 @@ inputObservable c s targetPath obs expr =
                 , placeholder =
                     Just <| Input.placeholder [] <| text n.name
                 , label =
-                    Input.labelRight [ padding 10, Background.color color.content.background ]
-                        (text
-                            (case n.val of
-                                Ok r ->
-                                    "= " ++ Rational.toString r
+                    if String.length n.name == 0 then
+                        Input.labelHidden n.name
 
-                                Err "" ->
-                                    ""
-
-                                Err _ ->
-                                    "(invalid number)"
-                            )
-                        )
+                    else
+                        Input.labelLeft [ padding 10, Background.color color.content.background ]
+                            (text (n.name ++ " ="))
                 }
 
         -- TODO
