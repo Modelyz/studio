@@ -166,11 +166,18 @@ init s f =
 
                     type_ =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    commitment =
+                        Dict.get (Uuid.toString uuid) s.state.commitments
                 in
                 { adding
-                    | type_ = type_
+                    | type_ = commitment |> Maybe.map .type_
                     , uuid = uuid
                     , commitmentType = type_ |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.commitmentTypes)
+                    , provider = commitment |> Maybe.map .provider
+                    , receiver = commitment |> Maybe.map .receiver
+                    , qty = commitment |> Maybe.map .qty
+                    , flow = commitment |> Maybe.map .flow
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
