@@ -1,4 +1,4 @@
-module Value.Value exposing (Value, compare, decoder, encode, eval, fromUuid, getByUuid)
+module Value.Value exposing (Value, compare, decoder, encode, fromUuid, getByUuid)
 
 import Dict exposing (Dict)
 import Expression as Expression exposing (Expression)
@@ -34,11 +34,6 @@ getByUuid uuid all =
         |> Dict.values
         |> List.head
         |> Result.fromMaybe "Missing value"
-
-
-eval : Dict String Value -> Value -> Result String Rational
-eval allVals value =
-    Expression.eval allVals value.expr
 
 
 encode : Value -> Encode.Value

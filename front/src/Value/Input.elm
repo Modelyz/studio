@@ -3,10 +3,13 @@ module Value.Input exposing (Config, inputValues)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Expression as Expression exposing (Expression(..))
+import Expression.Eval as Eval
 import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
+import Prng.Uuid as Uuid exposing (Uuid)
 import Shared
+import Type exposing (Type)
 import Value.Value as Value exposing (..)
 import View exposing (..)
 
@@ -14,6 +17,9 @@ import View exposing (..)
 type alias Config msg =
     { onEnter : msg
     , onInput : Value -> msg
+
+    -- TODO check the Type is used
+    , context : ( Type, Uuid )
     }
 
 
@@ -37,7 +43,7 @@ inputValue c s v =
     column []
         [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
         , row [ spacing 5 ]
-            [ inputExpression { onEnter = c.onEnter, onInput = \expr -> c.onInput { v | expr = expr } } s ( [], v.expr ) v.expr
+            [ inputExpression { onEnter = c.onEnter, onInput = \expr -> c.onInput { v | expr = expr }, context = c.context } s ( [], v.expr ) v.expr
 
             -- display the evaluated expression:
             , case v.expr of
@@ -46,7 +52,7 @@ inputValue c s v =
                     none
 
                 _ ->
-                    Expression.eval s.state.values v.expr
+                    Eval.exeval s { context = c.context } s.state.values v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->

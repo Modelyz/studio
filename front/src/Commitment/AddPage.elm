@@ -205,12 +205,14 @@ update s msg model =
                         (s.state.agents
                             |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
+                            |> Dict.values
                         )
                 , receiver =
                     chooseIfSingleton
                         (s.state.agents
                             |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
+                            |> Dict.values
                         )
                 , qty = Maybe.map .qty mct
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
@@ -382,6 +384,7 @@ viewContent model s =
                                 , Expression.Input.inputExpression
                                     { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
                                     , onInput = InputQty
+                                    , context = ( hereType, model.uuid )
                                     }
                                     s
                                     ( [], qty )
@@ -406,7 +409,13 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue } s model.values
+                    inputValues
+                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                        , onInput = InputValue
+                        , context = ( Type.TType TType.Commitment, model.uuid )
+                        }
+                        s
+                        model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

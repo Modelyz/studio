@@ -70,10 +70,10 @@ flip f x y =
     f y x
 
 
-chooseIfSingleton : Dict a b -> Maybe b
+chooseIfSingleton : List a -> Maybe a
 chooseIfSingleton xs =
-    if Dict.size xs == 1 then
-        List.head <| Dict.values xs
+    if List.length xs == 1 then
+        List.head xs
 
     else
         Nothing

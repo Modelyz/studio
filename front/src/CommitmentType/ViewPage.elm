@@ -126,13 +126,13 @@ viewContent model s =
             |> text
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
-            |> displayValueDict "(none)" s.state.values
+            |> displayValueDict s { context = ( Type.HType HType.CommitmentType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
-        , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s) |> Maybe.withDefault (text "(none)")
+        , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.CommitmentType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?

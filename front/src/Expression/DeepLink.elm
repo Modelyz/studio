@@ -119,7 +119,7 @@ toDisplay deeplink =
         EndPoint scope name ->
             -- TODO display without uuid
             -- name ++ " (" Scope.View.toDisplay allT allG configs scope ++ ")"
-            name ++ " (" ++ Scope.toString scope ++ ")"
+            Scope.toString scope ++ " → " ++ name
 
 
 toScope : Scope -> DeepLink -> Scope

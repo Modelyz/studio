@@ -117,7 +117,7 @@ viewContent model s =
             |> text
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
-            |> displayValueDict "(none)" s.state.values
+            |> displayValueDict s { context = ( Type.HType HType.ResourceType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)

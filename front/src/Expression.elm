@@ -1,4 +1,4 @@
-module Expression exposing (BOperator(..), Expression(..), UOperator(..), Value, allBinary, allUnary, applyB, applyU, bToShortString, bToString, decoder, encode, eval, uToShortString, uToString, undo, updateExpr)
+module Expression exposing (BOperator(..), Expression(..), UOperator(..), allBinary, allUnary, applyB, applyU, bToShortString, bToString, decoder, encode, uToShortString, uToString, undo, updateExpr)
 
 import Dict exposing (Dict)
 import Expression.DeepLink exposing (DeepLink(..))
@@ -122,48 +122,6 @@ or n d c =
     Or { name = n, desc = d, choice = Result.fromMaybe "No choice made" c }
 
 
-eval : Dict String Value -> Expression -> Result String Rational
-eval allVals expr =
-    case expr of
-        Leaf obs ->
-            case obs of
-                ObsNumber n ->
-                    n.val
-
-                ObsValue vs ->
-                    case vs of
-                        UndefinedValue ->
-                            Err "Undefined"
-
-                        SelectedValue w f n ->
-                            allVals
-                                |> Dict.filter (\_ x -> x.what == w && x.for == f && x.name == n)
-                                |> Dict.values
-                                |> List.head
-                                |> Result.fromMaybe "The value does not exist anymore"
-                                |> Result.andThen (.expr >> eval allVals)
-
-                ObsLink deeplink ->
-                    case deeplink of
-                        Null ->
-                            Err "Unselected value"
-
-                        EndPoint _ _ ->
-                            -- FIXME
-                            Err "Undefined"
-
-                        Link _ _ ->
-                            -- FIXME
-                            Err "Undefined"
-
-        Unary op e ->
-            Result.map (uEval op) (eval allVals e)
-
-        Binary op e f ->
-            -- the error is displayed only for the 1st eval even if both fail
-            bEval op (eval allVals e) (eval allVals f)
-
-
 encode : Expression -> Encode.Value
 encode e =
     case e of
@@ -207,38 +165,6 @@ decoder =
                     _ ->
                         Decode.fail "Unknown Expression"
             )
-
-
-uEval : UOperator -> Rational -> Rational
-uEval op n =
-    case op of
-        Neg ->
-            R.neg n
-
-        Inv ->
-            R.inv n
-
-
-bEval : BOperator -> Result String Rational -> Result String Rational -> Result String Rational
-bEval operator res1 res2 =
-    case operator of
-        Add ->
-            Result.map2 R.add res1 res2
-
-        Multiply ->
-            Result.map2 R.multiply res1 res2
-
-        Or data ->
-            -- one can choose either even if one fails
-            data.choice
-                |> Result.andThen
-                    (\c ->
-                        if c then
-                            res1
-
-                        else
-                            res2
-                    )
 
 
 uEncode : UOperator -> Encode.Value

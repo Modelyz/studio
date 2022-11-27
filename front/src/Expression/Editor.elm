@@ -14,6 +14,7 @@ import Expression.Rational as Rational
 import Expression.Value.Select
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
+import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
@@ -336,3 +337,21 @@ buttonUndo model =
 
     else
         button.special Undo "Undo"
+
+
+
+{- On part du commitment qu'on est en train de créer. Sur ce commitment on a une Value qui contient une Expression qui contient un ObsLink, qui contient un Deeplink, qui contient un Scope de l'entité à laquelle est attachée la Value, et le nom de la Value.
+
+      On dispose donc de : Scope, ValueType Name, et du chemin pour récupérer l'entitée visée par le scope.
+      Donc pour récupérer la Value, je prends la liste des Value ayant le ValueType avec le bon Name, et attachées aux Groupes du bon Type.
+      Ou sinon je peux repartir du Commitment et suivre le deeplink : Je suis sur un commitment. Je crée la liste de tous les agents possibles : singleton sur l'agent sélectionné. (Je connais l'agent). Je remplace chaque agent de la liste par tous les groupes de cet agent. J'applatis (join). Je continue les hardlink, jusqu'au endpoint. Quand je suis au Endpoint, j'ai une liste de Group. Je filtre cette liste en ne gardant que les Groups qui sont dans le Scope indiqué dans le Endpoint. Dans la liste restant je remplace chaque groupe par la Value ayant le bon nom et associée à ce groupe. J'aboutis à une liste de Value. Si j'en ai une seule, je l'évalue. Sinon j'affiche une erreur en indiquant qu'il y a plusieurs valeurs. Dans ce cas, il manque un condition d'unicité sur un groupe.
+
+
+   resolve : Commitment -> Deeplink -> List Value
+   resolve entity deeplink currentList =
+       case deeplink of
+           Link hl dl ->
+-}
+--bind : Shared.Model -> List Uuid -> (Shared.Model -> HardLink -> Uuid -> List Uuid) -> List Uuid
+--bind s uuids step =
+--    List.map step uuids

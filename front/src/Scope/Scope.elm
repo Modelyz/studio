@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, decoder, empty, encode, or, toString)
+module Scope.Scope exposing (Scope(..), compare, decoder, empty, encode, or, toString, toType)
 
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
@@ -142,3 +142,34 @@ toString scope =
 compare : Scope -> String
 compare =
     toString
+
+
+toType : Scope -> Maybe Type
+toType scope =
+    case scope of
+        Empty ->
+            Nothing
+
+        IsItem t _ ->
+            Just t
+
+        HasType t ->
+            Just t
+
+        HasUserType t _ ->
+            Just t
+
+        Identified _ ->
+            Nothing
+
+        And s1 s2 ->
+            -- FIXME this is inconsistent
+            Nothing
+
+        Or s1 s2 ->
+            -- FIXME this is inconsistent
+            Nothing
+
+        Not s ->
+            -- FIXME this is inconsistent
+            Nothing

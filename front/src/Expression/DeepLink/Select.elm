@@ -75,25 +75,6 @@ view s model =
         , h2 "Choose between:"
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of
-                {- TODO si on est sur null, on a notre contexte qui est le
-                   scope choisi pour la value en cours de création.  Dans ce cas
-                   on affiche les all du commitment (on extrait le type du scope).
-                   Le contexte est donc un scope. Quand on choisit un hardlink, on
-                   modifie le scope contexte en conséquence (sauf que là on n'a
-                   pas de uuid donc le scope est un HasType). Si dans la
-                   configuration du commitment pour le lien receiver on a un
-                   scope, alors on remplace le scope en contexte par celui là.
-                   Puis on affiche les all du nouveau contexte. On affiche aussi
-                   les values correspondant au nouveau scope en contexte.
-
-                      si on est sur Link, on vient de choisir un hardlink, on a un
-                      nouveau scope qui est hastype (si pas de config sur le
-                      hardlink) ou le scope du hardlink.
-
-                       si on est sur EndPoint, alors on a sélectionné une value,
-                       avec laquelle on veut remplacer le null. Dans ce cas on
-                       affiche le bouton Choose.
-                -}
                 Null ->
                     List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
