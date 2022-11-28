@@ -1,4 +1,4 @@
-module Group.Group exposing (Group, decoder, encode, getGroups)
+module Group.Group exposing (Group, decoder, encode, groupsOf)
 
 import Dict exposing (Dict)
 import Group.Link as GroupLink
@@ -19,8 +19,8 @@ type alias Group =
     }
 
 
-getGroups : Dict String GroupLink.Link -> Uuid -> List Uuid
-getGroups links uuid =
+groupsOf : Dict String GroupLink.Link -> Uuid -> List Uuid
+groupsOf links uuid =
     links
         |> Dict.filter (\_ link -> link.groupable == uuid)
         |> Dict.values

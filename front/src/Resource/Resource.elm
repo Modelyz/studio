@@ -1,8 +1,10 @@
 module Resource.Resource exposing (Resource, decoder, encode)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import ResourceType.ResourceType exposing (ResourceType)
 import Typed.Type as TType
 
 

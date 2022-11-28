@@ -3,7 +3,7 @@ module Group.View exposing (displayGroupTable, groupsColumn)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Group.Group exposing (getGroups)
+import Group.Group exposing (groupsOf)
 import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
@@ -34,7 +34,7 @@ groupsColumn s =
     , width = fill
     , view =
         \( uuid, _, _ ) ->
-            getGroups s.state.grouped uuid
+            groupsOf s.state.grouped uuid
                 |> List.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group))
                 |> String.join "\n"
                 |> text

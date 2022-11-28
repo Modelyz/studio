@@ -1,9 +1,19 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Agent.Agent exposing (Agent)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Element.Border as Border
+import Element.Font as Font
 import Event.Event exposing (Event)
+import EventType.EventType exposing (EventType)
+import Expression exposing (Expression)
+import Expression.Input
+import Flow exposing (Flow)
+import Flow.Input
+import Group.Group as Group exposing (Group)
+import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -14,11 +24,14 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
+import Util exposing (checkMaybe, chooseIfSingleton, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -51,6 +64,11 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
+    , eventType : Maybe EventType
+    , provider : Maybe Uuid
+    , receiver : Maybe Uuid
+    , qty : Maybe Expression
+    , flow : Maybe Flow
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -63,13 +81,20 @@ type alias Model =
 
 type Step
     = StepType
+    | StepProvider
+    | StepReceiver
+    | StepFlow
     | StepIdentifiers
     | StepValues
     | StepGroups
 
 
 type Msg
-    = InputType (Maybe Uuid)
+    = SelectType (Maybe Uuid)
+    | SelectProvider (Maybe Uuid)
+    | SelectReceiver (Maybe Uuid)
+    | InputQty Expression
+    | InputFlow (Maybe Flow)
     | InputIdentifier Identifier
     | InputValue Value
     | InputGroups (Dict String Uuid)
@@ -112,6 +137,11 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = Nothing
+            , eventType = Nothing
+            , provider = Nothing
+            , receiver = Nothing
+            , qty = Nothing
+            , flow = Nothing
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -120,7 +150,7 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
@@ -135,11 +165,19 @@ init s f =
                             |> Dict.fromList
 
                     type_ =
-                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    event =
+                        Dict.get (Uuid.toString uuid) s.state.events
                 in
                 { adding
-                    | type_ = type_
+                    | type_ = event |> Maybe.map .type_
                     , uuid = uuid
+                    , eventType = type_ |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
+                    , provider = event |> Maybe.map .provider
+                    , receiver = event |> Maybe.map .receiver
+                    , qty = event |> Maybe.map .qty
+                    , flow = event |> Maybe.map .flow
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
@@ -154,14 +192,46 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mh ->
+        SelectType mh ->
+            let
+                met =
+                    mh |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+            in
             ( { model
                 | type_ = mh
+                , eventType = met
+                , provider =
+                    chooseIfSingleton
+                        (s.state.agents
+                            |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                            |> Dict.map (\_ a -> a.uuid)
+                            |> Dict.values
+                        )
+                , receiver =
+                    chooseIfSingleton
+                        (s.state.agents
+                            |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                            |> Dict.map (\_ a -> a.uuid)
+                            |> Dict.values
+                        )
+                , qty = Maybe.map .qty met
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
             )
+
+        SelectProvider uuid ->
+            ( { model | provider = uuid }, Effect.none )
+
+        SelectReceiver uuid ->
+            ( { model | receiver = uuid }, Effect.none )
+
+        InputQty qty ->
+            ( { model | qty = Just qty }, Effect.none )
+
+        InputFlow flow ->
+            ( { model | flow = flow }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -216,7 +286,16 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select an Event Type")
+            checkMaybe model.type_ "You must select a Event Type" |> Result.map (\_ -> ())
+
+        Step StepProvider ->
+            checkMaybe model.provider "You must select a Provider" |> Result.map (\_ -> ())
+
+        Step StepReceiver ->
+            checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
+
+        Step StepFlow ->
+            checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
         Step StepIdentifiers ->
             Ok ()
@@ -230,13 +309,13 @@ checkStep model =
 
 validate : Model -> Result String Event
 validate m =
-    case m.type_ of
-        Just uuid ->
-            -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid uuid (millisToPosix 0)
-
-        Nothing ->
-            Err "You must select an Event Type"
+    Result.map5
+        (\type_ provider receiver flow qty -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow qty)
+        (checkMaybe m.type_ "You must select a Event Type")
+        (checkMaybe m.provider "You must select a Provider")
+        (checkMaybe m.receiver "You must select a Receiver")
+        (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+        (checkMaybe m.qty "The quantity is invalid")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -248,12 +327,80 @@ viewContent model s =
                     flatSelect s
                         { what = Type.HType HType.EventType
                         , muuid = model.type_
-                        , onInput = InputType
+                        , onInput = SelectType
                         , title = "Type:"
                         , explain = "Choose the type of the new Event:"
                         , empty = "(There are no Event Types yet to choose from)"
                         }
                         (s.state.eventTypes |> Dict.map (\_ a -> a.uuid))
+
+                Step.Step StepProvider ->
+                    Maybe.map
+                        (\ct ->
+                            column [ spacing 20 ]
+                                [ flatSelect s
+                                    { what = Type.TType TType.Agent
+                                    , muuid = model.provider
+                                    , onInput = SelectProvider
+                                    , title = "Provider:"
+                                    , explain = "Choose the provider of the event:"
+                                    , empty = "(There are no agents yet to choose from)"
+                                    }
+                                    (s.state.agents
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers)
+                                        |> Dict.map (\_ a -> a.uuid)
+                                    )
+                                ]
+                        )
+                        model.eventType
+                        |> Maybe.withDefault none
+
+                Step.Step StepReceiver ->
+                    Maybe.map
+                        (\ct ->
+                            column [ spacing 20 ]
+                                [ flatSelect s
+                                    { what = Type.TType TType.Agent
+                                    , muuid = model.receiver
+                                    , onInput = SelectReceiver
+                                    , title = "Receiver:"
+                                    , explain = "Choose the receiver of the event:"
+                                    , empty = "(There are no agents yet to choose from)"
+                                    }
+                                    (s.state.agents
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers)
+                                        |> Dict.map (\_ a -> a.uuid)
+                                    )
+                                ]
+                        )
+                        model.eventType
+                        |> Maybe.withDefault none
+
+                Step.Step StepFlow ->
+                    Maybe.map2
+                        (\ct qty ->
+                            column [ spacing 20 ]
+                                [ h2 "Flow from the provider to the receiver"
+                                , Expression.Input.inputExpression
+                                    { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                    , onInput = InputQty
+                                    , context = ( hereType, model.uuid )
+                                    }
+                                    s
+                                    ( [], qty )
+                                    qty
+                                , Flow.Input.input
+                                    { flow = model.flow
+                                    , scope = ct.flow
+                                    , onSelect = InputFlow
+                                    , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                    }
+                                    s
+                                ]
+                        )
+                        model.eventType
+                        model.qty
+                        |> Maybe.withDefault none
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups
@@ -262,7 +409,13 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues
+                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                        , onInput = InputValue
+                        , context = ( Type.TType TType.Event, model.uuid )
+                        }
+                        s
+                        model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

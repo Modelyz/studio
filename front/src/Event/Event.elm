@@ -1,5 +1,7 @@
 module Event.Event exposing (Event, decoder, encode)
 
+import Expression exposing (Expression)
+import Flow exposing (Flow)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -12,11 +14,10 @@ type alias Event =
     , uuid : Uuid
     , type_ : Uuid
     , when : Time.Posix
-
-    --    , qty: Float
-    --    , rtype: ResourceType
-    --    , provider: Agent
-    --    , receiver: Agent
+    , provider : Uuid
+    , receiver : Uuid
+    , flow : Flow
+    , qty : Expression
     }
 
 
@@ -32,8 +33,12 @@ encode e =
 
 decoder : Decoder Event
 decoder =
-    Decode.map4 Event
+    Decode.map8 Event
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "provider" Uuid.decoder)
+        (Decode.field "receiver" Uuid.decoder)
+        (Decode.field "flow" Flow.decoder)
+        (Decode.field "qty" Expression.decoder)

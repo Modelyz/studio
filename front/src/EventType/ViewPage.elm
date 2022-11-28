@@ -2,21 +2,28 @@ module EventType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
 import Dict
 import Effect exposing (Effect)
-import Element exposing (..)
+import Element as E exposing (..)
+import EventType.EventType exposing (EventType)
+import EventType.View
+import Expression.View
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
+import Scope.View
 import Shared
 import Spa.Page
+import Svg as S
+import Svg.Attributes as A
 import Type exposing (Type)
 import Typed.Type as TType
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
+import View.Style as Style
 import Zone.View exposing (display)
 import Zone.Zone exposing (Zone(..))
 
@@ -36,6 +43,7 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
+    , ct : Maybe EventType
     , type_ : Maybe Uuid
     , groups : List Uuid
     }
@@ -71,6 +79,7 @@ init s f =
     ( { route = f.route
       , what = mainHType
       , uuid = f.uuid
+      , ct = Dict.get (Uuid.toString f.uuid) s.state.eventTypes
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped
@@ -122,4 +131,13 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
+        , h2 "Default quantity"
+        , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
+        , h2 "Restrictions:"
+
+        -- TODO what about resource conversions?
+        , EventType.View.svg
+            (Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
         ]

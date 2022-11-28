@@ -4,6 +4,9 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import EventType.EventType exposing (EventType)
+import Expression as Expression exposing (Expression(..))
+import Expression.Editor exposing (view)
+import Flow exposing (Flow)
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -14,9 +17,13 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
+import Scope.Scope as Scope exposing (Scope(..))
+import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Type
+import Typed.Type as TType
+import Util exposing (checkEmptyString, checkListOne, checkMaybe, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -47,7 +54,11 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , type_ : Maybe Uuid
+    , mpuuid : Maybe Uuid
+    , providers : Scope
+    , receivers : Scope
+    , flowscope : Scope
+    , editor : Expression.Editor.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -61,16 +72,23 @@ type alias Model =
 type Step
     = StepType
     | StepIdentifiers
+    | StepProviders
+    | StepReceivers
+    | StepFlow
     | StepValues
     | StepGroups
 
 
 type Msg
-    = InputType (Maybe Uuid)
+    = SelectType (Maybe Uuid)
+    | SelectProviders Scope
+    | SelectReceivers Scope
+    | SelectFlow Scope
     | InputIdentifier Identifier
     | InputGroups (Dict String Uuid)
     | InputValue Value
     | Button Step.Msg
+    | EditorMsg Expression.Editor.Msg
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -108,7 +126,11 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , type_ = Nothing
+            , mpuuid = Nothing
+            , providers = Scope.empty
+            , receivers = Scope.empty
+            , flowscope = Scope.empty
+            , editor = Expression.Editor.init s (HasType (Type.TType TType.Event)) []
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -117,7 +139,15 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps =
+                [ Step.Step StepType
+                , Step.Step StepIdentifiers
+                , Step.Step StepValues
+                , Step.Step StepProviders
+                , Step.Step StepReceivers
+                , Step.Step StepFlow
+                , Step.Step StepGroups
+                ]
             }
     in
     ( f.uuid
@@ -131,16 +161,29 @@ init s f =
                             |> List.map (\link -> ( Uuid.toString link.group, link.group ))
                             |> Dict.fromList
 
-                    type_ =
+                    mpuuid =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+
+                    ct =
+                        Dict.get (Uuid.toString uuid) s.state.eventTypes
+
+                    flowscope =
+                        Maybe.map .flow ct |> Maybe.withDefault (HasType (Type.TType TType.Event))
                 in
                 { adding
-                    | type_ = type_
+                    | mpuuid = mpuuid
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
+                    , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
+                    , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
+                    , flowscope = flowscope
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid mpuuid False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid mpuuid False
                     , oldGroups = oldGroups
                     , groups = oldGroups
+                    , editor =
+                        Expression.Editor.init s
+                            flowscope
+                            (ct |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
                 }
             )
         |> Maybe.withDefault adding
@@ -151,11 +194,25 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        InputType mh ->
+        SelectType mh ->
             ( { model
-                | type_ = mh
+                | mpuuid = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
+                , editor = Expression.Editor.init s (Maybe.map (HasUserType (Type.TType TType.Event)) mh |> Maybe.withDefault (HasType (Type.TType TType.Event))) []
+              }
+            , Effect.none
+            )
+
+        SelectProviders scope ->
+            ( { model | providers = scope }, Effect.none )
+
+        SelectReceivers scope ->
+            ( { model | receivers = scope }, Effect.none )
+
+        SelectFlow scope ->
+            ( { model
+                | flowscope = scope
               }
             , Effect.none
             )
@@ -199,6 +256,10 @@ update s msg model =
             Step.update s stepmsg model
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
+        EditorMsg editormsg ->
+            Expression.Editor.update s editormsg model.editor
+                |> (\( x, y ) -> ( { model | editor = x }, Effect.map EditorMsg <| Effect.fromCmd y ))
+
 
 view : Shared.Model -> Model -> View Msg
 view s model =
@@ -215,6 +276,15 @@ checkStep model =
         Step StepType ->
             Ok ()
 
+        Step StepProviders ->
+            Ok ()
+
+        Step StepReceivers ->
+            Ok ()
+
+        Step StepFlow ->
+            Ok ()
+
         Step StepIdentifiers ->
             Ok ()
 
@@ -227,7 +297,9 @@ checkStep model =
 
 validate : Model -> Result String EventType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Result.map
+        (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flowscope)
+        (Expression.Editor.checkExpression m.editor)
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -238,13 +310,26 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.EventType
-                        , muuid = model.type_
-                        , onInput = InputType
+                        , muuid = model.mpuuid
+                        , onInput = SelectType
                         , title = "Parent Type:"
-                        , explain = "Optional parent type for the new Event Type (it can be hierarchical)"
+                        , explain = "You can choose among the following types:"
                         , empty = "(There are no Event Types yet to choose from)"
                         }
                         (s.state.eventTypes |> Dict.map (\_ a -> a.uuid))
+
+                Step.Step StepProviders ->
+                    selectScope s SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Provider Agents:"
+
+                Step.Step StepReceivers ->
+                    selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
+
+                Step.Step StepFlow ->
+                    column [ alignTop, width <| minimum 200 fill, spacing 10 ]
+                        [ selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
+                        , h2 "Build an expression for the quantity exchanged:"
+                        , Element.map EditorMsg <| Expression.Editor.view s model.editor
+                        ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups } s model.groups
@@ -255,9 +340,10 @@ viewContent model s =
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
     in
-    floatingContainer s
+    floatingContainer2 s
         (Just <| Button Step.Cancel)
         "Adding an Event Type"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]
+        (Maybe.map (Element.map EditorMsg) <| Expression.Editor.viewSubpage s model.editor)

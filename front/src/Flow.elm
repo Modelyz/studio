@@ -1,9 +1,11 @@
-module Flow exposing (Flow(..), decoder, encode)
+module Flow exposing (Flow(..), decoder, encode, flowOf, uuidOf)
 
+import Dict exposing (Dict)
 import Expression as Expression exposing (Expression)
 import Expression.Rational as Rational exposing (Rational)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Scope.Scope exposing (Scope(..))
@@ -15,6 +17,19 @@ type Flow
     | ResourceTypeFlow ResourceType
 
 
+flowOf : Dict String { a | flow : Flow } -> Dict String Resource -> Dict String ResourceType -> Uuid -> List Uuid
+flowOf entities resources resourceTypes uuid =
+    Dict.get (Uuid.toString uuid) entities
+        |> Maybe.map
+            (\e ->
+                resources
+                    |> Dict.filter (\_ v -> v.uuid == uuidOf e.flow)
+                    |> Dict.values
+                    |> List.map .uuid
+            )
+        |> Maybe.withDefault []
+
+
 encode : Flow -> Encode.Value
 encode flow =
     case flow of
@@ -23,6 +38,16 @@ encode flow =
 
         ResourceTypeFlow resourceType ->
             Encode.object [ ( "type", Encode.string "ResourceTypeFlow" ), ( "resourceType", ResourceType.encode resourceType ) ]
+
+
+uuidOf : Flow -> Uuid
+uuidOf flow =
+    case flow of
+        ResourceFlow r ->
+            r.uuid
+
+        ResourceTypeFlow rt ->
+            rt.uuid
 
 
 decoder : Decoder Flow
