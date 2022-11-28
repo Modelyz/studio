@@ -43,7 +43,7 @@ inputExpression c s ( currentPath, currentExpr ) expr =
             inputObservable c s currentPath obs expr
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) e ]
+            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) expr ]
 
         Binary o e1 e2 ->
             row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) expr, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) expr, text " )" ]
