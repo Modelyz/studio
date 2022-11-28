@@ -157,7 +157,7 @@ update s msg model =
             )
 
         SubMsg2 Expression.DeepLink.Select.Cancel ->
-            ( { model | vlselector = Nothing }, Cmd.none )
+            ( { model | dlselector = Nothing }, Cmd.none )
 
         SubMsg2 (Expression.DeepLink.Select.Choose dl stackNum targetPath) ->
             ( { model
