@@ -2,10 +2,12 @@ module Expression.Eval exposing (Config, dleval, exeval, veval)
 
 import Dict exposing (Dict)
 import Expression exposing (..)
+import Expression.Binary as B
 import Expression.DeepLink as DeepLink exposing (DeepLink(..))
 import Expression.HardLink as HardLink exposing (HardLink(..))
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational exposing (Rational)
+import Expression.Unary as U
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope.Scope exposing (Scope(..), toType)
@@ -54,11 +56,11 @@ exeval s c allVals expr =
                         |> Maybe.withDefault (Err "No result")
 
         Unary op e ->
-            Result.map (uEval op) (exeval s c allVals e)
+            Result.map (U.eval op) (exeval s c allVals e)
 
         Binary op e f ->
             -- the error is displayed only for the 1st eval even if both fail
-            bEval op (exeval s c allVals e) (exeval s c allVals f)
+            B.eval op (exeval s c allVals e) (exeval s c allVals f)
 
 
 step : Shared.Model -> HardLink -> Uuid -> List Uuid
@@ -110,35 +112,3 @@ dleval s deeplink currentlist =
                     currentlist |> List.filter (\u -> toType scope |> Maybe.map (\t -> containsScope s.state.types (IsItem t u) scope) |> Maybe.withDefault False)
             in
             List.map (\g -> s.state.values |> Dict.filter (\_ v -> v.for == g) |> Dict.values) groups |> List.concat
-
-
-uEval : UOperator -> Rational -> Rational
-uEval op n =
-    case op of
-        Neg ->
-            Rational.neg n
-
-        Inv ->
-            Rational.inv n
-
-
-bEval : BOperator -> Result String Rational -> Result String Rational -> Result String Rational
-bEval operator res1 res2 =
-    case operator of
-        Add ->
-            Result.map2 Rational.add res1 res2
-
-        Multiply ->
-            Result.map2 Rational.multiply res1 res2
-
-        Expression.Or data ->
-            -- one can choose either even if one fails
-            data.choice
-                |> Result.andThen
-                    (\c ->
-                        if c then
-                            res1
-
-                        else
-                            res2
-                    )

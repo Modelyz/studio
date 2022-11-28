@@ -6,13 +6,15 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression as Expression exposing (Expression(..))
+import Expression.Binary as B
 import Expression.DeepLink as DeepLink exposing (DeepLink(..))
 import Expression.DeepLink.Select
 import Expression.Eval as Eval
 import Expression.HardLink as HardLink exposing (HardLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.Unary as U
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -41,10 +43,10 @@ viewExpression s c expr =
             viewObservable s c obs
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), viewExpression s c e ]
+            row [] [ text (U.toShortString o), viewExpression s c e ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", viewExpression s c e1, text <| Expression.bToShortString o, viewExpression s c e2, text " )" ]
+            row [] [ text "( ", viewExpression s c e1, text <| B.toShortString o, viewExpression s c e2, text " )" ]
 
 
 viewObservable : Shared.Model -> Config -> Observable -> Element msg

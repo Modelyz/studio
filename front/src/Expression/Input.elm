@@ -6,13 +6,15 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression as Expression exposing (Expression(..))
+import Expression.Binary as B
 import Expression.DeepLink as DeepLink exposing (DeepLink(..))
 import Expression.DeepLink.Select
 import Expression.Eval as Eval
 import Expression.HardLink as HardLink exposing (HardLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.Unary as U
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -43,10 +45,10 @@ inputExpression c s ( currentPath, currentExpr ) expr =
             inputObservable c s currentPath obs expr
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), inputExpression c s ( 1 :: currentPath, e ) expr ]
+            row [] [ text (U.toShortString o), inputExpression c s ( 1 :: currentPath, e ) expr ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) expr, text <| Expression.bToShortString o, inputExpression c s ( 3 :: currentPath, e2 ) expr, text " )" ]
+            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) expr, text <| B.toShortString o, inputExpression c s ( 3 :: currentPath, e2 ) expr, text " )" ]
 
 
 inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Element msg

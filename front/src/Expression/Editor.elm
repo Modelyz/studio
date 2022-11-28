@@ -6,11 +6,13 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (BOperator, Expression(..), UOperator)
+import Expression as Expression exposing (Expression(..))
+import Expression.Binary as B
 import Expression.DeepLink as DeepLink exposing (DeepLink)
 import Expression.DeepLink.Select
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.Unary as U
 import Expression.Value.Select
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
@@ -27,8 +29,8 @@ import View.Style exposing (..)
 type Msg
     = AddExpression Expression
     | InputExpression ( Int, List Int ) Expression
-    | UnaryOperator UOperator
-    | BinaryOperator BOperator
+    | UnaryOperator U.Operator
+    | BinaryOperator B.Operator
     | RemoveExpression Int
     | Undo
     | SubMsg Expression.Value.Select.Msg
@@ -83,10 +85,10 @@ update s msg model =
             )
 
         UnaryOperator o ->
-            ( { model | stack = Expression.applyU o model.stack }, Cmd.none )
+            ( { model | stack = Expression.applyUnary o model.stack }, Cmd.none )
 
         BinaryOperator o ->
-            ( { model | stack = Expression.applyB o model.stack }, Cmd.none )
+            ( { model | stack = Expression.applyBinary o model.stack }, Cmd.none )
 
         RemoveExpression stackNum ->
             ( { model
@@ -197,8 +199,8 @@ view s model =
           wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
             (buttonUndo model
                 :: List.map buttonObservable Obs.allObs
-                ++ List.map (buttonUnaryOperator (List.head model.stack)) Expression.allUnary
-                ++ List.map (buttonBinaryOperator (Maybe.map2 Tuple.pair (List.head model.stack) ((List.tail >> Maybe.andThen List.head) model.stack))) Expression.allBinary
+                ++ List.map (buttonUnaryOperator (List.head model.stack)) U.all
+                ++ List.map (buttonBinaryOperator (Maybe.map2 Tuple.pair (List.head model.stack) ((List.tail >> Maybe.andThen List.head) model.stack))) B.all
             )
         , -- display the stack
           column [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
@@ -224,10 +226,10 @@ editExpression s model stackNum ( currentPath, expr ) =
             editObservable s model ( stackNum, currentPath ) obs
 
         Unary o e ->
-            row [] [ text (Expression.uToShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
+            row [] [ text (U.toShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
 
         Binary o e1 e2 ->
-            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| Expression.bToShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
+            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| B.toShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
 
 
 editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element Msg
@@ -312,16 +314,16 @@ buttonObservable obs =
             button.primary (AddExpression <| Leaf (ObsLink l)) (Obs.toString obs)
 
 
-buttonUnaryOperator : Maybe Expression -> UOperator -> Element Msg
+buttonUnaryOperator : Maybe Expression -> U.Operator -> Element Msg
 buttonUnaryOperator me o =
-    Maybe.map (\_ -> button.primary (UnaryOperator o) (Expression.uToString o)) me
-        |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (Expression.uToString o))
+    Maybe.map (\_ -> button.primary (UnaryOperator o) (U.toString o)) me
+        |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (U.toString o))
 
 
-buttonBinaryOperator : Maybe ( Expression, Expression ) -> BOperator -> Element Msg
+buttonBinaryOperator : Maybe ( Expression, Expression ) -> B.Operator -> Element Msg
 buttonBinaryOperator mt o =
-    Maybe.map (\_ -> button.primary (BinaryOperator o) (Expression.bToString o)) mt
-        |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (Expression.bToString o))
+    Maybe.map (\_ -> button.primary (BinaryOperator o) (B.toString o)) mt
+        |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (B.toString o))
 
 
 viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)

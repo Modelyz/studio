@@ -14,6 +14,11 @@ type alias Value =
     , for : Uuid
     , name : String
     , expr : Expression
+
+    -- TODO!! important:
+    --, value : Result String Rational
+    --, date: Posix
+    -- Ability to store the computed value, and trigger new values
     }
 
 

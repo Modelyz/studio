@@ -1,9 +1,11 @@
-module Expression exposing (BOperator(..), Expression(..), UOperator(..), allBinary, allUnary, applyB, applyU, bToShortString, bToString, decoder, encode, uToShortString, uToString, undo, updateExpr)
+module Expression exposing (Expression(..), applyBinary, applyUnary, decoder, encode, undo, updateExpr)
 
 import Dict exposing (Dict)
+import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as R exposing (Rational)
+import Expression.Unary as U
 import Expression.ValueSelection exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -13,24 +15,18 @@ import Type exposing (Type)
 
 type Expression
     = Leaf Observable
-    | Unary UOperator Expression
-    | Binary BOperator Expression Expression
+    | Unary U.Operator Expression
+    | Binary B.Operator Expression Expression
 
 
-type BOperator
-    = Add
-    | Multiply
-    | Or { name : String, desc : String, choice : Result String Bool }
+applyBinary : B.Operator -> List Expression -> List Expression
+applyBinary o stack =
+    Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
 
-type UOperator
-    = Neg
-    | Inv
-
-
-type alias Value =
-    -- WARNING must be kept in sync with Value.Value
-    { what : Type, for : Uuid, name : String, expr : Expression }
+applyUnary : U.Operator -> List Expression -> List Expression
+applyUnary o stack =
+    Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
 
 
 updateExpr : List Int -> List Int -> Expression -> Expression -> Expression
@@ -51,77 +47,6 @@ updateExpr targetPath currentPath subExpr expr =
             Binary o (updateExpr targetPath (2 :: currentPath) subExpr e1) (updateExpr targetPath (3 :: currentPath) subExpr e2)
 
 
-applyU : UOperator -> List Expression -> List Expression
-applyU o stack =
-    Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
-
-
-applyB : BOperator -> List Expression -> List Expression
-applyB o stack =
-    Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
-
-
-uToString : UOperator -> String
-uToString o =
-    case o of
-        Neg ->
-            "Neg"
-
-        Inv ->
-            "Inv"
-
-
-uToShortString : UOperator -> String
-uToShortString o =
-    case o of
-        Neg ->
-            " - "
-
-        Inv ->
-            "1 / "
-
-
-bToString : BOperator -> String
-bToString o =
-    case o of
-        Add ->
-            "Add"
-
-        Multiply ->
-            "Multiply"
-
-        Or _ ->
-            "Or"
-
-
-bToShortString : BOperator -> String
-bToShortString o =
-    case o of
-        Add ->
-            " + "
-
-        Multiply ->
-            " × "
-
-        Or _ ->
-            " or "
-
-
-allUnary : List UOperator
-allUnary =
-    [ Neg, Inv ]
-
-
-allBinary : List BOperator
-allBinary =
-    [ Add, Multiply, or "" "" Nothing ]
-
-
-or : String -> String -> Maybe Bool -> BOperator
-or n d c =
-    Or { name = n, desc = d, choice = Result.fromMaybe "No choice made" c }
-
-
 encode : Expression -> Encode.Value
 encode e =
     case e of
@@ -134,14 +59,14 @@ encode e =
         Unary operator expr ->
             Encode.object
                 [ ( "type", Encode.string "Unary" )
-                , ( "op", uEncode operator )
+                , ( "op", U.encode operator )
                 , ( "expr", encode expr )
                 ]
 
         Binary operator expr1 expr2 ->
             Encode.object
                 [ ( "type", Encode.string "Binary" )
-                , ( "op", bEncode operator )
+                , ( "op", B.encode operator )
                 , ( "expr1", encode expr1 )
                 , ( "expr2", encode expr2 )
                 ]
@@ -157,78 +82,13 @@ decoder =
                         Decode.map Leaf (Decode.field "obs" Obs.decoder)
 
                     "Unary" ->
-                        Decode.map2 Unary (Decode.field "op" uDecoder) (Decode.field "expr" decoder)
+                        Decode.map2 Unary (Decode.field "op" U.decoder) (Decode.field "expr" decoder)
 
                     "Binary" ->
-                        Decode.map3 Binary (Decode.field "op" bDecoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
+                        Decode.map3 Binary (Decode.field "op" B.decoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
 
                     _ ->
                         Decode.fail "Unknown Expression"
-            )
-
-
-uEncode : UOperator -> Encode.Value
-uEncode op =
-    case op of
-        Neg ->
-            Encode.object [ ( "type", Encode.string "Neg" ) ]
-
-        Inv ->
-            Encode.object [ ( "type", Encode.string "Inv" ) ]
-
-
-uDecoder : Decoder UOperator
-uDecoder =
-    Decode.field "type" Decode.string
-        |> Decode.andThen
-            (\s ->
-                case s of
-                    "Neg" ->
-                        Decode.succeed Neg
-
-                    "Inv" ->
-                        Decode.succeed Inv
-
-                    _ ->
-                        Decode.fail "Unknown Unary Operator"
-            )
-
-
-bEncode : BOperator -> Encode.Value
-bEncode op =
-    case op of
-        Add ->
-            Encode.object [ ( "type", Encode.string "+" ) ]
-
-        Multiply ->
-            Encode.object [ ( "type", Encode.string "*" ) ]
-
-        Or data ->
-            Encode.object
-                [ ( "type", Encode.string "type" )
-                , ( "name", Encode.string data.name )
-                , ( "desc", Encode.string data.desc )
-                , ( "choice", Result.map Encode.bool data.choice |> Result.withDefault Encode.null )
-                ]
-
-
-bDecoder : Decoder BOperator
-bDecoder =
-    Decode.field "type" Decode.string
-        |> Decode.andThen
-            (\s ->
-                case s of
-                    "+" ->
-                        Decode.succeed Add
-
-                    "*" ->
-                        Decode.succeed Multiply
-
-                    "Or" ->
-                        Decode.map3 or (Decode.field "name" Decode.string) (Decode.field "desc" Decode.string) (Decode.field "choice" (Decode.nullable Decode.bool))
-
-                    _ ->
-                        Decode.fail "Unknown Unary Operator"
             )
 
 
