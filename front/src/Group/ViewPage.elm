@@ -9,6 +9,8 @@ import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
+import Scope.Scope as Scope exposing (Scope)
+import Scope.View
 import Shared
 import Spa.Page
 import Type exposing (Type)
@@ -42,6 +44,7 @@ type alias Model =
     , what : Type
     , uuid : Uuid
     , type_ : Maybe Uuid
+    , scope : Scope
     , groups : List Uuid
     }
 
@@ -77,6 +80,7 @@ init s f =
       , what = mainTType
       , uuid = f.uuid
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
+      , scope = Dict.get (Uuid.toString f.uuid) s.state.groups |> Maybe.map .scope |> Maybe.withDefault Scope.Anything
       , groups =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
@@ -113,16 +117,18 @@ viewContent model s =
         "Group"
         [ button.primary Edit "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
+        , h2 "Can contain:"
+        , text <| Scope.View.toDisplay s model.scope
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict s { context = ( Type.TType TType.Group, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

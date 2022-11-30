@@ -403,7 +403,7 @@ viewContent model s =
                         |> Maybe.withDefault none
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model.groups
+                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

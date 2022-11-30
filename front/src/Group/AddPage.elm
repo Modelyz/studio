@@ -14,7 +14,8 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope
+import Scope.Scope as Scope exposing (Scope)
+import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
 import Type
@@ -55,6 +56,7 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
+    , scope : Scope
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -67,6 +69,7 @@ type alias Model =
 
 type Step
     = StepType
+    | StepScope
     | StepIdentifiers
     | StepValues
     | StepGroups
@@ -76,6 +79,7 @@ type Msg
     = InputType (Maybe Uuid)
     | InputIdentifier Identifier
     | InputValue Value
+    | InputScope Scope
     | InputGroups (Dict String Uuid)
     | Button Step.Msg
 
@@ -116,6 +120,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = Nothing
+            , scope = Scope.anything
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -124,7 +129,7 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepScope, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     ( f.uuid
@@ -140,9 +145,13 @@ init s f =
 
                     type_ =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+
+                    scope =
+                        Dict.get (Uuid.toString uuid) s.state.groups |> Maybe.map .scope |> Maybe.withDefault Scope.anything
                 in
                 { adding
                     | type_ = type_
+                    , scope = scope
                     , uuid = uuid
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
@@ -166,6 +175,9 @@ update s msg model =
               }
             , Effect.none
             )
+
+        InputScope scope ->
+            ( { model | scope = scope }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -231,13 +243,16 @@ checkStep model =
         Step StepGroups ->
             Ok ()
 
+        Step.Step StepScope ->
+            Ok ()
+
 
 validate : Model -> Result String TypedType
 validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid uuid Scope.empty
+            Ok <| constructor typedConstructor m.uuid uuid m.scope
 
         Nothing ->
             Err "You must select a Group Type"
@@ -259,8 +274,11 @@ viewContent model s =
                         }
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
+                Step.Step StepScope ->
+                    selectScope s InputScope model.scope Scope.anything "What can be in the group?"
+
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model.groups
+                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

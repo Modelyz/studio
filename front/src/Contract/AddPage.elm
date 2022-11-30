@@ -255,7 +255,7 @@ viewContent model s =
                         (s.state.contractTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model.groups
+                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

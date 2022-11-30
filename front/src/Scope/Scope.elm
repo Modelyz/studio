@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), compare, decoder, empty, encode, or, toString, toType)
+module Scope.Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType)
 
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
@@ -12,6 +12,8 @@ type
     -- a scope is the definition of a set of items:
     -- Either an empty set:
     = Empty
+      -- or the set of all sets
+    | Anything
       -- A set with a single item of type Type:
     | IsItem Type Uuid
       -- the set of items of type Type whose type_ or parent is child of a precise user type
@@ -32,6 +34,11 @@ type
 empty : Scope
 empty =
     Empty
+
+
+anything : Scope
+anything =
+    Anything
 
 
 or : Scope -> Scope -> Scope
@@ -63,8 +70,11 @@ encode scope =
         Identified id ->
             Encode.object [ ( "Identified", Identification.encode id ) ]
 
+        Anything ->
+            Encode.string "Anything"
+
         Empty ->
-            Encode.string "Empty"
+            Encode.string "Nothing"
 
 
 pairDecoder : (Scope -> Scope -> Scope) -> String -> Decoder Scope
@@ -115,7 +125,10 @@ toString scope =
     -- TODO remove to force use of Scope.View.toDisplay
     case scope of
         Empty ->
-            "Empty"
+            "Nothing"
+
+        Anything ->
+            "Anything"
 
         IsItem t uuid ->
             Type.toString t ++ "(uuid=" ++ Uuid.toString uuid ++ ")"
@@ -148,6 +161,10 @@ toType : Scope -> Maybe Type
 toType scope =
     case scope of
         Empty ->
+            Nothing
+
+        Anything ->
+            -- FIXME this is inconsistent
             Nothing
 
         IsItem t _ ->

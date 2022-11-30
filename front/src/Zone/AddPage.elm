@@ -11,11 +11,13 @@ import Element.Font as Font
 import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope)
+import Scope.Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
+import Type
+import Typed.Type as TType
 import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
@@ -261,11 +263,16 @@ inputFragments s model =
                     :: ((s.state.identifierTypes
                             |> Dict.values
                             |> List.filter
-                                (\it ->
-                                    containsScope s.state.types model.scope it.scope
-                                )
+                                (\it -> containsScope s.state.types model.scope it.scope)
                         )
                             |> List.map (.name >> IdentifierName)
+                       )
+                    ++ ((s.state.identifierTypes
+                            |> Dict.values
+                            |> List.filter
+                                (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
+                        )
+                            |> List.map (.name >> GroupIdentifierName)
                        )
                 )
         ]
@@ -296,4 +303,7 @@ inputFragment fragments index fragment =
                 }
 
         IdentifierName _ ->
+            none
+
+        GroupIdentifierName _ ->
             none

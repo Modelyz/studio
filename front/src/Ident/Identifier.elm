@@ -17,9 +17,9 @@ type alias Identifier =
     }
 
 
-select : String -> Dict String Identifier -> Maybe Identifier
+select : String -> Dict String Identifier -> List Identifier
 select name =
-    Dict.filter (\_ i -> i.name == name) >> Dict.values >> List.head
+    Dict.filter (\_ i -> i.name == name) >> Dict.values
 
 
 fromUuid : Uuid -> Dict String Identifier -> Dict String Identifier

@@ -28,7 +28,7 @@ flatSelect s c uuids =
         [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 4, Border.color color.item.border ] <|
             [ h2 c.title
             , c.muuid
-                |> Maybe.map (\uuid -> viewHalfCard (Just <| c.onInput Nothing) s.state.types s.state.configs s.state.identifiers c.what uuid)
+                |> Maybe.map (\uuid -> viewHalfCard (Just <| c.onInput Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped c.what uuid)
                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
             ]
         , c.muuid |> Maybe.map (\_ -> none) |> Maybe.withDefault (h2 c.explain)
@@ -38,7 +38,7 @@ flatSelect s c uuids =
                 (wrappedRow [ padding 10, spacing 10 ]
                     (uuids
                         |> Dict.values
-                        |> List.map (\uuid -> tClickableCard (c.onInput (Just uuid)) s.state.types s.state.configs s.state.identifiers c.what uuid)
+                        |> List.map (\uuid -> tClickableCard (c.onInput (Just uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped c.what uuid)
                         |> withDefaultContent (p c.empty)
                     )
                 )

@@ -102,7 +102,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.groups
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.TType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Groups yet. Add your first one!")
                     )

@@ -35,6 +35,8 @@ import Value.ValueType as ValueType exposing (ValueType)
 
 
 type alias State =
+    -- Reminder: Dicts in the State are actually meant to bu used as Sets
+    -- using a relevant comparable so that each entity can appear only once
     { pendingMessages : Dict Int Message
     , lastMessageTime : Time.Posix
     , uuids : Dict String Uuid

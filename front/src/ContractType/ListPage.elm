@@ -102,7 +102,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.contractTypes
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers (Type.HType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Contract Types yet. Add your first one!")
                     )

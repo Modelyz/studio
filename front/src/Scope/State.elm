@@ -173,3 +173,6 @@ getUpper types scope =
 
         Empty ->
             Nothing
+
+        Anything ->
+            Nothing

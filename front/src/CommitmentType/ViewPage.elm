@@ -121,7 +121,7 @@ viewContent model s =
             |> displayIdentifierDict "(none)"
         , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
         , h2 "Values:"
@@ -129,7 +129,7 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.HType HType.CommitmentType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
         , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.CommitmentType, model.uuid ) }) |> Maybe.withDefault (text "(none)")

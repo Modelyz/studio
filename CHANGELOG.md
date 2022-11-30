@@ -5,6 +5,8 @@
 ## version 10 -- unreleased
 
 * Ability to select the provider and receiver of a commitment
+* Ability to restrict what a group can contain
+* Ability to select the Identifiers of groups in the Zone display
 
 ## version 9 -- 2022-11-14
 

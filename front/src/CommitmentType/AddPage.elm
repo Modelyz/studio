@@ -54,7 +54,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , mpuuid : Maybe Uuid
+    , type_ : Maybe Uuid
     , providers : Scope
     , receivers : Scope
     , flowscope : Scope
@@ -126,7 +126,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , mpuuid = Nothing
+            , type_ = Nothing
             , providers = Scope.empty
             , receivers = Scope.empty
             , flowscope = Scope.empty
@@ -161,7 +161,7 @@ init s f =
                             |> List.map (\link -> ( Uuid.toString link.group, link.group ))
                             |> Dict.fromList
 
-                    mpuuid =
+                    type_ =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
 
                     ct =
@@ -171,13 +171,13 @@ init s f =
                         Maybe.map .flow ct |> Maybe.withDefault (HasType (Type.TType TType.Commitment))
                 in
                 { adding
-                    | mpuuid = mpuuid
+                    | type_ = type_
                     , uuid = uuid
                     , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
                     , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
                     , flowscope = flowscope
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid mpuuid False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid mpuuid False
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                     , editor =
@@ -196,7 +196,7 @@ update s msg model =
     case msg of
         SelectType mh ->
             ( { model
-                | mpuuid = mh
+                | type_ = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
                 , editor = Expression.Editor.init s (Maybe.map (HasUserType (Type.TType TType.Commitment)) mh |> Maybe.withDefault (HasType (Type.TType TType.Commitment))) []
@@ -298,7 +298,7 @@ checkStep model =
 validate : Model -> Result String CommitmentType
 validate m =
     Result.map
-        (constructor hierarchicConstructor m.uuid m.mpuuid m.providers m.receivers m.flowscope)
+        (constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flowscope)
         (Expression.Editor.checkExpression m.editor)
 
 
@@ -310,7 +310,7 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.CommitmentType
-                        , muuid = model.mpuuid
+                        , muuid = model.type_
                         , onInput = SelectType
                         , title = "Parent Type:"
                         , explain = "You can choose among the following types:"
@@ -332,7 +332,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups } s model.groups
+                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

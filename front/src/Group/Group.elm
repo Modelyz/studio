@@ -14,7 +14,7 @@ type alias Group =
     , uuid : Uuid
     , type_ : Uuid
 
-    -- TODO what's the scope of a group?
+    -- The scope defines what a group can contain
     , scope : Scope
     }
 
