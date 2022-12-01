@@ -103,6 +103,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.events
+                        |> Dict.filter (\_ c -> model.filter |> Maybe.map ((==) c.type_) |> Maybe.withDefault True)
                         |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
