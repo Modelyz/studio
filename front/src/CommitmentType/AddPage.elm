@@ -104,10 +104,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.CommitmentType Route.Add ->
+        Route.Entity Route.CommitmentType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
-        Route.Entity Route.CommitmentType (Route.Edit uuid) ->
+        Route.Entity Route.CommitmentType (Route.Edit uuid _) ->
             Just { route = route, uuid = Uuid.fromString uuid }
 
         _ ->
@@ -245,7 +245,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
                                 ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
-                        , redirect s.navkey (Route.Entity Route.CommitmentType (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.CommitmentType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
                         ]
                     )
 

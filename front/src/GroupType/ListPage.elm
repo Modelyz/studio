@@ -77,7 +77,7 @@ update s msg model =
             ( model, Route.redirectAdd s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.GroupType (Route.View (Uuid.toString uuid))) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.GroupType (Route.View (Uuid.toString uuid) Nothing)) |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )

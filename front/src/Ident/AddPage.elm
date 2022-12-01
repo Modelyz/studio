@@ -108,10 +108,10 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
-        Route.Entity Route.IdentifierType Route.Add ->
+        Route.Entity Route.IdentifierType (Route.Add _) ->
             Just { route = route, itid = "" }
 
-        Route.Entity Route.IdentifierType (Route.Edit itid) ->
+        Route.Entity Route.IdentifierType (Route.Edit itid _) ->
             Just { route = route, itid = itid }
 
         _ ->

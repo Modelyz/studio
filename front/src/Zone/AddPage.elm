@@ -61,10 +61,10 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Configuration Route.Add ->
+        Route.Entity Route.Configuration (Route.Add _) ->
             Just { route = route, zid = "" }
 
-        Route.Entity Route.Configuration (Route.Edit zid) ->
+        Route.Entity Route.Configuration (Route.Edit zid _) ->
             Just { route = route, zid = zid }
 
         _ ->

@@ -1,4 +1,4 @@
-module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, lenToPx, map, notFound, onEnter, p, separator, viewSelector, withDefaultContent, zero)
+module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, lenToPx, map, notFound, onEnter, p, separator, switch, viewSelector, withDefaultContent, zero)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -259,3 +259,21 @@ bound m mm x =
 lenToPx : String -> String
 lenToPx str =
     bound 14 30 (35 - String.length str) |> String.fromInt |> flip (++) "px"
+
+
+switch : msg -> Bool -> Element msg
+switch onSwitch b =
+    row [ pointer, onClick onSwitch, Background.color color.content.background, width (px 48), height (px 24), Border.color color.content.background, Border.width 2, Border.rounded 12 ]
+        [ row
+            [ Background.color color.item.selected
+            , width (px 24)
+            , height fill
+            , if b then
+                alignLeft
+
+              else
+                alignRight
+            , Border.rounded 12
+            ]
+            []
+        ]

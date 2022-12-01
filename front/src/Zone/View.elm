@@ -14,6 +14,7 @@ import Zone.Zone exposing (Zone)
 
 display : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Dict String Identifier -> Dict String Link -> Type -> Uuid -> String
 display types configs zone allIds allGroupLinks t uuid =
+    -- TODO replace types configs allIds allGroupLinks with just s
     Config.getMostSpecific types configs zone (IsItem t uuid)
         |> Maybe.map
             (\(ZoneConfig _ fragments _) ->

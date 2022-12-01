@@ -41,7 +41,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Configuration (Route.View zid) ->
+        Route.Entity Route.Configuration (Route.View zid _) ->
             Just { route = route, zid = zid }
 
         _ ->
@@ -67,7 +67,7 @@ update s msg model =
             model.config
                 |> Maybe.map
                     (\c ->
-                        ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration <| Route.Edit (Configuration.compare c) )
+                        ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration <| Route.Edit (Configuration.compare c) Nothing )
                     )
                 |> Maybe.withDefault ( model, Effect.none )
 

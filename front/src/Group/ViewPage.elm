@@ -35,6 +35,7 @@ mainHType =
 
 type alias Flags =
     { route : Route
+    , tuuid : Maybe String
     , uuid : Uuid
     }
 
@@ -67,8 +68,8 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Group (Route.View uuid) ->
-            Uuid.fromString uuid |> Maybe.map (Flags route)
+        Route.Entity Route.Group (Route.View uuid tuuid) ->
+            Uuid.fromString uuid |> Maybe.map (Flags route tuuid)
 
         _ ->
             Nothing
@@ -98,7 +99,7 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group (Route.List Nothing) )
 
         Edit ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.Edit (Uuid.toString model.uuid) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
 
 
 view : Shared.Model -> Model -> View Msg

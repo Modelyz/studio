@@ -1,15 +1,22 @@
-module Route exposing (EntitySegment(..), Route(..), View(..), all, goBack, redirect, redirectAdd, toDesc, toRoute, toString)
+module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), all, goBack, redirect, redirectAdd, toDesc, toRoute, toString)
 
 import Browser.Navigation as Nav
+import Hierarchy.Type as HType
+import Prng.Uuid as Uuid exposing (Uuid)
+import State exposing (State)
+import Type exposing (Type)
+import Typed.Type as TType
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (QueryParameter, absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
+import Zone.View
+import Zone.Zone exposing (Zone(..))
 
 
 type Route
     = Home
-    | Entity EntitySegment View
+    | Entity EntitySegment ViewSegment
 
 
 type CustomUrl
@@ -36,6 +43,35 @@ type EntitySegment
     | Configuration
 
 
+toType : EntitySegment -> Maybe Type
+toType s =
+    case s of
+        Resource ->
+            Just <| Type.HType HType.ResourceType
+
+        Event ->
+            Just <| Type.HType HType.EventType
+
+        Agent ->
+            Just <| Type.HType HType.AgentType
+
+        Commitment ->
+            Just <| Type.HType HType.CommitmentType
+
+        Contract ->
+            Just <| Type.HType HType.ContractType
+
+        Process ->
+            Just <| Type.HType HType.ProcessType
+
+        Group ->
+            Just <| Type.HType HType.GroupType
+
+        _ ->
+            Nothing
+
+
+all : List EntitySegment
 all =
     [ Resource
     , Event
@@ -57,11 +93,11 @@ all =
     ]
 
 
-type View
-    = View String
-    | Edit String
+type ViewSegment
+    = View String (Maybe String)
+    | Edit String (Maybe String)
     | List (Maybe String)
-    | Add
+    | Add (Maybe String)
 
 
 entityParser : Parser (EntitySegment -> a) a
@@ -179,27 +215,27 @@ entityToUrl e =
             "configuration"
 
 
-viewParser : Parser (View -> a) a
+viewParser : Parser (ViewSegment -> a) a
 viewParser =
     oneOf
-        [ map View (s "view" </> encodedString)
-        , map Add (s "add")
-        , map Edit (s "edit" </> encodedString)
+        [ map View (s "view" </> encodedString <?> Query.string "type")
+        , map Add (s "add" <?> Query.string "type")
+        , map Edit (s "edit" </> encodedString <?> Query.string "type")
         , map List (s "list" <?> Query.string "type")
         ]
 
 
-viewToCustomUrl : View -> CustomUrl
+viewToCustomUrl : ViewSegment -> CustomUrl
 viewToCustomUrl v =
     case v of
-        View s ->
-            CustomUrl [ "view", percentEncode s ] []
+        View s t ->
+            CustomUrl [ "view", percentEncode s ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
 
-        Add ->
-            CustomUrl [ "add" ] []
+        Add t ->
+            CustomUrl [ "add" ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
 
-        Edit s ->
-            CustomUrl [ "edit", percentEncode s ] []
+        Edit s t ->
+            CustomUrl [ "edit", percentEncode s ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
 
         List t ->
             CustomUrl [ "list" ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
@@ -244,11 +280,14 @@ toString r =
             customToString (viewToCustomUrl v |> and (CustomUrl [ entityToUrl e ] []))
 
 
-toDesc : Route -> String
-toDesc r =
+toDesc : State -> Route -> String
+toDesc s r =
     case r of
         Home ->
             "Home"
+
+        Entity e (List (Just uuid)) ->
+            Maybe.map2 (Zone.View.display s.types s.configs SmallcardTitle s.identifiers s.grouped) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e
@@ -260,13 +299,29 @@ redirect navkey =
     toString >> Nav.pushUrl navkey
 
 
+getType : ViewSegment -> Maybe String
+getType v =
+    case v of
+        Add t ->
+            t
+
+        Edit _ t ->
+            t
+
+        List t ->
+            t
+
+        View _ t ->
+            t
+
+
 redirectAdd : Nav.Key -> Route -> Cmd msg
 redirectAdd navkey route =
     Nav.pushUrl navkey <|
         toString <|
             case route of
-                Entity e _ ->
-                    Entity e Add
+                Entity e v ->
+                    Entity e (Add (getType v))
 
                 Home ->
                     Home
@@ -282,14 +337,14 @@ goBack navkey route =
 
                 Entity e v ->
                     case v of
-                        Edit s ->
-                            Entity e (View s)
+                        Edit s t ->
+                            Entity e (View s t)
 
-                        View _ ->
-                            Entity e (List Nothing)
+                        View _ t ->
+                            Entity e (List t)
 
-                        Add ->
-                            Entity e (List Nothing)
+                        Add t ->
+                            Entity e (List t)
 
                         List _ ->
                             Home

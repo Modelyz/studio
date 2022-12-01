@@ -29,6 +29,7 @@ type alias Model =
     , navkey : Nav.Key
     , windowSize : WindowSize
     , menu : Menu
+    , admin : Bool
 
     -- ES and WS related
     , iostatus : IOStatus
@@ -46,6 +47,7 @@ type alias Model =
 type Msg
     = WindowResized WindowSize
     | ToggleMenu
+    | SwitchAdmin
     | SetRoute Route
     | WSDisconnected Decode.Value
     | WSError Decode.Value
@@ -99,6 +101,7 @@ init value navkey =
 
                     else
                         Desktop
+              , admin = True
               , iostatus = ESReading
               , wsstatus = WSClosed
               , timeoutReconnect = 1
@@ -115,6 +118,7 @@ init value navkey =
               , route = Route.Home
               , navkey = navkey
               , windowSize = WindowSize 1024 768
+              , admin = False
               , menu = Desktop
               , iostatus = IOError <| "Wrong init flags: " ++ errorToString err
               , wsstatus = WSClosed
@@ -158,6 +162,13 @@ update msg model =
 
                         MobileClosed ->
                             MobileOpen
+              }
+            , Cmd.none
+            )
+
+        SwitchAdmin ->
+            ( { model
+                | admin = not model.admin
               }
             , Cmd.none
             )

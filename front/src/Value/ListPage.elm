@@ -40,7 +40,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ValueType (Route.List _) ->
+        Route.Entity Route.ValueType (Route.List tuuid) ->
             Just { route = route }
 
         _ ->
@@ -61,10 +61,10 @@ update s msg model =
             )
 
         Add ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType Route.Add )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.Add Nothing) )
 
         View vtid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.ValueType (Route.View vtid)) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.ValueType (Route.View vtid Nothing)) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

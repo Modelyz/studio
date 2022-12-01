@@ -9,7 +9,7 @@ import IOStatus as IO
 import Prng.Uuid as Uuid
 import Route exposing (Route, toString)
 import Shared
-import View exposing (hamburger, separator)
+import View exposing (hamburger, separator, switch)
 import View.Style as Style exposing (color, navbarHoverstyle)
 import Websocket as WS
 
@@ -25,19 +25,44 @@ view title s =
 
 links : Shared.Model -> Route -> List (Element Shared.Msg)
 links s r =
+    if s.admin then
+        adminLinks s r
+
+    else
+        userLinks s r
+
+
+adminLinks : Shared.Model -> Route -> List (Element Shared.Msg)
+adminLinks s r =
     menuitem s r Route.Home
         :: List.map
             (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
             Route.all
-        ++ (s.state.processTypes
+
+
+userLinks : Shared.Model -> Route -> List (Element Shared.Msg)
+userLinks s r =
+    menuitem s r Route.Home
+        :: (s.state.processTypes
                 |> Dict.values
                 |> List.map
                     (\pt ->
                         let
-                            name =
+                            uuid =
                                 Uuid.toString pt.uuid
                         in
-                        menuitem s r (Route.Entity Route.ProcessType (Route.View name))
+                        menuitem s r (Route.Entity Route.Process (Route.List <| Just uuid))
+                    )
+           )
+        ++ (s.state.commitmentTypes
+                |> Dict.values
+                |> List.map
+                    (\ct ->
+                        let
+                            uuid =
+                                Uuid.toString ct.uuid
+                        in
+                        menuitem s r (Route.Entity Route.Commitment (Route.List <| Just uuid))
                     )
            )
 
@@ -66,8 +91,14 @@ desktop s r =
             ++ [ column [ width fill, spacing 5, alignBottom ]
                     [ row [ centerX, Font.color color.navbar.text, padding 10, Font.size 15, Font.bold ] [ text "Studio ", newTabLink [ Font.regular ] { url = "/changelog", label = text <| "(version " ++ String.fromInt s.version ++ ")" } ]
                     , separator color.navbar.separator
-                    , el [ paddingXY 0 5, htmlAttribute <| Attr.title <| WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
-                    , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| "IO  " ++ IO.toEmoji s.iostatus)
+                    , row [ width fill ]
+                        [ column [ width fill ]
+                            [ el [ paddingXY 0 5, htmlAttribute <| Attr.title <| WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
+                            , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| "IO  " ++ IO.toEmoji s.iostatus)
+                            ]
+                        , column [ width fill, centerX, centerY ]
+                            [ switch Shared.SwitchAdmin s.admin ]
+                        ]
 
                     {- , el [ Font.size 15, htmlAttribute <| Attr.id "LastMessageTime" ] (text <| "LastMessageTime=" ++ (String.fromInt <| posixToMillis s.state.lastMessageTime))
                        , el [ Font.size 15, htmlAttribute <| Attr.id "timeoutReconnect" ] (text <| "timeoutReconnect=" ++ (String.fromInt <| s.timeoutReconnect))
@@ -109,4 +140,4 @@ menuitem s currentRoute route =
                     []
                )
         )
-        { url = toString route, label = text <| Route.toDesc route }
+        { url = toString route, label = text <| Route.toDesc s.state route }

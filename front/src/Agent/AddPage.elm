@@ -41,7 +41,7 @@ hereType =
 
 
 type alias Flags =
-    { route : Route, uuid : Maybe Uuid }
+    { route : Route, uuid : Maybe Uuid, tuuid : Maybe String }
 
 
 type alias Model =
@@ -88,11 +88,11 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Agent Route.Add ->
-            Just { route = route, uuid = Nothing }
+        Route.Entity Route.Agent (Route.Add tuuid) ->
+            Just { route = route, uuid = Nothing, tuuid = tuuid }
 
-        Route.Entity Route.Agent (Route.Edit uuid) ->
-            Just { route = route, uuid = Uuid.fromString uuid }
+        Route.Entity Route.Agent (Route.Edit uuid tuuid) ->
+            Just { route = route, uuid = Uuid.fromString uuid, tuuid = tuuid }
 
         _ ->
             Nothing
@@ -110,7 +110,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , type_ = Nothing
+            , type_ = Maybe.andThen Uuid.fromString f.tuuid
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -190,7 +190,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
                                 ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
                             )
-                        , redirect s.navkey (Route.Entity Route.Agent (Route.View (Uuid.toString model.uuid))) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Agent (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]
                     )
 

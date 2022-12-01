@@ -59,7 +59,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ProcessType (Route.View uuid) ->
+        Route.Entity Route.ProcessType (Route.View uuid _) ->
             Uuid.fromString uuid |> Maybe.map (Flags route)
 
         _ ->
@@ -86,10 +86,10 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.List Nothing )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.List (Maybe.map Uuid.toString model.type_) )
 
         Edit ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.Edit (Uuid.toString model.uuid) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ProcessType <| Route.Edit (Uuid.toString model.uuid) Nothing )
 
 
 view : Shared.Model -> Model -> View Msg
