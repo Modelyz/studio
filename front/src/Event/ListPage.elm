@@ -93,7 +93,7 @@ viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
         entities =
-            s.state.agents
+            s.state.events
                 |> Dict.filter (\_ c -> model.filter |> Maybe.map (Type.isParentOf s.state.types c.type_) |> Maybe.withDefault True)
                 |> Dict.values
     in
