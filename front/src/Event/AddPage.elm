@@ -13,7 +13,6 @@ import Expression.Input
 import Flow exposing (Flow)
 import Flow.Input
 import Group.Group as Group exposing (Group)
-import Group.Groupable as Groupable
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
