@@ -110,8 +110,11 @@ decoder =
             |> Decode.andThen
                 (\s ->
                     case s of
-                        "Empty" ->
+                        "Nothing" ->
                             Decode.succeed Empty
+
+                        "Anything" ->
+                            Decode.succeed Anything
 
                         _ ->
                             Decode.fail "Invalid scope definition"
