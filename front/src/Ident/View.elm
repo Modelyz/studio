@@ -36,7 +36,7 @@ identifierColumn s it =
         \( uuid, _, _ ) ->
             s.state.identifiers
                 |> Dict.values
-                |> List.filter (\id -> id.name == it.name && id.identifiable == uuid)
+                |> List.filter (\id -> id.name == it.name && id.for == uuid)
                 |> List.map Identifier.toValue
                 |> List.head
                 |> Maybe.withDefault ""

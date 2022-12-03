@@ -40,7 +40,6 @@ isType t =
 
 toType : Type -> Maybe Type
 toType t =
-    -- TODO rename to be more explicit
     if isType t then
         Just t
 
@@ -50,7 +49,6 @@ toType t =
 
 fromType : Type -> Maybe Type
 fromType t =
-    -- TODO rename to be more explicit
     if isType t then
         fromString <| String.slice 0 -4 <| toString t
 

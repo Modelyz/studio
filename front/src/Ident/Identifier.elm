@@ -11,7 +11,7 @@ import Type exposing (Type)
 type alias Identifier =
     -- This is the value of an identifier
     { what : Type
-    , identifiable : Uuid -- TODO rename to 'for'
+    , for : Uuid
     , name : String
     , fragments : List Fragment
     }
@@ -24,19 +24,19 @@ select name =
 
 fromUuid : Uuid -> Dict String Identifier -> Dict String Identifier
 fromUuid uuid =
-    Dict.filter (\_ i -> uuid == i.identifiable)
+    Dict.filter (\_ i -> uuid == i.for)
 
 
 compare : Identifier -> String
 compare i =
-    Type.compare i.what ++ "/" ++ Uuid.toString i.identifiable ++ "/" ++ i.name
+    Type.compare i.what ++ "/" ++ Uuid.toString i.for ++ "/" ++ i.name
 
 
 encode : Identifier -> Encode.Value
 encode i =
     Encode.object
         [ ( "what", Type.encode i.what )
-        , ( "identifiable", Uuid.encode i.identifiable )
+        , ( "for", Uuid.encode i.for )
         , ( "name", Encode.string i.name )
         , ( "fragments", Encode.list Fragment.encode i.fragments )
         ]
@@ -46,7 +46,7 @@ decoder : Decoder Identifier
 decoder =
     Decode.map4 Identifier
         (Decode.field "what" Type.decoder)
-        (Decode.field "identifiable" Uuid.decoder)
+        (Decode.field "for" Uuid.decoder)
         (Decode.field "name" Decode.string)
         (Decode.field "fragments" (Decode.list Fragment.decoder))
 

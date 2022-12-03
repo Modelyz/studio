@@ -149,7 +149,7 @@ aggregate (Message b p) state =
                         |> List.map
                             -- rebuild the identifier compare keys
                             (\i ->
-                                if i.name == old.name && containsScope state.types (IsItem i.what i.identifiable) new.scope then
+                                if i.name == old.name && containsScope state.types (IsItem i.what i.for) new.scope then
                                     let
                                         newi =
                                             { i | name = new.name }
@@ -170,7 +170,7 @@ aggregate (Message b p) state =
                     -- or if this is the same name, whose item is not in the scope of the identifier type
                     state.identifiers
                         |> Dict.filter
-                            (\_ i -> i.name /= it.name || not (containsScope state.types (IsItem i.what i.identifiable) it.scope))
+                            (\_ i -> i.name /= it.name || not (containsScope state.types (IsItem i.what i.for) it.scope))
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
