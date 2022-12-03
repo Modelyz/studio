@@ -168,7 +168,7 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.commitmentTypes
 
                     flowscope =
-                        Maybe.map .flow ct |> Maybe.withDefault (HasType (Type.TType TType.Commitment))
+                        Maybe.map .flowscope ct |> Maybe.withDefault (HasType (Type.TType TType.Commitment))
                 in
                 { adding
                     | type_ = type_

@@ -132,9 +132,9 @@ init s f =
 
         isNew =
             f.uuid == Nothing
+
         type_ =
             Maybe.andThen Uuid.fromString f.tuuid
-
 
         adding =
             { route = f.route
@@ -394,7 +394,7 @@ viewContent model s =
                                     qty
                                 , Flow.Input.input
                                     { flow = model.flow
-                                    , scope = ct.flow
+                                    , scope = ct.flowscope
                                     , onSelect = InputFlow
                                     , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
                                     }

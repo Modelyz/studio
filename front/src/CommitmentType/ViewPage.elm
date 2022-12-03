@@ -138,6 +138,6 @@ viewContent model s =
         -- TODO what about resource conversions?
         , CommitmentType.View.svg
             (Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
-            (Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.flowscope >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
             (Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
         ]

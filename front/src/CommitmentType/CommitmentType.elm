@@ -17,9 +17,7 @@ type alias CommitmentType =
     , parent : Maybe Uuid
     , providers : Scope
     , receivers : Scope
-
-    -- TODO rename flow to flowscope
-    , flow : Scope
+    , flowscope : Scope
     , qty : Expression
     }
 
@@ -32,7 +30,7 @@ encode ct =
         , ( "parent", Maybe.map Uuid.encode ct.parent |> Maybe.withDefault Encode.null )
         , ( "providers", Scope.encode ct.providers )
         , ( "receivers", Scope.encode ct.receivers )
-        , ( "flow", Scope.encode ct.flow )
+        , ( "flowscope", Scope.encode ct.flowscope )
         , ( "qty", Expression.encode ct.qty )
         ]
 
@@ -55,5 +53,5 @@ decoder =
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "providers" Scope.decoder)
         (Decode.field "receivers" Scope.decoder)
-        (Decode.field "flow" Scope.decoder)
+        (Decode.field "flowscope" Scope.decoder)
         (Decode.field "qty" Expression.decoder)
