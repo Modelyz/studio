@@ -94,7 +94,7 @@ viewContent model s =
     let
         entities =
             s.state.agents
-                |> Dict.filter (\_ c -> model.filter |> Maybe.map (Type.isParentOf s.state.types c.type_) |> Maybe.withDefault False)
+                |> Dict.filter (\_ c -> model.filter |> Maybe.map (Type.isParentOf s.state.types c.type_) |> Maybe.withDefault True)
                 |> Dict.values
     in
     case model.viewtype of
