@@ -17,9 +17,7 @@ type alias EventType =
     , parent : Maybe Uuid
     , providers : Scope
     , receivers : Scope
-
-    -- TODO rename flow to flowscope
-    , flow : Scope
+    , flowscope : Scope
     , qty : Expression
     }
 
@@ -30,6 +28,10 @@ encode et =
         [ ( "what", HType.encode et.what )
         , ( "uuid", Uuid.encode et.uuid )
         , ( "parent", Maybe.map Uuid.encode et.parent |> Maybe.withDefault Encode.null )
+        , ( "providers", Scope.encode et.providers )
+        , ( "receivers", Scope.encode et.receivers )
+        , ( "flowscope", Scope.encode et.flowscope )
+        , ( "qty", Expression.encode et.qty )
         ]
 
 
@@ -41,5 +43,5 @@ decoder =
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "providers" Scope.decoder)
         (Decode.field "receivers" Scope.decoder)
-        (Decode.field "flow" Scope.decoder)
+        (Decode.field "flowscope" Scope.decoder)
         (Decode.field "qty" Expression.decoder)

@@ -164,17 +164,17 @@ init s f =
                     type_ =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
 
-                    ct =
+                    et =
                         Dict.get (Uuid.toString uuid) s.state.eventTypes
 
                     flowscope =
-                        Maybe.map .flow ct |> Maybe.withDefault (HasType (Type.TType TType.Event))
+                        Maybe.map .flowscope et |> Maybe.withDefault (HasType (Type.TType TType.Event))
                 in
                 { adding
                     | type_ = type_
                     , uuid = uuid
-                    , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
-                    , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
+                    , providers = Maybe.map .providers et |> Maybe.withDefault Scope.empty
+                    , receivers = Maybe.map .receivers et |> Maybe.withDefault Scope.empty
                     , flowscope = flowscope
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
@@ -183,7 +183,7 @@ init s f =
                     , editor =
                         Expression.Editor.init s
                             flowscope
-                            (ct |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
+                            (et |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
                 }
             )
         |> Maybe.withDefault adding

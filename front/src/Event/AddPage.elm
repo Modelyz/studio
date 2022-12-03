@@ -132,9 +132,9 @@ init s f =
 
         isNew =
             f.uuid == Nothing
+
         type_ =
             Maybe.andThen Uuid.fromString f.tuuid
-
 
         adding =
             { route = f.route
@@ -206,14 +206,14 @@ update s msg model =
                 , provider =
                     chooseIfSingleton
                         (s.state.agents
-                            |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                            |> Dict.filter (\_ a -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.providers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
                             |> Dict.values
                         )
                 , receiver =
                     chooseIfSingleton
                         (s.state.agents
-                            |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                            |> Dict.filter (\_ a -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.receivers) |> Maybe.withDefault True)
                             |> Dict.map (\_ a -> a.uuid)
                             |> Dict.values
                         )
@@ -339,7 +339,7 @@ viewContent model s =
 
                 Step.Step StepProvider ->
                     Maybe.map
-                        (\ct ->
+                        (\et ->
                             column [ spacing 20 ]
                                 [ flatSelect s
                                     { what = Type.TType TType.Agent
@@ -350,7 +350,7 @@ viewContent model s =
                                     , empty = "(There are no agents yet to choose from)"
                                     }
                                     (s.state.agents
-                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers)
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.providers)
                                         |> Dict.map (\_ a -> a.uuid)
                                     )
                                 ]
@@ -360,7 +360,7 @@ viewContent model s =
 
                 Step.Step StepReceiver ->
                     Maybe.map
-                        (\ct ->
+                        (\et ->
                             column [ spacing 20 ]
                                 [ flatSelect s
                                     { what = Type.TType TType.Agent
@@ -371,7 +371,7 @@ viewContent model s =
                                     , empty = "(There are no agents yet to choose from)"
                                     }
                                     (s.state.agents
-                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers)
+                                        |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.receivers)
                                         |> Dict.map (\_ a -> a.uuid)
                                     )
                                 ]
@@ -381,7 +381,7 @@ viewContent model s =
 
                 Step.Step StepFlow ->
                     Maybe.map2
-                        (\ct qty ->
+                        (\et qty ->
                             column [ spacing 20 ]
                                 [ h2 "Flow from the provider to the receiver"
                                 , Expression.Input.inputExpression
@@ -394,7 +394,7 @@ viewContent model s =
                                     qty
                                 , Flow.Input.input
                                     { flow = model.flow
-                                    , scope = ct.flow
+                                    , scope = et.flowscope
                                     , onSelect = InputFlow
                                     , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
                                     }

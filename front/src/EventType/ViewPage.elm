@@ -43,7 +43,7 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
-    , ct : Maybe EventType
+    , et : Maybe EventType
     , type_ : Maybe Uuid
     , groups : List Uuid
     }
@@ -79,7 +79,7 @@ init s f =
     ( { route = f.route
       , what = mainHType
       , uuid = f.uuid
-      , ct = Dict.get (Uuid.toString f.uuid) s.state.eventTypes
+      , et = Dict.get (Uuid.toString f.uuid) s.state.eventTypes
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped
@@ -132,12 +132,12 @@ viewContent model s =
             |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
-        , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
+        , model.et |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?
         , EventType.View.svg
-            (Maybe.map (.providers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
-            (Maybe.map (.flow >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
-            (Maybe.map (.receivers >> Scope.View.toDisplay s) model.ct |> Maybe.withDefault "(none)")
+            (Maybe.map (.providers >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.flowscope >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.receivers >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
         ]
