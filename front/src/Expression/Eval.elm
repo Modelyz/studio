@@ -17,7 +17,7 @@ import Resource.Resource as Resource
 import Scope.Scope exposing (Scope(..), toType)
 import Scope.State exposing (containsScope)
 import Shared
-import Type exposing (Type, parentOf, typeOf)
+import Type exposing (Type, typeOf)
 import Typed.Type as TType
 import Util exposing (chooseIfSingleton)
 import Value.Value exposing (..)
@@ -77,7 +77,7 @@ step s hl uuid =
             Group.groupsOf s.state.grouped uuid
 
         ResourceLink HardLink.ResourceType ->
-            typeOf s.state.resources s.state.resourceTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         EventLink HardLink.EventProvider ->
             Agent.providerOf s.state.events s.state.agents uuid
@@ -95,13 +95,13 @@ step s hl uuid =
             Group.groupsOf s.state.grouped uuid
 
         EventLink HardLink.EventType ->
-            typeOf s.state.events s.state.eventTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         AgentLink HardLink.AgentGroup ->
             Group.groupsOf s.state.grouped uuid
 
         AgentLink HardLink.AgentType ->
-            typeOf s.state.agents s.state.agentTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         CommitmentLink HardLink.CommitmentProvider ->
             Agent.providerOf s.state.commitments s.state.agents uuid
@@ -119,67 +119,67 @@ step s hl uuid =
             Group.groupsOf s.state.grouped uuid
 
         CommitmentLink HardLink.CommitmentType ->
-            parentOf s.state.commitmentTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         ContractLink HardLink.ContractGroup ->
             Group.groupsOf s.state.grouped uuid
 
         ContractLink HardLink.ContractType ->
-            parentOf s.state.contractTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         ProcessLink HardLink.ProcessGroup ->
             Group.groupsOf s.state.grouped uuid
 
         ProcessLink HardLink.ProcessType ->
-            parentOf s.state.processTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         GroupLink HardLink.GroupGroup ->
             Group.groupsOf s.state.grouped uuid
 
         GroupLink HardLink.GroupType ->
-            parentOf s.state.groupTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         ResourceTypeLink HardLink.ResourceTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         ResourceTypeLink HardLink.ResourceTypeParent ->
-            parentOf s.state.resourceTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         EventTypeLink HardLink.EventTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         EventTypeLink HardLink.EventTypeParent ->
-            parentOf s.state.eventTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         AgentTypeLink HardLink.AgentTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         AgentTypeLink HardLink.AgentTypeParent ->
-            parentOf s.state.agentTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         CommitmentTypeLink HardLink.CommitmentTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         CommitmentTypeLink HardLink.CommitmentTypeParent ->
-            parentOf s.state.commitmentTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         ContractTypeLink HardLink.ContractTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         ContractTypeLink HardLink.ContractTypeParent ->
-            parentOf s.state.contractTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         ProcessTypeLink HardLink.ProcessTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         ProcessTypeLink HardLink.ProcessTypeParent ->
-            parentOf s.state.processTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         GroupTypeLink HardLink.GroupTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
         GroupTypeLink HardLink.GroupTypeParent ->
-            parentOf s.state.groupTypes uuid
+            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         _ ->
             []

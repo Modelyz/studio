@@ -1,4 +1,4 @@
-module Type exposing (Type(..), compare, decoder, encode, parentOf, toHierarchic, toPluralString, toString, typeOf)
+module Type exposing (Type(..), compare, decoder, encode, isChildOf, isParentOf, toHierarchic, toPluralString, toString, typeOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
@@ -6,6 +6,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Typed.Type as TType
+import Util exposing (third)
 
 
 type
@@ -75,27 +76,30 @@ compare =
     toString
 
 
-typeOf : Dict String { a | type_ : Uuid } -> Dict String { b | uuid : Uuid } -> Uuid -> List Uuid
-typeOf entities types uuid =
-    Dict.get (Uuid.toString uuid) entities
-        |> Maybe.map
-            (\e ->
-                types
-                    |> Dict.filter (\_ v -> v.uuid == e.type_)
-                    |> Dict.values
-                    |> List.map .uuid
-            )
-        |> Maybe.withDefault []
+typeOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Maybe Uuid
+typeOf types uuid =
+    Dict.get (Uuid.toString uuid) types |> Maybe.andThen third
 
 
-parentOf : Dict String { a | uuid : Uuid, parent : Maybe Uuid } -> Uuid -> List Uuid
-parentOf types uuid =
-    Dict.get (Uuid.toString uuid) types
-        |> Maybe.map
-            (\e ->
-                types
-                    |> Dict.filter (\_ t -> e.parent |> Maybe.map ((==) t.uuid) |> Maybe.withDefault False)
-                    |> Dict.values
-                    |> List.map .uuid
-            )
-        |> Maybe.withDefault []
+isChildOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Uuid -> Bool
+isChildOf types parent uuid =
+    if uuid == parent then
+        True
+
+    else
+        Dict.get (Uuid.toString uuid) types
+            |> Maybe.andThen third
+            |> Maybe.map
+                (\puuid ->
+                    if parent == puuid then
+                        True
+
+                    else
+                        isChildOf types parent puuid
+                )
+            |> Maybe.withDefault False
+
+
+isParentOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Uuid -> Bool
+isParentOf types parent uuid =
+    isChildOf types uuid parent

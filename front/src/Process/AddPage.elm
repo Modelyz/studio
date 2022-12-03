@@ -107,15 +107,18 @@ init s f =
 
         isNew =
             f.uuid == Nothing
+        type_ =
+            Maybe.andThen Uuid.fromString f.tuuid
+
 
         adding =
             { route = f.route
             , isNew = isNew
-            , type_ = Maybe.andThen Uuid.fromString f.tuuid
+            , type_ = type_
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
-            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ True
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid type_ True
             , oldGroups = Dict.empty
             , groups = Dict.empty
             , warning = ""
@@ -134,14 +137,14 @@ init s f =
                             |> List.map (\link -> ( Uuid.toString link.group, link.group ))
                             |> Dict.fromList
 
-                    type_ =
+                    t =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
                 in
                 { adding
                     | type_ = type_
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid t False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid t False
                     , oldGroups = oldGroups
                     , groups = oldGroups
                 }

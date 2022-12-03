@@ -91,6 +91,12 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        entities =
+            s.state.agents
+                |> Dict.filter (\_ c -> model.filter |> Maybe.map (Type.isParentOf s.state.types c.type_) |> Maybe.withDefault False)
+                |> Dict.values
+    in
     case model.viewtype of
         ViewType.Smallcard ->
             flatContainer s
@@ -102,10 +108,8 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    (s.state.resources
-                        |> Dict.filter (\_ c -> model.filter |> Maybe.map ((==) c.type_) |> Maybe.withDefault True)
-                        |> Dict.map (\_ t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType t.what) t.uuid)
-                        |> Dict.values
+                    (entities
+                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType t.what) t.uuid)
                         |> withDefaultContent (p "There are no Resources yet. Add your first one!")
                     )
                 ]
@@ -122,7 +126,7 @@ viewContent model s =
                     [ spacing 10 ]
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
-                            Dict.values s.state.resources
+                            entities
                                 |> List.map (\a -> ( a.uuid, Type.TType a.what, Just a.uuid ))
                         , columns =
                             (s.state.identifierTypes

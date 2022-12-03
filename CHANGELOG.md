@@ -4,11 +4,16 @@
 
 ## version 10 -- unreleased
 
-* TODO
-* Ability to select the provider and receiver of a commitment
-* Ability to restrict what a group can contain
-* Ability to select the Identifiers of groups in the Zone display
-* User menu with automatic filters and switch to go back to admin menu
+* Select the provider and receiver of an Event or Commitment
+* Restrict what a group can contain
+* Select the Identifiers of Groups in the Zone display of any entity
+* User menu leading to filtered lists, switch to go back to admin menu
+* Display Rational as Floats
+* Choose the Resource or Resource Type of an Event or Commitment
+* Restrict the Resources and Agents in the Event Type or Commitment Type
+* Display the Commitment Type or Event Type as an arrow
+* Improved UI
+* Many internal changes
 
 ## version 9 -- 2022-11-14
 

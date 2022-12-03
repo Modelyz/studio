@@ -58,6 +58,7 @@ type alias State =
     , groupTypes : Dict String GroupType
 
     -- Hierarchy mapping from an entity uuid to its own type and parent type uuid
+    -- TODO turn to a Dict String Type or Something
     , types : Dict String ( Uuid, Type, Maybe Uuid )
 
     -- links
