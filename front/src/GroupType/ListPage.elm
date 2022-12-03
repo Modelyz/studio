@@ -15,6 +15,7 @@ import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Type
+import Type.View
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
@@ -125,13 +126,14 @@ viewContent model s =
                     [ table [ width fill, Background.color color.table.inner.background ]
                         { data =
                             Dict.values s.state.groupTypes
-                                |> List.map (\a -> ( a.uuid, Type.HType a.what, Just a.uuid ))
+                                |> List.map (\a -> ( a.uuid, Type.HType a.what, a.parent ))
                         , columns =
-                            (s.state.identifierTypes
-                                |> Dict.values
-                                |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.HType HType.GroupType)))
-                                |> List.map (identifierColumn s)
-                            )
+                            Type.View.typeColumn s
+                                :: (s.state.identifierTypes
+                                        |> Dict.values
+                                        |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.HType HType.GroupType)))
+                                        |> List.map (identifierColumn s)
+                                   )
                                 ++ [ groupsColumn s ]
                         }
                     ]

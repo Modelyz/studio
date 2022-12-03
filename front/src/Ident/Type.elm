@@ -1,4 +1,4 @@
-module Ident.Type exposing (Type(..), all, allStrings, decoder, encode, fromType, isType, toPluralString, toString, toType)
+module Ident.Type exposing (Type(..), all, allStrings, decoder, encode, toPluralString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -31,29 +31,6 @@ all =
 allStrings : List String
 allStrings =
     List.map toString all
-
-
-isType : Type -> Bool
-isType t =
-    (String.slice 0 4 <| String.reverse <| toString t) == "epyT"
-
-
-toType : Type -> Maybe Type
-toType t =
-    if isType t then
-        Just t
-
-    else
-        fromString <| (\ts -> ts ++ "Type") <| toString t
-
-
-fromType : Type -> Maybe Type
-fromType t =
-    if isType t then
-        fromString <| String.slice 0 -4 <| toString t
-
-    else
-        Just t
 
 
 toString : Type -> String

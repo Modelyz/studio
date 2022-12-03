@@ -1,4 +1,4 @@
-module Type exposing (Type(..), compare, decoder, encode, isChildOf, isParentOf, toHierarchic, toPluralString, toString, typeOf)
+module Type exposing (Type(..), compare, decoder, encode, fromType, isChildOf, isParentOf, isType, toHierarchic, toPluralString, toString, toType, typeOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
@@ -103,3 +103,64 @@ isChildOf types parent uuid =
 isParentOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Uuid -> Bool
 isParentOf types parent uuid =
     isChildOf types uuid parent
+
+
+isType : Type -> Bool
+isType t =
+    (String.slice 0 4 <| String.reverse <| toString t) == "epyT"
+
+
+toType : Type -> Type
+toType t =
+    case t of
+        TType TType.Resource ->
+            HType HType.ResourceType
+
+        TType TType.Event ->
+            HType HType.EventType
+
+        TType TType.Agent ->
+            HType HType.AgentType
+
+        TType TType.Commitment ->
+            HType HType.CommitmentType
+
+        TType TType.Contract ->
+            HType HType.ContractType
+
+        TType TType.Process ->
+            HType HType.ProcessType
+
+        TType TType.Group ->
+            HType HType.GroupType
+
+        _ ->
+            t
+
+
+fromType : Type -> Type
+fromType t =
+    case t of
+        HType HType.ResourceType ->
+            TType TType.Resource
+
+        HType HType.EventType ->
+            TType TType.Event
+
+        HType HType.AgentType ->
+            TType TType.Agent
+
+        HType HType.CommitmentType ->
+            TType TType.Commitment
+
+        HType HType.ContractType ->
+            TType TType.Contract
+
+        HType HType.ProcessType ->
+            TType TType.Process
+
+        HType HType.GroupType ->
+            TType TType.Group
+
+        _ ->
+            t

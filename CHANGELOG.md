@@ -12,6 +12,7 @@
 * Choose the Resource or Resource Type of an Event or Commitment
 * Restrict the Resources and Agents in the Event Type or Commitment Type
 * Display the Commitment Type or Event Type as an arrow
+* Show a type column in the table view
 * Improved UI
 * Many internal changes
 
