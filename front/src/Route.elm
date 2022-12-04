@@ -1,6 +1,7 @@
-module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), all, goBack, redirect, redirectAdd, toDesc, toRoute, toString)
+module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, goBack, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
 
 import Browser.Navigation as Nav
+import Element exposing (Color, rgb255)
 import Hierarchy.Type as HType
 import Prng.Uuid as Uuid exposing (Uuid)
 import State exposing (State)
@@ -43,6 +44,87 @@ type EntitySegment
     | Configuration
 
 
+type ViewSegment
+    = View String (Maybe String)
+    | Edit String (Maybe String)
+    | List (Maybe String)
+    | Add (Maybe String)
+
+
+toTypeFilter : ViewSegment -> Maybe String
+toTypeFilter v =
+    case v of
+        View _ f ->
+            f
+
+        Edit _ f ->
+            f
+
+        List f ->
+            f
+
+        Add f ->
+            f
+
+
+toColor : Route -> Color
+toColor route =
+    case route of
+        Home ->
+            rgb255 0xC5 0xE8 0xF7
+
+        Entity Resource _ ->
+            rgb255 0xD3 0x87 0xF7
+
+        Entity Event _ ->
+            rgb255 0xF7 0x87 0x87
+
+        Entity Agent _ ->
+            rgb255 0x87 0x8E 0xF7
+
+        Entity Commitment _ ->
+            rgb255 0x87 0xF7 0xF2
+
+        Entity Contract _ ->
+            rgb255 0xAC 0xF7 0x87
+
+        Entity Process _ ->
+            rgb255 0xF7 0xF0 0x87
+
+        Entity Group _ ->
+            rgb255 0xF7 0xA7 0x87
+
+        Entity ResourceType _ ->
+            rgb255 0xD3 0x87 0xF7
+
+        Entity EventType _ ->
+            rgb255 0xF7 0x87 0x87
+
+        Entity AgentType _ ->
+            rgb255 0x87 0x8E 0xF7
+
+        Entity CommitmentType _ ->
+            rgb255 0x87 0xF7 0xF2
+
+        Entity ContractType _ ->
+            rgb255 0xAC 0xF7 0x87
+
+        Entity ProcessType _ ->
+            rgb255 0xF7 0xF0 0x87
+
+        Entity GroupType _ ->
+            rgb255 0xF7 0xA7 0x87
+
+        Entity ValueType _ ->
+            rgb255 0xFF 0xFF 0xFF
+
+        Entity IdentifierType _ ->
+            rgb255 0xFF 0xFF 0xFF
+
+        Entity Configuration _ ->
+            rgb255 0xFF 0xFF 0xFF
+
+
 toType : EntitySegment -> Maybe Type
 toType s =
     case s of
@@ -71,8 +153,8 @@ toType s =
             Nothing
 
 
-all : List EntitySegment
-all =
+allEntities : List EntitySegment
+allEntities =
     [ Resource
     , Event
     , Agent
@@ -80,29 +162,32 @@ all =
     , Contract
     , Process
     , Group
-    , ResourceType
+    ]
+
+
+allTypes : List EntitySegment
+allTypes =
+    [ ResourceType
     , EventType
     , AgentType
     , CommitmentType
     , ContractType
     , ProcessType
     , GroupType
-    , ValueType
+    ]
+
+
+allBehaviours : List EntitySegment
+allBehaviours =
+    [ ValueType
     , IdentifierType
     , Configuration
     ]
 
 
-type ViewSegment
-    = View String (Maybe String)
-    | Edit String (Maybe String)
-    | List (Maybe String)
-    | Add (Maybe String)
-
-
 entityParser : Parser (EntitySegment -> a) a
 entityParser =
-    oneOf <| List.map (\e -> map e (s (entityToUrl e))) all
+    oneOf <| List.map (\e -> map e (s (entityToUrl e))) (allEntities ++ allTypes ++ allBehaviours)
 
 
 entityToDesc : EntitySegment -> String

@@ -37,7 +37,10 @@ adminLinks s r =
     menuitem s r Route.Home
         :: List.map
             (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
-            Route.all
+            Route.allTypes
+        ++ List.map
+            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
+            Route.allBehaviours
 
 
 userLinks : Shared.Model -> Route -> List (Element Shared.Msg)
@@ -101,10 +104,10 @@ menuitem s currentRoute route =
     let
         active =
             case currentRoute of
-                Route.Entity e1 _ ->
+                Route.Entity e1 v1 ->
                     case route of
-                        Route.Entity e2 _ ->
-                            e1 == e2
+                        Route.Entity e2 v2 ->
+                            e1 == e2 && Route.toTypeFilter v1 == Route.toTypeFilter v2
 
                         _ ->
                             False
@@ -112,12 +115,8 @@ menuitem s currentRoute route =
                 _ ->
                     False
     in
-    link
-        ([ Font.size 15
-         , padding 10
-         , width fill
-         , mouseOver navbarHoverstyle
-         ]
+    row
+        ([ Font.size 15, spacing 5, padding 10, width fill, mouseOver navbarHoverstyle ]
             ++ (if active then
                     [ Background.color color.navbar.hover ]
 
@@ -125,4 +124,15 @@ menuitem s currentRoute route =
                     []
                )
         )
-        { url = toString route, label = text <| Route.toDesc s.state route }
+        [ el [ Background.color (Route.toColor route), width (px 15), alignLeft ] (text " ")
+        , link
+            ([]
+                ++ (if active then
+                        [ Background.color color.navbar.hover ]
+
+                    else
+                        []
+                   )
+            )
+            { url = toString route, label = text <| Route.toDesc s.state route }
+        ]
