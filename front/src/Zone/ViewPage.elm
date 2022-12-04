@@ -90,7 +90,8 @@ viewContent model s =
                     (Just Close)
                     "Configuration"
                     [ button.primary Edit "Edit" ]
-                    [ text <| Configuration.View.view s c
+                    [ h1 <| Configuration.View.description s c
+                    , text <| Configuration.View.view s c
                     ]
             )
         |> Maybe.withDefault

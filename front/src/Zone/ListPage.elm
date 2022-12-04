@@ -93,8 +93,8 @@ viewContent model s =
                     (\c ->
                         clickableRemovableCard (View <| Configuration.compare c)
                             (Removed c)
-                            (text <| Configuration.View.view s c)
                             (text <| Configuration.View.description s c)
+                            (text <| Configuration.View.view s c)
                     )
                 |> withDefaultContent (p "There are no Configurations yet. Create your first one!")
             )
