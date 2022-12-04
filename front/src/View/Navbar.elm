@@ -108,7 +108,7 @@ menuitem s currentRoute route =
                     False
     in
     row
-        ([ Font.size 15, spacing 5, padding 10, width fill, mouseOver navbarHoverstyle ]
+        ([ Font.size 15, spacing 10, padding 10, width fill, mouseOver navbarHoverstyle ]
             ++ (if active then
                     [ Background.color color.navbar.hover ]
 

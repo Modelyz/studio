@@ -96,7 +96,7 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group (Route.List Nothing) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group (Route.List (Maybe.map Uuid.toString model.type_)) )
 
         Edit ->
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
@@ -104,7 +104,7 @@ update s msg model =
 
 view : Shared.Model -> Model -> View Msg
 view s model =
-    { title = "Adding a Group Type"
+    { title = "Group"
     , attributes = []
     , element = viewContent model
     , route = model.route

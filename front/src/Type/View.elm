@@ -19,7 +19,7 @@ typeColumn s =
     , width = fill
     , view =
         \( _, t, mpuuid ) ->
-            Debug.log "mpuuid" mpuuid
+            mpuuid
                 |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (toType t))
                 |> Maybe.map (text >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ])
                 |> Maybe.withDefault (text "")
