@@ -54,6 +54,7 @@ exeval s c allVals expr =
                                 |> Result.andThen (.expr >> exeval s c allVals)
 
                 ObsLink deeplink ->
+                    -- Tuple.second c.context est le uuid, qui n'existe pas. Donc l'appel de step ensuite est vide
                     dleval s deeplink [ Tuple.second c.context ]
                         |> chooseIfSingleton
                         |> Maybe.map (veval s c s.state.values)
@@ -201,6 +202,7 @@ dleval s deeplink currentlist =
 
         EndPoint scope name ->
             -- use the transmitted list of uuid and find the corresponding values
+            -- FIXME TODO not only groups
             let
                 groups =
                     currentlist |> List.filter (\u -> toType scope |> Maybe.map (\t -> containsScope s.state.types (IsItem t u) scope) |> Maybe.withDefault False)
