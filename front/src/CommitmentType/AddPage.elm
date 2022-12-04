@@ -127,9 +127,9 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = Nothing
-            , providers = Scope.empty
-            , receivers = Scope.empty
-            , flowscope = Scope.empty
+            , providers = Scope.HasType (Type.TType TType.Agent)
+            , receivers = Scope.HasType (Type.TType TType.Agent)
+            , flowscope = Scope.anything
             , editor = Expression.Editor.init s (HasType (Type.TType TType.Commitment)) []
             , uuid = newUuid
             , seed = newSeed
@@ -162,7 +162,7 @@ init s f =
                             |> Dict.fromList
 
                     type_ =
-                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
                     ct =
                         Dict.get (Uuid.toString uuid) s.state.commitmentTypes
@@ -173,8 +173,8 @@ init s f =
                 { adding
                     | type_ = type_
                     , uuid = uuid
-                    , providers = Maybe.map .providers ct |> Maybe.withDefault Scope.empty
-                    , receivers = Maybe.map .receivers ct |> Maybe.withDefault Scope.empty
+                    , providers = Maybe.map .providers ct |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
+                    , receivers = Maybe.map .receivers ct |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
                     , flowscope = flowscope
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
