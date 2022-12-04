@@ -1,4 +1,4 @@
-module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, goBack, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
+module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
 
 import Browser.Navigation as Nav
 import Element exposing (Color, rgb255)
@@ -116,13 +116,13 @@ toColor route =
             rgb255 0xF7 0xA7 0x87
 
         Entity ValueType _ ->
-            rgb255 0xFF 0xFF 0xFF
+            rgb255 0xF7 0xF7 0xF7
 
         Entity IdentifierType _ ->
-            rgb255 0xFF 0xFF 0xFF
+            rgb255 0xF7 0xF7 0xF7
 
         Entity Configuration _ ->
-            rgb255 0xFF 0xFF 0xFF
+            rgb255 0xF7 0xF7 0xF7
 
 
 toType : EntitySegment -> Maybe Type

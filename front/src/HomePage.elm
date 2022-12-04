@@ -1,12 +1,15 @@
 module HomePage exposing (Flags, Model, Msg, match, page)
 
+import Dict
 import Effect exposing (Effect)
 import Element as E exposing (..)
 import Element.Background as Background
+import Prng.Uuid as Uuid
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import View exposing (View, closeMenu)
+import State exposing (State)
+import View exposing (View, closeMenu, h1)
 import View.Style exposing (..)
 
 
@@ -58,37 +61,48 @@ view : Shared.Model -> Model -> View Msg
 view s model =
     { title = "Home"
     , attributes = []
-    , element = \_ -> viewContent
+    , element = \_ -> viewContent s
     , route = model.route
     }
 
 
-cell : String -> String -> Element Msg
-cell title link =
-    column [ width (px 250), height (px 250) ]
-        [ E.link [ mouseOver itemHoverstyle, centerX, centerY, width fill, height fill, Background.color color.item.background ] { url = link, label = column [ alignTop, centerX, padding 10 ] [ text title ] } ]
+cell : Shared.Model -> Route -> Element Msg
+cell s route =
+    column [ width (px 200), height (px 200) ]
+        [ E.link [ mouseOver itemHoverstyle, centerX, centerY, width fill, height fill, Background.color color.item.background ] { url = Route.toString route, label = column [ alignTop, centerX, width fill, padding 10, Background.color (Route.toColor route) ] [ text <| Route.toDesc s.state route ] } ]
 
 
-viewContent : Element Msg
-viewContent =
-    column [ width fill, alignTop ]
+viewContent : Shared.Model -> Element Msg
+viewContent s =
+    if s.admin then
+        adminHome s
+
+    else
+        userHome s
+
+
+adminHome : Shared.Model -> Element Msg
+adminHome s =
+    column [ width fill, alignTop, padding 20 ]
+        [ h1 "Entity Types"
+        , wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
+            (List.map (\es -> cell s (Route.Entity es (Route.List Nothing))) Route.allTypes)
+        , h1 "Behaviours and Configuration"
+        , wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
+            (List.map (\es -> cell s (Route.Entity es (Route.List Nothing))) Route.allBehaviours)
+        ]
+
+
+userHome : Shared.Model -> Element Msg
+userHome s =
+    column [ width fill, alignTop, padding 20 ]
         [ wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
-            [ cell "Process Types" "/process-type/list"
-            , cell "Resource Types" "/resource-type/list"
-            , cell "Event Types" "/event-type/list"
-            , cell "Agent Types" "/agent-type/list"
-            , cell "Commitment Types" "/commitment-type/list"
-            , cell "Contract Types" "/contract-type/list"
-            , cell "Group Types" "/group-type/list"
-            , cell "Processes" "/process/list"
-            , cell "Resources" "/resource/list"
-            , cell "Events" "/event/list"
-            , cell "Agents" "/agent/list"
-            , cell "Commitments" "/commitment/list"
-            , cell "Contracts" "/contract/list"
-            , cell "Groups" "/group/list"
-            , cell "IdentifierTypes" "/identifier-type/list"
-            , cell "ValueTypes" "/value-type/list"
-            , cell "Configuration" "/config/list"
-            ]
+            ((s.state.resourceTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Resource (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.eventTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.agentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.commitmentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.contractTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.processTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid))))
+                ++ (s.state.groupTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid))))
+            )
         ]
