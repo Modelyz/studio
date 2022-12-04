@@ -2,7 +2,7 @@
 
 [Back to app](../)
 
-## version 10 -- unreleased
+## version 10 -- 2022-12-05
 
 * Select the provider and receiver of an Event or Commitment
 * Restrict what a group can contain
@@ -13,6 +13,7 @@
 * Restrict the Resources and Agents in the Event Type or Commitment Type
 * Display the Commitment Type or Event Type as an arrow
 * Show a type column in the table view
+* Improved the View Page of events and commitments
 * Improved UI
 * Many internal changes
 

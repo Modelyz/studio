@@ -1,14 +1,17 @@
-module Flow exposing (Flow(..), decoder, encode, flowOf, uuidOf)
+module Flow exposing (Flow(..), decoder, encode, flowOf, typeOf, uuidOf)
 
 import Dict exposing (Dict)
 import Expression as Expression exposing (Expression)
 import Expression.Rational as Rational exposing (Rational)
+import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Scope.Scope exposing (Scope(..))
+import Type exposing (Type)
+import Typed.Type as TType
 import Value.Value as Value exposing (Value)
 
 
@@ -48,6 +51,16 @@ uuidOf flow =
 
         ResourceTypeFlow rt ->
             rt.uuid
+
+
+typeOf : Flow -> Type
+typeOf flow =
+    case flow of
+        ResourceFlow _ ->
+            Type.TType TType.Resource
+
+        ResourceTypeFlow _ ->
+            Type.HType HType.ResourceType
 
 
 decoder : Decoder Flow

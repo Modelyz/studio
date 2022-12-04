@@ -3,6 +3,10 @@ module Event.ViewPage exposing (Flags, Model, Msg(..), match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
+import Expression exposing (Expression)
+import Expression.Eval exposing (exeval)
+import Expression.Rational as Rational
+import Flow exposing (Flow)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -42,6 +46,10 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
+    , provider : Maybe Uuid
+    , receiver : Maybe Uuid
+    , qty : Maybe Expression
+    , flow : Maybe Flow
     , type_ : Maybe Uuid
     , groups : List Uuid
     }
@@ -74,10 +82,18 @@ match route =
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
+    let
+        event =
+            Dict.get (Uuid.toString f.uuid) s.state.events
+    in
     ( { route = f.route
       , what = mainTType
       , uuid = f.uuid
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
+      , provider = Maybe.map .provider event
+      , receiver = Maybe.map .receiver event
+      , qty = Maybe.map .qty event
+      , flow = Maybe.map .flow event
       , groups =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
@@ -117,8 +133,16 @@ viewContent model s =
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
+        , h2
+            ("What: "
+                ++ (model.qty |> Maybe.map (\expr -> exeval s { context = ( Type.TType TType.Commitment, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
+                ++ " "
+                ++ (model.flow |> Maybe.map (\f -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+            )
+        , h2 ("Provider: " ++ (model.provider |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
-            |> displayIdentifierDict "(none)"
+            |> displayIdentifierDict ""
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict s { context = ( Type.TType TType.Event, model.uuid ) } "(none)" s.state.values

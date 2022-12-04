@@ -3,7 +3,7 @@
 set -e
 
 export APPVERSION=10 # don't forget the CHANGELOG
-export IDBVERSION=40 ### IndexedDB version. Upgrade when a json format change occurs ###
+export IDBVERSION=41 ### IndexedDB version. Upgrade when a json format change occurs ###
 
 if [[ -z "${WSS}" ]]; then
     export WSS="ws://localhost:8080"
