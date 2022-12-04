@@ -135,14 +135,29 @@ init s f =
         type_ =
             Maybe.andThen Uuid.fromString f.tuuid
 
+        met =
+            type_ |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+
         adding =
             { route = f.route
             , isNew = isNew
             , type_ = type_
-            , eventType = Nothing
-            , provider = Nothing
-            , receiver = Nothing
-            , qty = Nothing
+            , eventType = met
+            , provider =
+                chooseIfSingleton
+                    (s.state.agents
+                        |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                        |> Dict.map (\_ a -> a.uuid)
+                        |> Dict.values
+                    )
+            , receiver =
+                chooseIfSingleton
+                    (s.state.agents
+                        |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                        |> Dict.map (\_ a -> a.uuid)
+                        |> Dict.values
+                    )
+            , qty = met |> Maybe.map .qty
             , flow = Nothing
             , uuid = newUuid
             , seed = newSeed
@@ -173,9 +188,9 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.events
                 in
                 { adding
-                    | type_ = event |> Maybe.map .type_
+                    | type_ = t
                     , uuid = uuid
-                    , eventType = type_ |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
+                    , eventType = t |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
                     , provider = event |> Maybe.map .provider
                     , receiver = event |> Maybe.map .receiver
                     , qty = event |> Maybe.map .qty
@@ -288,7 +303,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            checkMaybe model.type_ "You must select a Event Type" |> Result.map (\_ -> ())
+            checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
 
         Step StepProvider ->
             checkMaybe model.provider "You must select a Provider" |> Result.map (\_ -> ())
@@ -313,7 +328,7 @@ validate : Model -> Result String Event
 validate m =
     Result.map5
         (\type_ provider receiver flow qty -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow qty)
-        (checkMaybe m.type_ "You must select a Event Type")
+        (checkMaybe m.type_ "You must select an Event Type")
         (checkMaybe m.provider "You must select a Provider")
         (checkMaybe m.receiver "You must select a Receiver")
         (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
@@ -355,7 +370,7 @@ viewContent model s =
                                 ]
                         )
                         model.eventType
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepReceiver ->
                     Maybe.map
@@ -376,7 +391,7 @@ viewContent model s =
                                 ]
                         )
                         model.eventType
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepFlow ->
                     Maybe.map2
@@ -402,7 +417,7 @@ viewContent model s =
                         )
                         model.eventType
                         model.qty
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups

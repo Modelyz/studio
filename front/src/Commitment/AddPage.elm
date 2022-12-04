@@ -135,14 +135,29 @@ init s f =
         type_ =
             Maybe.andThen Uuid.fromString f.tuuid
 
+        mct =
+            type_ |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.commitmentTypes)
+
         adding =
             { route = f.route
             , isNew = isNew
             , type_ = type_
-            , commitmentType = Nothing
-            , provider = Nothing
-            , receiver = Nothing
-            , qty = Nothing
+            , commitmentType = mct
+            , provider =
+                chooseIfSingleton
+                    (s.state.agents
+                        |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                        |> Dict.map (\_ a -> a.uuid)
+                        |> Dict.values
+                    )
+            , receiver =
+                chooseIfSingleton
+                    (s.state.agents
+                        |> Dict.filter (\_ a -> mct |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                        |> Dict.map (\_ a -> a.uuid)
+                        |> Dict.values
+                    )
+            , qty = mct |> Maybe.map .qty
             , flow = Nothing
             , uuid = newUuid
             , seed = newSeed
@@ -173,9 +188,9 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.commitments
                 in
                 { adding
-                    | type_ = commitment |> Maybe.map .type_
+                    | type_ = t
                     , uuid = uuid
-                    , commitmentType = type_ |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.commitmentTypes)
+                    , commitmentType = t |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.commitmentTypes)
                     , provider = commitment |> Maybe.map .provider
                     , receiver = commitment |> Maybe.map .receiver
                     , qty = commitment |> Maybe.map .qty
@@ -355,7 +370,7 @@ viewContent model s =
                                 ]
                         )
                         model.commitmentType
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This commitment has no type")
 
                 Step.Step StepReceiver ->
                     Maybe.map
@@ -376,7 +391,7 @@ viewContent model s =
                                 ]
                         )
                         model.commitmentType
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This commitment has no type")
 
                 Step.Step StepFlow ->
                     Maybe.map2
@@ -402,7 +417,7 @@ viewContent model s =
                         )
                         model.commitmentType
                         model.qty
-                        |> Maybe.withDefault none
+                        |> Maybe.withDefault (text "This commitment has no type")
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
