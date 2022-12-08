@@ -38,7 +38,7 @@ COPY back /srv/back/
 COPY front /srv/front/
 COPY build.sh /srv/
 COPY CHANGELOG.md /srv/
-RUN ./build.sh -o
+RUN ./build.sh optimize check_changelog
 
 FROM debian:11
 ##############
