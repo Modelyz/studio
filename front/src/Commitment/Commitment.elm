@@ -14,8 +14,8 @@ import Typed.Type as TType
 type alias Commitment =
     { what : TType.Type
     , uuid : Uuid
-    , type_ : Uuid
     , when : Time.Posix
+    , type_ : Uuid
     , provider : Uuid
     , receiver : Uuid
     , flow : Flow
@@ -47,8 +47,8 @@ decoder =
         )
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "type" Uuid.decoder)
         (Decode.field "provider" Uuid.decoder)
         (Decode.field "receiver" Uuid.decoder)
         (Decode.field "flow" Flow.decoder)

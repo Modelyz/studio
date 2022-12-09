@@ -1,5 +1,6 @@
 module Event.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import DateTime
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -15,6 +16,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Time exposing (Posix, millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
 import Util exposing (third)
@@ -52,6 +54,7 @@ type alias Model =
     , flow : Maybe Flow
     , type_ : Maybe Uuid
     , groups : List Uuid
+    , when : Posix
     }
 
 
@@ -99,8 +102,9 @@ init s f =
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
                 |> Dict.values
                 |> List.map (\link -> link.group)
+      , when = Maybe.map .when event |> Maybe.withDefault (millisToPosix 0)
       }
-    , closeMenu f s.menu
+    , Effect.batch [ closeMenu f s.menu ]
     )
 
 
@@ -133,9 +137,10 @@ viewContent model s =
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
+        , h2 ("Date: " ++ DateTime.toString s.zone model.when)
         , h2
             ("What: "
-                ++ (model.qty |> Maybe.map (\expr -> exeval s { context = ( Type.TType TType.Commitment, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
+                ++ (model.qty |> Maybe.map (\expr -> exeval s { context = ( Type.TType TType.Event, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
                 ++ " "
                 ++ (model.flow |> Maybe.map (\f -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )

@@ -24,7 +24,10 @@ isMobile window =
 
 size =
     { text =
-        { main = 15
+        { xl = 50
+        , large = 30
+        , medium = 20
+        , main = 15
         , small = 12
         , h1 = 28
         , h2 = 24
@@ -80,8 +83,9 @@ color =
         , focus = rgb255 0xE0 0xE0 0xE0
         }
     , text =
-        { main = rgb255 0x00 0x00 0x00
+        { main = rgb255 0x20 0x20 0x20
         , item = rgb255 0xE0 0xE0 0xE0
+        , light = rgb255 0xA0 0xA0 0xA0
         , disabled = rgb255 0xD0 0xD0 0xD0
         , warning = rgb255 0xFF 0x97 0x00
         , error = rgb255 0xFF 0x00 0x54

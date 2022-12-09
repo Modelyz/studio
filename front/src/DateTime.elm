@@ -1,8 +1,28 @@
-module DateTime exposing (decodeMonth, decodeWeekday, encodeMonth, encodeWeekday, monthToString, toStrMM, weekdayToString)
+module DateTime exposing (decodeMonth, decodeWeekday, encodeMonth, encodeWeekday, monthToLongString, monthToString, toStrMM, toString, weekdayToLongString, weekdayToString, zoneNameToString)
 
+import Calendar
+import Date exposing (Date, fromPosix)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Events exposing (onClick)
+import Element.Font as Font
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Time exposing (Month(..), Weekday(..))
+import Task
+import Time exposing (Month(..), Posix, Weekday(..), Zone, millisToPosix)
+import View.Style exposing (color, isMobile)
+
+
+toString : Zone -> Posix -> String
+toString zone posix =
+    (weekdayToLongString <| Time.toWeekday zone posix)
+        ++ ", "
+        ++ (String.fromInt <| Time.toDay zone posix)
+        ++ " "
+        ++ (monthToLongString <| Time.toMonth zone posix)
+        ++ " "
+        ++ (String.fromInt <| Time.toYear zone posix)
 
 
 toStrMM : Month -> String
@@ -83,6 +103,71 @@ monthToString month =
 
         Dec ->
             "Dec"
+
+
+monthToLongString : Month -> String
+monthToLongString month =
+    case month of
+        Jan ->
+            "January"
+
+        Feb ->
+            "February"
+
+        Mar ->
+            "March"
+
+        Apr ->
+            "April"
+
+        May ->
+            "May"
+
+        Jun ->
+            "June"
+
+        Jul ->
+            "July"
+
+        Aug ->
+            "August"
+
+        Sep ->
+            "September"
+
+        Oct ->
+            "October"
+
+        Nov ->
+            "November"
+
+        Dec ->
+            "December"
+
+
+weekdayToLongString : Weekday -> String
+weekdayToLongString weekday =
+    case weekday of
+        Mon ->
+            "Monday"
+
+        Tue ->
+            "Tuesday"
+
+        Wed ->
+            "Wednesday"
+
+        Thu ->
+            "Thursday"
+
+        Fri ->
+            "Friday"
+
+        Sat ->
+            "Saturday"
+
+        Sun ->
+            "Sunday"
 
 
 weekdayToString : Weekday -> String
@@ -197,3 +282,13 @@ encodeWeekday =
 encodeMonth : Month -> Encode.Value
 encodeMonth =
     monthToString >> Encode.string
+
+
+zoneNameToString : Time.ZoneName -> String
+zoneNameToString zn =
+    case zn of
+        Time.Name name ->
+            name
+
+        Time.Offset offset ->
+            String.fromInt offset

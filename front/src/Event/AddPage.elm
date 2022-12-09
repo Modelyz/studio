@@ -1,9 +1,12 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
 import Agent.Agent exposing (Agent)
+import Date
+import DateTime.View
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Event.Event exposing (Event)
@@ -27,16 +30,18 @@ import Scope.Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
+import Task
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (checkMaybe, chooseIfSingleton, third)
+import Util exposing (applyR, checkMaybe, chooseIfSingleton, flip, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
+import View.Style exposing (color)
 
 
 constructor =
@@ -68,6 +73,7 @@ type alias Model =
     , receiver : Maybe Uuid
     , qty : Maybe Expression
     , flow : Maybe Flow
+    , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , oldGroups : Dict String Uuid
@@ -83,6 +89,7 @@ type Step
     | StepProvider
     | StepReceiver
     | StepFlow
+    | StepDate
     | StepIdentifiers
     | StepValues
     | StepGroups
@@ -98,6 +105,7 @@ type Msg
     | InputValue Value
     | InputGroups (Dict String Uuid)
     | Button Step.Msg
+    | CalendarMsg DateTime.View.Msg
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -138,6 +146,9 @@ init s f =
         met =
             type_ |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
 
+        calinit =
+            DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
+
         adding =
             { route = f.route
             , isNew = isNew
@@ -159,6 +170,7 @@ init s f =
                     )
             , qty = met |> Maybe.map .qty
             , flow = Nothing
+            , calendar = Tuple.first calinit
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ True
@@ -167,10 +179,10 @@ init s f =
             , groups = Dict.empty
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
-    ( f.uuid
+    f.uuid
         |> Maybe.map
             (\uuid ->
                 let
@@ -186,8 +198,11 @@ init s f =
 
                     event =
                         Dict.get (Uuid.toString uuid) s.state.events
+
+                    caledit =
+                        event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
                 in
-                { adding
+                ( { adding
                     | type_ = t
                     , uuid = uuid
                     , eventType = t |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
@@ -195,15 +210,25 @@ init s f =
                     , receiver = event |> Maybe.map .receiver
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
+                    , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid t False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid t False
                     , oldGroups = oldGroups
                     , groups = oldGroups
-                }
+                  }
+                , Effect.batch
+                    [ Effect.fromCmd <| Cmd.map CalendarMsg <| Tuple.second caledit
+                    , closeMenu f s.menu
+                    ]
+                )
             )
-        |> Maybe.withDefault adding
-    , closeMenu f s.menu
-    )
+        |> Maybe.withDefault
+            ( adding
+            , Effect.batch
+                [ Effect.fromCmd <| Cmd.map CalendarMsg <| Tuple.second calinit
+                , closeMenu f s.menu
+                ]
+            )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -250,6 +275,15 @@ update s msg model =
         InputFlow flow ->
             ( { model | flow = flow }, Effect.none )
 
+        CalendarMsg submsg ->
+            let
+                mdlcmd =
+                    DateTime.View.update submsg model.calendar
+            in
+            ( { model | calendar = Tuple.first mdlcmd }
+            , Effect.fromCmd <| Cmd.map CalendarMsg <| Tuple.second mdlcmd
+            )
+
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
@@ -261,7 +295,7 @@ update s msg model =
 
         Button Step.Added ->
             case validate model of
-                Ok t ->
+                Ok e ->
                     let
                         addedGroups =
                             Dict.diff model.groups model.oldGroups
@@ -272,11 +306,11 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedEvent t
+                            (Message.AddedEvent e
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType e.uuid uuid)) (Dict.values addedGroups)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType e.uuid uuid)) (Dict.values removedGroups)
                             )
                         , redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]
@@ -314,6 +348,9 @@ checkStep model =
         Step StepFlow ->
             checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
+        Step StepDate ->
+            Ok ()
+
         Step StepIdentifiers ->
             Ok ()
 
@@ -326,13 +363,15 @@ checkStep model =
 
 validate : Model -> Result String Event
 validate m =
-    Result.map5
-        (\type_ provider receiver flow qty -> constructor typedConstructor m.uuid type_ (millisToPosix 0) provider receiver flow qty)
+    -- similar to haskell: f <$> a <*> b <*> c <*> d ...
+    -- we apply multiple partial applications until we have the full value
+    Result.map
+        (constructor typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
         (checkMaybe m.type_ "You must select an Event Type")
-        (checkMaybe m.provider "You must select a Provider")
-        (checkMaybe m.receiver "You must select a Receiver")
-        (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
-        (checkMaybe m.qty "The quantity is invalid")
+        |> applyR (checkMaybe m.provider "You must select a Provider")
+        |> applyR (checkMaybe m.receiver "You must select a Receiver")
+        |> applyR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+        |> applyR (checkMaybe m.qty "The quantity is invalid")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -418,6 +457,12 @@ viewContent model s =
                         model.eventType
                         model.qty
                         |> Maybe.withDefault (text "This event has no type")
+
+                Step.Step StepDate ->
+                    column [ spacing 20, width fill ]
+                        [ h1 "Select a date for the event"
+                        , Element.map CalendarMsg <| DateTime.View.inputDate s model.calendar
+                        ]
 
                 Step.Step StepGroups ->
                     inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups

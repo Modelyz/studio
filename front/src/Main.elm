@@ -61,7 +61,7 @@ import Value.ListPage
 import Value.ViewPage
 import View exposing (View, h1)
 import View.Navbar as Navbar
-import View.Style as Style exposing (WindowSize)
+import View.Style as Style exposing (WindowSize, color)
 import Zone.AddPage
 import Zone.ListPage
 import Zone.ViewPage
@@ -142,7 +142,7 @@ toDocument s view =
                      else
                         column
                     )
-                        [ width fill, height fill ]
+                        [ width fill, height fill, Font.color color.text.main ]
                         [ Element.map mapSharedMsg (Navbar.view view.title s view.route)
                         , view.element s
                         ]

@@ -1,4 +1,4 @@
-module Util exposing (checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, third)
+module Util exposing (applyR, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, third)
 
 import Dict exposing (Dict)
 
@@ -77,3 +77,19 @@ chooseIfSingleton xs =
 
     else
         Nothing
+
+
+applyR : Result err a -> Result err (a -> b) -> Result err b
+applyR rx rf =
+    -- flipped applicative <*> for Result
+    case rf of
+        Ok f ->
+            case rx of
+                Ok x ->
+                    Ok (f x)
+
+                Err err ->
+                    Err err
+
+        Err err ->
+            Err err

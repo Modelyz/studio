@@ -38,6 +38,8 @@ type alias Model =
 
     -- session related
     , identity : Maybe String
+    , zone : Time.Zone
+    , zonename : Time.ZoneName
 
     -- REA state related
     , state : State
@@ -60,6 +62,8 @@ type Msg
     | MessagesRead Decode.Value
     | MessagesSent Decode.Value
     | MessagesReceived String
+    | GotZone Time.Zone
+    | GotZoneName Time.ZoneName
 
 
 type alias Flags =
@@ -107,6 +111,8 @@ init value navkey =
               , timeoutReconnect = 1
               , identity = Nothing
               , state = State.empty
+              , zone = Time.utc
+              , zonename = Time.Offset 0
               }
             , Message.readMessages Encode.null
             )
@@ -125,8 +131,14 @@ init value navkey =
               , timeoutReconnect = 1
               , identity = Nothing
               , state = State.empty
+              , zone = Time.utc
+              , zonename = Time.Offset 0
               }
-            , Message.readMessages Encode.null
+            , Cmd.batch
+                [ Task.perform GotZone Time.here
+                , Task.perform GotZoneName Time.getZoneName
+                , Message.readMessages Encode.null
+                ]
             )
 
 
@@ -352,6 +364,12 @@ update msg model =
 
                 Err err ->
                     ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding received messages:\n" ++ errorToString err }, Cmd.none )
+
+        GotZone zone ->
+            ( { model | zone = zone }, Cmd.none )
+
+        GotZoneName zonename ->
+            ( { model | zonename = zonename }, Cmd.none )
 
 
 initiateConnection : Uuid -> Model -> Cmd Msg

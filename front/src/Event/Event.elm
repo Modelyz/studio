@@ -12,8 +12,8 @@ import Typed.Type as TType
 type alias Event =
     { what : TType.Type
     , uuid : Uuid
-    , type_ : Uuid
     , when : Time.Posix
+    , type_ : Uuid
     , provider : Uuid
     , receiver : Uuid
     , flow : Flow
@@ -26,8 +26,8 @@ encode e =
     Encode.object <|
         [ ( "what", TType.encode e.what )
         , ( "uuid", Uuid.encode e.uuid )
-        , ( "type", Uuid.encode e.type_ )
         , ( "when", Encode.int <| posixToMillis e.when )
+        , ( "type", Uuid.encode e.type_ )
         ]
 
 
@@ -36,8 +36,8 @@ decoder =
     Decode.map8 Event
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
         (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+        (Decode.field "type" Uuid.decoder)
         (Decode.field "provider" Uuid.decoder)
         (Decode.field "receiver" Uuid.decoder)
         (Decode.field "flow" Flow.decoder)
