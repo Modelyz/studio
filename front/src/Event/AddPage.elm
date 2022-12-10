@@ -13,7 +13,7 @@ import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
 import Expression exposing (Expression)
 import Expression.Input
-import Flow exposing (Flow)
+import Flow exposing (Flow(..))
 import Flow.Input
 import Group.Group as Group exposing (Group)
 import Group.Input exposing (inputGroups)
@@ -168,8 +168,20 @@ init s f =
                         |> Dict.map (\_ a -> a.uuid)
                         |> Dict.values
                     )
+            , flow =
+                chooseIfSingleton
+                    ((s.state.resources
+                        |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.flowscope) |> Maybe.withDefault True)
+                        |> Dict.map (\_ r -> ResourceFlow r)
+                        |> Dict.values
+                     )
+                        ++ (s.state.resourceTypes
+                                |> Dict.filter (\_ rt -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) ct.flowscope) |> Maybe.withDefault True)
+                                |> Dict.map (\_ rt -> ResourceTypeFlow rt)
+                                |> Dict.values
+                           )
+                    )
             , qty = met |> Maybe.map .qty
-            , flow = Nothing
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
@@ -257,6 +269,19 @@ update s msg model =
                             |> Dict.values
                         )
                 , qty = Maybe.map .qty met
+                , flow =
+                    chooseIfSingleton
+                        ((s.state.resources
+                            |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.flowscope) |> Maybe.withDefault True)
+                            |> Dict.map (\_ r -> ResourceFlow r)
+                            |> Dict.values
+                         )
+                            ++ (s.state.resourceTypes
+                                    |> Dict.filter (\_ rt -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) ct.flowscope) |> Maybe.withDefault True)
+                                    |> Dict.map (\_ rt -> ResourceTypeFlow rt)
+                                    |> Dict.values
+                               )
+                        )
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }

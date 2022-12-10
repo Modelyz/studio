@@ -2,6 +2,13 @@
 
 [Back to app](../)
 
+## version 11 -- unreleased
+
+* Calendar to choose the date of a commitment/event
+* Auto-select the resource (type) on an event/commitment
+* Improved UI
+* Internal changes
+
 ## version 10 -- 2022-12-05
 
 * Select the provider and receiver of an Event or Commitment
