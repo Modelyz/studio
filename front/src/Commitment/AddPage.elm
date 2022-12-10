@@ -146,7 +146,7 @@ init s f =
         mct =
             type_ |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.commitmentTypes)
 
-        calinit =
+        ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
 
         adding =
@@ -170,7 +170,7 @@ init s f =
                     )
             , qty = mct |> Maybe.map .qty
             , flow = Nothing
-            , calendar = Tuple.first calinit
+            , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ True
@@ -225,7 +225,7 @@ init s f =
         |> Maybe.withDefault
             ( adding
             , Effect.batch
-                [ Effect.fromCmd <| Cmd.map CalendarMsg <| Tuple.second calinit
+                [ Effect.fromCmd <| Cmd.map CalendarMsg calcmd
                 , closeMenu f s.menu
                 ]
             )
@@ -436,7 +436,7 @@ viewContent model s =
                     Maybe.map2
                         (\ct qty ->
                             let
-                                flowinputs =
+                                ( chosen, choice ) =
                                     Flow.Input.input
                                         { flow = model.flow
                                         , scope = ct.flowscope
@@ -456,9 +456,9 @@ viewContent model s =
                                         s
                                         ( [], qty )
                                         qty
-                                    , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] <| Tuple.first flowinputs
+                                    , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] chosen
                                     ]
-                                , Tuple.second flowinputs
+                                , choice
                                 ]
                         )
                         model.commitmentType
