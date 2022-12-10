@@ -32,46 +32,44 @@ type alias Config msg =
     }
 
 
-input : Config msg -> Shared.Model -> Element msg
+input : Config msg -> Shared.Model -> ( Element msg, Element msg )
 input c s =
-    column [ spacing 20 ]
-        [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 4, Border.color color.item.border ]
-            [ c.flow
-                |> Maybe.map
-                    (\flow ->
-                        case flow of
-                            ResourceFlow r ->
-                                viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid
+    -- (chosen, choice)
+    ( c.flow
+        |> Maybe.map
+            (\flow ->
+                case flow of
+                    ResourceFlow r ->
+                        viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid
 
-                            ResourceTypeFlow rt ->
-                                viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid
-                    )
-                |> Maybe.withDefault (text "Nothing chosen yet")
-            ]
-        , c.flow
-            |> Maybe.map (\_ -> none)
-            |> Maybe.withDefault
-                (column [ spacing 10 ]
-                    [ column [ alignTop, padding 10, spacing 10, width <| minimum 200 fill, Background.color color.content.choice ]
-                        [ h2 "Choose either a specific Resource:"
-                        , wrappedRow [ padding 10, spacing 10 ]
-                            (s.state.resources
-                                |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) c.scope)
-                                |> Dict.values
-                                |> List.map (\r -> tClickableCard (c.onSelect (Just <| ResourceFlow r)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid)
-                                |> withDefaultContent (p "(No Resources to choose from)")
-                            )
-                        ]
-                    , column [ alignTop, padding 10, spacing 10, width <| minimum 200 fill, Background.color color.content.choice ]
-                        [ h2 "Or a general Resource Type:"
-                        , wrappedRow [ padding 10, spacing 10 ]
-                            (s.state.resourceTypes
-                                |> Dict.filter (\_ rt -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) c.scope)
-                                |> Dict.values
-                                |> List.map (\rt -> tClickableCard (c.onSelect (Just <| ResourceTypeFlow rt)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid)
-                                |> withDefaultContent (p "(No Resource Types to choose from)")
-                            )
-                        ]
+                    ResourceTypeFlow rt ->
+                        viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid
+            )
+        |> Maybe.withDefault (el [ centerY ] <| text "Nothing chosen yet")
+    , c.flow
+        |> Maybe.map (\_ -> none)
+        |> Maybe.withDefault
+            (column [ spacing 10 ]
+                [ column [ alignTop, padding 10, spacing 10, width <| minimum 200 fill, Background.color color.content.choice ]
+                    [ h2 "Choose either a specific Resource:"
+                    , wrappedRow [ padding 10, spacing 10 ]
+                        (s.state.resources
+                            |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) c.scope)
+                            |> Dict.values
+                            |> List.map (\r -> tClickableCard (c.onSelect (Just <| ResourceFlow r)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid)
+                            |> withDefaultContent (p "(No Resources to choose from)")
+                        )
                     ]
-                )
-        ]
+                , column [ alignTop, padding 10, spacing 10, width <| minimum 200 fill, Background.color color.content.choice ]
+                    [ h2 "Or a general Resource Type:"
+                    , wrappedRow [ padding 10, spacing 10 ]
+                        (s.state.resourceTypes
+                            |> Dict.filter (\_ rt -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) c.scope)
+                            |> Dict.values
+                            |> List.map (\rt -> tClickableCard (c.onSelect (Just <| ResourceTypeFlow rt)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid)
+                            |> withDefaultContent (p "(No Resource Types to choose from)")
+                        )
+                    ]
+                ]
+            )
+    )

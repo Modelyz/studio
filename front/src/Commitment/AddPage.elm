@@ -367,11 +367,11 @@ validate m =
     -- we apply multiple partial applications until we have the full value
     Result.map
         (constructor typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
-        (checkMaybe m.type_ "You must select a Commitment Type")
+        (checkMaybe m.qty "The quantity is invalid")
+        |> applyR (checkMaybe m.type_ "You must select a Commitment Type")
         |> applyR (checkMaybe m.provider "You must select a Provider")
         |> applyR (checkMaybe m.receiver "You must select a Receiver")
         |> applyR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
-        |> applyR (checkMaybe m.qty "The quantity is invalid")
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -435,23 +435,30 @@ viewContent model s =
                 Step.Step StepFlow ->
                     Maybe.map2
                         (\ct qty ->
+                            let
+                                flowinputs =
+                                    Flow.Input.input
+                                        { flow = model.flow
+                                        , scope = ct.flowscope
+                                        , onSelect = InputFlow
+                                        , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                        }
+                                        s
+                            in
                             column [ spacing 20 ]
                                 [ h2 "Flow from the provider to the receiver"
-                                , Expression.Input.inputExpression
-                                    { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                                    , onInput = InputQty
-                                    , context = ( hereType, model.uuid )
-                                    }
-                                    s
-                                    ( [], qty )
-                                    qty
-                                , Flow.Input.input
-                                    { flow = model.flow
-                                    , scope = ct.flowscope
-                                    , onSelect = InputFlow
-                                    , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                                    }
-                                    s
+                                , wrappedRow [ width <| minimum 50 shrink, height (px 48), padding 3, spacing 4 ]
+                                    [ Expression.Input.inputExpression
+                                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
+                                        , onInput = InputQty
+                                        , context = ( hereType, model.uuid )
+                                        }
+                                        s
+                                        ( [], qty )
+                                        qty
+                                    , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] <| Tuple.first flowinputs
+                                    ]
+                                , Tuple.second flowinputs
                                 ]
                         )
                         model.commitmentType
