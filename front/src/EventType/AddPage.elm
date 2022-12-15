@@ -7,6 +7,7 @@ import EventType.EventType exposing (EventType)
 import Expression as Expression exposing (Expression(..))
 import Expression.Editor exposing (view)
 import Flow exposing (Flow)
+import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -61,8 +62,7 @@ type alias Model =
     , editor : Expression.Editor.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Uuid
-    , groups : Dict String Uuid
+    , gsubmodel : Group.Input.Model
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -85,7 +85,7 @@ type Msg
     | SelectReceivers Scope
     | SelectFlow Scope
     | InputIdentifier Identifier
-    | InputGroups (Dict String Uuid)
+    | GroupMsg Group.Input.Msg
     | InputValue Value
     | Button Step.Msg
     | EditorMsg Expression.Editor.Msg
@@ -123,6 +123,9 @@ init s f =
         isNew =
             f.uuid == Nothing
 
+        ( initgroups, initcmd ) =
+            Group.Input.init s Dict.empty
+
         adding =
             { route = f.route
             , isNew = isNew
@@ -135,8 +138,7 @@ init s f =
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
-            , oldGroups = Dict.empty
-            , groups = Dict.empty
+            , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
             , steps =
@@ -150,19 +152,18 @@ init s f =
                 ]
             }
     in
-    ( f.uuid
+    f.uuid
         |> Maybe.map
             (\uuid ->
                 let
-                    oldGroups =
-                        s.state.grouped
-                            |> Dict.filter (\_ link -> uuid == link.groupable)
-                            |> Dict.values
-                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
-                            |> Dict.fromList
-
-                    type_ =
+                    realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    gs =
+                        Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
+
+                    ( editgroups, editcmd ) =
+                        Group.Input.init s gs
 
                     et =
                         Dict.get (Uuid.toString uuid) s.state.eventTypes
@@ -170,25 +171,33 @@ init s f =
                     flowscope =
                         Maybe.map .flowscope et |> Maybe.withDefault (HasType (Type.TType TType.Event))
                 in
-                { adding
-                    | type_ = type_
+                ( { adding
+                    | type_ = realType
                     , uuid = uuid
                     , providers = Maybe.map .providers et |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
                     , receivers = Maybe.map .receivers et |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
                     , flowscope = flowscope
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
-                    , oldGroups = oldGroups
-                    , groups = oldGroups
                     , editor =
                         Expression.Editor.init s
                             flowscope
                             (et |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
-                }
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
+                    , gsubmodel = editgroups
+                  }
+                , Effect.batch
+                    [ closeMenu f s.menu
+                    , Effect.map GroupMsg (Effect.fromCmd editcmd)
+                    ]
+                )
             )
-        |> Maybe.withDefault adding
-    , closeMenu f s.menu
-    )
+        |> Maybe.withDefault
+            ( adding
+            , Effect.batch
+                [ closeMenu f s.menu
+                , Effect.map GroupMsg (Effect.fromCmd initcmd)
+                ]
+            )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -223,27 +232,24 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups uuids ->
-            ( { model | groups = uuids }, Effect.none )
+        GroupMsg submsg ->
+            let
+                ( submodel, subcmd ) =
+                    Group.Input.update submsg model.gsubmodel
+            in
+            ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
             case validate model of
                 Ok t ->
-                    let
-                        addedGroups =
-                            Dict.diff model.groups model.oldGroups
-
-                        removedGroups =
-                            Dict.diff model.oldGroups model.groups
-                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedEventType t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
                         , redirect s.navkey (Route.Entity Route.EventType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
                         ]
@@ -332,7 +338,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

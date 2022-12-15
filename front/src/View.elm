@@ -257,19 +257,23 @@ lenToPx str =
     bound 14 30 (35 - String.length str) |> String.fromInt |> flip (++) "px"
 
 
-switch : msg -> Bool -> Element msg
-switch onSwitch b =
-    row [ pointer, onClick onSwitch, Background.color color.content.background, width (px 48), height (px 24), Border.color color.content.background, Border.width 2, Border.rounded 12 ]
-        [ row
-            [ Background.color color.item.selected
-            , width (px 24)
-            , height fill
-            , if b then
-                alignLeft
+switch : (Bool -> msg) -> Bool -> String -> String -> Element msg
+switch onSwitch b false true =
+    row [ Background.color color.item.selected, pointer, spacing 10, Font.size size.text.main, padding 10 ]
+        [ el [ onClick (onSwitch False) ] (text false)
+        , row [ onClick <| onSwitch (not b), Background.color color.content.background, width (px 48), height (px 24), Border.color color.content.choice, Border.width 2, Border.rounded 12 ]
+            [ row
+                [ Background.color color.item.selected
+                , width (px 24)
+                , height fill
+                , if b then
+                    alignRight
 
-              else
-                alignRight
-            , Border.rounded 12
+                  else
+                    alignLeft
+                , Border.rounded 12
+                ]
+                []
             ]
-            []
+        , el [ onClick (onSwitch True) ] (text true)
         ]

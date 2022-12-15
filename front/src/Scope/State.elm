@@ -23,6 +23,9 @@ getUpperList types scope oldList =
 containsScope : Dict String ( Uuid, Type, Maybe Uuid ) -> Scope -> Scope -> Bool
 containsScope types inscope outscope =
     case outscope of
+        Anything ->
+            True
+
         Empty ->
             False
 

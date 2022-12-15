@@ -6,6 +6,7 @@
 
 * Calendar to choose the date of a commitment/event
 * Auto-select the resource (type) on an event/commitment
+* Hierarchical behaviour of groups can be configured
 * Improved UI
 * Internal changes
 

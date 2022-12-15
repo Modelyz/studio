@@ -49,7 +49,7 @@ type alias Model =
 type Msg
     = WindowResized WindowSize
     | ToggleMenu
-    | SwitchAdmin
+    | SwitchAdmin Bool
     | SetRoute Route
     | WSDisconnected Decode.Value
     | WSError Decode.Value
@@ -178,9 +178,9 @@ update msg model =
             , Cmd.none
             )
 
-        SwitchAdmin ->
+        SwitchAdmin b ->
             ( { model
-                | admin = not model.admin
+                | admin = b
               }
             , Cmd.none
             )

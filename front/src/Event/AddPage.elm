@@ -59,7 +59,10 @@ hereType =
 
 
 type alias Flags =
-    { route : Route, uuid : Maybe Uuid, tuuid : Maybe String }
+    { route : Route
+    , uuid : Maybe Uuid
+    , tuuid : Maybe String
+    }
 
 
 type alias Model =
@@ -76,8 +79,7 @@ type alias Model =
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Uuid
-    , groups : Dict String Uuid
+    , gsubmodel : Group.Input.Model
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -103,7 +105,7 @@ type Msg
     | InputFlow (Maybe Flow)
     | InputIdentifier Identifier
     | InputValue Value
-    | InputGroups (Dict String Uuid)
+    | GroupMsg Group.Input.Msg
     | Button Step.Msg
     | CalendarMsg DateTime.View.Msg
 
@@ -140,11 +142,14 @@ init s f =
         isNew =
             f.uuid == Nothing
 
-        type_ =
+        wantedType =
             Maybe.andThen Uuid.fromString f.tuuid
 
+        ( initgroups, initcmd ) =
+            Group.Input.init s Dict.empty
+
         met =
-            type_ |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+            wantedType |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
 
         ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
@@ -152,7 +157,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , type_ = type_
+            , type_ = wantedType
             , eventType = met
             , provider =
                 chooseIfSingleton
@@ -185,10 +190,9 @@ init s f =
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid type_ True
-            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid type_ True
-            , oldGroups = Dict.empty
-            , groups = Dict.empty
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid wantedType True
+            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid wantedType True
+            , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
             , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
@@ -198,15 +202,14 @@ init s f =
         |> Maybe.map
             (\uuid ->
                 let
-                    oldGroups =
-                        s.state.grouped
-                            |> Dict.filter (\_ link -> uuid == link.groupable)
-                            |> Dict.values
-                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
-                            |> Dict.fromList
-
-                    t =
+                    realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    gs =
+                        Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
+
+                    ( editgroups, editcmd ) =
+                        Group.Input.init s gs
 
                     event =
                         Dict.get (Uuid.toString uuid) s.state.events
@@ -215,30 +218,27 @@ init s f =
                         event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
                 in
                 ( { adding
-                    | type_ = t
+                    | type_ = realType
                     , uuid = uuid
-                    , eventType = t |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
+                    , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
                     , provider = event |> Maybe.map .provider
                     , receiver = event |> Maybe.map .receiver
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
                     , calendar = Tuple.first caledit
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid t False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid t False
-                    , oldGroups = oldGroups
-                    , groups = oldGroups
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
+                    , gsubmodel = editgroups
                   }
-                , Effect.batch
-                    [ Effect.fromCmd <| Cmd.map CalendarMsg <| Tuple.second caledit
-                    , closeMenu f s.menu
-                    ]
+                , Effect.batch [ closeMenu f s.menu, Effect.map GroupMsg (Effect.fromCmd editcmd) ]
                 )
             )
         |> Maybe.withDefault
             ( adding
             , Effect.batch
-                [ Effect.fromCmd <| Cmd.map CalendarMsg calcmd
-                , closeMenu f s.menu
+                [ closeMenu f s.menu
+                , Effect.fromCmd <| Cmd.map CalendarMsg calcmd
+                , Effect.map GroupMsg (Effect.fromCmd initcmd)
                 ]
             )
 
@@ -315,27 +315,24 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups uuids ->
-            ( { model | groups = uuids }, Effect.none )
+        GroupMsg submsg ->
+            let
+                ( submodel, subcmd ) =
+                    Group.Input.update submsg model.gsubmodel
+            in
+            ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
             case validate model of
                 Ok e ->
-                    let
-                        addedGroups =
-                            Dict.diff model.groups model.oldGroups
-
-                        removedGroups =
-                            Dict.diff model.oldGroups model.groups
-                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedEvent e
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType e.uuid uuid)) (Dict.values addedGroups)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType e.uuid uuid)) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
                         , redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]
@@ -497,7 +494,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

@@ -85,7 +85,7 @@ desktop s r =
                             , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| "IO  " ++ IO.toEmoji s.iostatus)
                             ]
                         , column [ width fill, centerX, centerY ]
-                            [ switch Shared.SwitchAdmin s.admin ]
+                            [ switch Shared.SwitchAdmin s.admin "user" "admin" ]
                         ]
                     ]
                ]

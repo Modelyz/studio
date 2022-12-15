@@ -4,6 +4,7 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.View exposing (displayGroupTable)
+import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
@@ -11,6 +12,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Tree
 import Type exposing (Type)
 import Typed.Type as TType
 import Util exposing (third)
@@ -37,6 +39,7 @@ type alias Model =
     , what : Type
     , uuid : Uuid
     , type_ : Maybe Uuid
+    , groupType : Maybe GroupType
     , groups : List Uuid
     }
 
@@ -72,6 +75,7 @@ init s f =
       , what = mainHType
       , uuid = f.uuid
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
+      , groupType = Dict.get (Uuid.toString f.uuid) s.state.groupTypes
       , groups =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
@@ -103,23 +107,37 @@ view s model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
-    floatingContainer s
-        (Just Close)
-        "Group Type"
-        [ button.primary Edit "Edit" ]
-        [ h2 "Identifiers:"
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
-            |> displayIdentifierDict "(none)"
-        , h2 "Type:"
-        , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
-            |> Maybe.withDefault ""
-            |> text
-        , h2 "Values:"
-        , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
-            |> displayValueDict s { context = ( Type.HType HType.GroupType, model.uuid ) } "(none)" s.state.values
-        , h2 "Groups:"
-        , model.groups
-            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
-            |> displayGroupTable "(none)"
-        ]
+    model.groupType
+        |> Maybe.map
+            (\gt ->
+                floatingContainer s
+                    (Just Close)
+                    "Group Type"
+                    [ button.primary Edit "Edit" ]
+                    [ h2 "Identifiers:"
+                    , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+                        |> displayIdentifierDict "(none)"
+                    , h2 "Type:"
+                    , Dict.get (Uuid.toString model.uuid) s.state.types
+                        |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
+                        |> Maybe.withDefault ""
+                        |> text
+                    , h2 "An entity can only be in one group of this type: "
+                    , text <|
+                        if gt.unique then
+                            "True"
+
+                        else
+                            "False"
+                    , h2 "Groups of this type are:"
+                    , text <| Tree.toString gt.treeType
+                    , h2 "Values:"
+                    , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
+                        |> displayValueDict s { context = ( Type.HType HType.GroupType, model.uuid ) } "(none)" s.state.values
+                    , h2 "Groups:"
+                    , model.groups
+                        |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
+                        |> displayGroupTable "(none)"
+                    ]
+            )
+        |> Maybe.withDefault (text "Not found")

@@ -3,6 +3,7 @@ module GroupType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import GroupType.GroupType exposing (GroupType)
@@ -16,7 +17,10 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import Tree exposing (Type(..))
+import Tree.View exposing (inputTreeType)
 import Type
+import Util exposing (third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -50,16 +54,19 @@ type alias Model =
     , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
-    , oldGroups : Dict String Uuid
-    , groups : Dict String Uuid
+    , gsubmodel : Group.Input.Model
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
+    , unique : Bool
+    , treeType : Tree.Type
     }
 
 
 type Step
     = StepType
+    | StepUnique
+    | StepTree
     | StepIdentifiers
     | StepValues
     | StepGroups
@@ -68,8 +75,10 @@ type Step
 type Msg
     = InputType (Maybe Uuid)
     | InputIdentifier Identifier
-    | InputGroups (Dict String Uuid)
+    | GroupMsg Group.Input.Msg
     | InputValue Value
+    | InputUnique Bool
+    | InputTreeType Tree.Type
     | Button Step.Msg
 
 
@@ -105,6 +114,9 @@ init s f =
         isNew =
             f.uuid == Nothing
 
+        ( initgroups, initcmd ) =
+            Group.Input.init s Dict.empty
+
         adding =
             { route = f.route
             , isNew = isNew
@@ -113,39 +125,52 @@ init s f =
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
-            , oldGroups = Dict.empty
-            , groups = Dict.empty
+            , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepUnique, Step.Step StepTree, Step.Step StepValues, Step.Step StepGroups ]
+            , unique = False
+            , treeType = Flat
             }
     in
-    ( f.uuid
+    f.uuid
         |> Maybe.map
             (\uuid ->
                 let
-                    oldGroups =
-                        s.state.grouped
-                            |> Dict.filter (\_ link -> uuid == link.groupable)
-                            |> Dict.values
-                            |> List.map (\link -> ( Uuid.toString link.group, link.group ))
-                            |> Dict.fromList
+                    realType =
+                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
-                    type_ =
-                        Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen (\( _, _, x ) -> x)
+                    gs =
+                        Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
+
+                    ( editgroups, editcmd ) =
+                        Group.Input.init s gs
+
+                    gt =
+                        Dict.get (Uuid.toString uuid) s.state.groupTypes
                 in
-                { adding
-                    | type_ = type_
+                ( { adding
+                    | type_ = realType
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid type_ False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid type_ False
-                    , oldGroups = oldGroups
-                    , groups = oldGroups
-                }
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
+                    , gsubmodel = editgroups
+                    , unique = Maybe.map .unique gt |> Maybe.withDefault False
+                    , treeType = Maybe.map .treeType gt |> Maybe.withDefault Flat
+                  }
+                , Effect.batch
+                    [ closeMenu f s.menu
+                    , Effect.map GroupMsg (Effect.fromCmd editcmd)
+                    ]
+                )
             )
-        |> Maybe.withDefault adding
-    , closeMenu f s.menu
-    )
+        |> Maybe.withDefault
+            ( adding
+            , Effect.batch
+                [ closeMenu f s.menu
+                , Effect.map GroupMsg (Effect.fromCmd initcmd)
+                ]
+            )
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -166,27 +191,30 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
-        InputGroups uuids ->
-            ( { model | groups = uuids }, Effect.none )
+        InputUnique b ->
+            ( { model | unique = b }, Effect.none )
+
+        InputTreeType t ->
+            ( { model | treeType = t }, Effect.none )
+
+        GroupMsg submsg ->
+            let
+                ( submodel, subcmd ) =
+                    Group.Input.update submsg model.gsubmodel
+            in
+            ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
             case validate model of
                 Ok t ->
-                    let
-                        addedGroups =
-                            Dict.diff model.groups model.oldGroups
-
-                        removedGroups =
-                            Dict.diff model.oldGroups model.groups
-                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
                             (Message.AddedGroupType t
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values addedGroups)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values removedGroups)
+                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
                         , redirect s.navkey (Route.Entity Route.GroupType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
                         ]
@@ -224,10 +252,16 @@ checkStep model =
         Step StepGroups ->
             Ok ()
 
+        Step StepUnique ->
+            Ok ()
+
+        Step StepTree ->
+            Ok ()
+
 
 validate : Model -> Result String GroupType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Ok <| constructor hierarchicConstructor m.uuid m.type_ m.unique m.treeType
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -247,13 +281,19 @@ viewContent model s =
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    inputGroups { onInput = InputGroups, type_ = hereType, mpuuid = model.type_ } s model.groups
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+
+                Step.Step StepUnique ->
+                    wrappedRow [ spacing 20 ] [ text "An entity can only be in one group of this type: ", switch InputUnique model.unique "False" "True" ]
+
+                Step.Step StepTree ->
+                    wrappedRow [ spacing 20 ] [ text "Groups of this type are:", inputTreeType InputTreeType model.treeType ]
     in
     floatingContainer s
         (Just <| Button Step.Cancel)
