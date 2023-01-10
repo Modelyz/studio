@@ -40,10 +40,10 @@ input c s =
             (\flow ->
                 case flow of
                     ResourceFlow r ->
-                        viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid
+                        viewHalfCard s.state (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType r.what) r.uuid
 
                     ResourceTypeFlow rt ->
-                        viewHalfCard (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid
+                        viewHalfCard s.state (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType rt.what) rt.uuid
             )
         |> Maybe.withDefault (el [ centerY ] <| text "Nothing chosen yet")
     , c.flow
@@ -56,7 +56,7 @@ input c s =
                         (s.state.resources
                             |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) c.scope)
                             |> Dict.values
-                            |> List.map (\r -> tClickableCard (c.onSelect (Just <| ResourceFlow r)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType r.what) r.uuid)
+                            |> List.map (\r -> tClickableCard s.state (c.onSelect (Just <| ResourceFlow r)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType r.what) r.uuid)
                             |> withDefaultContent (p "(No Resources to choose from)")
                         )
                     ]
@@ -66,7 +66,7 @@ input c s =
                         (s.state.resourceTypes
                             |> Dict.filter (\_ rt -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) c.scope)
                             |> Dict.values
-                            |> List.map (\rt -> tClickableCard (c.onSelect (Just <| ResourceTypeFlow rt)) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType rt.what) rt.uuid)
+                            |> List.map (\rt -> tClickableCard s.state (c.onSelect (Just <| ResourceTypeFlow rt)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType rt.what) rt.uuid)
                             |> withDefaultContent (p "(No Resource Types to choose from)")
                         )
                     ]

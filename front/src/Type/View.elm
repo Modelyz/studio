@@ -9,7 +9,7 @@ import Type exposing (Type, toType, typeOf)
 import Typed.Type as TType
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -20,7 +20,7 @@ typeColumn s =
     , view =
         \( _, t, mpuuid ) ->
             mpuuid
-                |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (toType t))
+                |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (toType t))
                 |> Maybe.map (text >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ])
                 |> Maybe.withDefault (text "")
     }

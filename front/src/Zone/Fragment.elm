@@ -1,4 +1,4 @@
-module Zone.Fragment exposing (Fragment(..), decoder, display, encode, toDesc, toString)
+module Zone.Fragment exposing (Fragment(..), decoder, encode, toDesc, toString)
 
 import Dict exposing (Dict)
 import Group.Group exposing (Group)
@@ -8,9 +8,12 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 
 
-type Fragment
+type
+    Fragment
+    -- TODO: add Types to be able to display the type in the zone
     = IdentifierName String
     | GroupIdentifierName String
+    | Parent
     | Fixed String
 
 
@@ -23,27 +26,11 @@ toString fragment =
         GroupIdentifierName name ->
             name
 
+        Parent ->
+            "Parent"
+
         Fixed s ->
-            s
-
-
-toValue : Dict String Identifier -> Dict String Identifier -> Fragment -> String
-toValue identifiers groupids fragment =
-    case fragment of
-        IdentifierName name ->
-            Identifier.select name identifiers |> List.map Identifier.toValue |> String.join ", "
-
-        GroupIdentifierName name ->
-            Identifier.select name groupids |> List.map Identifier.toValue |> String.join ", "
-
-        Fixed string ->
-            string
-
-
-display : Dict String Identifier -> Dict String Identifier -> List Fragment -> String
-display identifiers groupids fragments =
-    -- display the fragments corresponding to identifiers to construct the zone
-    fragments |> List.map (toValue identifiers groupids) |> String.concat
+            "Fixed:"
 
 
 toDesc : Fragment -> String
@@ -54,6 +41,9 @@ toDesc fragment =
 
         GroupIdentifierName _ ->
             "Group Identifier"
+
+        Parent ->
+            "Parent"
 
         Fixed _ ->
             "Fixed string"
@@ -70,6 +60,9 @@ encode fragment =
             Encode.object
                 [ ( "GroupIdentifierName", Encode.string name ) ]
 
+        Parent ->
+            Encode.string "Parent"
+
         Fixed string ->
             Encode.object
                 [ ( "Fixed", Encode.string string ) ]
@@ -78,7 +71,16 @@ encode fragment =
 decoder : Decoder Fragment
 decoder =
     Decode.oneOf
-        [ Decode.field "IdentifierName" Decode.string |> Decode.map IdentifierName
-        , Decode.field "GroupIdentifierName" Decode.string |> Decode.map GroupIdentifierName
-        , Decode.field "Fixed" Decode.string |> Decode.map Fixed
+        [ Decode.map IdentifierName <| Decode.field "IdentifierName" Decode.string
+        , Decode.string
+            |> Decode.andThen
+                (\s ->
+                    if s == "Parent" then
+                        Decode.succeed Parent
+
+                    else
+                        Decode.fail ("Unknown fragment: " ++ s)
+                )
+        , Decode.map GroupIdentifierName <| Decode.field "GroupIdentifierName" Decode.string
+        , Decode.map Fixed <| Decode.field "Fixed" Decode.string
         ]

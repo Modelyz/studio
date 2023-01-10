@@ -1,7 +1,7 @@
 module Zone.AddPage exposing (Flags, Model, Msg(..), match, page)
 
 import Configuration exposing (Configuration(..))
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
@@ -29,7 +29,8 @@ import Zone.Zone as Zone exposing (Zone(..))
 type Msg
     = InputZone Zone
     | InputScope Scope
-    | InputFragments (List Fragment)
+    | InputFragments Int (List Fragment)
+    | FragmentErrors Int String
     | Cancel
     | Added
 
@@ -44,6 +45,7 @@ type alias Model =
     , zone : Zone
     , scope : Scope
     , fragments : List Fragment
+    , errors : Dict Int String
     , warning : String
     }
 
@@ -92,6 +94,7 @@ init s f =
             , zone = SmallcardTitle
             , scope = Scope.empty
             , fragments = []
+            , errors = Dict.empty
             , warning = ""
             }
     in
@@ -141,8 +144,11 @@ update s msg model =
             }
                 |> Effect.withNone
 
-        InputFragments fragments ->
-            { model | fragments = fragments } |> Effect.withNone
+        InputFragments index fragments ->
+            { model | fragments = fragments, errors = Dict.remove index model.errors } |> Effect.withNone
+
+        FragmentErrors i err ->
+            { model | errors = Dict.insert i err model.errors } |> Effect.withNone
 
         Cancel ->
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.List Nothing) )
@@ -224,7 +230,7 @@ inputFragments : Shared.Model -> Model -> Element Msg
 inputFragments s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0 ] <| h2 "Format: ")
+            (el [ padding 5, spacing 10 ] <| h2 "Format: ")
                 :: List.append
                     (if List.isEmpty model.fragments then
                         [ el [ padding 10, Font.color color.text.disabled ] (text "Empty") ]
@@ -235,9 +241,9 @@ inputFragments s model =
                     (model.fragments
                         |> List.indexedMap
                             (\i fragment ->
-                                row [ Background.color color.item.background ]
+                                row [ paddingEach { left = 0, right = 5, top = 0, bottom = 0 }, spacing 5, Background.color color.item.background ]
                                     [ button.primary
-                                        (InputFragments
+                                        (InputFragments i
                                             (model.fragments
                                                 |> List.indexedMap Tuple.pair
                                                 |> List.filter (\( j, _ ) -> j /= i)
@@ -245,21 +251,21 @@ inputFragments s model =
                                             )
                                         )
                                         "×"
-                                    , el [ paddingXY 10 2 ] (text <| Fragment.toString fragment)
+                                    , text (Fragment.toString fragment)
                                     , inputFragment model.fragments i fragment
                                     ]
                             )
                     )
         , h2 "Click on the items below to construct the format of the zone"
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            List.map
-                (\f ->
+            List.indexedMap
+                (\i f ->
                     clickableCard
-                        (InputFragments <| model.fragments ++ [ f ])
+                        (InputFragments i <| model.fragments ++ [ f ])
                         (text <| Fragment.toDesc f)
                         (text <| Fragment.toString f)
                 )
-                (Fixed ""
+                ((Fixed ""
                     :: ((s.state.identifierTypes
                             |> Dict.values
                             |> List.filter
@@ -267,12 +273,15 @@ inputFragments s model =
                         )
                             |> List.map (.name >> IdentifierName)
                        )
-                    ++ ((s.state.identifierTypes
-                            |> Dict.values
-                            |> List.filter
-                                (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
-                        )
-                            |> List.map (.name >> GroupIdentifierName)
+                 )
+                    ++ (Parent
+                            :: ((s.state.identifierTypes
+                                    |> Dict.values
+                                    |> List.filter
+                                        (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
+                                )
+                                    |> List.map (.name >> GroupIdentifierName)
+                               )
                        )
                 )
         ]
@@ -282,10 +291,10 @@ inputFragment : List Fragment -> Int -> Fragment -> Element Msg
 inputFragment fragments index fragment =
     case fragment of
         Fixed value ->
-            Input.text [ width (px 75) ]
+            Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
                 { onChange =
                     \v ->
-                        InputFragments
+                        InputFragments index
                             (fragments
                                 |> List.indexedMap
                                     (\i f ->
@@ -297,10 +306,12 @@ inputFragment fragments index fragment =
                                     )
                             )
                 , text = value
-                , placeholder =
-                    Just <| Input.placeholder [] <| text <| Fragment.toString fragment
-                , label = Input.labelHidden <| "Fixed"
+                , placeholder = Nothing
+                , label = Input.labelHidden "Fixed"
                 }
+
+        Parent ->
+            none
 
         IdentifierName _ ->
             none

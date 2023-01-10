@@ -18,7 +18,7 @@ inputIdentifiers : Config msg -> Dict String Identifier -> Element msg
 inputIdentifiers c identifiers =
     -- display an input field for each relevant identifier
     column [ spacing 10 ]
-        (h2 "Input identifiers"
+        (h2 "Identifiers"
             :: (identifiers
                     |> Dict.values
                     |> List.map

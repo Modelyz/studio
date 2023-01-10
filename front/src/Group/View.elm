@@ -10,7 +10,7 @@ import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -35,7 +35,7 @@ groupsColumn s =
     , view =
         \( uuid, _, _ ) ->
             groupsOf s.state.grouped uuid
-                |> List.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group))
+                |> List.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group))
                 |> String.join "\n"
                 |> text
                 |> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]

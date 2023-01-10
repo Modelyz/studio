@@ -62,6 +62,7 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
+    , parent : Maybe Uuid
     , scope : Scope
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -74,6 +75,7 @@ type alias Model =
 
 type Step
     = StepType
+    | StepParent
     | StepScope
     | StepIdentifiers
     | StepValues
@@ -82,6 +84,7 @@ type Step
 
 type Msg
     = InputType (Maybe Uuid)
+    | InputParent (Maybe Uuid)
     | InputIdentifier Identifier
     | InputValue Value
     | InputScope Scope
@@ -131,6 +134,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = wantedType
+            , parent = Nothing
             , scope = Scope.anything
             , uuid = newUuid
             , seed = newSeed
@@ -139,7 +143,7 @@ init s f =
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepScope, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepScope, Step.Step StepIdentifiers, Step.Step StepParent, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -155,11 +159,15 @@ init s f =
                     ( editgroups, editcmd ) =
                         Group.Input.init s gs
 
+                    group =
+                        Dict.get (Uuid.toString uuid) s.state.groups
+
                     scope =
-                        Dict.get (Uuid.toString uuid) s.state.groups |> Maybe.map .scope |> Maybe.withDefault Scope.anything
+                        Maybe.map .scope group |> Maybe.withDefault Scope.anything
                 in
                 ( { adding
                     | type_ = realType
+                    , parent = Maybe.andThen .parent group
                     , scope = scope
                     , uuid = uuid
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
@@ -192,6 +200,9 @@ update s msg model =
               }
             , Effect.none
             )
+
+        InputParent parent ->
+            ( { model | parent = parent }, Effect.none )
 
         InputScope scope ->
             ( { model | scope = scope }, Effect.none )
@@ -260,13 +271,16 @@ checkStep model =
         Step.Step StepScope ->
             Ok ()
 
+        Step.Step StepParent ->
+            Ok ()
+
 
 validate : Model -> Result String TypedType
 validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid uuid m.scope
+            Ok <| constructor typedConstructor m.uuid uuid m.parent m.scope
 
         Nothing ->
             Err "You must select a Group Type"
@@ -287,6 +301,17 @@ viewContent model s =
                         , empty = "(There are no Group Types yet to choose from)"
                         }
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
+
+                Step.Step StepParent ->
+                    flatSelect s
+                        { what = Type.TType TType.Group
+                        , muuid = model.parent
+                        , onInput = InputParent
+                        , title = "Parent group:"
+                        , explain = "Choose the parent of the new group:"
+                        , empty = "(There are no Groups yet to choose from)"
+                        }
+                        ((s.state.groups |> Dict.filter (\_ v -> Maybe.map2 (Type.isChildOf s.state.types) (Just v.type_) model.type_ |> Maybe.withDefault False)) |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepScope ->
                     selectScope s InputScope model.scope Scope.anything "What can be in the group?"

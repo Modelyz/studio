@@ -13,6 +13,7 @@ type alias Group =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
+    , parent : Maybe Uuid
 
     -- The scope defines what a group can contain
     , scope : Scope
@@ -30,17 +31,20 @@ groupsOf links uuid =
 encode : Group -> Encode.Value
 encode g =
     Encode.object
-        [ ( "what", TType.encode g.what )
-        , ( "uuid", Uuid.encode g.uuid )
-        , ( "type", Uuid.encode g.type_ )
-        , ( "scope", Scope.encode g.scope )
-        ]
+        ([ ( "what", TType.encode g.what )
+         , ( "uuid", Uuid.encode g.uuid )
+         , ( "type", Uuid.encode g.type_ )
+         , ( "scope", Scope.encode g.scope )
+         ]
+            ++ (g.parent |> Maybe.map (\parent -> [ ( "parent", Uuid.encode parent ) ]) |> Maybe.withDefault [])
+        )
 
 
 decoder : Decoder Group
 decoder =
-    Decode.map4 Group
+    Decode.map5 Group
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
+        (Decode.maybe (Decode.field "parent" Uuid.decoder))
         (Decode.field "scope" Scope.decoder)

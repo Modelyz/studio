@@ -1,7 +1,10 @@
-module Tree exposing (Type(..), all, decoder, encode, toString)
+module Tree exposing (Type(..), all, decoder, encode, isAscendentOf, isDescendentOf, isDirectChildOf, parents, toString)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Prng.Uuid as Uuid exposing (Uuid)
+import Util exposing (third)
 
 
 type
@@ -14,9 +17,63 @@ type
     | Leaf
 
 
+isDirectChildOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Uuid -> Bool
+isDirectChildOf items parent uuid =
+    Dict.get (Uuid.toString uuid) items
+        |> Maybe.andThen .parent
+        |> Maybe.map ((==) parent)
+        |> Maybe.withDefault False
+
+
+isDescendentOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Uuid -> Bool
+isDescendentOf items parent uuid =
+    -- TODO merge with Type.ischildOf ?
+    if uuid == parent then
+        True
+
+    else
+        Dict.get (Uuid.toString uuid) items
+            |> Maybe.andThen .parent
+            |> Maybe.map
+                (\puuid ->
+                    if parent == puuid then
+                        True
+
+                    else
+                        isDescendentOf items parent puuid
+                )
+            |> Maybe.withDefault False
+
+
+isAscendentOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Uuid -> Bool
+isAscendentOf entities parent uuid =
+    isDescendentOf entities uuid parent
+
+
+parents : Uuid -> Dict String { a | uuid : Uuid, parent : Maybe Uuid } -> List Uuid -> List Uuid
+parents uuid items currents =
+    Dict.get (Uuid.toString uuid) items
+        |> Maybe.andThen .parent
+        |> Maybe.map (\parent -> parents parent items (parent :: currents))
+        |> Maybe.withDefault currents
+
+
 all : List Type
 all =
     [ Flat, Node, Leaf ]
+
+
+toString : Type -> String
+toString t =
+    case t of
+        Flat ->
+            "Not hierarchical"
+
+        Node ->
+            "Hierarchical, an intermediate node can be selected"
+
+        Leaf ->
+            "Hierarchical, a leaf must be selected"
 
 
 encode : Type -> Encode.Value
@@ -50,16 +107,3 @@ decoder =
                     _ ->
                         Decode.fail "Unknown Tree type"
             )
-
-
-toString : Type -> String
-toString t =
-    case t of
-        Flat ->
-            "Not hierarchical"
-
-        Node ->
-            "Hierarchical, an intermediate node can be selected"
-
-        Leaf ->
-            "Hierarchical, a leaf must be selected"

@@ -372,7 +372,7 @@ toDesc s r =
             "Home"
 
         Entity e (List (Just uuid)) ->
-            Maybe.map2 (Zone.View.display s.types s.configs SmallcardTitle s.identifiers s.grouped) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+            Maybe.map2 (Zone.View.displayZone s s.types s.configs SmallcardTitle s.identifiers s.grouped s.groups) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e

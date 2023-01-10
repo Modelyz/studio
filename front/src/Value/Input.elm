@@ -27,7 +27,7 @@ inputValues : Config msg -> Shared.Model -> Dict String Value -> Element msg
 inputValues c s values =
     -- display the expression with input fields for each relevant valueType
     column [ spacing 10 ]
-        (h2 "Input values"
+        (h2 "Values"
             :: (values
                     |> Dict.values
                     |> List.map

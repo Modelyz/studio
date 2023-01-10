@@ -24,7 +24,7 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -135,7 +135,7 @@ viewContent model s =
         "Commitment"
         [ button.primary Edit "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
         , h2 ("Date: " ++ DateTime.toString s.zone model.when)
@@ -143,10 +143,11 @@ viewContent model s =
             ("What: "
                 ++ (model.qty |> Maybe.map (\expr -> exeval s { context = ( Type.TType TType.Commitment, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
                 ++ " "
-                ++ (model.flow |> Maybe.map (\f -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+                ++ (model.flow |> Maybe.map (\f -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )
-        , h2 ("Provider: " ++ (model.provider |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
-        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainTType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict ""
         , h2 "Values:"
@@ -154,6 +155,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.TType TType.Commitment, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> display s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

@@ -129,7 +129,7 @@ init s f =
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid wantedType True
             , gsubmodel = initgroups
             , warning = ""
-            , step = Step.Step StepGroups
+            , step = Step.Step StepType
             , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in

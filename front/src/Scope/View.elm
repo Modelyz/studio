@@ -17,7 +17,7 @@ import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (clickableCard, hItemClickableCard, tClickableCard)
 import View.Style exposing (..)
-import Zone.View exposing (display)
+import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
 
@@ -42,19 +42,19 @@ toDisplay s scope =
             "Anything"
 
         IsItem (Type.TType tt) uuid ->
-            (Type.toString (Type.TType tt) ++ ": ") ++ display types configs SmallcardTitle (Identifier.fromUuid uuid ids) s.state.grouped (Type.TType tt) uuid
+            (Type.toString (Type.TType tt) ++ ": ") ++ displayZone s.state types configs SmallcardTitle (Identifier.fromUuid uuid ids) s.state.grouped s.state.groups (Type.TType tt) uuid
 
         IsItem (Type.HType ht) uuid ->
-            (Type.toString (Type.HType ht) ++ ": ") ++ display types configs SmallcardTitle (Identifier.fromUuid uuid ids) s.state.grouped (Type.HType ht) uuid
+            (Type.toString (Type.HType ht) ++ ": ") ++ displayZone s.state types configs SmallcardTitle (Identifier.fromUuid uuid ids) s.state.grouped s.state.groups (Type.HType ht) uuid
 
         HasType t ->
             Type.toPluralString t
 
         HasUserType (Type.TType tt) tuid ->
-            TType.toPluralString tt ++ " of type: " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) s.state.grouped (Type.HType (TType.toHierarchic tt)) tuid
+            TType.toPluralString tt ++ " of type: " ++ displayZone s.state types configs SmallcardTitle (Identifier.fromUuid tuid ids) s.state.grouped s.state.groups (Type.HType (TType.toHierarchic tt)) tuid
 
         HasUserType (Type.HType ht) tuid ->
-            HType.toPluralString ht ++ " of type: " ++ display types configs SmallcardTitle (Identifier.fromUuid tuid ids) s.state.grouped (Type.HType ht) tuid
+            HType.toPluralString ht ++ " of type: " ++ displayZone s.state types configs SmallcardTitle (Identifier.fromUuid tuid ids) s.state.grouped s.state.groups (Type.HType ht) tuid
 
         Identified _ ->
             "Identified"
@@ -133,7 +133,7 @@ selectScope s onInput sc forceScope title =
                                             htype =
                                                 Type.HType (TType.toHierarchic tt)
                                         in
-                                        tClickableCard (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped htype uuid
+                                        tClickableCard s.state (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups htype uuid
                                     )
                                 |> withDefaultContent (text <| "(There are no " ++ TType.toString tt ++ " Types defined)")
                            )
@@ -149,7 +149,7 @@ selectScope s onInput sc forceScope title =
                                             htype =
                                                 Type.HType ht
                                         in
-                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped htype uuid
+                                        tClickableCard s.state (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups htype uuid
                                     )
                                 |> withDefaultContent (text <| "(There are no " ++ HType.toString ht ++ " defined)")
                            )
@@ -167,7 +167,7 @@ selectScope s onInput sc forceScope title =
                                             htype =
                                                 Type.HType (TType.toHierarchic tt)
                                         in
-                                        tClickableCard (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped htype uuid
+                                        tClickableCard s.state (onInput (HasUserType (Type.TType tt) uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups htype uuid
                                     )
                             )
                         , h3 <| "or restrict to a " ++ HType.toString ht ++ " of Type:"
@@ -182,7 +182,7 @@ selectScope s onInput sc forceScope title =
                                             htype =
                                                 Type.HType ht
                                         in
-                                        tClickableCard (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped htype uuid
+                                        tClickableCard s.state (onInput (HasUserType htype uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups htype uuid
                                     )
                             )
                         ]
@@ -199,7 +199,7 @@ selectScope s onInput sc forceScope title =
                         :: (s.state.types
                                 |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.HType ht && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values
-                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.HType ht) uuid)
+                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard s.state onInput s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType ht) uuid)
                            )
 
                 HasUserType (Type.TType tt) puuid ->
@@ -207,7 +207,7 @@ selectScope s onInput sc forceScope title =
                         :: (s.state.types
                                 |> Dict.filter (\_ ( uuid, t, _ ) -> t == Type.TType tt && H.isAscendantOf uuid s.state.types puuid)
                                 |> Dict.values
-                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard onInput s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType tt) uuid)
+                                |> List.map (\( uuid, _, _ ) -> hItemClickableCard s.state onInput s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType tt) uuid)
                            )
 
                 _ ->

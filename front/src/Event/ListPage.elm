@@ -110,7 +110,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (entities
-                        |> List.map (\t -> tClickableRemovableCard (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped (Type.TType t.what) t.uuid)
+                        |> List.map (\t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType t.what) t.uuid)
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
                     )
                 ]
