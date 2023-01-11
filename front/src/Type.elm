@@ -1,10 +1,11 @@
-module Type exposing (Type(..), compare, decoder, encode, fromType, isChildOf, isParentOf, isType, toHierarchic, toPluralString, toString, toType, typeOf)
+module Type exposing (Type(..), compare, decoder, encode, fromType, hasCommonParent, isChildOf, isParentOf, isType, parents, toHierarchic, toPluralString, toString, toType, typeOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Set
 import Typed.Type as TType
 import Util exposing (third)
 
@@ -101,8 +102,26 @@ isChildOf types parent uuid =
 
 
 isParentOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Uuid -> Bool
-isParentOf types parent uuid =
-    isChildOf types uuid parent
+isParentOf types uuid parent =
+    isChildOf types parent uuid
+
+
+parents : Uuid -> Dict String ( Uuid, Type, Maybe Uuid ) -> List Uuid -> List Uuid
+parents uuid items currents =
+    -- TODO merge with Tree.parents
+    Dict.get (Uuid.toString uuid) items
+        |> Maybe.andThen third
+        |> Maybe.map (\parent -> parents parent items (parent :: currents))
+        |> Maybe.withDefault currents
+
+
+hasCommonParent : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Uuid -> Bool
+hasCommonParent types uuid1 uuid2 =
+    not <|
+        Dict.isEmpty <|
+            Dict.intersect
+                (Dict.fromList <| List.map (\uuid -> ( Uuid.toString uuid, uuid )) <| parents uuid1 types [])
+                (Dict.fromList <| List.map (\uuid -> ( Uuid.toString uuid, uuid )) <| parents uuid2 types [])
 
 
 isType : Type -> Bool

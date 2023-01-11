@@ -46,8 +46,8 @@ isDescendentOf items parent uuid =
 
 
 isAscendentOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Uuid -> Bool
-isAscendentOf entities parent uuid =
-    isDescendentOf entities uuid parent
+isAscendentOf entities uuid parent =
+    isDescendentOf entities parent uuid
 
 
 parents : Uuid -> Dict String { a | uuid : Uuid, parent : Maybe Uuid } -> List Uuid -> List Uuid

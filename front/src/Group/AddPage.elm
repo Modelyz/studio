@@ -311,7 +311,8 @@ viewContent model s =
                         , explain = "Choose the parent of the new group:"
                         , empty = "(There are no Groups yet to choose from)"
                         }
-                        ((s.state.groups |> Dict.filter (\_ v -> Maybe.map2 (Type.isChildOf s.state.types) (Just v.type_) model.type_ |> Maybe.withDefault False)) |> Dict.map (\_ a -> a.uuid))
+                        -- we display the groups whose type is an ascendent of the newly added group
+                        ((s.state.groups |> Dict.filter (\_ v -> Maybe.map (Type.hasCommonParent s.state.types v.type_) model.type_ |> Maybe.withDefault False)) |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepScope ->
                     selectScope s InputScope model.scope Scope.anything "What can be in the group?"
