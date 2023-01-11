@@ -289,7 +289,7 @@ checkStep model =
             Ok ()
 
         Step StepFlow ->
-            Ok ()
+            Result.map (\_ -> ()) <| Expression.Editor.checkExpression model.editor
 
         Step StepIdentifiers ->
             Ok ()
