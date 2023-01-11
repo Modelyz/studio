@@ -2,7 +2,7 @@
 
 [Back to app](../)
 
-## version 11 -- unreleased
+## version 11 -- 2023-01-11
 
 * Better Scope selection
 * Full configured entity display on the View Pages
