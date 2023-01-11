@@ -172,82 +172,83 @@ update msg model =
 
 inputGroups : Config -> Shared.Model -> Model -> Element Msg
 inputGroups c s model =
-    column [ alignTop, spacing 20, width <| minimum 200 fill ]
-        [ text "In what kind of groups do you want to put this into?"
-        , wrappedRow [ spacing 10 ]
-            (s.state.groupTypes
-                |> Dict.values
-                |> List.map
-                    (\gt ->
-                        (if Just gt == model.currentGt then
-                            button.primary
+    column [ spacing 10 ]
+        [ h2 "Groups"
+        , column [ alignTop, spacing 20, width <| minimum 200 fill ]
+            [ text "In what kind of groups do you want to put this into?"
+            , wrappedRow [ spacing 10 ]
+                (s.state.groupTypes
+                    |> Dict.values
+                    |> List.map
+                        (\gt ->
+                            (if Just gt == model.currentGt then
+                                button.primary
 
-                         else
-                            button.secondary
+                             else
+                                button.secondary
+                            )
+                                (SetCurrentGT gt)
+                                (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid)
                         )
-                            (SetCurrentGT gt)
-                            (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid)
-                    )
-            )
-        , column [ spacing 10 ]
-            (model.groups
-                |> Dict.values
-                |> List.map
-                    (\( gt, gdict ) ->
-                        let
-                            gtdisplay =
-                                displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid
-                        in
-                        column [ spacing 20 ]
-                            [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 5, Border.color color.item.border ] <|
-                                (h2 <| gtdisplay ++ ":")
-                                    :: (gdict
-                                            |> Dict.values
-                                            |> List.map
-                                                (\uuid ->
-                                                    viewHalfCard s.state (Just (RemovedGroup gt uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
-                                                )
-                                       )
+                )
+            , column [ spacing 10 ]
+                (model.groups
+                    |> Dict.values
+                    |> List.map
+                        (\( gt, gdict ) ->
+                            let
+                                gtdisplay =
+                                    displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid
+                            in
+                            column [ spacing 20 ]
+                                [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 5, Border.color color.item.border ] <|
+                                    (h2 <| gtdisplay ++ ":")
+                                        :: (gdict
+                                                |> Dict.values
+                                                |> List.map
+                                                    (\uuid ->
+                                                        viewHalfCard s.state (Just (RemovedGroup gt uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
+                                                    )
+                                           )
+                                ]
+                        )
+                )
+            , model.currentGt
+                |> Maybe.map
+                    (\currentGt ->
+                        column []
+                            [ h2 <| "Select the groups this entity should belong to"
+                            , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
+                                (s.state.groups
+                                    |> Dict.filter
+                                        (\_ g ->
+                                            if currentGt.treeType == Tree.Flat then
+                                                -- if the treeType of the currentGT is Node or Leaf,
+                                                -- keep the groups that have the currentGroup as a parent
+                                                Type.isChildOf s.state.types g.type_ currentGt.uuid
+                                                    && containsScope
+                                                        s.state.types
+                                                        (c.mpuuid |> Maybe.map (HasUserType c.type_) |> Maybe.withDefault Empty)
+                                                        g.scope
+
+                                            else
+                                                -- otherwise keep the groups whose type is a child of the current Group Type
+                                                Type.isChildOf s.state.types currentGt.uuid g.type_
+                                                    -- and those which are a direct child of the current Group
+                                                    && (model.currentG |> Maybe.map (\currentG -> Tree.isDirectChildOf s.state.groups currentG g.uuid) |> Maybe.withDefault (g.parent == Nothing))
+                                                    -- and those whose scope fits in the current Group
+                                                    && containsScope s.state.types (c.mpuuid |> Maybe.map (HasUserType c.type_) |> Maybe.withDefault Empty) g.scope
+                                        )
+                                    |> Dict.values
+                                    |> List.map .uuid
+                                    |> List.map
+                                        (\uuid ->
+                                            tClickableCard s.state (AddedGroup currentGt uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
+                                        )
+                                    |> withDefaultContent (p "(There are no Groups yet)")
+                                )
                             ]
                     )
-            )
-        , model.currentGt
-            |> Maybe.map
-                (\currentGt ->
-                    column []
-                        [ h2 <| "Select the groups this entity should belong to"
-                        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
-                            (s.state.groups
-                                |> Dict.filter
-                                    (\_ g ->
-                                        -- if the treeType of the currentGt is Node or Leaf,
-                                        -- filter groups that have currentGroup as a parent
-                                        if currentGt.treeType == Tree.Flat then
-                                            Type.isChildOf s.state.types g.type_ currentGt.uuid
-                                                && containsScope
-                                                    s.state.types
-                                                    (c.mpuuid |> Maybe.map (HasUserType c.type_) |> Maybe.withDefault Empty)
-                                                    g.scope
-                                            -- otherwise filter the groups whose type is a child of the currentG
-                                            -- and those whose scope fits in the current entity
-
-                                        else
-                                            Type.isChildOf s.state.types g.type_ currentGt.uuid
-                                                && (model.currentG |> Maybe.map (\currentG -> Tree.isDirectChildOf s.state.groups currentG g.uuid) |> Maybe.withDefault (g.parent == Nothing))
-                                                && containsScope
-                                                    s.state.types
-                                                    (c.mpuuid |> Maybe.map (HasUserType c.type_) |> Maybe.withDefault Empty)
-                                                    g.scope
-                                    )
-                                |> Dict.values
-                                |> List.map .uuid
-                                |> List.map
-                                    (\uuid ->
-                                        tClickableCard s.state (AddedGroup currentGt uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
-                                    )
-                                |> withDefaultContent (p "(There are no Groups yet)")
-                            )
-                        ]
-                )
-            |> Maybe.withDefault none
+                |> Maybe.withDefault none
+            ]
         ]
