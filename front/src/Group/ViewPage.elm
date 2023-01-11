@@ -122,6 +122,8 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> h1
         , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainTType model.uuid
+        , h2 "Parent group:"
+        , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group)) |> Maybe.withDefault "plop" |> text
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Can contain:"
