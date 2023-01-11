@@ -85,22 +85,22 @@ view s model =
         ]
         (case model.selection of
             None ->
-                [ selectScope s InputScope Scope.empty Scope.empty "Where do you want to select a value?" ]
+                [ selectScope s InputScope Scope.anything Scope.anything "Where do you want to select a value?" ]
 
             OnlyScope (IsItem type_ uuid) ->
                 let
                     scope =
                         IsItem type_ uuid
                 in
-                [ selectScope s InputScope scope Scope.empty "Where do you want to select a value?"
+                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?"
                 , selectValue s model scope (InputValue type_ uuid)
                 ]
 
             OnlyScope scope ->
-                [ selectScope s InputScope scope Scope.empty "Where do you want to select a value?" ]
+                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?" ]
 
             ScopeAndValue scope name ->
-                [ selectScope s InputScope scope Scope.empty "Where do you want to select a value?"
+                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?"
                 , halfCard (InputScope scope) (text name)
                 ]
         )

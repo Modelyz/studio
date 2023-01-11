@@ -4,6 +4,7 @@
 
 ## version 11 -- unreleased
 
+* Better Scope selection
 * Full configured entity display on the View Pages
 * Ability to display the parent in the configured display
 * Calendar to choose the date of a commitment/event

@@ -1,10 +1,12 @@
 module Scope.Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType)
 
+import Hierarchy.Type as HType
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
+import Typed.Type as TType
 
 
 type

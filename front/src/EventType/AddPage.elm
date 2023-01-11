@@ -332,6 +332,7 @@ viewContent model s =
 
                 Step.Step StepFlow ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
+                        -- TODO review Scope.or and check Commitment as well
                         [ selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
                         , h2 "Build an expression for the quantity exchanged:"
                         , Element.map EditorMsg <| Expression.Editor.view s model.editor
