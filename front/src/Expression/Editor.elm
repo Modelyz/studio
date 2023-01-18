@@ -34,6 +34,7 @@ type Msg
     | BinaryOperator B.Operator
     | RemoveExpression Int
     | Undo
+    | Swap
     | VlMsg Expression.Value.Select.Msg
     | DlMsg Expression.DeepLink.Select.Msg
     | OpenValueSelector Int (List Int)
@@ -105,6 +106,9 @@ update s msg model =
 
         Undo ->
             ( { model | stack = Expression.undo model.stack }, Cmd.none )
+
+        Swap ->
+            ( { model | stack = Expression.swap model.stack }, Cmd.none )
 
         OpenValueSelector stackNum targetPath ->
             ( { model
@@ -198,8 +202,8 @@ view s model =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ -- display buttons
           wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (buttonUndo model
-                :: List.map buttonObservable Obs.allObs
+            ([ buttonUndo model, buttonSwap model ]
+                ++ List.map buttonObservable Obs.allObs
                 ++ List.map (buttonUnaryOperator (List.head model.stack)) U.all
                 ++ List.map (buttonBinaryOperator (Maybe.map2 Tuple.pair (List.head model.stack) ((List.tail >> Maybe.andThen List.head) model.stack))) B.all
             )
@@ -340,3 +344,12 @@ buttonUndo model =
 
     else
         button.special Undo "Undo"
+
+
+buttonSwap : Model -> Element Msg
+buttonSwap model =
+    if List.length model.stack < 2 then
+        button.disabled "" "Swap"
+
+    else
+        button.special Swap "Swap"

@@ -8,6 +8,7 @@
 * improved the display of scopes during the deeplink selection
 * Display the expression in the ValueType ViewPage
 * Allow to select the Parent of a group in the Deeplink
+* Allow to swap the first two lines in the expression editor
 
 ## version 11 -- 2023-01-11
 

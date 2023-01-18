@@ -1,4 +1,4 @@
-module Expression exposing (Expression(..), applyBinary, applyUnary, decoder, encode, undo, updateExpr)
+module Expression exposing (Expression(..), applyBinary, applyUnary, decoder, encode, swap, undo, updateExpr)
 
 import Dict exposing (Dict)
 import Expression.Binary as B
@@ -110,3 +110,18 @@ undo stack =
         |> Maybe.withDefault []
     )
         ++ (List.tail stack |> Maybe.withDefault [])
+
+
+swap : List Expression -> List Expression
+swap stack =
+    case stack of
+        x :: xs ->
+            case xs of
+                y :: ys ->
+                    y :: x :: ys
+
+                _ ->
+                    xs
+
+        _ ->
+            stack
