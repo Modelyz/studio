@@ -2,6 +2,11 @@
 
 [Back to app](../)
 
+## version 12 -- unreleased
+
+
+* improved the display of scopes during the deeplink selection
+
 ## version 11 -- 2023-01-11
 
 * Better Scope selection

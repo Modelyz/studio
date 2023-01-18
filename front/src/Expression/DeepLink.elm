@@ -1,12 +1,10 @@
-module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toDisplay, toScope)
+module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toScope)
 
 import Expression.HardLink as HardLink exposing (HardLink)
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope.Scope as Scope exposing (Scope(..))
-import Type
-import Typed.Type as TType
 
 
 type DeepLink
@@ -105,21 +103,6 @@ terminate scope name dl =
 
         EndPoint _ _ ->
             EndPoint scope name
-
-
-toDisplay : DeepLink -> String
-toDisplay deeplink =
-    case deeplink of
-        Null ->
-            "Empty"
-
-        Link hl dl ->
-            HardLink.toString hl ++ " → " ++ toDisplay dl
-
-        EndPoint scope name ->
-            -- TODO display without uuid
-            -- name ++ " (" Scope.View.toDisplay allT allG configs scope ++ ")"
-            Scope.toString scope ++ " → " ++ name
 
 
 toScope : Scope -> DeepLink -> Scope

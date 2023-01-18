@@ -4,6 +4,7 @@ import Dict
 import Element exposing (..)
 import Element.Border as Border
 import Expression.DeepLink as DL exposing (DeepLink(..))
+import Expression.DeepLink.View
 import Expression.HardLink as HL exposing (HardLink)
 import Scope.Scope exposing (Scope)
 import Scope.State exposing (containsScope)
@@ -71,7 +72,7 @@ view s model =
             ]
         ]
     <|
-        [ {- TODO turn into a chain of smallcards -} text <| DL.toDisplay model.deeplink
+        [ {- TODO turn into a chain of smallcards -} text <| Expression.DeepLink.View.toDisplay s model.deeplink
         , h2 "Choose between:"
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of

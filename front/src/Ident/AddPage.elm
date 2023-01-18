@@ -8,6 +8,7 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Attr
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Message
@@ -248,7 +249,7 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new identifierType"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Identifier Type"
                             }
     in
     floatingContainer s

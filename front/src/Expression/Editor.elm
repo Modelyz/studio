@@ -10,6 +10,7 @@ import Expression as Expression exposing (Expression(..))
 import Expression.Binary as B
 import Expression.DeepLink as DeepLink exposing (DeepLink)
 import Expression.DeepLink.Select
+import Expression.DeepLink.View
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
 import Expression.Unary as U
@@ -33,8 +34,8 @@ type Msg
     | BinaryOperator B.Operator
     | RemoveExpression Int
     | Undo
-    | SubMsg Expression.Value.Select.Msg
-    | SubMsg2 Expression.DeepLink.Select.Msg
+    | VlMsg Expression.Value.Select.Msg
+    | DlMsg Expression.DeepLink.Select.Msg
     | OpenValueSelector Int (List Int)
     | OpenDeepLinkSelector Int (List Int)
 
@@ -112,10 +113,10 @@ update s msg model =
             , Cmd.none
             )
 
-        SubMsg Expression.Value.Select.Cancel ->
+        VlMsg Expression.Value.Select.Cancel ->
             ( { model | vlselector = Nothing }, Cmd.none )
 
-        SubMsg (Expression.Value.Select.Choose vs stackNum targetPath) ->
+        VlMsg (Expression.Value.Select.Choose vs stackNum targetPath) ->
             case vs of
                 SelectedValue _ _ _ ->
                     -- TODO we don't use the selected value?
@@ -139,7 +140,7 @@ update s msg model =
                 UndefinedValue ->
                     ( model, Cmd.none )
 
-        SubMsg vlmsg ->
+        VlMsg vlmsg ->
             model.vlselector
                 |> Maybe.map
                     (\vlselector ->
@@ -147,7 +148,7 @@ update s msg model =
                             ( newsubmodel, subcmd ) =
                                 Expression.Value.Select.update s vlmsg vlselector
                         in
-                        ( { model | vlselector = Just newsubmodel }, Cmd.map SubMsg subcmd )
+                        ( { model | vlselector = Just newsubmodel }, Cmd.map VlMsg subcmd )
                     )
                 |> Maybe.withDefault ( { model | vlselector = Nothing }, Cmd.none )
 
@@ -158,10 +159,10 @@ update s msg model =
             , Cmd.none
             )
 
-        SubMsg2 Expression.DeepLink.Select.Cancel ->
+        DlMsg Expression.DeepLink.Select.Cancel ->
             ( { model | dlselector = Nothing }, Cmd.none )
 
-        SubMsg2 (Expression.DeepLink.Select.Choose dl stackNum targetPath) ->
+        DlMsg (Expression.DeepLink.Select.Choose dl stackNum targetPath) ->
             ( { model
                 | dlselector = Nothing
                 , stack =
@@ -179,7 +180,7 @@ update s msg model =
             , Cmd.none
             )
 
-        SubMsg2 dlmsg ->
+        DlMsg dlmsg ->
             model.dlselector
                 |> Maybe.map
                     (\dlselector ->
@@ -187,7 +188,7 @@ update s msg model =
                             ( newsubmodel, subcmd ) =
                                 Expression.DeepLink.Select.update s dlmsg dlselector
                         in
-                        ( { model | dlselector = Just newsubmodel }, Cmd.map SubMsg2 subcmd )
+                        ( { model | dlselector = Just newsubmodel }, Cmd.map DlMsg subcmd )
                     )
                 |> Maybe.withDefault ( { model | vlselector = Nothing }, Cmd.none )
 
@@ -297,7 +298,7 @@ editObservable s model ( stackNum, exprPath ) obs =
 
                 DeepLink.Link _ _ ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (DeepLink.toDisplay deeplink)
+                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (Expression.DeepLink.View.toDisplay s deeplink)
                         ]
 
 
@@ -328,8 +329,8 @@ buttonBinaryOperator mt o =
 
 viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)
 viewSubpage s model =
-    (model.vlselector |> Maybe.map (Element.map SubMsg << Expression.Value.Select.view s))
-        |> otherwise (model.dlselector |> Maybe.map (Element.map SubMsg2 << Expression.DeepLink.Select.view s))
+    (model.vlselector |> Maybe.map (Element.map VlMsg << Expression.Value.Select.view s))
+        |> otherwise (model.dlselector |> Maybe.map (Element.map DlMsg << Expression.DeepLink.Select.view s))
 
 
 buttonUndo : Model -> Element Msg
