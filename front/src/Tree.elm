@@ -1,4 +1,4 @@
-module Tree exposing (Type(..), all, decoder, encode, isAscendentOf, isDescendentOf, isDirectChildOf, parents, toString)
+module Tree exposing (Type(..), all, decoder, encode, isAscendentOf, isDescendentOf, isDirectChildOf, parentOf, parents, toString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -48,6 +48,11 @@ isDescendentOf items parent uuid =
 isAscendentOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Uuid -> Bool
 isAscendentOf entities uuid parent =
     isDescendentOf entities parent uuid
+
+
+parentOf : Dict String { a | parent : Maybe Uuid } -> Uuid -> Maybe Uuid
+parentOf entities uuid =
+    Dict.get (Uuid.toString uuid) entities |> Maybe.andThen .parent
 
 
 parents : Uuid -> Dict String { a | uuid : Uuid, parent : Maybe Uuid } -> List Uuid -> List Uuid

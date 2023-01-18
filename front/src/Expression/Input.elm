@@ -106,9 +106,8 @@ inputObservable c s targetPath obs expr =
         ObsLink deeplink ->
             let
                 value =
-                    (Eval.dleval s deeplink [ Tuple.second c.context ]
+                    Eval.dleval s deeplink [ Tuple.second c.context ]
                         |> chooseIfSingleton
-                    )
                         |> Maybe.map (Eval.veval s { context = c.context } s.state.values)
             in
             row [ height fill ]

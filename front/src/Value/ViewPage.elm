@@ -3,6 +3,7 @@ module Value.ViewPage exposing (Flags, Model, Msg(..), match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
+import Expression.View
 import Route exposing (Route, redirect)
 import Scope.View
 import Shared
@@ -91,9 +92,8 @@ viewContent model s =
                     "ValueType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| vt.name
-                    , text <|
-                        "Scope: "
-                            ++ Scope.View.toDisplay s vt.scope
+                    , text <| "For: " ++ Scope.View.toDisplay s vt.scope
+                    , row [] [ text "Expression : ", Expression.View.viewExpression s vt.expr ]
                     ]
             )
         |> Maybe.withDefault

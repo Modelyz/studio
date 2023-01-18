@@ -17,6 +17,7 @@ import Resource.Resource as Resource
 import Scope.Scope exposing (Scope(..), toType)
 import Scope.State exposing (containsScope)
 import Shared
+import Tree exposing (parentOf)
 import Type exposing (Type, typeOf)
 import Typed.Type as TType
 import Util exposing (chooseIfSingleton)
@@ -134,6 +135,9 @@ step s hl uuid =
         ProcessLink HardLink.ProcessType ->
             Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
+        GroupLink HardLink.ParentGroup ->
+            Maybe.withDefault [] <| Maybe.map List.singleton (parentOf s.state.groups uuid)
+
         GroupLink HardLink.GroupGroup ->
             Group.groupsOf s.state.grouped uuid
 
@@ -146,6 +150,12 @@ step s hl uuid =
         ResourceTypeLink HardLink.ResourceTypeParent ->
             Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
+        EventTypeLink HardLink.EventTypeReceiver ->
+            Agent.receiversOf s.state.types s.state.eventTypes s.state.agents uuid
+
+        EventTypeLink HardLink.EventTypeProvider ->
+            Agent.providersOf s.state.types s.state.eventTypes s.state.agents uuid
+
         EventTypeLink HardLink.EventTypeGroup ->
             Group.groupsOf s.state.grouped uuid
 
@@ -157,6 +167,12 @@ step s hl uuid =
 
         AgentTypeLink HardLink.AgentTypeParent ->
             Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
+
+        CommitmentTypeLink HardLink.CommitmentTypeReceiver ->
+            Agent.receiversOf s.state.types s.state.commitmentTypes s.state.agents uuid
+
+        CommitmentTypeLink HardLink.CommitmentTypeProvider ->
+            Agent.providersOf s.state.types s.state.commitmentTypes s.state.agents uuid
 
         CommitmentTypeLink HardLink.CommitmentTypeGroup ->
             Group.groupsOf s.state.grouped uuid
@@ -183,6 +199,7 @@ step s hl uuid =
             Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.state.types uuid)
 
         _ ->
+            -- FIXME missing EventTypeFlow and CommitmentTypeFlow
             []
 
 

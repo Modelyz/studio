@@ -96,6 +96,9 @@ toString hardlink =
         GroupLink GroupType ->
             "Group Type"
 
+        GroupLink ParentGroup ->
+            "Parent Group"
+
         ResourceTypeLink ResourceTypeGroup ->
             "ResourceType Group"
 
@@ -239,6 +242,9 @@ decoder =
 
                     "Group Type" ->
                         Decode.succeed <| GroupLink GroupType
+
+                    "Parent Group" ->
+                        Decode.succeed <| GroupLink ParentGroup
 
                     "ResourceType Group" ->
                         Decode.succeed <| ResourceTypeLink ResourceTypeGroup
@@ -393,11 +399,12 @@ allPL =
 type GroupLink
     = GroupGroup
     | GroupType
+    | ParentGroup
 
 
 allGL : List HardLink
 allGL =
-    [ GroupLink GroupGroup, GroupLink GroupType ]
+    [ GroupLink ParentGroup, GroupLink GroupGroup, GroupLink GroupType ]
 
 
 type ResourceTypeLink
@@ -611,6 +618,9 @@ plToChoice hl =
 glToChoice : GroupLink -> List HardLink
 glToChoice hl =
     case hl of
+        ParentGroup ->
+            allGL
+
         GroupGroup ->
             allGL
 
@@ -845,6 +855,9 @@ plToScope hardlink =
 glToScope : GroupLink -> Scope
 glToScope hardlink =
     case hardlink of
+        ParentGroup ->
+            HasType (Type.TType TType.Group)
+
         GroupGroup ->
             HasType (Type.TType TType.Group)
 

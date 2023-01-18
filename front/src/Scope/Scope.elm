@@ -9,6 +9,10 @@ import Type exposing (Type)
 import Typed.Type as TType
 
 
+
+-- TODO move this module at the root: Scope/Scope.elm → Scope.elm
+
+
 type
     Scope
     -- a scope is the definition of a set of items:

@@ -1,9 +1,12 @@
-module Agent.Agent exposing (Agent, decoder, encode, providerOf, receiverOf)
+module Agent.Agent exposing (Agent, decoder, encode, providerOf, providersOf, receiverOf, receiversOf)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
+import Scope.Scope exposing (Scope(..))
+import Scope.State as Scope
+import Type exposing (Type)
 import Typed.Type as TType
 
 
@@ -12,6 +15,32 @@ type alias Agent =
     , uuid : Uuid
     , type_ : Uuid
     }
+
+
+providersOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String { a | providers : Scope } -> Dict String Agent -> Uuid -> List Uuid
+providersOf types entities agents uuid =
+    Dict.get (Uuid.toString uuid) entities
+        |> Maybe.map
+            (\e ->
+                agents
+                    |> Dict.filter (\_ v -> Scope.containsScope types (IsItem (Type.TType TType.Agent) v.uuid) e.providers)
+                    |> Dict.values
+                    |> List.map .uuid
+            )
+        |> Maybe.withDefault []
+
+
+receiversOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String { a | receivers : Scope } -> Dict String Agent -> Uuid -> List Uuid
+receiversOf types entities agents uuid =
+    Dict.get (Uuid.toString uuid) entities
+        |> Maybe.map
+            (\e ->
+                agents
+                    |> Dict.filter (\_ v -> Scope.containsScope types (IsItem (Type.TType TType.Agent) v.uuid) e.receivers)
+                    |> Dict.values
+                    |> List.map .uuid
+            )
+        |> Maybe.withDefault []
 
 
 providerOf : Dict String { a | provider : Uuid } -> Dict String Agent -> Uuid -> List Uuid

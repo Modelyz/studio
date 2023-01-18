@@ -133,7 +133,7 @@ viewContent model s =
             |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
-        , model.et |> Maybe.map .qty |> Maybe.map (Expression.View.viewExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
+        , model.et |> Maybe.map .qty |> Maybe.map (Expression.View.inputExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?
