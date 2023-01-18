@@ -1,4 +1,4 @@
-module Scope.Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType)
+module Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType)
 
 import Hierarchy.Type as HType
 import Ident.Identification as Identification exposing (Identification)
@@ -7,10 +7,6 @@ import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 import Typed.Type as TType
-
-
-
--- TODO move this module at the root: Scope/Scope.elm → Scope.elm
 
 
 type

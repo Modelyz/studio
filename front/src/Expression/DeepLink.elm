@@ -4,7 +4,7 @@ import Expression.HardLink as HardLink exposing (HardLink)
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope as Scope exposing (Scope(..))
 
 
 type DeepLink

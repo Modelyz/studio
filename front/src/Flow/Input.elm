@@ -12,7 +12,7 @@ import Hierarchy.Type as HType
 import Ident.Identifier exposing (Identifier)
 import Ident.IdentifierType exposing (IdentifierType)
 import Resource.Resource exposing (Resource)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Type

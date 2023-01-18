@@ -5,7 +5,7 @@ import Group.Link as GroupLink
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope as Scope exposing (Scope)
+import Scope as Scope exposing (Scope)
 import Typed.Type as TType
 
 

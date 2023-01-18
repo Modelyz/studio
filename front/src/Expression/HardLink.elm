@@ -3,7 +3,7 @@ module Expression.HardLink exposing (AgentLink(..), AgentTypeLink(..), Commitmen
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Scope.Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Type exposing (Type)
 import Typed.Type as TType
 

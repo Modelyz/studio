@@ -9,7 +9,7 @@ import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope)
+import Scope as Scope exposing (Scope)
 import Scope.View
 import Shared
 import Spa.Page

@@ -14,7 +14,7 @@ import Flow
 import Group.Group as Group
 import Prng.Uuid as Uuid exposing (Uuid)
 import Resource.Resource as Resource
-import Scope.Scope exposing (Scope(..), toType)
+import Scope exposing (Scope(..), toType)
 import Scope.State exposing (containsScope)
 import Shared
 import Tree exposing (parentOf)

@@ -14,7 +14,7 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope)
+import Scope as Scope exposing (Scope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page

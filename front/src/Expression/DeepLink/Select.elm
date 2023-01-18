@@ -6,7 +6,7 @@ import Element.Border as Border
 import Expression.DeepLink as DL exposing (DeepLink(..))
 import Expression.DeepLink.View
 import Expression.HardLink as HL exposing (HardLink)
-import Scope.Scope exposing (Scope)
+import Scope exposing (Scope)
 import Scope.State exposing (containsScope)
 import Shared
 import View exposing (..)

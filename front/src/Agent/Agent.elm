@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State as Scope
 import Type exposing (Type)
 import Typed.Type as TType

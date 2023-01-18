@@ -7,7 +7,7 @@ import Element.Font as Font
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Tree

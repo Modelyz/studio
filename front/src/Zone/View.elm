@@ -6,7 +6,7 @@ import Group.Group as Group exposing (Group)
 import Group.Link exposing (Link)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import State exposing (State)
 import Tree
 import Type exposing (Type)

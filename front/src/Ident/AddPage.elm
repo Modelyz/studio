@@ -13,7 +13,7 @@ import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
-import Scope.Scope as Scope exposing (Scope)
+import Scope as Scope exposing (Scope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page

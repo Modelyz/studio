@@ -10,7 +10,7 @@ import Hierarchy.Hierarchic as H
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
 import Prng.Uuid exposing (Uuid)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope as Scope exposing (Scope(..))
 import Shared
 import Type exposing (Type)
 import Typed.Type as TType

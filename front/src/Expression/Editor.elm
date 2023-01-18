@@ -18,7 +18,7 @@ import Expression.Value.Select
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope.Scope as Scope exposing (Scope(..))
+import Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Util exposing (checkEmptyString, checkListOne, otherwise)
