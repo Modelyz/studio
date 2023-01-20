@@ -44,7 +44,7 @@ viewExpression s expr =
             viewObservable s obs
 
         Unary o e ->
-            row [] [ text (U.toShortString o), viewExpression s e ]
+            wrappedRow [ width fill ] [ text (U.toShortString o), viewExpression s e ]
 
         Binary o e1 e2 ->
             wrappedRow [ width fill ] [ viewExpression s e1, text <| B.toShortString o, viewExpression s e2 ]
@@ -58,10 +58,10 @@ inputExpression s c expr =
             inputObservable s c obs
 
         Unary o e ->
-            row [] [ text (U.toShortString o), inputExpression s c e ]
+            wrappedRow [ width fill ] [ text (U.toShortString o), inputExpression s c e ]
 
         Binary o e1 e2 ->
-            wrappedRow [] [ inputExpression s c e1, text <| B.toShortString o, inputExpression s c e2 ]
+            wrappedRow [ width fill ] [ inputExpression s c e1, text <| B.toShortString o, inputExpression s c e2 ]
 
 
 viewObservable : Shared.Model -> Observable -> Element msg
@@ -74,7 +74,8 @@ viewObservable s obs =
                         "[" ++ Rational.toRString n.val ++ "]"
 
                     _ ->
-                        "[" ++ n.name
+                        "["
+                            ++ n.name
                             ++ (if n.input /= "" then
                                     "=" ++ Rational.toRString n.val
 
@@ -84,7 +85,7 @@ viewObservable s obs =
                             ++ "]"
 
         ObsValue (ValueSelection.SelectedValue _ for name) ->
-            row [ height fill, htmlAttribute <| Attr.title name ]
+            wrappedRow [ height fill, htmlAttribute <| Attr.title name ]
                 [ Value.getByUuid for s.state.values
                     |> Result.map .name
                     |> Result.withDefault "(value not found)"
@@ -92,10 +93,10 @@ viewObservable s obs =
                 ]
 
         ObsValue ValueSelection.UndefinedValue ->
-            row [ height fill ] [ text "Unselected value" ]
+            wrappedRow [ height fill ] [ text "Unselected value" ]
 
         ObsLink deeplink ->
-            row [ height fill ]
+            wrappedRow [ height fill ]
                 [ text <| Expression.DeepLink.View.toDisplay s deeplink
                 ]
 
@@ -107,7 +108,7 @@ inputObservable s c obs =
             text <| Rational.toRString n.val
 
         ObsValue (ValueSelection.SelectedValue _ for name) ->
-            row [ height fill, htmlAttribute <| Attr.title name ]
+            wrappedRow [ width fill, height fill, htmlAttribute <| Attr.title name ]
                 [ text <|
                     case
                         Value.getByUuid for s.state.values
@@ -121,10 +122,10 @@ inputObservable s c obs =
                 ]
 
         ObsValue ValueSelection.UndefinedValue ->
-            row [ height fill ] [ text "Unselected value" ]
+            wrappedRow [ width fill, height fill ] [ text "Unselected value" ]
 
         ObsLink deeplink ->
-            row [ height fill ]
+            wrappedRow [ width fill, height fill ]
                 [ text <|
                     case
                         Err "TODO1"

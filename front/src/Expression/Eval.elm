@@ -224,4 +224,4 @@ dleval s deeplink currentlist =
                 groups =
                     currentlist |> List.filter (\u -> toType scope |> Maybe.map (\t -> containsScope s.state.types (IsItem t u) scope) |> Maybe.withDefault False)
             in
-            List.map (\g -> s.state.values |> Dict.filter (\_ v -> v.for == g) |> Dict.values) groups |> List.concat
+            List.map (\g -> s.state.values |> Dict.filter (\_ v -> v.for == g && v.name == name) |> Dict.values) groups |> List.concat

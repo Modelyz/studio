@@ -3,12 +3,14 @@ module Expression.Binary exposing (..)
 import Expression.Rational as R exposing (Rational)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Util exposing (otherwiseR)
 
 
 type Operator
     = Add
     | Multiply
     | Or { name : String, desc : String, choice : Result String Bool }
+    | Otherwise
 
 
 toString : Operator -> String
@@ -22,6 +24,9 @@ toString o =
 
         Or _ ->
             "Or"
+
+        Otherwise ->
+            "Otherwise"
 
 
 eval : Operator -> Result String Rational -> Result String Rational -> Result String Rational
@@ -45,6 +50,9 @@ eval operator res1 res2 =
                             res2
                     )
 
+        Otherwise ->
+            res1 |> otherwiseR res2
+
 
 or : String -> String -> Maybe Bool -> Operator
 or n d c =
@@ -63,10 +71,13 @@ toShortString o =
         Or _ ->
             " or "
 
+        Otherwise ->
+            " ?? Otherwise: "
+
 
 all : List Operator
 all =
-    [ Add, Multiply, or "" "" Nothing ]
+    [ Add, Multiply, or "" "" Nothing, Otherwise ]
 
 
 encode : Operator -> Encode.Value
@@ -77,6 +88,9 @@ encode op =
 
         Multiply ->
             Encode.object [ ( "type", Encode.string "*" ) ]
+
+        Otherwise ->
+            Encode.object [ ( "type", Encode.string "??" ) ]
 
         Or data ->
             Encode.object
@@ -101,6 +115,9 @@ decoder =
 
                     "Or" ->
                         Decode.map3 or (Decode.field "name" Decode.string) (Decode.field "desc" Decode.string) (Decode.field "choice" (Decode.nullable Decode.bool))
+
+                    "??" ->
+                        Decode.succeed Otherwise
 
                     _ ->
                         Decode.fail "Unknown Unary Operator"

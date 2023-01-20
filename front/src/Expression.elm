@@ -114,6 +114,7 @@ undo stack =
 
 swap : List Expression -> List Expression
 swap stack =
+    -- swap the two first lines of the stack
     case stack of
         x :: xs ->
             case xs of

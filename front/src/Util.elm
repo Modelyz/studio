@@ -1,16 +1,26 @@
-module Util exposing (applyR, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, third)
+module Util exposing (applyR, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, otherwiseR, third)
 
 import Dict exposing (Dict)
 
 
 otherwise : Maybe a -> Maybe a -> Maybe a
-otherwise x y =
-    case x of
-        Just z ->
-            Just z
+otherwise fallback main =
+    case main of
+        Just _ ->
+            main
 
         Nothing ->
-            y
+            fallback
+
+
+otherwiseR : Result e a -> Result e a -> Result e a
+otherwiseR fallback main =
+    case main of
+        Ok _ ->
+            main
+
+        Err _ ->
+            fallback
 
 
 third : ( a, b, c ) -> c

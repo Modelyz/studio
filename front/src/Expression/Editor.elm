@@ -333,8 +333,8 @@ buttonBinaryOperator mt o =
 
 viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)
 viewSubpage s model =
-    (model.vlselector |> Maybe.map (Element.map VlMsg << Expression.Value.Select.view s))
-        |> otherwise (model.dlselector |> Maybe.map (Element.map DlMsg << Expression.DeepLink.Select.view s))
+    (model.dlselector |> Maybe.map (Element.map DlMsg << Expression.DeepLink.Select.view s))
+        |> otherwise (model.vlselector |> Maybe.map (Element.map VlMsg << Expression.Value.Select.view s))
 
 
 buttonUndo : Model -> Element Msg
