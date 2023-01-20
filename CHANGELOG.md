@@ -2,7 +2,7 @@
 
 [Back to app](../)
 
-## version 12 -- unreleased
+## version 12 -- 2023-01-20
 
 * Added an "otherwise" binary operator in the Expression Editor
 * improved the display of scopes during the deeplink selection
