@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 13 -- unreleased
+
+* improved display of value selection in a deeplink
+
 ## version 12 -- 2023-01-20
 
 * Added an "otherwise" binary operator in the Expression Editor

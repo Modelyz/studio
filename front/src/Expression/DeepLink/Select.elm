@@ -8,6 +8,7 @@ import Expression.DeepLink.View
 import Expression.HardLink as HL exposing (HardLink)
 import Scope exposing (Scope)
 import Scope.State exposing (containsScope)
+import Scope.View
 import Shared
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
@@ -90,13 +91,13 @@ view s model =
                 DL.toScope model.scope model.deeplink
           in
           column [ spacing 20 ]
-            [ h2 "Select the value you want to choose:"
+            [ h2 "Select the Value Type you want to choose:"
             , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                 (s.state.valueTypes
                     |> Dict.values
                     |> List.filter (\vt -> containsScope s.state.types vt.scope model.scope)
-                    |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) none)
-                    |> withDefaultContent (text "(No Value Types are defined for this scope. Choose another entity or create a value for this entity)")
+                    |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) (text <| Scope.View.toDisplay s vt.scope))
+                    |> withDefaultContent (p "(No Value Types are defined for this scope. Choose another entity or create a value type for this entity)")
                 )
             ]
         ]
