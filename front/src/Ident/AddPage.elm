@@ -381,7 +381,7 @@ inputFragment fragments index fragment =
 
         Sequence padding step start value ->
             row []
-                [ Input.text [ width (px 50) ]
+                [ Input.text [ width (px 50), htmlAttribute <| Attr.title "padding" ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -402,7 +402,7 @@ inputFragment fragments index fragment =
                         Just <| Input.placeholder [] <| text "Padding"
                     , label = Input.labelHidden <| "Padding"
                     }
-                , Input.text [ width (px 50) ]
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "step" ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -423,7 +423,7 @@ inputFragment fragments index fragment =
                         Just <| Input.placeholder [] <| text "Step"
                     , label = Input.labelHidden <| "Step"
                     }
-                , Input.text [ width (px 50) ]
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "start" ]
                     { onChange =
                         \x ->
                             InputFragments
