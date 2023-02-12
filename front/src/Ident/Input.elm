@@ -57,8 +57,8 @@ inputFragment c index fragment ident =
         Fixed value ->
             row [ width <| minimum 20 fill, height (px 30) ] [ text value ]
 
-        Sequence _ _ _ value ->
-            row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" value ]
+        Sequence _ _ _ _ value ->
+            row [ width <| minimum 20 fill, height (px 30) ] [ text <| Maybe.withDefault "(Not yet assigned)" <| Maybe.map String.fromInt value ]
 
         _ ->
             text "Not Implemented"

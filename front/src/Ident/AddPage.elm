@@ -379,9 +379,28 @@ inputFragment fragments index fragment =
                 , label = Input.labelHidden <| "Existing"
                 }
 
-        Sequence padding step start value ->
+        Sequence name padding step start value ->
             row []
-                [ Input.text [ width (px 50), htmlAttribute <| Attr.title "padding" ]
+                [ Input.text [ width (px 50), htmlAttribute <| Attr.title "name" ]
+                    { onChange =
+                        \x ->
+                            InputFragments
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                Sequence x padding step start value
+
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = name
+                    , placeholder =
+                        Just <| Input.placeholder [] <| text "Name"
+                    , label = Input.labelHidden <| "Name"
+                    }
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "padding" ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -390,8 +409,8 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\p -> Sequence p step start value)
-                                                    |> Maybe.withDefault (Sequence padding step start value)
+                                                    |> Maybe.map (\p -> Sequence name p step start value)
+                                                    |> Maybe.withDefault (Sequence name padding step start value)
 
                                             else
                                                 f
@@ -411,8 +430,8 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\s -> Sequence padding s start value)
-                                                    |> Maybe.withDefault (Sequence padding step start value)
+                                                    |> Maybe.map (\s -> Sequence name padding s start value)
+                                                    |> Maybe.withDefault (Sequence name padding step start value)
 
                                             else
                                                 f
@@ -432,8 +451,8 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\s -> Sequence padding step s value)
-                                                    |> Maybe.withDefault (Sequence padding step start value)
+                                                    |> Maybe.map (\s -> Sequence name padding step s value)
+                                                    |> Maybe.withDefault (Sequence name padding step start value)
 
                                             else
                                                 f

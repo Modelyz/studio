@@ -333,34 +333,29 @@ update msg model =
                     ( { model | currentSeed = newSeed, iostatus = IOError <| "Error getting status of message sending: " ++ errorToString err }, Cmd.none )
 
         MessagesReceived ms ->
-            case decodeString (Decode.maybe <| Decode.field "messages" <| Decode.list Message.decoder) ms of
-                Ok mbmessages ->
-                    mbmessages
-                        |> Maybe.map
-                            (\messages ->
-                                let
-                                    msgs =
-                                        exceptCI messages
-                                in
-                                ( { model
-                                    | wsstatus = WSOpen
-                                    , iostatus =
-                                        if List.length msgs > 0 then
-                                            ESStoring
+            case decodeString (Decode.list Message.decoder) ms of
+                Ok messages ->
+                    let
+                        msgs =
+                            exceptCI messages
+                    in
+                    ( { model
+                        | wsstatus = WSOpen
+                        , iostatus =
+                            if List.length msgs > 0 then
+                                ESStoring
 
-                                        else
-                                            IOIdle "Just received messages"
-                                  }
-                                , if List.length msgs > 0 then
-                                    Message.storeMessages <|
-                                        Encode.list Message.encode <|
-                                            exceptCI messages
+                            else
+                                IOIdle "Just received messages"
+                      }
+                    , if List.length msgs > 0 then
+                        Message.storeMessages <|
+                            Encode.list Message.encode <|
+                                exceptCI messages
 
-                                  else
-                                    Cmd.none
-                                )
-                            )
-                        |> Maybe.withDefault ( model, Cmd.none )
+                      else
+                        Cmd.none
+                    )
 
                 Err err ->
                     ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding received messages:\n" ++ errorToString err }, Cmd.none )

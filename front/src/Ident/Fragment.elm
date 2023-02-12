@@ -3,6 +3,7 @@ module Ident.Fragment exposing (Fragment(..), Name, Padding, Start, Step, all, d
 import DateTime exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import String exposing (padLeft)
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix, posixToMillis)
 
 
@@ -13,7 +14,7 @@ type alias Name =
 type Fragment
     = Free String
     | Fixed String
-    | Sequence Padding Step Start (Maybe String)
+    | Sequence Name Padding Step Start (Maybe Int)
     | Existing Name String
     | YYYY Int
     | YY Int
@@ -43,7 +44,7 @@ all : List Fragment
 all =
     [ Free ""
     , Fixed ""
-    , Sequence 4 1 0 Nothing
+    , Sequence "" 4 1 0 Nothing
     , Existing "" ""
     , YYYY 0
     , YY 0
@@ -67,7 +68,7 @@ toString f =
         Fixed _ ->
             "Fixed"
 
-        Sequence _ _ _ _ ->
+        Sequence _ _ _ _ _ ->
             "Sequence"
 
         Existing _ _ ->
@@ -113,8 +114,8 @@ toValue f =
         Fixed value ->
             value
 
-        Sequence _ _ _ value ->
-            Maybe.withDefault "(Not yet assigned)" value
+        Sequence _ padding _ _ value ->
+            padLeft padding '0' <| Maybe.withDefault "?" <| Maybe.map String.fromInt value
 
         Existing _ value ->
             value
@@ -159,7 +160,7 @@ toDesc f =
         Fixed _ ->
             "A fixed text that you define now and that will be always the same. For instance it can be a prefix, a suffix, a separator."
 
-        Sequence _ _ _ _ ->
+        Sequence _ _ _ _ _ ->
             "A sequence number used to identify an entity."
 
         Existing _ _ ->
@@ -211,13 +212,14 @@ encode f =
                 , ( "value", Encode.string value )
                 ]
 
-        Sequence padding step start value ->
+        Sequence name padding step start value ->
             Encode.object
                 [ ( "type", Encode.string "Sequence" )
+                , ( "name", Encode.string name )
                 , ( "padding", Encode.int padding )
                 , ( "step", Encode.int step )
                 , ( "start", Encode.int start )
-                , ( "value", Maybe.map Encode.string value |> Maybe.withDefault Encode.null )
+                , ( "value", Maybe.map Encode.int value |> Maybe.withDefault Encode.null )
                 ]
 
         Existing name value ->
@@ -302,11 +304,12 @@ decoder =
                         Decode.map Fixed (Decode.field "value" Decode.string)
 
                     "Sequence" ->
-                        Decode.map4 Sequence
+                        Decode.map5 Sequence
+                            (Decode.field "name" Decode.string)
                             (Decode.field "padding" Decode.int)
                             (Decode.field "step" Decode.int)
                             (Decode.field "start" Decode.int)
-                            (Decode.field "value" (Decode.maybe Decode.string))
+                            (Decode.field "value" (Decode.maybe Decode.int))
 
                     "Existing" ->
                         Decode.map2 Existing (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)

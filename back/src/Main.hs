@@ -14,39 +14,18 @@ import Control.Concurrent (
  )
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
-import Control.Monad.Trans (liftIO)
 import qualified Data.Aeson as JSON (decode, encode)
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
-import qualified Data.HashMap.Lazy as HashMap
 import Data.List ()
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import qualified Data.Text.IO as T
-import Message (Message, getMetaString, getUuids, isType, setProcessed)
+import Message (Message, getMetaString, getUuids, isType)
 import qualified MessageStore as ES
 import Network.HTTP.Types (status200)
-import Network.Wai (
-    Application,
-    pathInfo,
-    rawPathInfo,
-    responseFile,
-    responseLBS,
- )
-import Network.Wai.Handler.Warp (run)
+import qualified Network.Wai as Wai
+import qualified Network.Wai.Handler.Warp as Warp
 import Network.Wai.Handler.WebSockets (websocketsOr)
-import Network.WebSockets (
-    Connection,
-    DataMessage (Binary, Text),
-    ServerApp,
-    acceptRequest,
-    defaultConnectionOptions,
-    fromLazyByteString,
-    receiveDataMessage,
-    runClient,
-    sendTextData,
-    withPingThread,
- )
 import qualified Network.WebSockets as WS
 import Options.Applicative
 
@@ -56,8 +35,6 @@ data Options = Options !String !Port !FilePath
 type NumClient = Int
 
 type Port = Int
-
-type WSState = MVar NumClient
 
 portOption :: Parser Port
 portOption =
@@ -76,118 +53,144 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-wsApp :: FilePath -> Chan (NumClient, Message) -> WSState -> ServerApp
-wsApp f chan st pending_conn = do
-    elmChan <- dupChan chan -- channel to the browser application
+wsApp :: FilePath -> Chan (NumClient, Message) -> MVar NumClient -> WS.ServerApp
+wsApp f chan ncMV pending_conn = do
+    elmChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
-    conn <- acceptRequest pending_conn
-    -- increment the sequence of clients
-    nc <- takeMVar st
-    putMVar st (nc + 1)
-    putStrLn $ "Client " ++ show nc ++ " connecting"
-    -- fork a thread to loop on waiting for new messages coming into the chan to send them to the new client
+    conn <- WS.acceptRequest pending_conn
+    -- increment the client number
+    nc <- takeMVar ncMV
+    putMVar ncMV (nc + 1)
+    putStrLn $ "\nBrowser " ++ show nc ++ " connected"
+    -- wait for new messages coming from other connected browsers through the chan
+    -- and send them to the currently connected browser
+
     _ <-
         forkIO $
             fix
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
                     when (n /= nc && not (isType "InitiatedConnection" ev)) $ do
-                        putStrLn $ "Read message on channel from client " ++ show n ++ "... sending to client " ++ show nc ++ " through WS"
-                        sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) [ev]
+                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from connected browser " ++ show n ++ ": " ++ show ev
+                        WS.sendTextData conn $ JSON.encode [ev]
                     loop
                 )
 
-    -- loop on the handling of messages incoming through websocket
-    withPingThread conn 30 (return ()) $
-        forever $
-            do
-                messages <- receiveDataMessage conn
-                putStrLn $ "Received string from websocket from client " ++ show nc ++ ". Handling it : " ++ show messages
-                case JSON.decode
-                    ( case messages of
-                        Text bs _ -> fromLazyByteString bs
-                        Binary bs -> fromLazyByteString bs
-                    ) of
-                    Just evs -> mapM (handleMessage f conn nc elmChan) evs
-                    Nothing -> sequence [putStrLn "Error decoding incoming message"]
+    -- handle messages coming through websocket from the currently connected browser
+    WS.withPingThread conn 30 (return ()) $
+        forever $ do
+            putStrLn $ "\nWaiting for new messages from browser " ++ show nc
+            messages <- WS.receiveDataMessage conn
+            putStrLn $ "\nReceived stuff through websocket from Elm client " ++ show nc ++ ". Handling it : " ++ show messages
+            case JSON.decode
+                ( case messages of
+                    WS.Text bs _ -> WS.fromLazyByteString bs
+                    WS.Binary bs -> WS.fromLazyByteString bs
+                ) of
+                Just msgs -> mapM (handleMessageFromBrowser f conn nc elmChan) msgs
+                Nothing -> sequence [putStrLn "\nError decoding incoming message"]
 
-clientApp :: Chan (NumClient, Message) -> WS.ClientApp ()
-clientApp storeChan conn = do
+clientApp :: FilePath -> Chan (NumClient, Message) -> WS.ClientApp ()
+clientApp f storeChan conn = do
     putStrLn "Connected!"
     -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
-
     -- fork a thread to send back data from the channel to the central store
     _ <- forkIO $
         forever $ do
             (n, ev) <- readChan storeChan
-            putStrLn $ "Sending back this message coming from microservice " ++ show n ++ " to the store: " ++ show ev
-            WS.sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) ev
+            unless (n == -1 || isType "InitiatedConnection" ev) $ do
+                putStrLn $ "\nSending back this message coming from browser " ++ show n ++ " to the Store: " ++ show ev
+                WS.sendTextData conn $ JSON.encode [ev]
 
-    -- Fork a thread that writes WS data to stdout.
-    -- TODO remove
+    putStrLn "Starting message handler"
     forever $ do
-        msg <- WS.receiveData conn
-        liftIO $ T.putStrLn msg
+        putStrLn "\nWaiting for new messages from the store"
+        messages <- WS.receiveDataMessage conn
+        putStrLn $ "\nReceived stuff through websocket from the Store: " ++ show messages
+        case JSON.decode
+            ( case messages of
+                WS.Text bs _ -> WS.fromLazyByteString bs
+                WS.Binary bs -> WS.fromLazyByteString bs
+            ) of
+            Just msgs -> do
+                mapM (handleMessageFromStore f conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
+            Nothing -> sequence [putStrLn "\nError decoding incoming message"]
 
-handleMessage :: FilePath -> Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessage f conn nc chan ev =
+handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
+handleMessageFromBrowser f conn nc chan ev =
     do
         -- store the message in the message store
-        unless
-            (isType "InitiatedConnection" ev)
-            (ES.appendMessage f ev)
+        unless (isType "InitiatedConnection" ev) $ do
+            ES.appendMessage f ev
+            putStrLn $ "\nStored message" ++ show ev
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
-        when
-            (isType "InitiatedConnection" ev)
-            ( do
-                let uuids = getUuids ev
-                esevs <- ES.readMessages f
-                let evs =
-                        filter
-                            ( \e -> case getMetaString "uuid" e of
-                                Just u -> T.unpack u `notElem` uuids
-                                Nothing -> False
-                            )
-                            esevs
-                sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) evs
-                putStrLn $ "Sent all missing " ++ show (length evs) ++ " messsages to client " ++ show nc
-            )
-        -- Send back and store an ACK to let the client know the message has been stored
-        -- Except for messages that should be handled by another service
-        let ev' = setProcessed ev
-        unless (isType "InitiatedConnection" ev || isType "IdentifierAdded" ev) $ ES.appendMessage f ev'
-        sendTextData conn $ JSON.encode $ HashMap.singleton ("messages" :: T.Text) [ev']
-        -- send the msg to other connected clients
-        putStrLn $ "Writing to the chan as client " ++ show nc
+        when (isType "InitiatedConnection" ev) $ do
+            let uuids = getUuids ev
+            esevs <- ES.readMessages f
+            let msgs =
+                    filter
+                        ( \e -> case getMetaString "uuid" e of
+                            Just u -> T.unpack u `notElem` uuids
+                            Nothing -> False
+                        )
+                        esevs
+            WS.sendTextData conn $ JSON.encode msgs
+            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc
+        -- send msg to other connected clients
+        putStrLn $ "\nWriting to the chan as client " ++ show nc
         writeChan chan (nc, ev)
-        writeChan chan (nc, ev')
 
-httpApp :: Options -> Application
+handleMessageFromStore :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
+handleMessageFromStore f conn nc chan ev =
+    do
+        -- store the message in the message store
+        unless (isType "InitiatedConnection" ev) $ do
+            ES.appendMessage f ev
+            putStrLn $ "\nStored message" ++ show ev
+        -- if the message is a InitiatedConnection, get the uuid list from it,
+        -- and send back all the missing messages (with an added ack)
+        when (isType "InitiatedConnection" ev) $ do
+            let uuids = getUuids ev
+            esevs <- ES.readMessages f
+            let msgs =
+                    filter
+                        ( \e -> case getMetaString "uuid" e of
+                            Just u -> T.unpack u `notElem` uuids
+                            Nothing -> False
+                        )
+                        esevs
+            WS.sendTextData conn $ JSON.encode msgs
+            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc
+        -- send msg to other connected clients
+        putStrLn $ "\nWriting to the chan as client " ++ show nc
+        writeChan chan (nc, ev)
+
+httpApp :: Options -> Wai.Application
 httpApp (Options d _ _) request respond = do
-    rawPathInfo request
+    Wai.rawPathInfo request
         & decodeUtf8
         & T.append "Request "
         & T.unpack
         & putStrLn
-    respond $ case pathInfo request of
+    respond $ case Wai.pathInfo request of
         "static" : pathtail -> case pathtail of
             filename : _ ->
                 let ct = BS.append "text/" (encodeUtf8 (contentType filename))
-                 in responseFile status200 [("Content-Type", ct)] (d ++ "/static/" ++ T.unpack filename) Nothing
-            _ -> responseLBS status200 [("Content-Type", "text/html")] ""
-        "changelog" : _ -> responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
-        _ -> responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
+                 in Wai.responseFile status200 [("Content-Type", ct)] (d ++ "/static/" ++ T.unpack filename) Nothing
+            _ -> Wai.responseLBS status200 [("Content-Type", "text/html")] ""
+        "changelog" : _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
+        _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
 
 serve :: Options -> IO ()
 serve (Options d p f) = do
+    ncMV <- newMVar 0
+    chan <- newChan -- initial channel
+    storeChan <- dupChan chan -- output channel to the central message store
+    putStrLn "Connecting to Store at ws://localhost:8081/"
+    _ <- forkIO $ WS.runClient "localhost" 8081 "/" (clientApp f storeChan)
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
-    st <- newMVar 0
-    chan <- newChan
-    storeChan <- dupChan chan -- channel to the central message store
-    putStrLn "Connecting to ws://localhost:8081/"
-    _ <- forkIO $ runClient "localhost" 8081 "/" (clientApp storeChan)
-    run 8080 $ websocketsOr defaultConnectionOptions (wsApp f chan st) $ httpApp (Options d p f)
+    Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f)
 
 main :: IO ()
 main =

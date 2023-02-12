@@ -5,6 +5,6 @@ pushd $HERE
 pushd ../front
 ./build.sh
 popd
-cabal run modelyz-studio -- -d ../build -f ../data/eventstore.txt
+cabal run modelyz-studio -- -d ../build -f ../data/messagestore.txt
 
 popd
