@@ -1,29 +1,15 @@
-FROM debian:11 AS build
-#######################
+FROM haskell:9.2 AS build
+#########################
 
-ENV LASTBUILD 2022071601
+ENV LASTBUILD 2023021201
 ARG WSS
 ENV WSS $WSS
 WORKDIR /srv
 ADD https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz elm.gz
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        cabal-install \
-        curl \
         gettext-base \
         gzip \
-        libghc-aeson-dev \
-        libghc-http-types-dev \
-        libghc-optparse-applicative-dev \
-        libghc-scientific-dev \
-        libghc-unordered-containers-dev \
-        libghc-uuid-dev \
-        libghc-uuid-types-dev \
-        libghc-wai-dev \
-        libghc-wai-websockets-dev \
-        libghc-warp-dev \
-        libghc-warp-tls-dev \
-        libghc-websockets-dev \
         markdown \
         npm \
         rsync \
@@ -32,16 +18,15 @@ RUN apt-get update \
     && chmod +x elm \
     && mv elm /usr/local/bin/
 
-ENV LASTBUILD 2022072701
-
+RUN cabal update
 COPY back /srv/back/
 COPY front /srv/front/
 COPY build.sh /srv/
 COPY CHANGELOG.md /srv/
 RUN ./build.sh optimize check_changelog
 
-FROM debian:11
-##############
+FROM debian:bookworm
+####################
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG C.UTF-8
