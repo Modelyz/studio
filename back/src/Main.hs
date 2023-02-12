@@ -30,22 +30,21 @@ import qualified Network.WebSockets as WS
 import Options.Applicative
 
 -- dir, port, file
-data Options = Options !String !Port !FilePath
+data Options = Options !String !Port !FilePath !Host !Port
 
 type NumClient = Int
 
+type Host = String
 type Port = Int
-
-portOption :: Parser Port
-portOption =
-    option auto (long "port" <> short 'p' <> metavar "PORT" <> value 8080 <> help "Bind socket to this port.  [default: 8080]")
 
 options :: Parser Options
 options =
     Options
         <$> strOption (short 'd' <> long "dir" <> value "." <> help "Directory containing the index file and static directory")
-        <*> portOption
+        <*> option auto (long "port" <> short 'p' <> metavar "PORT" <> value 8080 <> help "Bind socket to this port.  [default: 8080]")
         <*> strOption (short 'f' <> long "file" <> value "messagestore.txt" <> help "Filename of the file containing messages")
+        <*> strOption (long "store_host" <> value "localhost" <> help "Hostname of the Store service. [default: localhost]")
+        <*> option auto (long "store_port" <> metavar "STORE_PORT" <> value 8081 <> help "Port of the Store service.  [default: 8081]")
 
 contentType :: T.Text -> T.Text
 contentType filename = case reverse $ T.split (== '.') filename of
@@ -167,7 +166,7 @@ handleMessageFromStore f conn nc chan ev =
         writeChan chan (nc, ev)
 
 httpApp :: Options -> Wai.Application
-httpApp (Options d _ _) request respond = do
+httpApp (Options d _ _ _ _) request respond = do
     Wai.rawPathInfo request
         & decodeUtf8
         & T.append "Request "
@@ -183,14 +182,14 @@ httpApp (Options d _ _) request respond = do
         _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
 
 serve :: Options -> IO ()
-serve (Options d p f) = do
+serve (Options d p f sh sp) = do
     ncMV <- newMVar 0
     chan <- newChan -- initial channel
     storeChan <- dupChan chan -- output channel to the central message store
-    putStrLn "Connecting to Store at ws://localhost:8081/"
-    _ <- forkIO $ WS.runClient "localhost" 8081 "/" (clientApp f storeChan)
+    putStrLn $ "Connecting to Store at ws://" ++ sh ++ ":" ++ show sp ++ "/"
+    _ <- forkIO $ WS.runClient sh sp "/" (clientApp f storeChan)
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
-    Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f)
+    Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f sh sp)
 
 main :: IO ()
 main =
