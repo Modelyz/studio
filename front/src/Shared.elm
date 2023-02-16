@@ -238,7 +238,7 @@ update msg model =
                 Ok messages ->
                     let
                         newstate =
-                            List.foldr State.aggregate model.state (List.reverse messages)
+                            List.foldl State.aggregate model.state messages
 
                         lastMessageTime =
                             messages
