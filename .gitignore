@@ -11,6 +11,7 @@ test/geckodriver.log
 
 # haskell build
 back/dist-newstyle/
+back/src/dist-newstyle/
 
 # Data
 data/
