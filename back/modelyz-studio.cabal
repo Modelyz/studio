@@ -1,7 +1,7 @@
 cabal-version:      3.4
 name:               modelyz-studio
 version:            0.1.0.0
-synopsis: Modelyz microservice serving the Modeling interface
+synopsis: Modeling studio for Modelyz
 -- description:
 -- bug-reports:
 license: AGPL-3.0-or-later
@@ -19,10 +19,8 @@ source-repository head
 
 executable studio
     main-is:             Main.hs
-    hs-source-dirs:      src
-    other-modules:
-        Message
-        MessageStore
+    hs-source-dirs:
+        src
   -- other-extensions:
     ghc-options: -Wall
     build-depends:
@@ -31,6 +29,7 @@ executable studio
         , bytestring
         , containers
         , http-types
+        , modelyz-message
         , mtl
         , optparse-applicative
         , scientific

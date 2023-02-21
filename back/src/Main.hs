@@ -19,10 +19,10 @@ import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import qualified Data.List as List
+import qualified Data.Map as Map (Map)
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Message (Message, getMessages, getMetaString, getUuids, isType, setFlow)
-import qualified MessageStore as ES
+import Message (Message, appendMessage, getMessages, getMetaString, getUuids, isType, readMessages, setFlow)
 import Network.HTTP.Types (status200)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
@@ -37,6 +37,8 @@ type NumClient = Int
 
 type Host = String
 type Port = Int
+
+type Pending = Map.Map Int Message
 
 options :: Parser Options
 options =
@@ -120,14 +122,14 @@ handleMessageFromBrowser f conn nc chan msg =
     do
         -- store the message in the message store
         unless (isType "InitiatedConnection" msg) $ do
-            ES.appendMessage f msg
+            appendMessage f msg
             WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow "Sent" msg)
             putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
         when (isType "InitiatedConnection" msg) $ do
             let uuids = getUuids msg
-            esevs <- ES.readMessages f
+            esevs <- readMessages f
             let msgs =
                     filter
                         ( \e -> case getMetaString "uuid" e of
@@ -146,13 +148,13 @@ handleMessageFromStore f conn nc chan msg =
     do
         -- store the message in the message store
         unless (isType "InitiatedConnection" msg) $ do
-            ES.appendMessage f msg
+            appendMessage f msg
             putStrLn $ "\nStored message" ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
         when (isType "InitiatedConnection" msg) $ do
             let uuids = getUuids msg
-            esevs <- ES.readMessages f
+            esevs <- readMessages f
             let msgs =
                     filter
                         ( \e -> case getMetaString "uuid" e of
