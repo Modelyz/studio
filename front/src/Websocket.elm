@@ -1,13 +1,14 @@
 port module Websocket exposing (WSStatus(..), fromReadyState, toEmoji, toText, wsConnect, wsSend)
 
 import Json.Decode as Decode exposing (decodeValue)
+import Json.Encode as Encode
 
 
 
 -- send events through WS
 
 
-port wsSend : String -> Cmd msg
+port wsSend : Encode.Value -> Cmd msg
 
 
 port wsConnect : () -> Cmd msg

@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Message (getUuids, Uuid, Message, getInt, setProcessed, getMetaString, excludeType, isType, isAfter) where
+module Message (getMessages, getUuids, Uuid, Message, getInt, setFlow, getMetaString, excludeType, isType, isAfter) where
 
 import qualified Data.Aeson as JSON (Value (..), toJSON)
 import qualified Data.Aeson.KeyMap as KeyMap
@@ -38,6 +38,15 @@ getInt k e =
             Just (JSON.Number n) -> Just n >>= toBoundedInteger
             _ -> Nothing
         _ -> Nothing
+
+getMessages :: JSON.Value -> [Message]
+getMessages e =
+    -- TODO use Vector instead
+    case e of
+        (JSON.Object o) -> case KeyMap.lookup "messages" o of
+            (Just (JSON.Array a)) -> Vector.toList a
+            _ -> []
+        _ -> []
 
 getMetaString :: KeyMap.Key -> Message -> Maybe T.Text
 getMetaString k e =
@@ -76,8 +85,8 @@ getUuids e =
             _ -> []
         _ -> []
 
-setProcessed :: Message -> Message
-setProcessed e =
+setFlow :: T.Text -> Message -> Message
+setFlow flow e =
     case e of
         JSON.Object keymap ->
             JSON.toJSON $
@@ -89,7 +98,7 @@ setProcessed e =
                                     JSON.toJSON $
                                         KeyMap.alterF
                                             ( \case
-                                                Just _ -> Just $ Just $ JSON.String "Processed"
+                                                Just _ -> Just $ Just $ JSON.String flow
                                                 Nothing -> Nothing
                                             )
                                             "flow"

@@ -4,8 +4,13 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 
 
-type MessageFlow
+type
+    MessageFlow
+    -- Created and stored locally:
     = Requested
+      -- Sent to the backend:
+    | Sent
+      -- Returned as Processed:
     | Processed
 
 
@@ -14,6 +19,9 @@ toString f =
     case f of
         Requested ->
             "Requested"
+
+        Sent ->
+            "Sent"
 
         Processed ->
             "Processed"
@@ -33,6 +41,9 @@ decoder =
                 case s of
                     "Requested" ->
                         Decode.succeed Requested
+
+                    "Sent" ->
+                        Decode.succeed Sent
 
                     "Processed" ->
                         Decode.succeed Processed

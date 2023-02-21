@@ -15,12 +15,13 @@ import Control.Concurrent (
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
 import qualified Data.Aeson as JSON (decode, encode)
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
-import Data.List ()
+import qualified Data.List as List
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Message (Message, getMetaString, getUuids, isType)
+import Message (Message, getMessages, getMetaString, getUuids, isType, setFlow)
 import qualified MessageStore as ES
 import Network.HTTP.Types (status200)
 import qualified Network.Wai as Wai
@@ -70,8 +71,8 @@ wsApp f chan ncMV pending_conn = do
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
                     when (n /= nc && not (isType "InitiatedConnection" ev)) $ do
-                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from connected browser " ++ show n ++ ": " ++ show ev
-                        WS.sendTextData conn $ JSON.encode [ev]
+                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from connected browser " ++ show n ++ ": Sent through WS : " ++ show ev
+                        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
                     loop
                 )
 
@@ -86,8 +87,8 @@ wsApp f chan ncMV pending_conn = do
                     WS.Text bs _ -> WS.fromLazyByteString bs
                     WS.Binary bs -> WS.fromLazyByteString bs
                 ) of
-                Just msgs -> mapM (handleMessageFromBrowser f conn nc elmChan) msgs
-                Nothing -> sequence [putStrLn "\nError decoding incoming message"]
+                Just msgs -> mapM_ (handleMessageFromBrowser f conn nc elmChan) $ getMessages msgs
+                Nothing -> sequence_ [putStrLn "\nError decoding incoming message"]
 
 clientApp :: FilePath -> Chan (NumClient, Message) -> WS.ClientApp ()
 clientApp f storeChan conn = do
@@ -99,7 +100,7 @@ clientApp f storeChan conn = do
             (n, ev) <- readChan storeChan
             unless (n == -1 || isType "InitiatedConnection" ev) $ do
                 putStrLn $ "\nSending back this message coming from browser " ++ show n ++ " to the Store: " ++ show ev
-                WS.sendTextData conn $ JSON.encode [ev]
+                WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
 
     putStrLn "Starting message handler"
     forever $ do
@@ -111,21 +112,21 @@ clientApp f storeChan conn = do
                 WS.Text bs _ -> WS.fromLazyByteString bs
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
-            Just msgs -> do
-                mapM (handleMessageFromStore f conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
+            Just msgs -> mapM (handleMessageFromStore f conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
             Nothing -> sequence [putStrLn "\nError decoding incoming message"]
 
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromBrowser f conn nc chan ev =
+handleMessageFromBrowser f conn nc chan msg =
     do
         -- store the message in the message store
-        unless (isType "InitiatedConnection" ev) $ do
-            ES.appendMessage f ev
-            putStrLn $ "\nStored message" ++ show ev
+        unless (isType "InitiatedConnection" msg) $ do
+            ES.appendMessage f msg
+            WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow "Sent" msg)
+            putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
-        when (isType "InitiatedConnection" ev) $ do
-            let uuids = getUuids ev
+        when (isType "InitiatedConnection" msg) $ do
+            let uuids = getUuids msg
             esevs <- ES.readMessages f
             let msgs =
                     filter
@@ -134,23 +135,23 @@ handleMessageFromBrowser f conn nc chan ev =
                             Nothing -> False
                         )
                         esevs
-            WS.sendTextData conn $ JSON.encode msgs
-            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc
+            WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
+            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
         -- send msg to other connected clients
         putStrLn $ "\nWriting to the chan as client " ++ show nc
-        writeChan chan (nc, ev)
+        writeChan chan (nc, msg)
 
 handleMessageFromStore :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromStore f conn nc chan ev =
+handleMessageFromStore f conn nc chan msg =
     do
         -- store the message in the message store
-        unless (isType "InitiatedConnection" ev) $ do
-            ES.appendMessage f ev
-            putStrLn $ "\nStored message" ++ show ev
+        unless (isType "InitiatedConnection" msg) $ do
+            ES.appendMessage f msg
+            putStrLn $ "\nStored message" ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
-        when (isType "InitiatedConnection" ev) $ do
-            let uuids = getUuids ev
+        when (isType "InitiatedConnection" msg) $ do
+            let uuids = getUuids msg
             esevs <- ES.readMessages f
             let msgs =
                     filter
@@ -159,11 +160,11 @@ handleMessageFromStore f conn nc chan ev =
                             Nothing -> False
                         )
                         esevs
-            WS.sendTextData conn $ JSON.encode msgs
-            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc
+            WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
+            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
         -- send msg to other connected clients
         putStrLn $ "\nWriting to the chan as client " ++ show nc
-        writeChan chan (nc, ev)
+        writeChan chan (nc, msg)
 
 httpApp :: Options -> Wai.Application
 httpApp (Options d _ _ _ _) request respond = do

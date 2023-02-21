@@ -1,4 +1,4 @@
-port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptCI, getTime, readMessages, storeMessages, storeMessagesToSend)
+port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, storeMessages, storeMessagesToSend)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -246,6 +246,7 @@ base (Message b p) =
 
 compare : Message -> Int
 compare =
+    -- FIXME what if 2 messages at the same time?
     getTime >> posixToMillis
 
 
@@ -254,11 +255,11 @@ getTime =
     base >> .when
 
 
-exceptCI : List Message -> List Message
-exceptCI es =
+exceptIC : List Message -> List Message
+exceptIC es =
     List.filter
-        (\(Message _ p) ->
-            case p of
+        (\(Message _ payload) ->
+            case payload of
                 InitiatedConnection _ ->
                     False
 

@@ -37,7 +37,7 @@ import Value.ValueType as ValueType exposing (ValueType)
 type alias State =
     -- Reminder: Dicts in the State are actually meant to bu used as Sets
     -- using a relevant comparable so that each entity can appear only once
-    { pendingMessages : Dict Int Message
+    { pendingMessages : Dict Int Message -- pending Messages are in Requested or Sent mode
     , lastMessageTime : Time.Posix
     , uuids : Dict String Uuid
 
@@ -525,10 +525,13 @@ aggregate (Message b p) state =
 
 
 updatePending : Message -> Dict Int Message -> Dict Int Message
-updatePending e es =
-    case .flow <| base <| e of
+updatePending m ms =
+    case .flow <| base <| m of
         Requested ->
-            Dict.insert (Message.compare e) e es
+            Dict.insert (Message.compare m) m ms
+
+        Sent ->
+            Dict.insert (Message.compare m) m ms
 
         Processed ->
-            Dict.remove (Message.compare e) es
+            Dict.remove (Message.compare m) ms

@@ -59,9 +59,9 @@ var app = Elm.Main.init({flags:flags});
 
 // store an message to IDB
 const store = function(send) {
-    return function(messages) {
+    return function(letter) {
             console.log("ELM port storeMessages")
-            console.log("JS IDB store(messages): " + messages)
+            console.log("JS IDB store(letter): " + letter)
             let request = window.indexedDB.open('messagestore', ${IDBVERSION});
         request.onsuccess = function(e) {
             const db = e.target.result;
@@ -70,11 +70,12 @@ const store = function(send) {
                 console.log("JS IDB transaction.oncomplete")
             }
             transaction.onerror = function(e) {
-                const msg = "IndexedDB transaction error while storing messages:" + transaction.error;
-                console.log(msg);
-                app.ports.wsSendStatus.send(msg);
+                const err = "IndexedDB transaction error while storing messages:" + transaction.error;
+                console.log(err);
+                letter.status = err;
+                app.ports.wsSendStatus.send(letter);
             }
-            messages.forEach(function(message) {
+            letter.messages.forEach(function(message) {
                 console.log("JS IDB messages.forEach transaction.objectStore('messages').add(message): " + message.what)
                 const addrequest = transaction.objectStore('messages').add(message)
                 addrequest.onsuccess = (e) => {
@@ -87,18 +88,20 @@ const store = function(send) {
                     }
                 }
                 addrequest.onerror = (e) => {
-                    const msg = "IndexedDB store request error: " + addrequest.error;
-                    console.log(msg);
-                    app.ports.wsSendStatus.send(msg);
+                    const err = "IndexedDB store request error: " + addrequest.error;
+                    console.log(err);
+                    letter.status = err;
+                    app.ports.wsSendStatus.send(letter);
                     addrequest.transaction.abort()
                 }
             })
             db.close()
         }
         request.onerror = (e) => {
-            const msg = "IndexedDB could not be opened to store messages: " + request.error;
-            console.log(msg);
-            app.ports.wsSendStatus.send(msg);
+            const err = "IndexedDB could not be opened to store messages: " + request.error;
+            console.log(err);
+            letter.status = err;
+            app.ports.wsSendStatus.send(letter);
         }
     };
 };
@@ -120,15 +123,15 @@ app.ports.readMessages.subscribe(function() {
             app.ports.messagesReader.send(messages);
         }
         openCursor.onerror = () => {
-            const msg = "IndexedDB transaction error while reading messages:" + transaction.error;
-            console.log(msg);
-            app.ports.wsSendStatus.send(msg);
+            const err = "IndexedDB transaction error while reading messages:" + transaction.error;
+            console.log(err);
+            app.ports.wsSendStatus.send({"messages":[],"status":err});
         }
     }
     request.onerror = (e) => {
-        const msg = "IndexedDB could not be opened to read messages. Please note that the browser private mode or some browser extensions can be the cause of this error:\n\n" + request.error;
-        console.log(msg);
-        app.ports.wsSendStatus.send(msg);
+        const err = "IndexedDB could not be opened to read messages. Please note that the browser private mode or some browser extensions can be the cause of this error:\n\n" + request.error;
+        console.log(err);
+        app.ports.wsSendStatus.send({"messages":[],"status":err});
     }
 });
 
@@ -172,13 +175,16 @@ app.ports.wsConnect.subscribe(reconnect);
 
 // Elm asks to send messages to WS
 console.log("JS WS app.ports.wsSend.subscribe")
-app.ports.wsSend.subscribe(function(message) {
+app.ports.wsSend.subscribe(function(letter) {
     if (window.socket) {
         console.log("ELM port wsSend")
-        console.log("JS WS window.socket.send(message)")
-        window.socket.send(message);
-        console.log("ELM wsSendStatus.send('OK')")
-        app.ports.wsSendStatus.send("OK");
+        console.log("JS WS window.socket.send(letter):")
+        console.log(letter)
+        window.socket.send(JSON.stringify(letter));
+        console.log("ELM wsSendStatus")
+        // TODO what if the send fails?
+        letter.status = "OK"
+        app.ports.wsSendStatus.send(letter);
     } else console.log("no websocket to send messages");
 });
 

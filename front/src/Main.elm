@@ -98,7 +98,7 @@ port messagesReceiver : (String -> msg) -> Sub msg
 subscriptions : Shared.Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ wsSendStatus MessagesSent
+        [ wsSendStatus MessageSent
         , Events.onResize (\width height -> WindowResized (WindowSize width height))
         , messagesReader MessagesRead
         , messagesStoredToSend MessagesStoredTosend
