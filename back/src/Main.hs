@@ -64,7 +64,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
     _ -> "raw"
 
 wsApp :: FilePath -> Chan (NumClient, Message) -> MVar NumClient -> WS.ServerApp
-wsApp f chan ncMV pending_conn = do
+wsApp msgPath chan ncMV pending_conn = do
     elmChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
     conn <- WS.acceptRequest pending_conn
@@ -97,11 +97,11 @@ wsApp f chan ncMV pending_conn = do
                     WS.Text bs _ -> WS.fromLazyByteString bs
                     WS.Binary bs -> WS.fromLazyByteString bs
                 ) of
-                Just msgs -> mapM_ (handleMessageFromBrowser f conn nc elmChan) $ getMessages msgs
+                Just msgs -> mapM_ (handleMessageFromBrowser msgPath conn nc elmChan) $ getMessages msgs
                 Nothing -> sequence_ [putStrLn "\nError decoding incoming message"]
 
 clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
-clientApp f storeChan stateMV conn = do
+clientApp msgPath storeChan stateMV conn = do
     putStrLn "Connected!"
     -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
     -- fork a thread to send back data from the channel to the central store
@@ -122,22 +122,22 @@ clientApp f storeChan stateMV conn = do
                 WS.Text bs _ -> WS.fromLazyByteString bs
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
-            Just msgs -> mapM (handleMessageFromStore f conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
+            Just msgs -> mapM (handleMessageFromStore msgPath conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
             Nothing -> sequence [putStrLn "\nError decoding incoming message"]
 
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromBrowser f conn nc chan msg =
+handleMessageFromBrowser msgPath conn nc chan msg =
     do
         -- store the message in the message store
         unless (isType "InitiatedConnection" msg) $ do
-            appendMessage f msg
+            appendMessage msgPath msg
             WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow "Sent" msg)
             putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
         when (isType "InitiatedConnection" msg) $ do
             let uuids = getUuids msg
-            esevs <- readMessages f
+            esevs <- readMessages msgPath
             let msgs =
                     filter
                         ( \e -> case getMetaString "uuid" e of
@@ -152,17 +152,17 @@ handleMessageFromBrowser f conn nc chan msg =
         writeChan chan (nc, msg)
 
 handleMessageFromStore :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromStore f conn nc chan msg =
+handleMessageFromStore msgPath conn nc chan msg =
     do
         -- store the message in the message store
         unless (isType "InitiatedConnection" msg) $ do
-            appendMessage f msg
+            appendMessage msgPath msg
             putStrLn $ "\nStored message" ++ show msg
         -- if the message is a InitiatedConnection, get the uuid list from it,
         -- and send back all the missing messages (with an added ack)
         when (isType "InitiatedConnection" msg) $ do
             let uuids = getUuids msg
-            esevs <- readMessages f
+            esevs <- readMessages msgPath
             let msgs =
                     filter
                         ( \e -> case getMetaString "uuid" e of
@@ -196,31 +196,31 @@ maxWait :: Int
 maxWait = 10
 
 connectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
-connectClient waitTime time1 sh sp f storeChan stateMV = do
-    putStrLn $ "time1 = " ++ show time1
+connectClient waitTime previousTime host port msgPath storeChan stateMV = do
+    putStrLn $ "previousTime = " ++ show previousTime
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
     threadDelay $ waitTime * 1000000
     putStrLn "Trying to connect..."
     catch
-        (WS.runClient sh sp "/" (clientApp f storeChan stateMV))
+        (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
         ( \(SomeException _) -> do
-            time2 <- getPOSIXTime
-            let newWaitTime = if fromEnum (time2 - time1) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
-            connectClient newWaitTime time2 sh sp f storeChan stateMV
+            disconnectTime <- getPOSIXTime
+            let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
+            connectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
         )
 
 serve :: Options -> IO ()
-serve (Options d p f sh sp) = do
+serve (Options d p msgPath host port) = do
     ncMV <- newMVar 0
     chan <- newChan -- initial channel
     stateMV <- newMVar emptyState
     storeChan <- dupChan chan -- output channel to the central message store
-    putStrLn $ "Connecting to Store at ws://" ++ sh ++ ":" ++ show sp ++ "/"
+    putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "/"
     firstTime <- getPOSIXTime
-    _ <- forkIO $ connectClient 1 firstTime sh sp f storeChan stateMV
+    _ <- forkIO $ connectClient 1 firstTime host port msgPath storeChan stateMV
 
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
-    Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f sh sp)
+    Warp.run p $ websocketsOr WS.defaultConnectionOptions (wsApp msgPath chan ncMV) $ httpApp (Options d p msgPath host port)
 
 main :: IO ()
 main =
