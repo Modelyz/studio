@@ -10,8 +10,10 @@ import Control.Concurrent (
     putMVar,
     readChan,
     takeMVar,
+    threadDelay,
     writeChan,
  )
+import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
 import qualified Data.Aeson as JSON (decode, encode)
@@ -19,9 +21,9 @@ import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS (append)
 import Data.Function ((&))
 import qualified Data.List as List
-import qualified Data.Map as Map (Map)
 import qualified Data.Text as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Time.Clock.POSIX
 import Message (Message, appendMessage, getMessages, getMetaString, getUuids, isType, readMessages, setFlow)
 import Network.HTTP.Types (status200)
 import qualified Network.Wai as Wai
@@ -38,7 +40,13 @@ type NumClient = Int
 type Host = String
 type Port = Int
 
-type Pending = Map.Map Int Message
+newtype State = State {pending :: [Message]}
+    deriving (Show)
+
+type StateMV = MVar State
+
+emptyState :: State
+emptyState = State{pending = []}
 
 options :: Parser Options
 options =
@@ -92,8 +100,8 @@ wsApp f chan ncMV pending_conn = do
                 Just msgs -> mapM_ (handleMessageFromBrowser f conn nc elmChan) $ getMessages msgs
                 Nothing -> sequence_ [putStrLn "\nError decoding incoming message"]
 
-clientApp :: FilePath -> Chan (NumClient, Message) -> WS.ClientApp ()
-clientApp f storeChan conn = do
+clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
+clientApp f storeChan stateMV conn = do
     putStrLn "Connected!"
     -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
     -- fork a thread to send back data from the channel to the central store
@@ -188,9 +196,29 @@ serve :: Options -> IO ()
 serve (Options d p f sh sp) = do
     ncMV <- newMVar 0
     chan <- newChan -- initial channel
+    stateMV <- newMVar emptyState
     storeChan <- dupChan chan -- output channel to the central message store
     putStrLn $ "Connecting to Store at ws://" ++ sh ++ ":" ++ show sp ++ "/"
-    _ <- forkIO $ WS.runClient sh sp "/" (clientApp f storeChan)
+    _ <-
+        let maxWait :: Int
+            maxWait = 10
+            reconnect :: Int -> POSIXTime -> IO ()
+            reconnect waitTime time1 = do
+                putStrLn $ "time1 = " ++ show time1
+                putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
+                threadDelay $ waitTime * 1000000
+                putStrLn "Trying to connect..."
+                catch
+                    (WS.runClient sh sp "/" (clientApp f storeChan stateMV))
+                    ( \(SomeException _) -> do
+                        time2 <- getPOSIXTime
+                        let newWaitTime = if fromEnum (time2 - time1) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
+                        reconnect newWaitTime time2
+                    )
+         in forkIO $ do
+                firstTime <- getPOSIXTime
+                reconnect 1 firstTime
+
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
     Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f sh sp)
 
