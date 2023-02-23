@@ -192,6 +192,23 @@ httpApp (Options d _ _ _ _) request respond = do
         "changelog" : _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
         _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
 
+maxWait :: Int
+maxWait = 10
+
+connectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
+connectClient waitTime time1 sh sp f storeChan stateMV = do
+    putStrLn $ "time1 = " ++ show time1
+    putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
+    threadDelay $ waitTime * 1000000
+    putStrLn "Trying to connect..."
+    catch
+        (WS.runClient sh sp "/" (clientApp f storeChan stateMV))
+        ( \(SomeException _) -> do
+            time2 <- getPOSIXTime
+            let newWaitTime = if fromEnum (time2 - time1) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
+            connectClient newWaitTime time2 sh sp f storeChan stateMV
+        )
+
 serve :: Options -> IO ()
 serve (Options d p f sh sp) = do
     ncMV <- newMVar 0
@@ -199,25 +216,8 @@ serve (Options d p f sh sp) = do
     stateMV <- newMVar emptyState
     storeChan <- dupChan chan -- output channel to the central message store
     putStrLn $ "Connecting to Store at ws://" ++ sh ++ ":" ++ show sp ++ "/"
-    _ <-
-        let maxWait :: Int
-            maxWait = 10
-            reconnect :: Int -> POSIXTime -> IO ()
-            reconnect waitTime time1 = do
-                putStrLn $ "time1 = " ++ show time1
-                putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
-                threadDelay $ waitTime * 1000000
-                putStrLn "Trying to connect..."
-                catch
-                    (WS.runClient sh sp "/" (clientApp f storeChan stateMV))
-                    ( \(SomeException _) -> do
-                        time2 <- getPOSIXTime
-                        let newWaitTime = if fromEnum (time2 - time1) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
-                        reconnect newWaitTime time2
-                    )
-         in forkIO $ do
-                firstTime <- getPOSIXTime
-                reconnect 1 firstTime
+    firstTime <- getPOSIXTime
+    _ <- forkIO $ connectClient 1 firstTime sh sp f storeChan stateMV
 
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
     Warp.run 8080 $ websocketsOr WS.defaultConnectionOptions (wsApp f chan ncMV) $ httpApp (Options d p f sh sp)
