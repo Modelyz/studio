@@ -197,10 +197,9 @@ maxWait = 10
 
 connectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
 connectClient waitTime previousTime host port msgPath storeChan stateMV = do
-    putStrLn $ "previousTime = " ++ show previousTime
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
     threadDelay $ waitTime * 1000000
-    putStrLn "Trying to connect..."
+    putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "..."
     catch
         (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
         ( \(SomeException _) -> do
@@ -215,7 +214,6 @@ serve (Options d p msgPath host port) = do
     chan <- newChan -- initial channel
     stateMV <- newMVar emptyState
     storeChan <- dupChan chan -- output channel to the central message store
-    putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "/"
     firstTime <- getPOSIXTime
     _ <- forkIO $ connectClient 1 firstTime host port msgPath storeChan stateMV
 
