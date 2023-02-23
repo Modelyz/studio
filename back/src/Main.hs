@@ -105,16 +105,16 @@ clientApp msgPath storeChan stateMV conn = do
     putStrLn "Connected!"
     -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
     -- fork a thread to send back data from the channel to the central store
-    _ <- forkIO $
+    _ <- forkIO $ do
+        putStrLn "Waiting for messages coming from the client browsers"
         forever $ do
             (n, ev) <- readChan storeChan
             unless (n == -1 || isType "InitiatedConnection" ev) $ do
                 putStrLn $ "\nSending back this message coming from browser " ++ show n ++ " to the Store: " ++ show ev
                 WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
 
-    putStrLn "Starting message handler"
     forever $ do
-        putStrLn "\nWaiting for new messages from the store"
+        putStrLn "Waiting for messages coming from the store"
         messages <- WS.receiveDataMessage conn
         putStrLn $ "\nReceived stuff through websocket from the Store: " ++ show messages
         case JSON.decode
@@ -216,7 +216,6 @@ serve (Options d p msgPath host port) = do
     storeChan <- dupChan chan -- output channel to the central message store
     firstTime <- getPOSIXTime
     _ <- forkIO $ connectClient 1 firstTime host port msgPath storeChan stateMV
-
     putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
     Warp.run p $ websocketsOr WS.defaultConnectionOptions (wsApp msgPath chan ncMV) $ httpApp (Options d p msgPath host port)
 
