@@ -60,8 +60,8 @@ separator c =
     row [ width fill, Border.width 1, Border.color c ] []
 
 
-hamburger : String -> Shared.Model -> Element Shared.Msg
-hamburger title s =
+hamburger : String -> Element Shared.Msg
+hamburger title =
     row []
         [ column
             [ width (px 40)
@@ -162,6 +162,12 @@ withDefaultContent e xs =
         xs
 
 
+button :
+    { primary : msg -> String -> Element msg
+    , secondary : a -> String -> Element a
+    , special : b -> String -> Element b
+    , disabled : String -> String -> Element c
+    }
 button =
     { primary =
         \msg txt ->
@@ -243,6 +249,7 @@ viewSelector all selected change =
             all
 
 
+zero : { top : number, right : number, bottom : number, left : number }
 zero =
     { top = 0, right = 0, bottom = 0, left = 0 }
 

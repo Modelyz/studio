@@ -284,7 +284,7 @@ update msg model =
                         Tuple.pair "messages" <|
                             Encode.list Message.encode <|
                                 Dict.values <|
-                                    Dict.union (Dict.filter (\k (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
+                                    Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
                                         Dict.fromList <|
                                             List.map (\m -> ( Message.compare m, m )) <|
                                                 messages
@@ -315,7 +315,7 @@ update msg model =
                                         Tuple.pair "messages" <|
                                             Encode.list Message.encode <|
                                                 Dict.values <|
-                                                    Dict.union (Dict.filter (\k (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
+                                                    Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
                                                         Dict.fromList <|
                                                             List.map (\m -> ( Message.compare m, m )) <|
                                                                 evs
@@ -497,7 +497,7 @@ uuidMerger : List ( ( Uuid, Seed ), Message ) -> List Message
 uuidMerger tuples =
     -- merge the new uuids into the messages
     List.map
-        (\( ( uuid, seed ), Message metadata payload ) ->
+        (\( ( uuid, _ ), Message metadata payload ) ->
             Message { metadata | uuid = uuid } payload
         )
         tuples

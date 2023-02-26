@@ -8,7 +8,6 @@ import Prng.Uuid as Uuid
 import Route exposing (Route)
 import Shared
 import Spa.Page
-import State exposing (State)
 import View exposing (View, closeMenu, h1)
 import View.Style exposing (..)
 
