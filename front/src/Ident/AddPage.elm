@@ -3,9 +3,6 @@ module Ident.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
@@ -19,6 +16,7 @@ import Shared
 import Spa.Page
 import Util exposing (checkEmptyList, checkEmptyString)
 import View exposing (..)
+import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Msg(..), Step(..), buttons)
 import View.Style exposing (..)
 
@@ -100,7 +98,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -195,8 +193,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding an IdentifierType"
     , attributes = []
     , element = viewContent model
@@ -236,7 +234,14 @@ viewContent model s =
                         ]
 
                 Step.Step StepFormat ->
-                    inputFragments model
+                    multiSelect
+                        model
+                        { inputFragments = InputFragments
+                        , toString = Fragment.toString
+                        , toDesc = Fragment.toDesc
+                        , inputFragment = inputFragment
+                        }
+                        Fragment.all
 
                 Step.Step StepName ->
                     el [ alignTop ] <|
@@ -257,58 +262,6 @@ viewContent model s =
         "Adding an identifierType"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
-        ]
-
-
-inputFragments : Model -> Element Msg
-inputFragments model =
-    column [ alignTop, spacing 20, width <| minimum 200 fill ]
-        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ paddingXY 10 0 ] <| h2 "Format: ")
-                :: List.append
-                    (if List.isEmpty model.fragments then
-                        [ el [ padding 10, Font.color color.text.disabled ] (text "Empty") ]
-
-                     else
-                        []
-                    )
-                    (model.fragments
-                        |> List.indexedMap
-                            (\i fragment ->
-                                row [ Background.color color.item.background ]
-                                    [ button.primary
-                                        (InputFragments
-                                            (model.fragments
-                                                |> List.indexedMap Tuple.pair
-                                                |> List.filter (\( j, _ ) -> j /= i)
-                                                |> List.map Tuple.second
-                                            )
-                                        )
-                                        "×"
-                                    , el [ paddingXY 10 2 ] (text <| Fragment.toString fragment)
-                                    , inputFragment model.fragments i fragment
-                                    ]
-                            )
-                    )
-        , h2 "Click on the items below to construct the format of your identifier"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            List.map
-                (\f ->
-                    column
-                        [ Background.color color.item.background
-                        , mouseOver itemHoverstyle
-                        , width (px 250)
-                        , onClick (InputFragments <| model.fragments ++ [ f ])
-                        , pointer
-                        , padding 10
-                        , spacing 10
-                        , height (px 150)
-                        ]
-                        [ el [] (text <| Fragment.toString f)
-                        , paragraph [ Font.size size.text.main ] [ text <| Fragment.toDesc f ]
-                        ]
-                )
-                Fragment.all
         ]
 
 

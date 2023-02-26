@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
@@ -20,7 +19,7 @@ import Type
 import Typed.Type as TType
 import Util exposing (checkEmptyList)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard)
+import View.MultiSelect exposing (multiSelect)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
 import Zone.Zone as Zone exposing (Zone(..))
@@ -29,8 +28,7 @@ import Zone.Zone as Zone exposing (Zone(..))
 type Msg
     = InputZone Zone
     | InputScope Scope
-    | InputFragments Int (List Fragment)
-    | FragmentErrors Int String
+    | InputFragments (List Fragment)
     | Cancel
     | Added
 
@@ -55,7 +53,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -73,8 +71,8 @@ match route =
             Nothing
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a Zone display format"
     , attributes = []
     , element = viewContent model
@@ -144,11 +142,8 @@ update s msg model =
             }
                 |> Effect.withNone
 
-        InputFragments index fragments ->
-            { model | fragments = fragments, errors = Dict.remove index model.errors } |> Effect.withNone
-
-        FragmentErrors i err ->
-            { model | errors = Dict.insert i err model.errors } |> Effect.withNone
+        InputFragments fragments ->
+            { model | fragments = fragments } |> Effect.withNone
 
         Cancel ->
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.List Nothing) )
@@ -202,7 +197,32 @@ viewContent model s =
         buttons
         [ inputZone model
         , selectScope s InputScope model.scope Scope.anything "What should it apply to?"
-        , inputFragments s model
+        , multiSelect
+            model
+            { inputFragments = InputFragments
+            , toString = Fragment.toString
+            , toDesc = Fragment.toDesc
+            , inputFragment = inputFragment
+            }
+          <|
+            (Fixed ""
+                :: ((s.state.identifierTypes
+                        |> Dict.values
+                        |> List.filter
+                            (\it -> containsScope s.state.types model.scope it.scope)
+                    )
+                        |> List.map (.name >> IdentifierName)
+                   )
+            )
+                ++ (Parent
+                        :: ((s.state.identifierTypes
+                                |> Dict.values
+                                |> List.filter
+                                    (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
+                            )
+                                |> List.map (.name >> GroupIdentifierName)
+                           )
+                   )
         ]
 
 
@@ -226,67 +246,6 @@ inputZone model =
             Zone.all
 
 
-inputFragments : Shared.Model -> Model -> Element Msg
-inputFragments s model =
-    column [ alignTop, spacing 20, width <| minimum 200 fill ]
-        [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ padding 5, spacing 10 ] <| h2 "Format: ")
-                :: List.append
-                    (if List.isEmpty model.fragments then
-                        [ el [ padding 10, Font.color color.text.disabled ] (text "Empty") ]
-
-                     else
-                        []
-                    )
-                    (model.fragments
-                        |> List.indexedMap
-                            (\i fragment ->
-                                row [ paddingEach { left = 0, right = 5, top = 0, bottom = 0 }, spacing 5, Background.color color.item.background ]
-                                    [ button.primary
-                                        (InputFragments i
-                                            (model.fragments
-                                                |> List.indexedMap Tuple.pair
-                                                |> List.filter (\( j, _ ) -> j /= i)
-                                                |> List.map Tuple.second
-                                            )
-                                        )
-                                        "×"
-                                    , text (Fragment.toString fragment)
-                                    , inputFragment model.fragments i fragment
-                                    ]
-                            )
-                    )
-        , h2 "Click on the items below to construct the format of the zone"
-        , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            List.indexedMap
-                (\i f ->
-                    clickableCard
-                        (InputFragments i <| model.fragments ++ [ f ])
-                        (text <| Fragment.toDesc f)
-                        (text <| Fragment.toString f)
-                )
-                ((Fixed ""
-                    :: ((s.state.identifierTypes
-                            |> Dict.values
-                            |> List.filter
-                                (\it -> containsScope s.state.types model.scope it.scope)
-                        )
-                            |> List.map (.name >> IdentifierName)
-                       )
-                 )
-                    ++ (Parent
-                            :: ((s.state.identifierTypes
-                                    |> Dict.values
-                                    |> List.filter
-                                        (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
-                                )
-                                    |> List.map (.name >> GroupIdentifierName)
-                               )
-                       )
-                )
-        ]
-
-
 inputFragment : List Fragment -> Int -> Fragment -> Element Msg
 inputFragment fragments index fragment =
     case fragment of
@@ -294,7 +253,7 @@ inputFragment fragments index fragment =
             Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
                 { onChange =
                     \v ->
-                        InputFragments index
+                        InputFragments
                             (fragments
                                 |> List.indexedMap
                                     (\i f ->
@@ -306,7 +265,7 @@ inputFragment fragments index fragment =
                                     )
                             )
                 , text = value
-                , placeholder = Nothing
+                , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden "Fixed"
                 }
 
