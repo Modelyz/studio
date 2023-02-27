@@ -1,18 +1,17 @@
 module DateTime.View exposing (Model, Msg, init, inputDate, toPosix, update)
 
 import Calendar
-import Date exposing (Date, fromPosix)
+import Date exposing (Date)
 import DateTime
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
 import Shared
 import Task
 import Time exposing (Month(..), Posix, Weekday(..), millisToPosix)
+import View exposing (button)
 import View.Style exposing (color, isMobile, shadowStyle, size)
 
 
@@ -24,7 +23,8 @@ type alias Model =
 
 
 type Msg
-    = GotCurrentDate Date
+    = GetCurrentDate
+    | GotCurrentDate Date
     | InputDate Date
     | PrevMonth
     | NextMonth
@@ -51,9 +51,12 @@ init isNew zone date =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GetCurrentDate ->
+            ( model, Task.perform GotCurrentDate Date.today )
+
         GotCurrentDate now ->
             ( { model | date = now }, Cmd.none )
 
@@ -130,7 +133,8 @@ inputDate s model =
     in
     column [ width fill ]
         [ wrappedRow [ Font.size xlfont, centerX, spacing 5 ]
-            [ el
+            [ button.special GetCurrentDate "Today"
+            , el
                 [ width weekdayWidth
                 , Font.center
                 , Background.color color.item.background
@@ -154,12 +158,15 @@ inputDate s model =
         , column
             [ width fill, padding d, spacing d ]
           <|
-            [ row [ width fill, spacing d ] <| [ el [ width colwidth, Font.alignRight ] (text " ") ] ++ List.map (el [ Font.size mediumfont, width fill, spacing d, padding d ] << text << DateTime.weekdayToString << Date.numberToWeekday) (List.range 1 7) ]
-                ++ List.map
+            (row [ width fill, spacing d ] <|
+                el [ width colwidth, Font.alignRight ] (text " ")
+                    :: List.map (el [ Font.size mediumfont, width fill, spacing d, padding d ] << text << DateTime.weekdayToString << Date.numberToWeekday) (List.range 1 7)
+            )
+                :: List.map
                     (\calweek ->
                         row [ width fill, spacing d, Font.color color.text.light ] <|
-                            [ el [ width colwidth, Font.alignRight, Font.size mediumfont ] <| text <| Maybe.withDefault "" <| Maybe.map (String.fromInt << Date.weekNumber << .date) <| List.head calweek ]
-                                ++ List.map
+                            (el [ width colwidth, Font.alignRight, Font.size mediumfont ] <| text <| Maybe.withDefault "" <| Maybe.map (String.fromInt << Date.weekNumber << .date) <| List.head calweek)
+                                :: List.map
                                     (\calday ->
                                         row
                                             [ if Date.day model.date == Date.day calday.date then
