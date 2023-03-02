@@ -161,7 +161,7 @@ toDesc f =
             "A fixed text that you define now and that will be always the same. For instance it can be a prefix, a suffix, a separator."
 
         Sequence _ _ _ _ _ ->
-            "A sequence number used to identify an entity."
+            "A sequence number used to identify an entity. You can configure the name of the sequence, the number of figures, the increment and the starting number"
 
         Existing _ _ ->
             "An existing identifierType for an entity."

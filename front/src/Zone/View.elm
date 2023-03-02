@@ -1,52 +1,178 @@
-module Zone.View exposing (displayZone)
+module Zone.View exposing (allFragmentsByScope, displayZone)
 
 import Configuration as Config exposing (Configuration(..))
-import Dict exposing (Dict)
-import Group.Group as Group exposing (Group)
-import Group.Link exposing (Link)
-import Ident.Identifier as Identifier exposing (Identifier)
+import Dict
+import Expression.Eval as Eval
+import Expression.Rational as Rational
+import Flow exposing (Flow(..))
+import Group.Group as Group
+import Hierarchy.Type as HType
+import Ident.Identifier as Identifier
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import State exposing (State)
-import Tree
 import Type exposing (Type)
 import Typed.Type as TType
-import Util exposing (third)
-import Zone.Fragment as ZoneFragment exposing (Fragment(..))
+import Zone.Fragment exposing (Fragment(..))
 import Zone.Zone exposing (Zone(..))
 
 
-displayZone : State -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Dict String Identifier -> Dict String Link -> Dict String Group -> Type -> Uuid -> String
-displayZone state types configs zone allIds allGroupLinks allGroups t uuid =
+displayZone : State -> Zone -> Type -> Uuid -> String
+displayZone s zone t uuid =
     -- TODO replace types configs allIds allGroupLinks with just s
-    Config.getMostSpecific types configs zone (IsItem t uuid)
+    Config.getMostSpecific s.types s.configs zone (IsItem t uuid)
         |> Maybe.map
             (\(ZoneConfig _ fragments _) ->
                 String.concat <|
-                    List.map
-                        (toValue
-                            state
-                            zone
-                            (Identifier.fromUuid uuid allIds)
-                            (List.map (\guuid -> Identifier.fromUuid guuid allIds |> Dict.toList) (Group.groupsOf allGroupLinks uuid) |> List.concat |> Dict.fromList)
-                            (Dict.get (Uuid.toString uuid) allGroups |> Maybe.andThen .parent)
-                        )
-                        fragments
+                    List.map (toValue s t uuid zone) fragments
             )
         |> Maybe.withDefault (Uuid.toString uuid)
 
 
-toValue : State -> Zone -> Dict String Identifier -> Dict String Identifier -> Maybe Uuid -> Fragment -> String
-toValue state zone identifiers groupids parent fragment =
+toValue : State -> Type -> Uuid -> Zone -> Fragment -> String
+toValue s t uuid zone fragment =
     case fragment of
         IdentifierName name ->
-            Identifier.select name identifiers |> List.map Identifier.toValue |> String.join ", "
+            Identifier.select name (Identifier.fromUuid uuid s.identifiers) |> List.map Identifier.toValue |> String.join ", "
 
         GroupIdentifierName name ->
+            let
+                groupids =
+                    List.map (\guuid -> Identifier.fromUuid guuid s.identifiers |> Dict.toList) (Group.groupsOf s.grouped uuid) |> List.concat |> Dict.fromList
+            in
             Identifier.select name groupids |> List.map Identifier.toValue |> String.join ", "
 
         Parent ->
-            Maybe.map (displayZone state state.types state.configs zone state.identifiers state.grouped state.groups (Type.TType TType.Group)) parent |> Maybe.withDefault ""
+            let
+                parent =
+                    Dict.get (Uuid.toString uuid) s.groups |> Maybe.andThen .parent
+            in
+            Maybe.map (displayZone s zone (Type.TType TType.Group)) parent |> Maybe.withDefault ""
 
         Fixed string ->
             string
+
+        Quantity ->
+            case t of
+                Type.TType TType.Commitment ->
+                    Dict.get (Uuid.toString uuid) s.commitments
+                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.toRString)
+                        |> Maybe.withDefault ""
+
+                Type.TType TType.Event ->
+                    Dict.get (Uuid.toString uuid) s.events
+                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.toRString)
+                        |> Maybe.withDefault ""
+
+                _ ->
+                    ""
+
+        Flow ->
+            (case t of
+                Type.TType TType.Commitment ->
+                    Dict.get (Uuid.toString uuid) s.commitments
+
+                Type.TType TType.Event ->
+                    Dict.get (Uuid.toString uuid) s.events
+
+                _ ->
+                    Nothing
+            )
+                |> Maybe.map
+                    (.flow
+                        >> (\f ->
+                                case f of
+                                    ResourceFlow resource ->
+                                        displayZone s zone (Type.TType TType.Resource) resource.uuid
+
+                                    ResourceTypeFlow resourceType ->
+                                        displayZone s zone (Type.HType HType.ResourceType) resourceType.uuid
+                           )
+                    )
+                |> Maybe.withDefault ""
+
+        Provider ->
+            (case t of
+                Type.TType TType.Commitment ->
+                    Dict.get (Uuid.toString uuid) s.commitments
+
+                Type.TType TType.Event ->
+                    Dict.get (Uuid.toString uuid) s.events
+
+                _ ->
+                    Nothing
+            )
+                |> Maybe.map
+                    (.provider
+                        >> displayZone s zone (Type.TType TType.Agent)
+                    )
+                |> Maybe.withDefault ""
+
+        Receiver ->
+            (case t of
+                Type.TType TType.Commitment ->
+                    Dict.get (Uuid.toString uuid) s.commitments
+
+                Type.TType TType.Event ->
+                    Dict.get (Uuid.toString uuid) s.events
+
+                _ ->
+                    Nothing
+            )
+                |> Maybe.map
+                    (.receiver
+                        >> displayZone s zone (Type.TType TType.Agent)
+                    )
+                |> Maybe.withDefault ""
+
+
+allFragmentsByScope : State -> Scope -> List Fragment
+allFragmentsByScope s scope =
+    -- all the relevant fragments for the scope
+    let
+        identifierNames =
+            s.identifierTypes
+                |> Dict.values
+                |> List.filter
+                    (\it -> containsScope s.types scope it.scope)
+                |> List.map (.name >> IdentifierName)
+
+        groupIdentifierNames =
+            s.identifierTypes
+                |> Dict.values
+                |> List.filter
+                    (\it -> containsScope s.types it.scope (HasType (Type.TType TType.Group)))
+                |> List.map (.name >> GroupIdentifierName)
+    in
+    identifierNames
+        ++ groupIdentifierNames
+        ++ [ Fixed ""
+           , Parent
+           ]
+        ++ (case scope of
+                IsItem t _ ->
+                    allByType t
+
+                HasUserType t _ ->
+                    allByType t
+
+                HasType t ->
+                    allByType t
+
+                _ ->
+                    []
+           )
+
+
+allByType : Type -> List Fragment
+allByType t =
+    case t of
+        Type.TType TType.Event ->
+            [ Quantity, Flow, Provider, Receiver ]
+
+        Type.TType TType.Commitment ->
+            [ Quantity, Flow, Provider, Receiver ]
+
+        _ ->
+            []

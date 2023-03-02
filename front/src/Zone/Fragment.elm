@@ -1,11 +1,8 @@
 module Zone.Fragment exposing (Fragment(..), decoder, encode, toDesc, toString)
 
-import Dict exposing (Dict)
-import Group.Group exposing (Group)
-import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid exposing (Uuid)
+import Scope exposing (Scope(..))
 
 
 type
@@ -15,6 +12,10 @@ type
     | GroupIdentifierName String
     | Parent
     | Fixed String
+    | Quantity
+    | Flow
+    | Provider
+    | Receiver
 
 
 toString : Fragment -> String
@@ -29,8 +30,20 @@ toString fragment =
         Parent ->
             "Parent"
 
-        Fixed s ->
+        Fixed _ ->
             "Fixed:"
+
+        Quantity ->
+            "Quantity"
+
+        Flow ->
+            "Flow"
+
+        Provider ->
+            "Provider"
+
+        Receiver ->
+            "Receiver"
 
 
 toDesc : Fragment -> String
@@ -43,10 +56,22 @@ toDesc fragment =
             "Group Identifier"
 
         Parent ->
-            "Parent"
+            "Display the zone configuration of the Parent"
 
         Fixed _ ->
-            "Fixed string"
+            "Always display a predefined string"
+
+        Quantity ->
+            "Display the quantity of the event"
+
+        Flow ->
+            "Display the Resource or ResourceType of the Event or Commitment"
+
+        Provider ->
+            "Display the provider of the Event or Commitment"
+
+        Receiver ->
+            "Display the receiver of the Event or Commitment"
 
 
 encode : Fragment -> Encode.Value
@@ -67,6 +92,18 @@ encode fragment =
             Encode.object
                 [ ( "Fixed", Encode.string string ) ]
 
+        Quantity ->
+            Encode.string "Quantity"
+
+        Flow ->
+            Encode.string "Flow"
+
+        Provider ->
+            Encode.string "Provider"
+
+        Receiver ->
+            Encode.string "Receiver"
+
 
 decoder : Decoder Fragment
 decoder =
@@ -75,11 +112,24 @@ decoder =
         , Decode.string
             |> Decode.andThen
                 (\s ->
-                    if s == "Parent" then
-                        Decode.succeed Parent
+                    case s of
+                        "Parent" ->
+                            Decode.succeed Parent
 
-                    else
-                        Decode.fail ("Unknown fragment: " ++ s)
+                        "Quantity" ->
+                            Decode.succeed Quantity
+
+                        "Flow" ->
+                            Decode.succeed Flow
+
+                        "Provider" ->
+                            Decode.succeed Provider
+
+                        "Receiver" ->
+                            Decode.succeed Receiver
+
+                        _ ->
+                            Decode.fail ("Unknown fragment: " ++ s)
                 )
         , Decode.map GroupIdentifierName <| Decode.field "GroupIdentifierName" Decode.string
         , Decode.map Fixed <| Decode.field "Fixed" Decode.string

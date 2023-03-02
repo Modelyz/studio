@@ -4,7 +4,8 @@
 
 ## version 13 -- unreleased
 
-* improved display of value selection in a deeplink
+* Improved display of value selection in a deeplink
+* Allow to display the qty, flow, provider and receiver
 
 ## version 12 -- 2023-01-20
 

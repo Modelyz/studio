@@ -1,8 +1,6 @@
 module Flow exposing (Flow(..), decoder, encode, flowOf, typeOf, uuidOf)
 
 import Dict exposing (Dict)
-import Expression as Expression exposing (Expression)
-import Expression.Rational as Rational exposing (Rational)
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -12,7 +10,6 @@ import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Scope exposing (Scope(..))
 import Type exposing (Type)
 import Typed.Type as TType
-import Value.Value as Value exposing (Value)
 
 
 type Flow
