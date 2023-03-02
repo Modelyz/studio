@@ -30,8 +30,8 @@ type Msg
     | Choose DeepLink Int (List Int)
 
 
-init : Shared.Model -> Scope -> Int -> List Int -> Model
-init s scope stackNum targetPath =
+init : Scope -> Int -> List Int -> Model
+init scope stackNum targetPath =
     -- scope is the scope of the Value being added
     { scope = scope
     , deeplink = Null
@@ -40,8 +40,8 @@ init s scope stackNum targetPath =
     }
 
 
-update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
-update s msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
         Terminate scope name ->
             ( { model | deeplink = DL.terminate scope name model.deeplink }, Cmd.none )
@@ -73,30 +73,26 @@ view s model =
             ]
         ]
     <|
-        [ {- TODO turn into a chain of smallcards -} text <| Expression.DeepLink.View.toDisplay s model.deeplink
+        [ {- TODO turn into a chain of smallcards -} text <| Expression.DeepLink.View.toDisplay s.state model.deeplink
         , h2 "Choose between:"
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of
                 Null ->
                     List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
-                Link hl _ ->
+                Link _ _ ->
                     -- TODO replace Nothing with Just scope of the restricted scope of the hardlink
                     List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
                 EndPoint _ _ ->
                     []
-        , let
-            sc =
-                DL.toScope model.scope model.deeplink
-          in
-          column [ spacing 20 ]
+        , column [ spacing 20 ]
             [ h2 "Select the Value Type you want to choose:"
             , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ]
                 (s.state.valueTypes
                     |> Dict.values
                     |> List.filter (\vt -> containsScope s.state.types vt.scope model.scope)
-                    |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) (text <| Scope.View.toDisplay s vt.scope))
+                    |> List.map (\vt -> clickableCard (Terminate vt.scope vt.name) (text vt.name) (text <| Scope.View.toDisplay s.state vt.scope))
                     |> withDefaultContent (p "(No Value Types are defined for this scope. Choose another entity or create a value type for this entity)")
                 )
             ]

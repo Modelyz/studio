@@ -32,7 +32,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -40,7 +40,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ValueType (Route.List tuuid) ->
+        Route.Entity Route.ValueType _ ->
             Just { route = route }
 
         _ ->
@@ -67,17 +67,18 @@ update s msg model =
             ( model, Route.redirect s.navkey (Route.Entity Route.ValueType (Route.View vtid Nothing)) |> Effect.fromCmd )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "ValueTypes"
-    , attributes = []
-    , element = viewContent model
-    , route = Route.Entity Route.ValueType (Route.List Nothing)
-    }
+view : Model -> View Msg
+view =
+    always
+        { title = "ValueTypes"
+        , attributes = []
+        , element = viewContent
+        , route = Route.Entity Route.ValueType (Route.List Nothing)
+        }
 
 
-viewContent : Model -> Shared.Model -> Element Msg
-viewContent model s =
+viewContent : Shared.Model -> Element Msg
+viewContent s =
     flatContainer s
         Nothing
         "ValueTypes"
@@ -96,7 +97,7 @@ viewContent model s =
                             (Removed vt)
                             (text vt.name)
                             (row []
-                                [ text <| "for " ++ Scope.View.toDisplay s vt.scope ]
+                                [ text <| "for " ++ Scope.View.toDisplay s.state vt.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Value Types yet. Create your first one!")

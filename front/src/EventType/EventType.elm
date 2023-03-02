@@ -7,8 +7,6 @@ import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope)
-import Type exposing (Type)
-import Value.Value exposing (Value)
 
 
 type alias EventType =

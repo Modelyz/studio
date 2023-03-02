@@ -2,7 +2,7 @@ module EventType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
 import Dict
 import Effect exposing (Effect)
-import Element as E exposing (..)
+import Element exposing (..)
 import EventType.EventType exposing (EventType)
 import EventType.View
 import Expression.View
@@ -15,15 +15,12 @@ import Route exposing (Route, redirect)
 import Scope.View
 import Shared
 import Spa.Page
-import Svg as S
-import Svg.Attributes as A
 import Type exposing (Type)
 import Typed.Type as TType
 import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import View.Style as Style
 import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
@@ -59,7 +56,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -101,8 +98,8 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.Edit (Uuid.toString model.uuid) Nothing )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Event Type"
     , attributes = []
     , element = viewContent model
@@ -117,12 +114,12 @@ viewContent model s =
         "Event Type"
         [ button.primary Edit "Edit" ]
         [ h2 "Identifiers:"
-        , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType model.uuid
+        , text <| displayZone s.state SmallcardTitle mainHType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
         , h2 "Values:"
@@ -130,15 +127,15 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.HType HType.EventType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
-        , model.et |> Maybe.map .qty |> Maybe.map (Expression.View.inputExpression s { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
+        , model.et |> Maybe.map .qty |> Maybe.map (Expression.View.inputExpression s.state { context = ( Type.HType HType.EventType, model.uuid ) }) |> Maybe.withDefault (text "(none)")
         , h2 "Restrictions:"
 
         -- TODO what about resource conversions?
         , EventType.View.svg
-            (Maybe.map (.providers >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
-            (Maybe.map (.flowscope >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
-            (Maybe.map (.receivers >> Scope.View.toDisplay s) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.providers >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.flowscope >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.receivers >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
         ]

@@ -44,7 +44,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -80,8 +80,8 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Resource Types"
     , attributes = []
     , element = viewContent model
@@ -103,7 +103,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.resourceTypes
-                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) (Type.HType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Resource Types yet. Add your first one!")
                     )

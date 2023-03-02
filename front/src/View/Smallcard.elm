@@ -1,14 +1,10 @@
-module View.Smallcard exposing (clickableCard, clickableRemovableCard, hItemClickableCard, halfCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
+module View.Smallcard exposing (clickableCard, clickableRemovableCard, halfCard, itemClickableCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
 
-import Configuration exposing (Configuration)
-import Dict exposing (Dict)
+import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Group.Group exposing (Group)
-import Group.Link exposing (Link)
-import Ident.Identifier as Identifier exposing (Identifier)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
 import State exposing (State)
@@ -37,7 +33,7 @@ clickableRemovableCard onChoose onDelete title description =
 
 clickableCard : msg -> Element msg -> Element msg -> Element msg
 clickableCard onInput title description =
-    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, height (px 75) ]
+    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, width (px 250) ]
         [ row [ alignLeft, Font.size size.text.main ]
             [ button.primary onInput "+"
             , el [ paddingXY 10 0 ] title
@@ -51,53 +47,49 @@ halfCard onDelete title =
     row [ Background.color color.item.selected ] [ el [ padding 10 ] title, button.secondary onDelete "×" ]
 
 
-viewHalfCard : State -> Maybe msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Dict String Link -> Dict String Group -> Type -> Uuid -> Element msg
-viewHalfCard state maybeOnDelete types configs ids grouplinks groups t uuid =
+viewHalfCard : State -> Maybe msg -> Type -> Uuid -> Element msg
+viewHalfCard s maybeOnDelete t uuid =
     row [ Background.color color.item.selected ]
-        [ el [ padding 10 ] (text <| Zone.View.displayZone state types configs SmallcardTitle ids grouplinks groups t uuid)
+        [ el [ padding 10 ] (text <| Zone.View.displayZone s SmallcardTitle t uuid)
         , Maybe.map (\onDelete -> button.secondary onDelete "×") maybeOnDelete |> Maybe.withDefault none
         ]
 
 
-tItemClickableCard : State -> (Scope -> msg) -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Dict String Link -> Dict String Group -> Type -> Uuid -> Element msg
-tItemClickableCard state onInput types configs ids grouplinks groups t uuid =
+itemClickableCard : State -> (Scope -> msg) -> Type -> Uuid -> Element msg
+itemClickableCard s onInput t uuid =
     clickableCard
         (onInput (IsItem t uuid))
-        (text <| Zone.View.displayZone state types configs SmallcardTitle ids grouplinks groups t uuid)
-        (Dict.get (Uuid.toString uuid) types
+        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone state types configs SmallcardTitle (Identifier.fromUuid puuid ids) grouplinks groups (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- FIXME? (Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
 
 
-hItemClickableCard =
-    tItemClickableCard
-
-
-tClickableCard : State -> msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Dict String Link -> Dict String Group -> Type -> Uuid -> Element msg
-tClickableCard state onInput types configs ids grouplinks groups t uuid =
+tClickableCard : State -> msg -> Type -> Uuid -> Element msg
+tClickableCard s onInput t uuid =
     clickableCard
         onInput
-        (text <| Zone.View.displayZone state types configs SmallcardTitle ids grouplinks groups t uuid)
-        (Dict.get (Uuid.toString uuid) types
+        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone state types configs SmallcardTitle (Identifier.fromUuid puuid ids) grouplinks groups (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- FIXME?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
 
 
-tClickableRemovableCard : State -> msg -> msg -> Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Dict String Identifier -> Dict String Link -> Dict String Group -> Type -> Uuid -> Element msg
-tClickableRemovableCard state onChoose onDelete types configs ids grouplinks groups t uuid =
+tClickableRemovableCard : State -> msg -> msg -> Type -> Uuid -> Element msg
+tClickableRemovableCard s onChoose onDelete t uuid =
     clickableRemovableCard
         onChoose
         onDelete
-        (text <| Zone.View.displayZone state types configs SmallcardTitle ids grouplinks groups t uuid)
-        (Dict.get (Uuid.toString uuid) types
+        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone state types configs SmallcardTitle (Identifier.fromUuid puuid ids) grouplinks groups (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- FIXME?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )

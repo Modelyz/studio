@@ -1,6 +1,5 @@
 module Expression.Editor exposing (Model, Msg, checkExpression, init, update, view, viewSubpage)
 
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -8,20 +7,18 @@ import Element.Font as Font
 import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
 import Expression.Binary as B
-import Expression.DeepLink as DeepLink exposing (DeepLink)
+import Expression.DeepLink as DeepLink
 import Expression.DeepLink.Select
 import Expression.DeepLink.View
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
 import Expression.Unary as U
 import Expression.Value.Select
-import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
+import Expression.ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
-import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope(..))
-import Scope.View exposing (selectScope)
 import Shared
-import Util exposing (checkEmptyString, checkListOne, otherwise)
+import Util exposing (checkListOne, otherwise)
 import Value.Value as Value exposing (..)
 import View exposing (..)
 import View.Style exposing (..)
@@ -54,8 +51,8 @@ checkExpression model =
     checkListOne model.stack "Your expression stack must have a single element"
 
 
-init : Shared.Model -> Scope -> List Expression -> Model
-init s scope stack =
+init : Scope -> List Expression -> Model
+init scope stack =
     { scope = scope
     , stack = stack
     , vlselector = Nothing
@@ -63,8 +60,8 @@ init s scope stack =
     }
 
 
-update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
-update s msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
         AddExpression expr ->
             ( { model | stack = expr :: model.stack }, Cmd.none )
@@ -112,7 +109,7 @@ update s msg model =
 
         OpenValueSelector stackNum targetPath ->
             ( { model
-                | vlselector = Just <| Expression.Value.Select.init s stackNum targetPath
+                | vlselector = Just <| Expression.Value.Select.init stackNum targetPath
               }
             , Cmd.none
             )
@@ -150,7 +147,7 @@ update s msg model =
                     (\vlselector ->
                         let
                             ( newsubmodel, subcmd ) =
-                                Expression.Value.Select.update s vlmsg vlselector
+                                Expression.Value.Select.update vlmsg vlselector
                         in
                         ( { model | vlselector = Just newsubmodel }, Cmd.map VlMsg subcmd )
                     )
@@ -158,7 +155,7 @@ update s msg model =
 
         OpenDeepLinkSelector stackNum targetPath ->
             ( { model
-                | dlselector = Just <| Expression.DeepLink.Select.init s model.scope stackNum targetPath
+                | dlselector = Just <| Expression.DeepLink.Select.init model.scope stackNum targetPath
               }
             , Cmd.none
             )
@@ -190,7 +187,7 @@ update s msg model =
                     (\dlselector ->
                         let
                             ( newsubmodel, subcmd ) =
-                                Expression.DeepLink.Select.update s dlmsg dlselector
+                                Expression.DeepLink.Select.update dlmsg dlselector
                         in
                         ( { model | dlselector = Just newsubmodel }, Cmd.map DlMsg subcmd )
                     )
@@ -228,7 +225,7 @@ editExpression s model stackNum ( currentPath, expr ) =
     -- used to modify the expression and input default values
     case expr of
         Leaf obs ->
-            editObservable s model ( stackNum, currentPath ) obs
+            editObservable s ( stackNum, currentPath ) obs
 
         Unary o e ->
             row [] [ text (U.toShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
@@ -237,8 +234,8 @@ editExpression s model stackNum ( currentPath, expr ) =
             row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| B.toShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
 
 
-editObservable : Shared.Model -> Model -> ( Int, List Int ) -> Observable -> Element Msg
-editObservable s model ( stackNum, exprPath ) obs =
+editObservable : Shared.Model -> ( Int, List Int ) -> Observable -> Element Msg
+editObservable s ( stackNum, exprPath ) obs =
     case obs of
         ObsNumber n ->
             row [ Background.color color.item.background ]
@@ -267,11 +264,6 @@ editObservable s model ( stackNum, exprPath ) obs =
                 ]
 
         ObsValue vs ->
-            let
-                onSelect : ValueSelection -> Msg
-                onSelect =
-                    InputExpression ( stackNum, exprPath ) << Leaf << ObsValue
-            in
             case vs of
                 UndefinedValue ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
@@ -284,11 +276,6 @@ editObservable s model ( stackNum, exprPath ) obs =
                         ]
 
         ObsLink deeplink ->
-            let
-                onSelect : DeepLink -> Msg
-                onSelect =
-                    InputExpression ( stackNum, exprPath ) << Leaf << ObsLink
-            in
             case deeplink of
                 DeepLink.Null ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
@@ -302,7 +289,7 @@ editObservable s model ( stackNum, exprPath ) obs =
 
                 DeepLink.Link _ _ ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (Expression.DeepLink.View.toDisplay s deeplink)
+                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (Expression.DeepLink.View.toDisplay s.state deeplink)
                         ]
 
 

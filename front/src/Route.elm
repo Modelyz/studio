@@ -3,10 +3,9 @@ module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehavio
 import Browser.Navigation as Nav
 import Element exposing (Color, rgb255)
 import Hierarchy.Type as HType
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid as Uuid
 import State exposing (State)
 import Type exposing (Type)
-import Typed.Type as TType
 import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (QueryParameter, absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
@@ -372,7 +371,7 @@ toDesc s r =
             "Home"
 
         Entity e (List (Just uuid)) ->
-            Maybe.map2 (Zone.View.displayZone s s.types s.configs SmallcardTitle s.identifiers s.grouped s.groups) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+            Maybe.map2 (Zone.View.displayZone s SmallcardTitle) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e

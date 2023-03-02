@@ -7,8 +7,8 @@ import Zone.Fragment as Fragment
 import Zone.Zone as Zone
 
 
-view : Shared.Model -> Configuration -> String
-view s c =
+view : Configuration -> String
+view c =
     -- TODO convert to a separate title and description to feed in to a smallcard
     case c of
         ZoneConfig zone fragments _ ->
@@ -21,4 +21,4 @@ description : Shared.Model -> Configuration -> String
 description s c =
     case c of
         ZoneConfig _ _ scope ->
-            Scope.View.toDisplay s scope
+            Scope.View.toDisplay s.state scope

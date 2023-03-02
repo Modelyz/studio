@@ -32,7 +32,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -40,7 +40,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.IdentifierType (Route.List tuuid) ->
+        Route.Entity Route.IdentifierType _ ->
             Just { route = route }
 
         _ ->
@@ -67,17 +67,18 @@ update s msg model =
             ( model, Route.redirect s.navkey (Route.Entity Route.IdentifierType (Route.View vtid Nothing)) |> Effect.fromCmd )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
-    { title = "IdentifierTypes"
-    , attributes = []
-    , element = viewContent model
-    , route = Route.Entity Route.IdentifierType (Route.List Nothing)
-    }
+view : Model -> View Msg
+view =
+    always
+        { title = "IdentifierTypes"
+        , attributes = []
+        , element = viewContent
+        , route = Route.Entity Route.IdentifierType (Route.List Nothing)
+        }
 
 
-viewContent : Model -> Shared.Model -> Element Msg
-viewContent model s =
+viewContent : Shared.Model -> Element Msg
+viewContent s =
     flatContainer s
         Nothing
         "IdentifierTypes"
@@ -96,7 +97,7 @@ viewContent model s =
                             (Removed it)
                             (text it.name)
                             (row []
-                                [ text <| "for " ++ Scope.View.toDisplay s it.scope ]
+                                [ text <| "for " ++ Scope.View.toDisplay s.state it.scope ]
                             )
                     )
                 |> withDefaultContent (p "There are no Identifier Types yet. Create your first one!")

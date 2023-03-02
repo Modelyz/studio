@@ -34,16 +34,16 @@ type Msg
     | Choose ValueSelection Int (List Int)
 
 
-init : Shared.Model -> Int -> List Int -> Model
-init s stackNum targetPath =
+init : Int -> List Int -> Model
+init stackNum targetPath =
     { selection = None
     , stackNum = stackNum
     , targetPath = targetPath
     }
 
 
-update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
-update s msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
         InputScope scope ->
             ( { model | selection = OnlyScope scope }, Cmd.none )
@@ -85,29 +85,29 @@ view s model =
         ]
         (case model.selection of
             None ->
-                [ selectScope s InputScope Scope.anything Scope.anything "Where do you want to select a value?" ]
+                [ selectScope s.state InputScope Scope.anything Scope.anything "Where do you want to select a value?" ]
 
             OnlyScope (IsItem type_ uuid) ->
                 let
                     scope =
                         IsItem type_ uuid
                 in
-                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?"
-                , selectValue s model scope (InputValue type_ uuid)
+                [ selectScope s.state InputScope scope Scope.anything "Where do you want to select a value?"
+                , selectValue s scope (InputValue type_ uuid)
                 ]
 
             OnlyScope scope ->
-                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?" ]
+                [ selectScope s.state InputScope scope Scope.anything "Where do you want to select a value?" ]
 
             ScopeAndValue scope name ->
-                [ selectScope s InputScope scope Scope.anything "Where do you want to select a value?"
+                [ selectScope s.state InputScope scope Scope.anything "Where do you want to select a value?"
                 , halfCard (InputScope scope) (text name)
                 ]
         )
 
 
-selectValue : Shared.Model -> Model -> Scope -> (String -> Msg) -> Element Msg
-selectValue s model scope onInput =
+selectValue : Shared.Model -> Scope -> (String -> Msg) -> Element Msg
+selectValue s scope onInput =
     case scope of
         IsItem t uuid ->
             column [ spacing 20 ]

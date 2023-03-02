@@ -6,7 +6,6 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Expression as Expression exposing (Expression(..))
 import Expression.Editor exposing (view)
-import Flow exposing (Flow)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -24,7 +23,7 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (checkEmptyString, checkListOne, checkMaybe, third)
+import Util exposing (third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -38,12 +37,9 @@ hereType =
     Type.HType HType.CommitmentType
 
 
+hierarchicConstructor : HType.Type
 hierarchicConstructor =
     HType.CommitmentType
-
-
-constructor =
-    CommitmentType
 
 
 type alias Flags =
@@ -96,7 +92,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -133,7 +129,7 @@ init s f =
             , providers = Scope.HasType (Type.TType TType.Agent)
             , receivers = Scope.HasType (Type.TType TType.Agent)
             , flowscope = Scope.anything
-            , editor = Expression.Editor.init s (HasType (Type.TType TType.Commitment)) []
+            , editor = Expression.Editor.init (HasType (Type.TType TType.Commitment)) []
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -178,7 +174,7 @@ init s f =
                     , receivers = Maybe.map .receivers ct |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
                     , flowscope = flowscope
                     , editor =
-                        Expression.Editor.init s
+                        Expression.Editor.init
                             flowscope
                             (ct |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
@@ -208,7 +204,7 @@ update s msg model =
                 | type_ = mh
                 , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
-                , editor = Expression.Editor.init s (Maybe.map (HasUserType (Type.TType TType.Commitment)) mh |> Maybe.withDefault (HasType (Type.TType TType.Commitment))) []
+                , editor = Expression.Editor.init (Maybe.map (HasUserType (Type.TType TType.Commitment)) mh |> Maybe.withDefault (HasType (Type.TType TType.Commitment))) []
               }
             , Effect.none
             )
@@ -263,12 +259,12 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
         EditorMsg editormsg ->
-            Expression.Editor.update s editormsg model.editor
+            Expression.Editor.update editormsg model.editor
                 |> (\( x, y ) -> ( { model | editor = x }, Effect.map EditorMsg <| Effect.fromCmd y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding an Commitment Type"
     , attributes = []
     , element = viewContent model
@@ -304,7 +300,7 @@ checkStep model =
 validate : Model -> Result String CommitmentType
 validate m =
     Result.map
-        (constructor hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flowscope)
+        (CommitmentType hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flowscope)
         (Expression.Editor.checkExpression m.editor)
 
 
@@ -325,14 +321,14 @@ viewContent model s =
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepProviders ->
-                    selectScope s SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Provider Agents:"
+                    selectScope s.state SelectProviders model.providers (Scope.HasType (Type.TType TType.Agent)) "Provider Agents:"
 
                 Step.Step StepReceivers ->
-                    selectScope s SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
+                    selectScope s.state SelectReceivers model.receivers (Scope.HasType (Type.TType TType.Agent)) "Receiver Agents:"
 
                 Step.Step StepFlow ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
-                        [ selectScope s SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
+                        [ selectScope s.state SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
                         , h2 "Build an expression for the quantity exchanged:"
                         , Element.map EditorMsg <| Expression.Editor.view s model.editor
                         ]

@@ -11,17 +11,15 @@ import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
 import Scope as Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import Type
-import Typed.Type as TType
 import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.MultiSelect exposing (multiSelect)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
+import Zone.View exposing (allFragmentsByScope)
 import Zone.Zone as Zone exposing (Zone(..))
 
 
@@ -196,33 +194,20 @@ viewContent model s =
         "Adding a Display Zone Configuration"
         buttons
         [ inputZone model
-        , selectScope s InputScope model.scope Scope.anything "What should it apply to?"
+        , selectScope s.state InputScope model.scope Scope.anything "What should it apply to?"
         , multiSelect
             model
-            { inputFragments = InputFragments
+            { inputMsg = InputFragments
+            , selection = .fragments
+            , title = "Format: "
+            , description = "Click on the items below to construct the display of your identifier"
             , toString = Fragment.toString
             , toDesc = Fragment.toDesc
-            , inputFragment = inputFragment
+            , height = 100
+            , input = inputFragment
             }
           <|
-            (Fixed ""
-                :: ((s.state.identifierTypes
-                        |> Dict.values
-                        |> List.filter
-                            (\it -> containsScope s.state.types model.scope it.scope)
-                    )
-                        |> List.map (.name >> IdentifierName)
-                   )
-            )
-                ++ (Parent
-                        :: ((s.state.identifierTypes
-                                |> Dict.values
-                                |> List.filter
-                                    (\it -> containsScope s.state.types it.scope (HasType (Type.TType TType.Group)))
-                            )
-                                |> List.map (.name >> GroupIdentifierName)
-                           )
-                   )
+            allFragmentsByScope s.state model.scope
         ]
 
 
@@ -276,4 +261,16 @@ inputFragment fragments index fragment =
             none
 
         GroupIdentifierName _ ->
+            none
+
+        Quantity ->
+            none
+
+        Flow ->
+            none
+
+        Provider ->
+            none
+
+        Receiver ->
             none

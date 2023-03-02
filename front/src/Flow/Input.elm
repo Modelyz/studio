@@ -1,26 +1,15 @@
 module Flow.Input exposing (Config, input)
 
-import Dict exposing (Dict)
+import Dict
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Expression.Input
-import Expression.Rational exposing (Rational)
 import Flow exposing (Flow(..))
-import Hierarchy.Type as HType
-import Ident.Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (IdentifierType)
-import Resource.Resource exposing (Resource)
 import Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Type
-import Typed.Type as TType
-import Value.Input
-import Value.Value exposing (Value)
 import View exposing (..)
-import View.Smallcard exposing (clickableCard, tClickableCard, viewHalfCard)
+import View.Smallcard exposing (tClickableCard, viewHalfCard)
 import View.Style exposing (..)
 
 
@@ -40,10 +29,10 @@ input c s =
             (\flow ->
                 case flow of
                     ResourceFlow r ->
-                        viewHalfCard s.state (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType r.what) r.uuid
+                        viewHalfCard s.state (Just <| c.onSelect Nothing) (Type.TType r.what) r.uuid
 
                     ResourceTypeFlow rt ->
-                        viewHalfCard s.state (Just <| c.onSelect Nothing) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType rt.what) rt.uuid
+                        viewHalfCard s.state (Just <| c.onSelect Nothing) (Type.HType rt.what) rt.uuid
             )
         |> Maybe.withDefault (el [ centerY ] <| text "Nothing chosen yet")
     , c.flow
@@ -56,7 +45,7 @@ input c s =
                         (s.state.resources
                             |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) c.scope)
                             |> Dict.values
-                            |> List.map (\r -> tClickableCard s.state (c.onSelect (Just <| ResourceFlow r)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType r.what) r.uuid)
+                            |> List.map (\r -> tClickableCard s.state (c.onSelect (Just <| ResourceFlow r)) (Type.TType r.what) r.uuid)
                             |> withDefaultContent (p "(No Resources to choose from)")
                         )
                     ]
@@ -66,7 +55,7 @@ input c s =
                         (s.state.resourceTypes
                             |> Dict.filter (\_ rt -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) c.scope)
                             |> Dict.values
-                            |> List.map (\rt -> tClickableCard s.state (c.onSelect (Just <| ResourceTypeFlow rt)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType rt.what) rt.uuid)
+                            |> List.map (\rt -> tClickableCard s.state (c.onSelect (Just <| ResourceTypeFlow rt)) (Type.HType rt.what) rt.uuid)
                             |> withDefaultContent (p "(No Resource Types to choose from)")
                         )
                     ]

@@ -33,7 +33,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -72,8 +72,8 @@ update s msg model =
                 |> Maybe.withDefault ( model, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a Configuration"
     , attributes = []
     , element = viewContent model
@@ -91,7 +91,7 @@ viewContent model s =
                     "Configuration"
                     [ button.primary Edit "Edit" ]
                     [ h1 <| Configuration.View.description s c
-                    , text <| Configuration.View.view s c
+                    , text <| Configuration.View.view c
                     ]
             )
         |> Maybe.withDefault

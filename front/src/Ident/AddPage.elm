@@ -128,8 +128,8 @@ init s f =
             , mandatory = False
             , fragments = []
             , warning = ""
-            , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepFormat ]
-            , step = Step.Step StepName
+            , steps = [ Step.Step StepScope, Step.Step StepName, Step.Step StepOptions, Step.Step StepFormat ]
+            , step = Step.Step StepScope
             , old = Nothing
             }
     in
@@ -208,7 +208,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    selectScope s InputScope model.scope Scope.anything "What should it apply to?"
+                    selectScope s.state InputScope model.scope Scope.anything "Add an identifier to:"
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -236,10 +236,14 @@ viewContent model s =
                 Step.Step StepFormat ->
                     multiSelect
                         model
-                        { inputFragments = InputFragments
+                        { inputMsg = InputFragments
+                        , selection = .fragments
+                        , title = "Format: "
+                        , description = "Click on the items below to construct the format of the identifier"
                         , toString = Fragment.toString
                         , toDesc = Fragment.toDesc
-                        , inputFragment = inputFragment
+                        , height = 100
+                        , input = inputFragment
                         }
                         Fragment.all
 

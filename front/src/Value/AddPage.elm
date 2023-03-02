@@ -12,7 +12,7 @@ import Scope as Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
-import Util exposing (checkEmptyString, checkListOne)
+import Util exposing (checkEmptyString)
 import Value.ValueType exposing (ValueType)
 import View exposing (..)
 import View.Step as Step exposing (Msg(..), Step(..), buttons)
@@ -99,7 +99,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -127,10 +127,10 @@ init s f =
             , scope = Scope.anything
             , mandatory = False
             , warning = ""
-            , steps = [ Step.Step StepName, Step.Step StepScope, Step.Step StepOptions, Step.Step StepExpression ]
-            , step = Step.Step StepName
+            , steps = [ Step.Step StepScope, Step.Step StepName, Step.Step StepOptions, Step.Step StepExpression ]
+            , step = Step.Step StepScope
             , old = Nothing
-            , editor = Expression.Editor.init s Scope.anything []
+            , editor = Expression.Editor.init Scope.anything []
             }
     in
     s.state.valueTypes
@@ -144,7 +144,7 @@ init s f =
                     , mandatory = vt.mandatory
                     , old = Just vt
                     , scope = vt.scope
-                    , editor = Expression.Editor.init s vt.scope [ vt.expr ]
+                    , editor = Expression.Editor.init vt.scope [ vt.expr ]
                 }
             )
         |> Maybe.withDefault adding
@@ -160,7 +160,7 @@ update s msg model =
         InputScope scope ->
             ( { model
                 | scope = scope
-                , editor = Expression.Editor.init s scope []
+                , editor = Expression.Editor.init scope []
               }
             , Effect.none
             )
@@ -191,12 +191,12 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
         EditorMsg editormsg ->
-            Expression.Editor.update s editormsg model.editor
+            Expression.Editor.update editormsg model.editor
                 |> (\( x, y ) -> ( { model | editor = x }, Effect.map EditorMsg <| Effect.fromCmd y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a ValueType"
     , attributes = []
     , element = viewContent model
@@ -210,7 +210,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepScope ->
-                    selectScope s InputScope model.scope Scope.anything "What should it apply to?"
+                    selectScope s.state InputScope model.scope Scope.anything "Add a value to:"
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]

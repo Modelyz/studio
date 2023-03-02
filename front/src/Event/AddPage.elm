@@ -1,21 +1,19 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Agent.Agent exposing (Agent)
 import Date
 import DateTime.View
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
-import Element.Font as Font
 import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
 import Expression exposing (Expression)
 import Expression.Input
+import Expression.Rational as Rational
 import Flow exposing (Flow(..))
 import Flow.Input
-import Group.Group as Group exposing (Group)
+import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -24,28 +22,27 @@ import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Reconcile exposing (Reconciliation)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Task
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (applyR, checkMaybe, chooseIfSingleton, flip, third)
+import Util exposing (applyR, checkMaybe, chooseIfSingleton, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
+import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (color)
-
-
-constructor =
-    Event
+import Zone.View exposing (displayZone)
+import Zone.Zone exposing (Zone(..))
 
 
 typedConstructor : TType.Type
@@ -70,6 +67,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
+    , processes : List Uuid
     , type_ : Maybe Uuid
     , eventType : Maybe EventType
     , provider : Maybe Uuid
@@ -87,7 +85,8 @@ type alias Model =
 
 
 type Step
-    = StepType
+    = StepProcess
+    | StepType
     | StepProvider
     | StepReceiver
     | StepFlow
@@ -99,6 +98,7 @@ type Step
 
 type Msg
     = SelectType (Maybe Uuid)
+    | SelectProcesses (List Uuid)
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
     | InputQty Expression
@@ -115,7 +115,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -157,6 +157,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
+            , processes = []
             , type_ = wantedType
             , eventType = met
             , provider =
@@ -195,7 +196,7 @@ init s f =
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepProcess, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -204,6 +205,9 @@ init s f =
                 let
                     realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    reconciliations =
+                        Dict.values <| Dict.filter (\_ r -> r.event == uuid) s.state.reconciliations
 
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
@@ -218,7 +222,8 @@ init s f =
                         event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
                 in
                 ( { adding
-                    | type_ = realType
+                    | processes = reconciliations |> List.map .process
+                    , type_ = realType
                     , uuid = uuid
                     , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
                     , provider = event |> Maybe.map .provider
@@ -288,6 +293,9 @@ update s msg model =
             , Effect.none
             )
 
+        SelectProcesses uuids ->
+            ( { model | processes = uuids }, Effect.none )
+
         SelectProvider uuid ->
             ( { model | provider = uuid }, Effect.none )
 
@@ -333,6 +341,7 @@ update s msg model =
                                 ++ List.map Message.AddedValue (Dict.values model.values)
                                 ++ List.map (\uuid -> Message.Grouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Message.Ungrouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                                ++ List.map (\uuid -> Message.Reconciled (Reconciliation Rational.zero model.uuid uuid)) model.processes
                             )
                         , redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]
@@ -346,8 +355,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding an Event"
     , attributes = []
     , element = viewContent model
@@ -358,6 +367,9 @@ view s model =
 checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
+        Step StepProcess ->
+            Ok ()
+
         Step StepType ->
             checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
 
@@ -388,7 +400,7 @@ validate m =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
-        (constructor typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
+        (Event typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
         (checkMaybe m.qty "The quantity is invalid")
         |> applyR (checkMaybe m.type_ "You must select an Event Type")
         |> applyR (checkMaybe m.provider "You must select a Provider")
@@ -401,13 +413,37 @@ viewContent model s =
     let
         step =
             case model.step of
+                Step.Step StepProcess ->
+                    multiSelect model
+                        { inputMsg = SelectProcesses
+                        , selection = .processes
+                        , title = "Processes: "
+                        , description = "Select the processes that correspond to this new event. (If you don't know, click Next)"
+                        , toString = displayZone s.state SmallcardTitle (Type.TType TType.Process)
+                        , toDesc = always ""
+                        , height = 50
+                        , input = \_ _ _ -> none
+                        }
+                    <|
+                        List.map .uuid <|
+                            Dict.values s.state.processes
+
+                {- what = Type.TType TType.Process
+                   , muuids = model.processes
+                   , onInput = SelectProcess
+                   , title = "Process:"
+                   , explain = "Choose the process of the new Event:"
+                   , empty = "(There are no Processes yet to choose from)"
+                   }
+                   (s.state.processes |> Dict.map (\_ a -> a.uuid))
+                -}
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.EventType
                         , muuid = model.type_
                         , onInput = SelectType
                         , title = "Type:"
-                        , explain = "Choose the type of the new Event:"
+                        , explain = "Select the type of the new Event:"
                         , empty = "(There are no Event Types yet to choose from)"
                         }
                         (s.state.eventTypes |> Dict.map (\_ a -> a.uuid))
@@ -421,7 +457,7 @@ viewContent model s =
                                     , muuid = model.provider
                                     , onInput = SelectProvider
                                     , title = "Provider:"
-                                    , explain = "Choose the provider of the event:"
+                                    , explain = "Select the provider:"
                                     , empty = "(There are no agents yet to choose from)"
                                     }
                                     (s.state.agents
@@ -442,7 +478,7 @@ viewContent model s =
                                     , muuid = model.receiver
                                     , onInput = SelectReceiver
                                     , title = "Receiver:"
-                                    , explain = "Choose the receiver of the event:"
+                                    , explain = "Select the receiver:"
                                     , empty = "(There are no agents yet to choose from)"
                                     }
                                     (s.state.agents

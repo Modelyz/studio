@@ -60,7 +60,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -102,8 +102,8 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Group <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Group"
     , attributes = []
     , element = viewContent model
@@ -118,21 +118,21 @@ viewContent model s =
         "Group"
         [ button.primary Edit "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
-        , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainTType model.uuid
+        , text <| displayZone s.state SmallcardTitle mainTType model.uuid
         , h2 "Parent group:"
-        , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group)) |> Maybe.withDefault "(None)" |> text
+        , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Group)) |> Maybe.withDefault "(None)" |> text
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Can contain:"
-        , text <| Scope.View.toDisplay s model.scope
+        , text <| Scope.View.toDisplay s.state model.scope
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False
             |> displayValueDict s { context = ( Type.TType TType.Group, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

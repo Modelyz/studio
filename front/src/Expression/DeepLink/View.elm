@@ -1,12 +1,12 @@
 module Expression.DeepLink.View exposing (toDisplay)
 
 import Expression.DeepLink exposing (DeepLink(..))
-import Expression.HardLink as HardLink exposing (HardLink)
+import Expression.HardLink as HardLink
 import Scope.View
-import Shared
+import State exposing (State)
 
 
-toDisplay : Shared.Model -> DeepLink -> String
+toDisplay : State -> DeepLink -> String
 toDisplay s deeplink =
     case deeplink of
         Null ->

@@ -1,29 +1,22 @@
 module Expression.Input exposing (Config, inputExpression)
 
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
 import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
 import Expression.Binary as B
-import Expression.DeepLink as DeepLink exposing (DeepLink(..))
-import Expression.DeepLink.Select
+import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Eval as Eval
-import Expression.HardLink as HardLink exposing (HardLink(..))
-import Expression.Observable as Obs exposing (Observable(..))
+import Expression.HardLink exposing (HardLink(..))
+import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
 import Expression.Unary as U
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
-import Prng.Uuid as Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
-import Scope.View exposing (selectScope)
+import Prng.Uuid exposing (Uuid)
+import Scope exposing (Scope(..))
 import Shared
 import Type exposing (Type)
-import Typed.Type as TType
 import Util exposing (chooseIfSingleton)
 import Value.Value as Value exposing (..)
 import View exposing (..)
@@ -91,7 +84,7 @@ inputObservable c s targetPath obs expr =
                 [ text <|
                     case
                         Value.getByUuid for s.state.values
-                            |> Result.andThen (Eval.veval s { context = c.context } s.state.values)
+                            |> Result.andThen (Eval.veval s.state { context = c.context } s.state.values)
                     of
                         Err err ->
                             err
@@ -106,9 +99,9 @@ inputObservable c s targetPath obs expr =
         ObsLink deeplink ->
             let
                 value =
-                    Eval.dleval s deeplink [ Tuple.second c.context ]
+                    Eval.dleval s.state deeplink [ Tuple.second c.context ]
                         |> chooseIfSingleton
-                        |> Maybe.map (Eval.veval s { context = c.context } s.state.values)
+                        |> Maybe.map (Eval.veval s.state { context = c.context } s.state.values)
             in
             row [ height fill ]
                 [ value

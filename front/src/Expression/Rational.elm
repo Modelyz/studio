@@ -1,4 +1,4 @@
-module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, rdecoder, toFloatString, toRString, toString)
+module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, rdecoder, toFloatString, toRString, toString, zero)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -6,6 +6,11 @@ import Json.Encode as Encode
 
 type Rational
     = Rational Int Int
+
+
+zero : Rational
+zero =
+    Rational 0 1
 
 
 neg : Rational -> Rational
@@ -149,7 +154,7 @@ decoder =
                                 Decode.succeed rational
 
                             Err _ ->
-                                Decode.fail "plop"
+                                Decode.fail "Error decoding rational"
                    )
             )
 

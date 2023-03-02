@@ -35,7 +35,7 @@ groupsColumn s =
     , view =
         \( uuid, _, _ ) ->
             groupsOf s.state.grouped uuid
-                |> List.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group))
+                |> List.map (displayZone s.state SmallcardTitle (Type.TType TType.Group))
                 |> String.join "\n"
                 |> text
                 |> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]

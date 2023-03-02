@@ -1,18 +1,13 @@
 module Value.View exposing (displayValueDict)
 
--- TODO file seems unused
-
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Expression as Expression
 import Expression.Eval as Eval
 import Expression.Rational as Rational
-import Prng.Uuid exposing (Uuid)
 import Shared
-import Type exposing (Type)
 import Value.Value exposing (Value)
-import View exposing (headerCell, innerCell)
+import View exposing (innerCell)
 import View.Style exposing (..)
 
 
@@ -23,7 +18,15 @@ displayValueDict s c default allV data =
             { data = Dict.values data
             , columns =
                 [ { header = none, width = fill, view = .name >> innerCell }
-                , { header = none, width = fill, view = .expr >> Eval.exeval s c allV >> Result.map Rational.toFloatString >> Result.withDefault "(undefined)" >> innerCell }
+                , { header = none
+                  , width = fill
+                  , view =
+                        .expr
+                            >> Eval.exeval s.state c allV
+                            >> Result.map Rational.toFloatString
+                            >> Result.withDefault "(undefined)"
+                            >> innerCell
+                  }
                 ]
             }
 

@@ -34,7 +34,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -73,8 +73,8 @@ update s msg model =
                 |> Maybe.withDefault ( model, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding an Value Type"
     , attributes = []
     , element = viewContent model
@@ -92,8 +92,8 @@ viewContent model s =
                     "ValueType"
                     [ button.primary Edit "Edit" ]
                     [ h2 <| vt.name
-                    , text <| "For: " ++ Scope.View.toDisplay s vt.scope
-                    , row [] [ text "Expression : ", Expression.View.viewExpression s vt.expr ]
+                    , text <| "For: " ++ Scope.View.toDisplay s.state vt.scope
+                    , row [] [ text "Expression : ", Expression.View.viewExpression s.state vt.expr ]
                     ]
             )
         |> Maybe.withDefault

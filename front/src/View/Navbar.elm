@@ -61,7 +61,7 @@ mobile title s r =
         List.intersperse
             (separator color.navbar.separator)
         <|
-            hamburger title s
+            hamburger title
                 :: (if s.menu == Style.MobileClosed then
                         []
 

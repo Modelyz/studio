@@ -3,7 +3,6 @@ module Group.Input exposing (Config, Model, Msg, added, init, inputGroups, remov
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Border as Border
-import Element.Font as Font
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -188,7 +187,7 @@ inputGroups c s model =
                                 button.secondary
                             )
                                 (SetCurrentGT gt)
-                                (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid)
+                                (displayZone s.state SmallcardTitle (Type.HType HType.GroupType) gt.uuid)
                         )
                 )
             , column [ spacing 10 ]
@@ -198,7 +197,7 @@ inputGroups c s model =
                         (\( gt, gdict ) ->
                             let
                                 gtdisplay =
-                                    displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.HType HType.GroupType) gt.uuid
+                                    displayZone s.state SmallcardTitle (Type.HType HType.GroupType) gt.uuid
                             in
                             column [ spacing 20 ]
                                 [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 5, Border.color color.item.border ] <|
@@ -207,7 +206,7 @@ inputGroups c s model =
                                                 |> Dict.values
                                                 |> List.map
                                                     (\uuid ->
-                                                        viewHalfCard s.state (Just (RemovedGroup gt uuid)) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
+                                                        viewHalfCard s.state (Just (RemovedGroup gt uuid)) (Type.TType TType.Group) uuid
                                                     )
                                            )
                                 ]
@@ -243,7 +242,7 @@ inputGroups c s model =
                                     |> List.map .uuid
                                     |> List.map
                                         (\uuid ->
-                                            tClickableCard s.state (AddedGroup currentGt uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) uuid
+                                            tClickableCard s.state (AddedGroup currentGt uuid) (Type.TType TType.Group) uuid
                                         )
                                     |> withDefaultContent (p "(There are no Groups yet)")
                                 )

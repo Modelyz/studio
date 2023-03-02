@@ -51,7 +51,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -92,8 +92,8 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ResourceType <| Route.Edit (Uuid.toString model.uuid) Nothing )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Resource Type"
     , attributes = []
     , element = viewContent model
@@ -108,12 +108,12 @@ viewContent model s =
         "Resource Type"
         [ button.primary Edit "Edit" ]
         [ h2 "Identifiers:"
-        , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType model.uuid
+        , text <| displayZone s.state SmallcardTitle mainHType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
         , h2 "Values:"
@@ -121,6 +121,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.HType HType.ResourceType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

@@ -32,7 +32,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -40,7 +40,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Configuration (Route.List tuuid) ->
+        Route.Entity Route.Configuration _ ->
             Just { route = route }
 
         _ ->
@@ -67,17 +67,17 @@ update s msg model =
             ( model, Route.redirect s.navkey (Route.Entity Route.Configuration (Route.View zid Nothing)) |> Effect.fromCmd )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Configurations"
     , attributes = []
-    , element = viewContent model
+    , element = viewContent
     , route = model.route
     }
 
 
-viewContent : Model -> Shared.Model -> Element Msg
-viewContent model s =
+viewContent : Shared.Model -> Element Msg
+viewContent s =
     flatContainer s
         Nothing
         "Configurations"
@@ -94,7 +94,7 @@ viewContent model s =
                         clickableRemovableCard (View <| Configuration.compare c)
                             (Removed c)
                             (text <| Configuration.View.description s c)
-                            (text <| Configuration.View.view s c)
+                            (text <| Configuration.View.view c)
                     )
                 |> withDefaultContent (p "There are no Configurations yet. Create your first one!")
             )

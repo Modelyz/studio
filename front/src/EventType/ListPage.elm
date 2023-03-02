@@ -103,7 +103,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.eventTypes
-                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) s.state.types s.state.configs s.state.identifiers s.state.grouped s.state.groups (Type.HType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid)  (Type.HType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Event Types yet. Add your first one!")
                     )

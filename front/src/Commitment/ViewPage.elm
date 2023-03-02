@@ -1,6 +1,5 @@
 module Commitment.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Commitment.Commitment exposing (Commitment)
 import DateTime
 import Dict
 import Effect exposing (Effect)
@@ -69,7 +68,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -119,8 +118,8 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Commitment <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Commitment"
     , attributes = []
     , element = viewContent model
@@ -135,19 +134,19 @@ viewContent model s =
         "Commitment"
         [ button.primary Edit "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
         , h2 ("Date: " ++ DateTime.toString s.zone model.when)
         , h2
             ("What: "
-                ++ (model.qty |> Maybe.map (\expr -> exeval s { context = ( Type.TType TType.Commitment, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
+                ++ (model.qty |> Maybe.map (\expr -> exeval s.state { context = ( Type.TType TType.Commitment, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
                 ++ " "
-                ++ (model.flow |> Maybe.map (\f -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardTitle (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )
-        , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
-        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
-        , text <| displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups mainTType model.uuid
+        , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , text <| displayZone s.state SmallcardTitle mainTType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict ""
         , h2 "Values:"
@@ -155,6 +154,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.TType TType.Commitment, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state s.state.types s.state.configs SmallcardTitle s.state.identifiers s.state.grouped s.state.groups (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

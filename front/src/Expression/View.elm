@@ -14,7 +14,7 @@ import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
 import Prng.Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
-import Shared
+import State exposing (State)
 import Type exposing (Type)
 import Value.Value as Value exposing (..)
 import View exposing (..)
@@ -26,7 +26,7 @@ type alias Config =
     }
 
 
-viewExpression : Shared.Model -> Expression -> Element msg
+viewExpression : State -> Expression -> Element msg
 viewExpression s expr =
     -- used to input values into an expression
     case expr of
@@ -40,7 +40,7 @@ viewExpression s expr =
             wrappedRow [ width fill ] [ viewExpression s e1, text <| B.toShortString o, viewExpression s e2 ]
 
 
-inputExpression : Shared.Model -> Config -> Expression -> Element msg
+inputExpression : State -> Config -> Expression -> Element msg
 inputExpression s c expr =
     -- used to input values into an expression
     case expr of
@@ -54,7 +54,7 @@ inputExpression s c expr =
             wrappedRow [ width fill ] [ inputExpression s c e1, text <| B.toShortString o, inputExpression s c e2 ]
 
 
-viewObservable : Shared.Model -> Observable -> Element msg
+viewObservable : State -> Observable -> Element msg
 viewObservable s obs =
     case obs of
         ObsNumber n ->
@@ -76,7 +76,7 @@ viewObservable s obs =
 
         ObsValue (ValueSelection.SelectedValue _ for name) ->
             wrappedRow [ height fill, htmlAttribute <| Attr.title name ]
-                [ Value.getByUuid for s.state.values
+                [ Value.getByUuid for s.values
                     |> Result.map .name
                     |> Result.withDefault "(value not found)"
                     |> text
@@ -91,7 +91,7 @@ viewObservable s obs =
                 ]
 
 
-inputObservable : Shared.Model -> Config -> Observable -> Element msg
+inputObservable : State -> Config -> Observable -> Element msg
 inputObservable s c obs =
     case obs of
         ObsNumber n ->
@@ -101,8 +101,8 @@ inputObservable s c obs =
             wrappedRow [ width fill, height fill, htmlAttribute <| Attr.title name ]
                 [ text <|
                     case
-                        Value.getByUuid for s.state.values
-                            |> Result.andThen (Eval.veval s { context = c.context } s.state.values)
+                        Value.getByUuid for s.values
+                            |> Result.andThen (Eval.veval s { context = c.context } s.values)
                     of
                         Err err ->
                             err

@@ -7,7 +7,7 @@ import Expression.Eval as Eval
 import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
-import Prng.Uuid as Uuid exposing (Uuid)
+import Prng.Uuid exposing (Uuid)
 import Shared
 import Type exposing (Type)
 import Value.Value as Value exposing (..)
@@ -52,7 +52,7 @@ inputValue c s v =
                     none
 
                 _ ->
-                    Eval.exeval s { context = c.context } s.state.values v.expr
+                    Eval.exeval s.state { context = c.context } s.state.values v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->

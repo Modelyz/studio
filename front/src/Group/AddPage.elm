@@ -33,10 +33,6 @@ type alias TypedType =
     Group
 
 
-constructor =
-    Group
-
-
 typedConstructor : TType.Type
 typedConstructor =
     TType.Group
@@ -97,7 +93,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -244,8 +240,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a Group"
     , attributes = []
     , element = viewContent model
@@ -280,7 +276,7 @@ validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid uuid m.parent m.scope
+            Ok <| Group typedConstructor m.uuid uuid m.parent m.scope
 
         Nothing ->
             Err "You must select a Group Type"
@@ -315,7 +311,7 @@ viewContent model s =
                         ((s.state.groups |> Dict.filter (\_ v -> Maybe.map (Type.hasCommonParent s.state.types v.type_) model.type_ |> Maybe.withDefault False)) |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepScope ->
-                    selectScope s InputScope model.scope Scope.anything "What can be in the group?"
+                    selectScope s.state InputScope model.scope Scope.anything "What can be in the group?"
 
                 Step.Step StepGroups ->
                     Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
