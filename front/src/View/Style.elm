@@ -1,4 +1,4 @@
-module View.Style exposing (Menu(..), WindowSize, color, isMobile, itemHoverstyle, navbarHoverstyle, shadowStyle, size, strcolor)
+module View.Style exposing (Menu(..), WindowSize, color, darken, isMobile, itemHoverstyle, navbarHoverstyle, shadowStyle, size, strcolor)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -22,6 +22,7 @@ isMobile window =
     window.w < 992
 
 
+size : { text : { xl : number, large : number, medium : number, main : number, small : number, h1 : number, h2 : number, h3 : number, topbar : number } }
 size =
     { text =
         { xl = 50
@@ -94,9 +95,6 @@ color =
         { primary = rgb255 0xC5 0xE8 0xF7
         , secondary = rgb255 0xE0 0xE0 0xE0
         , special = rgb255 0xF7 0xDC 0xC5
-        , prim_hover = rgb255 0xD0 0xD8 0xE7
-        , sec_hover = rgb255 0xD0 0xD0 0xD0
-        , spec_hover = rgb255 0xE7 0xCC 0xB5
         , disabled = rgb255 0xF0 0xF0 0xF0
         }
     , content =
@@ -107,6 +105,12 @@ color =
     }
 
 
+darken : Float -> Color -> Color
+darken coef =
+    toRgb >> (\{ red, green, blue, alpha } -> rgba (red * coef) (green * coef) (blue * coef) alpha)
+
+
+shadowStyle : { offset : ( number, number ), size : number, blur : number, color : Color }
 shadowStyle =
     { offset = ( 2, 2 ), size = 3, blur = 5, color = color.border.focus }
 

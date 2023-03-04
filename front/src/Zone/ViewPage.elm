@@ -89,7 +89,7 @@ viewContent model s =
                 floatingContainer s
                     (Just Close)
                     "Configuration"
-                    [ button.primary Edit "Edit" ]
+                    [ button.primary (Ok Edit) "Edit" ]
                     [ h1 <| Configuration.View.description s c
                     , text <| Configuration.View.view c
                     ]

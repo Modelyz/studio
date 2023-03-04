@@ -186,7 +186,7 @@ inputGroups c s model =
                              else
                                 button.secondary
                             )
-                                (SetCurrentGT gt)
+                                (Ok <| SetCurrentGT gt)
                                 (displayZone s.state SmallcardTitle (Type.HType HType.GroupType) gt.uuid)
                         )
                 )

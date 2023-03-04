@@ -82,7 +82,7 @@ viewContent s =
     flatContainer s
         Nothing
         "IdentifierTypes"
-        [ button.primary Add "Add..."
+        [ button.primary (Ok Add) "Add..."
         ]
         none
         none

@@ -103,7 +103,7 @@ viewContent model s =
             flatContainer s
                 Nothing
                 "Commitments"
-                [ button.primary Add "Add..."
+                [ button.primary (Ok Add) "Add..."
                 ]
                 none
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
@@ -119,7 +119,7 @@ viewContent model s =
             flatContainer s
                 Nothing
                 "Commitments"
-                [ button.primary Add "Add..."
+                [ button.primary (Ok Add) "Add..."
                 ]
                 none
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)

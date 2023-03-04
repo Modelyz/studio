@@ -74,13 +74,13 @@ view s model =
         (Just Cancel)
         "Selecting another Value"
         [ wrappedRow [ width fill, spacing 20 ]
-            [ button.secondary Cancel "Cancel"
+            [ button.secondary (Ok Cancel) "Cancel"
             , case model.selection of
                 ScopeAndValue (IsItem type_ uuid) name ->
-                    button.primary (Choose (SelectedValue type_ uuid name) model.stackNum model.targetPath) "Choose"
+                    button.primary (Ok <| Choose (SelectedValue type_ uuid name) model.stackNum model.targetPath) "Choose"
 
                 _ ->
-                    button.disabled "Please select a value" "Choose"
+                    button.disabled (Err "Please select a value") "Choose"
             ]
         ]
         (case model.selection of

@@ -64,12 +64,12 @@ view s model =
         (Just Cancel)
         "Building a link to another Value"
         [ wrappedRow [ width fill, spacing 20 ]
-            [ button.secondary Cancel "Cancel"
+            [ button.secondary (Ok Cancel) "Cancel"
             , if DL.isComplete model.deeplink then
-                button.primary (Choose model.deeplink model.stackNum model.targetPath) "Choose"
+                button.primary (Ok <| Choose model.deeplink model.stackNum model.targetPath) "Choose"
 
               else
-                button.disabled "Please select a Value Type" "Choose"
+                button.disabled (Err "Please select a Value Type") "Choose"
             ]
         ]
     <|
@@ -78,11 +78,11 @@ view s model =
         , wrappedRow [ spacing 20 ] <|
             case model.deeplink of
                 Null ->
-                    List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
+                    List.map (\l -> button.primary (Ok <| AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
                 Link _ _ ->
                     -- TODO replace Nothing with Just scope of the restricted scope of the hardlink
-                    List.map (\l -> button.primary (AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
+                    List.map (\l -> button.primary (Ok <| AddedHardlink l) (HL.toString l)) (HL.chooseFromScope model.scope)
 
                 EndPoint _ _ ->
                     []

@@ -116,7 +116,7 @@ viewContent model s =
     floatingContainer s
         (Just Close)
         "Group"
-        [ button.primary Edit "Edit" ]
+        [ button.primary (Ok Edit) "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
             |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
             |> Maybe.withDefault ""

@@ -89,7 +89,7 @@ viewContent model s =
                 floatingContainer s
                     (Just Close)
                     "IdentifierType"
-                    [ button.primary Edit "Edit" ]
+                    [ button.primary (Ok Edit) "Edit" ]
                     [ h2 <| it.name
                     , text <| "Scope: " ++ Scope.View.toDisplay s.state it.scope
                     ]

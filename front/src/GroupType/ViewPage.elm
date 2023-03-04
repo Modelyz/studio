@@ -113,7 +113,7 @@ viewContent model s =
                 floatingContainer s
                     (Just Close)
                     "Group Type"
-                    [ button.primary Edit "Edit" ]
+                    [ button.primary (Ok Edit) "Edit" ]
                     [ h2 "Identifiers:"
                     , text <| displayZone s.state SmallcardTitle mainHType model.uuid
                     , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False

@@ -214,7 +214,7 @@ displayLine : Shared.Model -> Model -> Int -> Expression -> Element Msg
 displayLine s model stackNum expr =
     row []
         [ row [ height fill, width fill, alignTop, paddingEach { zero | right = 5 } ]
-            [ el [ alignLeft ] (button.primary (RemoveExpression stackNum) "×")
+            [ el [ alignLeft ] (button.primary (Ok <| RemoveExpression stackNum) "×")
             ]
         , editExpression s model stackNum ( [], expr )
         ]
@@ -267,29 +267,29 @@ editObservable s ( stackNum, exprPath ) obs =
             case vs of
                 UndefinedValue ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenValueSelector stackNum exprPath) "Choose value..."
+                        [ button.primary (Ok <| OpenValueSelector stackNum exprPath) "Choose value..."
                         ]
 
                 SelectedValue _ _ name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenValueSelector stackNum exprPath) name
+                        [ button.primary (Ok <| OpenValueSelector stackNum exprPath) name
                         ]
 
         ObsLink deeplink ->
             case deeplink of
                 DeepLink.Null ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) "Choose link..."
+                        [ button.primary (Ok <| OpenDeepLinkSelector stackNum exprPath) "Choose link..."
                         ]
 
                 DeepLink.EndPoint scope name ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill, htmlAttribute <| Attr.title <| Scope.toString scope ]
-                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) name
+                        [ button.primary (Ok <| OpenDeepLinkSelector stackNum exprPath) name
                         ]
 
                 DeepLink.Link _ _ ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (OpenDeepLinkSelector stackNum exprPath) (Expression.DeepLink.View.toDisplay s.state deeplink)
+                        [ button.primary (Ok <| OpenDeepLinkSelector stackNum exprPath) (Expression.DeepLink.View.toDisplay s.state deeplink)
                         ]
 
 
@@ -297,25 +297,25 @@ buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
         ObsNumber n ->
-            button.primary (AddExpression <| Leaf (ObsNumber n)) (Obs.toString obs)
+            button.primary (Ok <| AddExpression <| Leaf (ObsNumber n)) (Obs.toString obs)
 
         ObsValue v ->
-            button.primary (AddExpression <| Leaf (ObsValue v)) (Obs.toString obs)
+            button.primary (Ok <| AddExpression <| Leaf (ObsValue v)) (Obs.toString obs)
 
         ObsLink l ->
-            button.primary (AddExpression <| Leaf (ObsLink l)) (Obs.toString obs)
+            button.primary (Ok <| AddExpression <| Leaf (ObsLink l)) (Obs.toString obs)
 
 
 buttonUnaryOperator : Maybe Expression -> U.Operator -> Element Msg
 buttonUnaryOperator me o =
-    Maybe.map (\_ -> button.primary (UnaryOperator o) (U.toString o)) me
-        |> Maybe.withDefault (button.disabled "Add one expression in the stack to use this button" (U.toString o))
+    Maybe.map (\_ -> button.primary (Ok <| UnaryOperator o) (U.toString o)) me
+        |> Maybe.withDefault (button.disabled (Err "Add one expression in the stack to use this button") (U.toString o))
 
 
 buttonBinaryOperator : Maybe ( Expression, Expression ) -> B.Operator -> Element Msg
 buttonBinaryOperator mt o =
-    Maybe.map (\_ -> button.primary (BinaryOperator o) (B.toString o)) mt
-        |> Maybe.withDefault (button.disabled "Add two expressions in the stack to use this button" (B.toString o))
+    Maybe.map (\_ -> button.primary (Ok <| BinaryOperator o) (B.toString o)) mt
+        |> Maybe.withDefault (button.disabled (Err "Add two expressions in the stack to use this button") (B.toString o))
 
 
 viewSubpage : Shared.Model -> Model -> Maybe (Element Msg)
@@ -327,16 +327,16 @@ viewSubpage s model =
 buttonUndo : Model -> Element Msg
 buttonUndo model =
     if List.length model.stack == 0 then
-        button.disabled "" "Undo"
+        button.disabled (Err "You cannot undo nothing") "Undo"
 
     else
-        button.special Undo "Undo"
+        button.special (Ok Undo) "Undo"
 
 
 buttonSwap : Model -> Element Msg
 buttonSwap model =
     if List.length model.stack < 2 then
-        button.disabled "" "Swap"
+        button.disabled (Err "You must have two elements to swap") "Swap"
 
     else
-        button.special Swap "Swap"
+        button.special (Ok Swap) "Swap"

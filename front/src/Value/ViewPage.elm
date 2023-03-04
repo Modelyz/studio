@@ -90,7 +90,7 @@ viewContent model s =
                 floatingContainer s
                     (Just Close)
                     "ValueType"
-                    [ button.primary Edit "Edit" ]
+                    [ button.primary (Ok Edit) "Edit" ]
                     [ h2 <| vt.name
                     , text <| "For: " ++ Scope.View.toDisplay s.state vt.scope
                     , row [] [ text "Expression : ", Expression.View.viewExpression s.state vt.expr ]

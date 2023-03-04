@@ -81,7 +81,7 @@ viewContent s =
     flatContainer s
         Nothing
         "Configurations"
-        [ button.primary Add "Add..."
+        [ button.primary (Ok Add) "Add..."
         ]
         none
         none

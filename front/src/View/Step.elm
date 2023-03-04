@@ -35,13 +35,13 @@ buttonNextOrValidate added model result =
     case result of
         Ok _ ->
             if isLast model.step model.steps then
-                button.primary Added "Validate and finish"
+                button.primary (Ok Added) "Validate and finish"
 
             else
-                button.primary NextPage "Next →"
+                button.primary (Ok NextPage) "Next →"
 
         Err err ->
-            button.disabled err "Next →"
+            button.disabled (Err err) "Next →"
 
 
 onEnter : msg -> msg -> (String -> msg) -> Model model step -> Result String () -> Attribute msg
@@ -103,14 +103,14 @@ buttons : Model m s -> Result String () -> List (Element Msg)
 buttons model checkedStep =
     -- standard buttons for a floatingContainer with steps (Previous, Cancel, Next)
     [ (if isFirst model.step model.steps then
-        button.disabled "This is the first page"
+        button.disabled (Err "This is the first page")
 
        else
-        button.secondary PreviousPage
+        button.secondary (Ok PreviousPage)
       )
         "← Previous"
-    , button.secondary Cancel "Cancel"
-    , buttonNextOrValidate Added model checkedStep
+    , button.secondary (Ok Cancel) "Cancel"
+    , buttonNextOrValidate (Ok Added) model checkedStep
     , if model.warning /= "" then
         paragraph [ Font.color color.text.warning ] [ text model.warning ]
 

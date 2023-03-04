@@ -97,7 +97,7 @@ topbar s goBack title background =
             , Font.size size.text.topbar
             , Background.color background
             ]
-            [ Maybe.map (\m -> button.primary m " < ") goBack |> Maybe.withDefault none
+            [ Maybe.map (\m -> button.primary (Ok m) " < ") goBack |> Maybe.withDefault none
             , el [ padding 10 ] <| text title
             ]
 
@@ -162,25 +162,36 @@ withDefaultContent e xs =
         xs
 
 
+buildButton : Color -> Result String msg -> String -> Element msg
+buildButton color msg txt =
+    Input.button
+        ([ mouseOver [ Background.color <| darken 0.8 color ]
+         , Background.color color
+         , padding 10
+         , height fill
+         ]
+            ++ (case msg of
+                    Ok _ ->
+                        []
+
+                    Err err ->
+                        [ htmlAttribute <| Attr.title err ]
+               )
+        )
+        { onPress = Result.toMaybe msg, label = text txt }
+
+
 button :
-    { primary : msg -> String -> Element msg
-    , secondary : a -> String -> Element a
-    , special : b -> String -> Element b
-    , disabled : String -> String -> Element c
+    { primary : Result String msg -> String -> Element msg
+    , secondary : Result String msg -> String -> Element msg
+    , special : Result String msg -> String -> Element msg
+    , disabled : Result String msg -> String -> Element msg
     }
 button =
-    { primary =
-        \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.prim_hover ], Background.color color.button.primary, padding 10, height fill ] { onPress = Just msg, label = text txt }
-    , secondary =
-        \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.sec_hover ], Background.color color.button.secondary, padding 10, height fill ] { onPress = Just msg, label = text txt }
-    , special =
-        \msg txt ->
-            Input.button [ mouseOver [ Background.color color.button.spec_hover ], Background.color color.button.special, padding 10, height fill ] { onPress = Just msg, label = text txt }
-    , disabled =
-        \err txt ->
-            row [ htmlAttribute <| Attr.title err, spacing 20 ] [ Input.button [ Background.color color.button.disabled, Font.color color.text.disabled, padding 10, height fill ] { onPress = Nothing, label = text txt } ]
+    { primary = buildButton color.button.primary
+    , secondary = buildButton color.button.secondary
+    , special = buildButton color.button.special
+    , disabled = buildButton color.button.disabled
     }
 
 
@@ -241,10 +252,10 @@ viewSelector all selected change =
         List.map
             (\t ->
                 if t == selected then
-                    button.primary (change t) (ViewType.toString t)
+                    button.primary (Ok <| change t) (ViewType.toString t)
 
                 else
-                    button.secondary (change t) (ViewType.toString t)
+                    button.secondary (Ok <| change t) (ViewType.toString t)
             )
             all
 

@@ -133,7 +133,7 @@ inputDate s model =
     in
     column [ width fill ]
         [ wrappedRow [ Font.size xlfont, centerX, spacing 5 ]
-            [ button.special GetCurrentDate "Today"
+            [ button.special (Ok GetCurrentDate) "Today"
             , el
                 [ width weekdayWidth
                 , Font.center

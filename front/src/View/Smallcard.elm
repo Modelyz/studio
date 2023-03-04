@@ -25,7 +25,7 @@ clickableRemovableCard onChoose onDelete title description =
     column [ Background.color color.item.background ]
         [ row [ spacing 10, width fill ]
             [ row [ Font.size size.text.main, padding 10, onClick onChoose, pointer ] [ title ]
-            , el [ alignRight ] (button.primary onDelete "×")
+            , el [ alignRight ] (button.primary (Ok onDelete) "×")
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
         ]
@@ -35,7 +35,7 @@ clickableCard : msg -> Element msg -> Element msg -> Element msg
 clickableCard onInput title description =
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, width (px 250) ]
         [ row [ alignLeft, Font.size size.text.main ]
-            [ button.primary onInput "+"
+            [ button.primary (Ok onInput) "+"
             , el [ paddingXY 10 0 ] title
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
@@ -44,14 +44,14 @@ clickableCard onInput title description =
 
 halfCard : msg -> Element msg -> Element msg
 halfCard onDelete title =
-    row [ Background.color color.item.selected ] [ el [ padding 10 ] title, button.secondary onDelete "×" ]
+    row [ Background.color color.item.selected ] [ el [ padding 10 ] title, button.secondary (Ok onDelete) "×" ]
 
 
 viewHalfCard : State -> Maybe msg -> Type -> Uuid -> Element msg
 viewHalfCard s maybeOnDelete t uuid =
     row [ Background.color color.item.selected ]
         [ el [ padding 10 ] (text <| Zone.View.displayZone s SmallcardTitle t uuid)
-        , Maybe.map (\onDelete -> button.secondary onDelete "×") maybeOnDelete |> Maybe.withDefault none
+        , Maybe.map (\onDelete -> button.secondary (Ok onDelete) "×") maybeOnDelete |> Maybe.withDefault none
         ]
 
 

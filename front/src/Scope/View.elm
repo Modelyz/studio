@@ -64,7 +64,7 @@ halfCard onDelete s scope =
             none
 
           else
-            button.secondary onDelete "×"
+            button.secondary (Ok onDelete) "×"
         ]
 
 
