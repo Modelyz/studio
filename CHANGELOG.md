@@ -5,7 +5,15 @@
 ## version 13 -- unreleased
 
 * Improved display of value selection in a deeplink
-* Allow to display the qty, flow, provider and receiver
+* Allow to display the qty, flow, provider and receiver in the display configuration of a commitment or event
+* Allow to display the list of events in the display of a process
+* Allow to choose the Process Type when creating an Event
+* Allow to choose the Processes related to an Event
+* A sequence can have a name
+* Reordered the steps of some AddPages
+* Impoved the Fragment selection in the zone display configuration
+* Added a Today button in the date selector
+* Internal changes
 
 ## version 12 -- 2023-01-20
 
