@@ -1,4 +1,4 @@
-module Zone.View exposing (allFragmentsByScope, displayZone)
+module Zone.View exposing (displayZone)
 
 import Configuration as Config exposing (Configuration(..))
 import Dict
@@ -10,7 +10,6 @@ import Hierarchy.Type as HType
 import Ident.Identifier as Identifier
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
 import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
@@ -126,53 +125,13 @@ toValue s t uuid zone fragment =
                     )
                 |> Maybe.withDefault ""
 
-
-allFragmentsByScope : State -> Scope -> List Fragment
-allFragmentsByScope s scope =
-    -- all the relevant fragments for the scope
-    let
-        identifierNames =
-            s.identifierTypes
-                |> Dict.values
-                |> List.filter
-                    (\it -> containsScope s.types scope it.scope)
-                |> List.map (.name >> IdentifierName)
-
-        groupIdentifierNames =
-            s.identifierTypes
-                |> Dict.values
-                |> List.filter
-                    (\it -> containsScope s.types it.scope (HasType (Type.TType TType.Group)))
-                |> List.map (.name >> GroupIdentifierName)
-    in
-    identifierNames
-        ++ groupIdentifierNames
-        ++ [ Fixed ""
-           , Parent
-           ]
-        ++ (case scope of
-                IsItem t _ ->
-                    allByType t
-
-                HasUserType t _ ->
-                    allByType t
-
-                HasType t ->
-                    allByType t
+        EventList separator ->
+            case t of
+                Type.TType TType.Process ->
+                    Dict.filter (\_ r -> r.process == uuid) s.reconciliations
+                        |> Dict.values
+                        |> List.map (.event >> displayZone s zone (Type.TType TType.Event))
+                        |> String.join separator
 
                 _ ->
-                    []
-           )
-
-
-allByType : Type -> List Fragment
-allByType t =
-    case t of
-        Type.TType TType.Event ->
-            [ Quantity, Flow, Provider, Receiver ]
-
-        Type.TType TType.Commitment ->
-            [ Quantity, Flow, Provider, Receiver ]
-
-        _ ->
-            []
+                    ""

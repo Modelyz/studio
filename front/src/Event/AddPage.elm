@@ -22,13 +22,16 @@ import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Process as Process exposing (Process)
 import Process.Reconcile exposing (Reconciliation)
+import ProcessType.ProcessType as PT exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Scope as Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
+import State exposing (State)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
@@ -45,16 +48,6 @@ import Zone.View exposing (displayZone)
 import Zone.Zone exposing (Zone(..))
 
 
-typedConstructor : TType.Type
-typedConstructor =
-    TType.Event
-
-
-hereType : Type.Type
-hereType =
-    Type.TType TType.Event
-
-
 type alias Flags =
     { route : Route
     , uuid : Maybe Uuid
@@ -67,7 +60,8 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , processes : List Uuid
+    , processTypes : Dict String ProcessType
+    , processes : Dict String Uuid
     , type_ : Maybe Uuid
     , eventType : Maybe EventType
     , provider : Maybe Uuid
@@ -86,6 +80,7 @@ type alias Model =
 
 type Step
     = StepProcess
+    | StepProcessTypes
     | StepType
     | StepProvider
     | StepReceiver
@@ -98,6 +93,7 @@ type Step
 
 type Msg
     = SelectType (Maybe Uuid)
+    | SelectProcessTypes (List ProcessType)
     | SelectProcesses (List Uuid)
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
@@ -133,6 +129,19 @@ match route =
             Nothing
 
 
+toProcessTypes : State -> Maybe Uuid -> Dict String ProcessType
+toProcessTypes s muuid =
+    -- return the processTypes corresponding to an eventType
+    s.processTypes
+        |> Dict.filter
+            (\_ pt ->
+                pt.eventTypes
+                    |> Dict.filter (\_ et -> Just et == muuid)
+                    |> Dict.isEmpty
+                    |> not
+            )
+
+
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
 init s f =
     let
@@ -157,9 +166,10 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , processes = []
+            , processes = Dict.empty
             , type_ = wantedType
             , eventType = met
+            , processTypes = toProcessTypes s.state (Maybe.map .uuid met)
             , provider =
                 chooseIfSingleton
                     (s.state.agents
@@ -191,12 +201,12 @@ init s f =
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid wantedType True
-            , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid wantedType True
+            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) newUuid wantedType True
+            , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid wantedType True
             , gsubmodel = initgroups
             , warning = ""
-            , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepProcess, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , step = Step.Step StepProcessTypes
+            , steps = [ Step.Step StepProcessTypes, Step.Step StepType, Step.Step StepProcess, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -207,7 +217,7 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
                     reconciliations =
-                        Dict.values <| Dict.filter (\_ r -> r.event == uuid) s.state.reconciliations
+                        Dict.filter (\_ r -> r.event == uuid) s.state.reconciliations
 
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
@@ -222,7 +232,7 @@ init s f =
                         event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
                 in
                 ( { adding
-                    | processes = reconciliations |> List.map .process
+                    | processes = reconciliations |> Dict.values |> List.map (\r -> ( Uuid.toString r.process, r.process )) |> Dict.fromList
                     , type_ = realType
                     , uuid = uuid
                     , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
@@ -231,8 +241,8 @@ init s f =
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
                     , calendar = Tuple.first caledit
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
-                    , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
+                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) uuid realType False
+                    , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
                     , gsubmodel = editgroups
                   }
                 , Effect.batch [ closeMenu f s.menu, Effect.map GroupMsg (Effect.fromCmd editcmd) ]
@@ -251,13 +261,13 @@ init s f =
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
-        SelectType mh ->
+        SelectType muuid ->
             let
                 met =
-                    mh |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+                    muuid |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
             in
             ( { model
-                | type_ = mh
+                | type_ = muuid
                 , eventType = met
                 , provider =
                     chooseIfSingleton
@@ -287,14 +297,17 @@ update s msg model =
                                     |> Dict.values
                                )
                         )
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
-                , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
+                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) model.uuid muuid True
+                , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) model.uuid muuid True
               }
             , Effect.none
             )
 
         SelectProcesses uuids ->
-            ( { model | processes = uuids }, Effect.none )
+            ( { model | processes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList }, Effect.none )
+
+        SelectProcessTypes pts ->
+            ( { model | processTypes = pts |> List.map (\pt -> ( PT.compare pt, pt )) |> Dict.fromList }, Effect.none )
 
         SelectProvider uuid ->
             ( { model | provider = uuid }, Effect.none )
@@ -339,10 +352,29 @@ update s msg model =
                             (Message.AddedEvent e
                                 :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
-                                ++ List.map (\uuid -> Message.Reconciled (Reconciliation Rational.zero model.uuid uuid)) model.processes
+                                ++ List.map (\uuid -> Message.Grouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Message.Ungrouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                                ++ (if Dict.isEmpty model.processes then
+                                        Dict.values model.processTypes
+                                            |> List.foldl (Shared.uuidAggregator s.currentSeed) []
+                                            |> List.concatMap
+                                                (\( nextUuid, _, pt ) ->
+                                                    [ Message.AddedProcess <| Process TType.Process nextUuid pt.uuid
+
+                                                    -- FIXME Rational.one ??
+                                                    , Message.Reconciled <| Reconciliation Rational.one e.uuid nextUuid
+                                                    ]
+                                                )
+
+                                    else
+                                        -- FIXME Rational.zero
+                                        -- FIXME foldl also with uuidAggregator
+                                        List.map (\p -> Message.Reconciled (Reconciliation Rational.zero model.uuid p)) <| Dict.values model.processes
+                                   )
                             )
+
+                        -- renew the Seed to avoid conflict due to uuidAggregator
+                        , Effect.fromCmd <| Message.renewSeed ()
                         , redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]
                     )
@@ -367,9 +399,6 @@ view model =
 checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
-        Step StepProcess ->
-            Ok ()
-
         Step StepType ->
             checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
 
@@ -382,16 +411,10 @@ checkStep model =
         Step StepFlow ->
             checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
-        Step StepDate ->
-            Ok ()
+        Step StepProcessTypes ->
+            checkEmptyDict model.processTypes "You must choose at least one Process Types" |> Result.map (\_ -> ())
 
-        Step StepIdentifiers ->
-            Ok ()
-
-        Step StepValues ->
-            Ok ()
-
-        Step StepGroups ->
+        Step _ ->
             Ok ()
 
 
@@ -400,7 +423,7 @@ validate m =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
-        (Event typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
+        (Event TType.Event m.uuid (DateTime.View.toPosix m.calendar))
         (checkMaybe m.qty "The quantity is invalid")
         |> andMapR (checkMaybe m.type_ "You must select an Event Type")
         |> andMapR (checkMaybe m.provider "You must select a Provider")
@@ -413,30 +436,40 @@ viewContent model s =
     let
         step =
             case model.step of
-                Step.Step StepProcess ->
+                Step.Step StepProcessTypes ->
                     multiSelect model
-                        { inputMsg = SelectProcesses
-                        , selection = .processes
-                        , title = "Processes: "
-                        , description = "Select the processes that correspond to this new event. (If you don't know, click Next)"
-                        , toString = displayZone s.state SmallcardTitle (Type.TType TType.Process)
+                        { inputMsg = SelectProcessTypes
+                        , selection = .processTypes >> Dict.values
+                        , title = "Process Types: "
+                        , description = "Select all the Process Types related to this new Event"
+                        , toString = .uuid >> displayZone s.state SmallcardTitle (Type.HType HType.ProcessType)
+                        , empty = "There are no Process Types yet to choose from"
                         , toDesc = always ""
                         , height = 50
                         , input = \_ _ _ -> none
                         }
                     <|
-                        List.map .uuid <|
-                            Dict.values s.state.processes
+                        Dict.values s.state.processTypes
 
-                {- what = Type.TType TType.Process
-                   , muuids = model.processes
-                   , onInput = SelectProcess
-                   , title = "Process:"
-                   , explain = "Choose the process of the new Event:"
-                   , empty = "(There are no Processes yet to choose from)"
-                   }
-                   (s.state.processes |> Dict.map (\_ a -> a.uuid))
-                -}
+                Step.Step StepProcess ->
+                    multiSelect model
+                        { inputMsg = SelectProcesses
+                        , selection = .processes >> Dict.values
+                        , title = "Processes: "
+                        , description = "Select the processes that correspond to this new event. Leave empty to create a new process."
+                        , toString = displayZone s.state SmallcardTitle (Type.TType TType.Process)
+                        , empty = "There are no processes yet to choose from"
+                        , toDesc = always ""
+                        , height = 50
+                        , input = \_ _ _ -> none
+                        }
+                        -- only choose among relevant processes whose type is in the ProcessType
+                        (s.state.processes
+                            |> Dict.filter (\_ p -> Dict.member (Uuid.toString p.type_) model.processTypes)
+                            |> Dict.values
+                            |> List.map .uuid
+                        )
+
                 Step.Step StepType ->
                     flatSelect s
                         { what = Type.HType HType.EventType
@@ -446,7 +479,11 @@ viewContent model s =
                         , explain = "Select the type of the new Event:"
                         , empty = "(There are no Event Types yet to choose from)"
                         }
-                        (s.state.eventTypes |> Dict.map (\_ a -> a.uuid))
+                        (model.processTypes
+                            |> Dict.values
+                            |> List.map .eventTypes
+                            |> List.foldl Dict.union Dict.empty
+                        )
 
                 Step.Step StepProvider ->
                     Maybe.map
@@ -509,7 +546,7 @@ viewContent model s =
                                     [ Expression.Input.inputExpression
                                         { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
                                         , onInput = InputQty
-                                        , context = ( hereType, model.uuid )
+                                        , context = ( Type.TType TType.Event, model.uuid )
                                         }
                                         s
                                         ( [], qty )
@@ -530,7 +567,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = Type.TType TType.Event, mpuuid = model.type_ } s model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

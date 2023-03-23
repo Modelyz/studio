@@ -57,6 +57,15 @@ checkEmptyString str err =
         Ok str
 
 
+checkEmptyDict : Dict comparable a -> String -> Result String (Dict comparable a)
+checkEmptyDict dict err =
+    if Dict.isEmpty dict then
+        Err err
+
+    else
+        Ok dict
+
+
 checkEmptyList : List a -> String -> Result String (List a)
 checkEmptyList list err =
     if List.isEmpty list then
@@ -78,6 +87,11 @@ checkListOne list err =
 flip : (a -> b -> c) -> (b -> a -> c)
 flip f x y =
     f y x
+
+
+dup : (a -> a -> b) -> a -> b
+dup f x =
+    f x x
 
 
 chooseIfSingleton : List a -> Maybe a

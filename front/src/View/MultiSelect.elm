@@ -9,56 +9,61 @@ import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
 
 
-type alias Model model fragment =
-    { model | fragments : List fragment }
+type alias Config model item msg =
+    { inputMsg : List item -> msg
+    , selection : model -> List item
+    , title : String
+    , description : String
+    , empty : String
+    , toString : item -> String
+    , toDesc : item -> String
+    , height : Int
 
-
-type alias Config =
-    { inputFragments : List fragment -> msg
-    , toString : fragment -> String
-    , toDesc : fragment -> String
-    , inputFragment : List fragment -> Int -> fragment -> Element msg
+    -- edit the Nth item of the list
+    , input : List item -> Int -> item -> Element msg
     }
 
 
-multiSelect : Model model fragment -> Config -> List fragment -> Element msg
+multiSelect : model -> Config model item msg -> List item -> Element msg
 multiSelect model c all =
     column [ alignTop, spacing 20, width <| minimum 200 fill ]
         [ wrappedRow [ width <| minimum 50 shrink, Border.width 2, padding 10, spacing 5, Border.color color.item.border ] <|
-            (el [ padding 5, spacing 10 ] <| h2 "Format: ")
+            (el [ padding 5, spacing 10, width fill ] <| h2 c.title)
                 :: List.append
-                    (if List.isEmpty model.fragments then
+                    (if List.isEmpty (c.selection model) then
                         [ el [ padding 10, Font.color color.text.disabled ] (text "Empty") ]
 
                      else
                         []
                     )
-                    (model.fragments
+                    (c.selection model
                         |> List.indexedMap
-                            (\i fragment ->
+                            (\i item ->
                                 row [ paddingEach { zero | right = 5 }, spacing 5, Background.color color.item.background ]
                                     [ button.primary
-                                        (c.inputFragments
-                                            (model.fragments
-                                                |> List.indexedMap Tuple.pair
-                                                |> List.filter (\( j, _ ) -> j /= i)
-                                                |> List.map Tuple.second
-                                            )
+                                        (Ok <|
+                                            c.inputMsg
+                                                (c.selection model
+                                                    |> List.indexedMap Tuple.pair
+                                                    |> List.filter (\( j, _ ) -> j /= i)
+                                                    |> List.map Tuple.second
+                                                )
                                         )
                                         "×"
-                                    , text <| c.toString fragment
-                                    , c.inputFragment model.fragments i fragment
+                                    , text <| c.toString item
+                                    , c.input (c.selection model) i item
                                     ]
                             )
                     )
-        , h2 "Click on the items below to construct the format of your identifier"
+        , h2 c.description
         , wrappedRow [ padding 10, spacing 10, Border.color color.item.border ] <|
-            List.map
-                (\f ->
-                    clickableCard
-                        (c.inputFragments <| model.fragments ++ [ f ])
-                        (text <| c.toDesc f)
-                        (text <| c.toString f)
-                )
-                all
+            withDefaultContent (p c.empty) <|
+                List.map
+                    (\item ->
+                        clickableCard
+                            (c.inputMsg <| c.selection model ++ [ item ])
+                            (text <| c.toString item)
+                            (paragraph [ Font.size size.text.small, height (px c.height) ] [ text <| c.toDesc item ])
+                    )
+                    all
         ]

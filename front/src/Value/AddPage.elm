@@ -197,7 +197,7 @@ update s msg model =
 
 view : Model -> View Msg
 view model =
-    { title = "Adding a ValueType"
+    { title = "Adding a Value Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -221,7 +221,7 @@ viewContent model s =
                                 { onChange = InputMandatory
                                 , icon = Input.defaultCheckbox
                                 , checked = model.mandatory
-                                , label = Input.labelRight [] <| text "This valueType is mandatory"
+                                , label = Input.labelRight [] <| text "This Value Type is mandatory"
                                 }
                             ]
                         ]
@@ -240,12 +240,12 @@ viewContent model s =
                             , text = model.name
                             , placeholder =
                                 Just <| Input.placeholder [] <| text "Name"
-                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new valueType"
+                            , label = Input.labelAbove [ Font.size size.text.h3, paddingXY 0 10 ] <| text "Give a name to this new Value Type"
                             }
     in
     floatingContainer2 s
         (Just <| Button Step.Cancel)
-        "Adding an valueType"
+        "Adding an Value Type"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

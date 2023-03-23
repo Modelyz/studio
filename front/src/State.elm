@@ -20,6 +20,7 @@ import Message exposing (Message(..), Payload(..), base)
 import MessageFlow exposing (MessageFlow(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
+import Process.Reconcile as Reconcile exposing (Reconciliation)
 import ProcessType.ProcessType exposing (ProcessType)
 import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
@@ -65,6 +66,7 @@ type alias State =
     , process_commitments : Dict String ProcessCommitments
     , process_events : Dict String ProcessEvents
     , grouped : Dict String GroupLink.Link
+    , reconciliations : Dict String Reconciliation
 
     -- ident
     , identifierTypes : Dict String IdentifierType
@@ -106,6 +108,7 @@ empty =
     , process_events = Dict.empty
     , process_commitments = Dict.empty
     , grouped = Dict.empty
+    , reconciliations = Dict.empty
 
     -- behaviours
     , identifierTypes = Dict.empty
@@ -518,6 +521,22 @@ aggregate (Message b p) state =
         Ungrouped link ->
             { state
                 | grouped = Dict.remove (GroupLink.compare link) state.grouped
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
+            }
+
+        Reconciled reconciliation ->
+            { state
+                | reconciliations = Dict.insert (Reconcile.compare reconciliation) reconciliation state.reconciliations
+                , lastMessageTime = b.when
+                , pendingMessages = updatePending (Message b p) state.pendingMessages
+                , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids
+            }
+
+        Unreconciled reconciliation ->
+            { state
+                | reconciliations = Dict.remove (Reconcile.compare reconciliation) state.reconciliations
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages
                 , uuids = Dict.insert (Uuid.toString b.uuid) b.uuid state.uuids

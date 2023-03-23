@@ -16,6 +16,7 @@ type
     | Flow
     | Provider
     | Receiver
+    | EventList String
 
 
 toString : Fragment -> String
@@ -45,6 +46,9 @@ toString fragment =
         Receiver ->
             "Receiver"
 
+        EventList _ ->
+            "EventList"
+
 
 toDesc : Fragment -> String
 toDesc fragment =
@@ -72,6 +76,9 @@ toDesc fragment =
 
         Receiver ->
             "Display the receiver of the Event or Commitment"
+
+        EventList _ ->
+            "Display the list of Events, separated by a configurable separator."
 
 
 encode : Fragment -> Encode.Value
@@ -104,6 +111,10 @@ encode fragment =
         Receiver ->
             Encode.string "Receiver"
 
+        EventList separator ->
+            Encode.object
+                [ ( "EventList", Encode.string separator ) ]
+
 
 decoder : Decoder Fragment
 decoder =
@@ -133,4 +144,5 @@ decoder =
                 )
         , Decode.map GroupIdentifierName <| Decode.field "GroupIdentifierName" Decode.string
         , Decode.map Fixed <| Decode.field "Fixed" Decode.string
+        , Decode.map EventList <| Decode.field "EventList" Decode.string
         ]

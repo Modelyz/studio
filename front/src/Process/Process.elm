@@ -1,23 +1,20 @@
-module Process.Process exposing (Process, decoder, encode)
+module Process.Process exposing (Process, compare, decoder, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Time exposing (millisToPosix, posixToMillis)
 import Typed.Type as TType
 
 
 
--- a process is the wrapper around other entities
+-- a process is the wrapper around related partial events
 -- Processes are independant and unrelated one another
--- if a payment is done for 2 processes, then it's the same process
 
 
 type alias Process =
     { what : TType.Type
     , uuid : Uuid
     , type_ : Uuid
-    , when : Time.Posix
     }
 
 
@@ -27,7 +24,6 @@ encode p =
         [ ( "what", TType.encode p.what )
         , ( "type", Uuid.encode p.type_ )
         , ( "uuid", Uuid.encode p.uuid )
-        , ( "when", Encode.int <| posixToMillis p.when )
         ]
 
 
@@ -40,8 +36,12 @@ encode p =
 
 decoder : Decode.Decoder Process
 decoder =
-    Decode.map4 Process
+    Decode.map3 Process
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "type" Uuid.decoder)
-        (Decode.field "when" Decode.int |> Decode.andThen (\t -> Decode.succeed (millisToPosix t)))
+
+
+compare : Process -> String
+compare =
+    Uuid.toString << .uuid

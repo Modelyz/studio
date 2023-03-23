@@ -1,4 +1,4 @@
-port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, storeMessages, storeMessagesToSend)
+port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, renewSeed, storeMessages, storeMessagesToSend)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -20,6 +20,7 @@ import Json.Encode as Encode
 import MessageFlow exposing (MessageFlow)
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
+import Process.Reconcile as Reconcile exposing (Reconciliation)
 import ProcessType.ProcessType as ProcessType exposing (ProcessType)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
@@ -47,6 +48,9 @@ port storeMessages : Encode.Value -> Cmd msg
 
 
 port storeMessagesToSend : Encode.Value -> Cmd msg
+
+
+port renewSeed : () -> Cmd msg
 
 
 
@@ -106,6 +110,8 @@ type Payload
     | RemovedGroup Uuid
     | Grouped GroupLink.Link
     | Ungrouped GroupLink.Link
+    | Reconciled Reconciliation
+    | Unreconciled Reconciliation
 
 
 toString : Payload -> String
@@ -234,13 +240,19 @@ toString p =
         Ungrouped _ ->
             "Ungrouped"
 
+        Reconciled _ ->
+            "Reconciled"
+
+        Unreconciled _ ->
+            "Unreconciled"
+
 
 type alias Connection =
     { lastMessageTime : Time.Posix, uuids : Dict String Uuid }
 
 
 base : Message -> Metadata
-base (Message b p) =
+base (Message b _) =
     b
 
 
@@ -425,6 +437,12 @@ encode (Message b p) =
 
             Ungrouped link ->
                 ( "load", GroupLink.encode link )
+
+            Reconciled reconciliation ->
+                ( "load", Reconcile.encode reconciliation )
+
+            Unreconciled reconciliation ->
+                ( "load", Reconcile.encode reconciliation )
         ]
 
 
@@ -613,6 +631,12 @@ decoder =
 
                         "Ungrouped" ->
                             Decode.map Ungrouped (Decode.field "load" GroupLink.decoder)
+
+                        "Reconciled" ->
+                            Decode.map Reconciled (Decode.field "load" Reconcile.decoder)
+
+                        "Unreconciled" ->
+                            Decode.map Unreconciled (Decode.field "load" Reconcile.decoder)
 
                         _ ->
                             Decode.fail <| "Unknown Message type: " ++ t

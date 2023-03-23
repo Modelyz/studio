@@ -24,20 +24,15 @@ import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
+import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
+import Zone.View exposing (displayZone)
+import Zone.Zone exposing (Zone(..))
 
 
 hereType : Type.Type
 hereType =
     Type.HType HType.ProcessType
-
-
-constructor =
-    ProcessType
-
-
-hierarchicConstructor =
-    HType.ProcessType
 
 
 type alias Flags =
@@ -50,6 +45,7 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
+    , eventTypes : Dict String Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
     , gsubmodel : Group.Input.Model
@@ -64,11 +60,13 @@ type Step
     | StepIdentifiers
     | StepValues
     | StepGroups
+    | StepEventTypes
 
 
 type Msg
     = InputType (Maybe Uuid)
     | InputIdentifier Identifier
+    | InputEventTypes (List Uuid)
     | GroupMsg Group.Input.Msg
     | InputValue Value
     | Button Step.Msg
@@ -79,7 +77,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -113,6 +111,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = Nothing
+            , eventTypes = Dict.empty
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
@@ -120,7 +119,7 @@ init s f =
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepEventTypes, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -129,6 +128,9 @@ init s f =
                 let
                     realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
+
+                    eventTypes =
+                        Dict.get (Uuid.toString uuid) s.state.processTypes |> Maybe.map .eventTypes |> Maybe.withDefault Dict.empty
 
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
@@ -139,6 +141,7 @@ init s f =
                 ( { adding
                     | type_ = realType
                     , uuid = uuid
+                    , eventTypes = eventTypes
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
                     , gsubmodel = editgroups
@@ -171,10 +174,19 @@ update s msg model =
             )
 
         InputIdentifier i ->
-            ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
+            ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }
+            , Effect.none
+            )
 
         InputValue v ->
-            ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
+            ( { model | values = Dict.insert (Value.compare v) v model.values }
+            , Effect.none
+            )
+
+        InputEventTypes uuids ->
+            ( { model | eventTypes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList }
+            , Effect.none
+            )
 
         GroupMsg submsg ->
             let
@@ -207,8 +219,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a Process Type"
     , attributes = []
     , element = viewContent model
@@ -231,10 +243,13 @@ checkStep model =
         Step StepGroups ->
             Ok ()
 
+        Step StepEventTypes ->
+            Ok ()
+
 
 validate : Model -> Result String ProcessType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Ok <| ProcessType HType.ProcessType m.uuid m.type_ m.eventTypes
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -261,6 +276,21 @@ viewContent model s =
 
                 Step.Step StepValues ->
                     inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+
+                Step.Step StepEventTypes ->
+                    multiSelect
+                        model
+                        { inputMsg = InputEventTypes
+                        , selection = .eventTypes >> Dict.values
+                        , title = "Event Types: "
+                        , description = "Select the Event Types that can occur in the processes of this type"
+                        , toString = displayZone s.state SmallcardTitle (Type.HType HType.EventType)
+                        , toDesc = always ""
+                        , empty = "There are no Event Types yet to choose from"
+                        , height = 100
+                        , input = \_ _ _ -> none
+                        }
+                        (List.map .uuid <| Dict.values s.state.eventTypes)
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

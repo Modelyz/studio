@@ -242,6 +242,7 @@ viewContent model s =
                         , description = "Click on the items below to construct the format of the identifier"
                         , toString = Fragment.toString
                         , toDesc = Fragment.toDesc
+                        , empty = "No identifier available"
                         , height = 100
                         , input = inputFragment
                         }

@@ -17,7 +17,6 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
 import Util exposing (third)
@@ -244,7 +243,7 @@ validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| Process typedConstructor m.uuid uuid (millisToPosix 0) Dict.empty
+            Ok <| Process typedConstructor m.uuid uuid
 
         Nothing ->
             Err "You must select a Process Type"

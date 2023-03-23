@@ -45,7 +45,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -81,8 +81,8 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Processes"
     , attributes = []
     , element = viewContent model
@@ -110,7 +110,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (entities
-                        |> List.map (\t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid)  (Type.TType t.what) t.uuid)
+                        |> List.map (\t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) (Type.TType t.what) t.uuid)
                         |> withDefaultContent (p "There are no Processes yet. Add your first one!")
                     )
                 ]

@@ -11,15 +11,18 @@ import Element.Input as Input
 import Message
 import Route exposing (Route, redirect)
 import Scope as Scope exposing (Scope(..))
+import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
+import State exposing (State)
+import Type
+import Typed.Type as TType
 import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.MultiSelect exposing (multiSelect)
 import View.Style exposing (..)
 import Zone.Fragment as Fragment exposing (Fragment(..))
-import Zone.View exposing (allFragmentsByScope)
 import Zone.Zone as Zone exposing (Zone(..))
 
 
@@ -179,8 +182,8 @@ viewContent model s =
         buttons : List (Element Msg)
         buttons =
             [ wrappedRow [ width fill, spacing 20 ]
-                [ button.secondary Cancel "Cancel"
-                , button.primary Added "Validate and finish"
+                [ button.secondary (Ok Cancel) "Cancel"
+                , button.primary (Ok Added) "Validate and finish"
                 , if model.warning /= "" then
                     paragraph [ Font.color color.text.warning ] [ text model.warning ]
 
@@ -203,12 +206,76 @@ viewContent model s =
             , description = "Click on the items below to construct the display of your identifier"
             , toString = Fragment.toString
             , toDesc = Fragment.toDesc
+            , empty = "No identifier available"
             , height = 100
             , input = inputFragment
             }
           <|
-            allFragmentsByScope s.state model.scope
+            allByScope s.state model.scope
         ]
+
+
+allByScope : State -> Scope -> List Fragment
+allByScope s scope =
+    -- all the relevant fragments for the scope
+    let
+        identifierNames =
+            s.identifierTypes
+                |> Dict.values
+                |> List.filter
+                    (\it -> containsScope s.types scope it.scope)
+                |> List.map (.name >> IdentifierName)
+
+        groupIdentifierNames =
+            s.identifierTypes
+                |> Dict.values
+                |> List.filter
+                    (\it -> containsScope s.types it.scope (HasType (Type.TType TType.Group)))
+                |> List.map (.name >> GroupIdentifierName)
+    in
+    identifierNames
+        ++ Fixed ""
+        :: (case scope of
+                IsItem (Type.TType TType.Commitment) _ ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                IsItem (Type.TType TType.Event) _ ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                IsItem (Type.TType TType.Process) _ ->
+                    [ EventList "" ]
+
+                IsItem (Type.TType TType.Group) _ ->
+                    [ Parent ]
+
+                HasUserType (Type.TType TType.Commitment) _ ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                HasUserType (Type.TType TType.Event) _ ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                HasUserType (Type.TType TType.Process) _ ->
+                    [ EventList "" ]
+
+                HasUserType (Type.TType TType.Group) _ ->
+                    [ Parent ]
+
+                HasType (Type.TType TType.Commitment) ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                HasType (Type.TType TType.Event) ->
+                    [ Quantity, Flow, Provider, Receiver ]
+
+                HasType (Type.TType TType.Process) ->
+                    [ EventList "" ]
+
+                HasType (Type.TType TType.Group) ->
+                    [ Parent ]
+
+                _ ->
+                    []
+           )
+        ++ groupIdentifierNames
 
 
 inputZone : Model -> Element Msg
@@ -274,3 +341,23 @@ inputFragment fragments index fragment =
 
         Receiver ->
             none
+
+        EventList value ->
+            Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+                { onChange =
+                    \v ->
+                        InputFragments
+                            (fragments
+                                |> List.indexedMap
+                                    (\i f ->
+                                        if i == index then
+                                            EventList v
+
+                                        else
+                                            f
+                                    )
+                            )
+                , text = value
+                , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                , label = Input.labelHidden "Separator"
+                }

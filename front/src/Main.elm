@@ -91,6 +91,9 @@ port wsOpened : (Encode.Value -> msg) -> Sub msg
 port messagesReceiver : (String -> msg) -> Sub msg
 
 
+port newSeed : (( Int, List Int ) -> msg) -> Sub msg
+
+
 
 -- TODO get or create a session uuid, retrieve the last message time, send to haskell )
 
@@ -107,6 +110,7 @@ subscriptions _ =
         , wsOpened WSConnected
         , wsClose WSDisconnected
         , wsError WSError
+        , newSeed GotNewSeed
         ]
 
 

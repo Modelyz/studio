@@ -1,4 +1,4 @@
-module Shared exposing (Model, Msg(..), dispatch, dispatchMany, identity, init, update)
+module Shared exposing (Model, Msg(..), dispatch, dispatchMany, identity, init, update, uuidAggregator)
 
 import Browser.Navigation as Nav
 import Dict
@@ -64,6 +64,7 @@ type Msg
     | MessagesReceived String
     | GotZone Time.Zone
     | GotZoneName Time.ZoneName
+    | GotNewSeed ( Int, List Int )
 
 
 type alias Flags =
@@ -403,6 +404,9 @@ update msg model =
         GotZoneName zonename ->
             ( { model | zonename = zonename }, Cmd.none )
 
+        GotNewSeed ( seed, seedExtension ) ->
+            ( { model | currentSeed = initialSeed seed seedExtension }, Cmd.none )
+
 
 initiateConnection : Uuid -> Model -> Cmd Msg
 initiateConnection uuid model =
@@ -463,7 +467,7 @@ identity =
     .identity
 
 
-uuidAggregator : Seed -> a -> List ( ( Uuid, Seed ), a ) -> List ( ( Uuid, Seed ), a )
+uuidAggregator : Seed -> a -> List ( Uuid, Seed, a ) -> List ( Uuid, Seed, a )
 uuidAggregator firstSeed i tuples =
     -- aggregator to generate several uuids from a list
     let
@@ -472,32 +476,29 @@ uuidAggregator firstSeed i tuples =
                 |> List.head
                 |> (\mt ->
                         case mt of
-                            Just t ->
+                            Just ( _, lastSeed, _ ) ->
                                 let
-                                    ( _, lastSeed ) =
-                                        Tuple.first t
-
                                     ( newUuid, newSeed ) =
                                         Random.step Uuid.generator lastSeed
                                 in
-                                ( ( newUuid, newSeed ), i )
+                                ( newUuid, newSeed, i )
 
                             Nothing ->
                                 let
                                     ( newUuid, newSeed ) =
                                         Random.step Uuid.generator firstSeed
                                 in
-                                ( ( newUuid, newSeed ), i )
+                                ( newUuid, newSeed, i )
                    )
     in
     newTuple :: tuples
 
 
-uuidMerger : List ( ( Uuid, Seed ), Message ) -> List Message
+uuidMerger : List ( Uuid, Seed, Message ) -> List Message
 uuidMerger tuples =
     -- merge the new uuids into the messages
     List.map
-        (\( ( uuid, _ ), Message metadata payload ) ->
+        (\( uuid, _, Message metadata payload ) ->
             Message { metadata | uuid = uuid } payload
         )
         tuples

@@ -1,4 +1,4 @@
-module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, rdecoder, toFloatString, toRString, toString, zero)
+module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, one, rdecoder, toFloatString, toRString, toString, zero)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -11,6 +11,11 @@ type Rational
 zero : Rational
 zero =
     Rational 0 1
+
+
+one : Rational
+one =
+    Rational 1 1
 
 
 neg : Rational -> Rational
