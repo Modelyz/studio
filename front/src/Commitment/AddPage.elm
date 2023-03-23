@@ -34,7 +34,7 @@ import Task
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (applyR, checkMaybe, chooseIfSingleton, flip, third)
+import Util exposing (andMapR, checkMaybe, chooseIfSingleton, flip, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -393,10 +393,10 @@ validate m =
     Result.map
         (constructor typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
         (checkMaybe m.qty "The quantity is invalid")
-        |> applyR (checkMaybe m.type_ "You must select a Commitment Type")
-        |> applyR (checkMaybe m.provider "You must select a Provider")
-        |> applyR (checkMaybe m.receiver "You must select a Receiver")
-        |> applyR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+        |> andMapR (checkMaybe m.type_ "You must select a Commitment Type")
+        |> andMapR (checkMaybe m.provider "You must select a Provider")
+        |> andMapR (checkMaybe m.receiver "You must select a Receiver")
+        |> andMapR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
 
 
 viewContent : Model -> Shared.Model -> Element Msg

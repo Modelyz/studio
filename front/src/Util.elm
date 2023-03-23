@@ -1,4 +1,4 @@
-module Util exposing (applyR, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, flip, otherwise, otherwiseR, third)
+module Util exposing (andMapR, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, otherwise, otherwiseR, third)
 
 import Dict exposing (Dict)
 
@@ -89,17 +89,7 @@ chooseIfSingleton xs =
         Nothing
 
 
-applyR : Result err a -> Result err (a -> b) -> Result err b
-applyR rx rf =
-    -- flipped applicative <*> for Result
-    case rf of
-        Ok f ->
-            case rx of
-                Ok x ->
-                    Ok (f x)
-
-                Err err ->
-                    Err err
-
-        Err err ->
-            Err err
+andMapR : Result err a -> Result err (a -> b) -> Result err b
+andMapR =
+    -- flipped applicative Tie fighter <*> for Result
+    Result.map2 (|>)
