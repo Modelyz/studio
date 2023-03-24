@@ -599,7 +599,7 @@ decoder =
                                 (Decode.field "load" Process.decoder)
 
                         "RemovedProcess" ->
-                            Decode.map RemovedProcessType
+                            Decode.map RemovedProcess
                                 (Decode.field "load" Uuid.decoder)
 
                         "AddedIdentifier" ->
