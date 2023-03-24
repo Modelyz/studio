@@ -1,5 +1,6 @@
-module Process.Reconcile exposing (Reconciliation, compare, decoder, encode)
+module Process.Reconcile exposing (Reconciliation, byProcess, compare, decoder, encode)
 
+import Dict exposing (Dict)
 import Expression.Rational as Rational exposing (Rational)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -13,6 +14,11 @@ type alias Reconciliation =
     , event : Uuid
     , process : Uuid
     }
+
+
+byProcess : Uuid -> Dict String Reconciliation -> Dict String Reconciliation
+byProcess uuid =
+    Dict.filter (\_ r -> r.process == uuid)
 
 
 encode : Reconciliation -> Encode.Value

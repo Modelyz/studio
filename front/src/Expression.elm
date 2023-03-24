@@ -1,16 +1,12 @@
 module Expression exposing (Expression(..), applyBinary, applyUnary, decoder, encode, swap, undo, updateExpr)
 
-import Dict exposing (Dict)
 import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Observable as Obs exposing (Observable(..))
-import Expression.Rational as R exposing (Rational)
 import Expression.Unary as U
 import Expression.ValueSelection exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid exposing (Uuid)
-import Type exposing (Type)
 
 
 type Expression

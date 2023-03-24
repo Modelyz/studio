@@ -444,6 +444,7 @@ aggregate (Message b p) state =
         RemovedProcess uuid ->
             { state
                 | processes = Dict.remove (Uuid.toString uuid) state.processes
+                , reconciliations = Dict.filter (\_ r -> r.process /= uuid) state.reconciliations
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = b.when
                 , pendingMessages = updatePending (Message b p) state.pendingMessages

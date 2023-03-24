@@ -9,6 +9,7 @@
 * Allow to display the list of events in the display of a process
 * Allow to choose the Process Type when creating an Event
 * Allow to choose the Processes related to an Event
+* Allow to link/reconcile two Events through the creation of a Process
 * A sequence can have a name
 * Reordered the steps of some AddPages
 * Impoved the Fragment selection in the zone display configuration
