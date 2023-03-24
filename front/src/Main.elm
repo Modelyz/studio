@@ -91,7 +91,7 @@ port wsOpened : (Encode.Value -> msg) -> Sub msg
 port messagesReceiver : (String -> msg) -> Sub msg
 
 
-port newSeed : (( Int, List Int ) -> msg) -> Sub msg
+port newSeed : (List Int -> msg) -> Sub msg
 
 
 

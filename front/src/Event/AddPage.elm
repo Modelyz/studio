@@ -356,7 +356,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Message.Ungrouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                                 ++ (if Dict.isEmpty model.processes then
                                         Dict.values model.processTypes
-                                            |> List.foldl (Shared.uuidAggregator s.currentSeed) []
+                                            |> List.foldl (Shared.uuidAggregator model.seed) []
                                             |> List.concatMap
                                                 (\( nextUuid, _, pt ) ->
                                                     [ Message.AddedProcess <| Process TType.Process nextUuid pt.uuid
@@ -375,7 +375,7 @@ update s msg model =
 
                         -- renew the Seed to avoid conflict due to uuidAggregator
                         , Effect.fromCmd <| Message.renewSeed ()
-                        , redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
+                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_)))
                         ]
                     )
 

@@ -64,7 +64,7 @@ type Msg
     | MessagesReceived String
     | GotZone Time.Zone
     | GotZoneName Time.ZoneName
-    | GotNewSeed ( Int, List Int )
+    | GotNewSeed (List Int)
 
 
 type alias Flags =
@@ -404,8 +404,18 @@ update msg model =
         GotZoneName zonename ->
             ( { model | zonename = zonename }, Cmd.none )
 
-        GotNewSeed ( seed, seedExtension ) ->
-            ( { model | currentSeed = initialSeed seed seedExtension }, Cmd.none )
+        GotNewSeed randints ->
+            case List.head randints of
+                Just seed ->
+                    case List.tail randints of
+                        Just seedExtension ->
+                            ( { model | currentSeed = initialSeed seed seedExtension }, Cmd.none )
+
+                        Nothing ->
+                            ( { model | iostatus = IOError "Invalid seed extensions generated" }, Cmd.none )
+
+                Nothing ->
+                    ( { model | iostatus = IOError "Invalid seed generated" }, Cmd.none )
 
 
 initiateConnection : Uuid -> Model -> Cmd Msg

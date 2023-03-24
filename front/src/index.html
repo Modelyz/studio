@@ -58,9 +58,9 @@
 
         /**** subscribe to Ports ****/
         // Regenerate a seed
-        const renewSeed = function () {
-            app.ports.renewSeed.send(getRandomInts(5));
-        }
+        app.ports.renewSeed.subscribe(function () {
+            app.ports.newSeed.send(getRandomInts(5));
+        })
 
         // store an message to IDB
         const store = function (send) {
