@@ -1,13 +1,16 @@
 module Process.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
+import Message exposing (Message(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Reconcile exposing (Reconciliation)
+import Process.Reconcile.View
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -42,6 +45,7 @@ type alias Model =
     { route : Route
     , what : Type
     , uuid : Uuid
+    , reconciliations : Dict String Reconciliation
     , type_ : Maybe Uuid
     , groups : List Uuid
     }
@@ -49,6 +53,8 @@ type alias Model =
 
 type Msg
     = Edit
+    | ViewEvent Uuid
+    | Unreconciled Reconciliation
     | Close
 
 
@@ -77,6 +83,9 @@ init s f =
     ( { route = f.route
       , what = mainTType
       , uuid = f.uuid
+      , reconciliations =
+            s.state.reconciliations
+                |> Dict.filter (\_ v -> v.process == f.uuid)
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped
@@ -97,9 +106,17 @@ update s msg model =
         Edit ->
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Process <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
 
+        ViewEvent uuid ->
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString uuid) Nothing)) |> Effect.fromCmd )
+
+        Unreconciled r ->
+            ( model
+            , Shared.dispatch s (Message.Unreconciled r)
+            )
+
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Process"
     , attributes = []
     , element = viewContent model
@@ -118,6 +135,15 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> h1
         , text <| displayZone s.state SmallcardTitle mainTType model.uuid
+        , h2 "Contains:"
+        , row [ spacing 5 ]
+            (model.reconciliations
+                |> Dict.values
+                |> List.map
+                    (\r ->
+                        Process.Reconcile.View.view s.state ViewEvent Unreconciled r
+                    )
+            )
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"

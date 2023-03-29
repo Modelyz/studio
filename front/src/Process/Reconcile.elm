@@ -1,6 +1,7 @@
 module Process.Reconcile exposing (Reconciliation, byProcess, compare, decoder, encode)
 
 import Dict exposing (Dict)
+import Element exposing (..)
 import Expression.Rational as Rational exposing (Rational)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

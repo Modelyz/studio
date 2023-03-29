@@ -82,7 +82,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Events"
     , attributes = []
     , element = viewContent model
@@ -110,7 +110,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (entities
-                        |> List.map (\t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid)  (Type.TType t.what) t.uuid)
+                        |> List.map (\t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) (Type.TType t.what) t.uuid)
                         |> withDefaultContent (p "There are no Events yet. Add your first one!")
                     )
                 ]
