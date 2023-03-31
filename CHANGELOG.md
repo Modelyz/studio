@@ -6,7 +6,6 @@
 
 * Improved display of value selection in a deeplink
 * Allow to display the qty, flow, provider and receiver in the display configuration of a commitment or event
-* Allow to display the list of events in the display of a process
 * Allow to choose the Process Type when creating an Event
 * Allow to choose the Processes related to an Event
 * Display the reconciliations in the Process Viewpage
