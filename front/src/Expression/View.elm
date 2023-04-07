@@ -61,13 +61,13 @@ viewObservable s obs =
             text <|
                 case n.name of
                     "" ->
-                        "[" ++ Rational.toRString n.val ++ "]"
+                        "[" ++ Rational.parse n.input ++ "]"
 
                     _ ->
                         "["
                             ++ n.name
                             ++ (if n.input /= "" then
-                                    "=" ++ Rational.toRString n.val
+                                    "=" ++ Rational.parse n.input
 
                                 else
                                     ""
@@ -95,7 +95,7 @@ inputObservable : State -> Config -> Observable -> Element msg
 inputObservable s c obs =
     case obs of
         ObsNumber n ->
-            text <| Rational.toRString n.val
+            text <| Rational.parse n.input
 
         ObsValue (ValueSelection.SelectedValue _ for name) ->
             wrappedRow [ width fill, height fill, htmlAttribute <| Attr.title name ]

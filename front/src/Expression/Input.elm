@@ -1,8 +1,6 @@
 module Expression.Input exposing (Config, inputExpression)
 
 import Element exposing (..)
-import Element.Background as Background
-import Element.Input as Input
 import Expression as Expression exposing (Expression(..))
 import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
@@ -10,6 +8,7 @@ import Expression.Eval as Eval
 import Expression.HardLink exposing (HardLink(..))
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.RationalInput as RationalInput
 import Expression.Unary as U
 import Expression.ValueSelection as ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
@@ -48,37 +47,39 @@ inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expres
 inputObservable c s targetPath obs expr =
     case obs of
         ObsNumber n ->
-            Input.text
-                [ width <| px <| Rational.adaptRF n.val
-                , htmlAttribute <| Attr.title n.input
-                , Background.color
-                    (case n.val of
-                        Ok _ ->
-                            color.content.background
+            RationalInput.inputText Rational.fromString (Just n.name) (\str -> c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str }) expr) n.input
 
-                        Err "" ->
-                            color.content.background
+        {- Input.text
+           [ width <| px <| RationalInput.adaptWidth n.input
+           , htmlAttribute <| Attr.title n.input
+           , Background.color
+               (case Rational.fromString n.input of
+                   Ok _ ->
+                       color.content.background
 
-                        Err _ ->
-                            color.item.warning
-                    )
-                ]
-                { onChange =
-                    \str ->
-                        c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str, val = Rational.fromString str |> Result.map Tuple.first }) expr
-                , text =
-                    n.input
-                , placeholder =
-                    Just <| Input.placeholder [] <| text n.name
-                , label =
-                    if String.length n.name == 0 then
-                        Input.labelHidden n.name
+                   Err "" ->
+                       color.content.background
 
-                    else
-                        Input.labelLeft [ padding 10, Background.color color.content.background ]
-                            (text (n.name ++ " ="))
-                }
+                   Err _ ->
+                       color.item.warning
+               )
+           ]
+           { onChange =
+               \str ->
+                   c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str }) expr
+           , text =
+               n.input
+           , placeholder =
+               Just <| Input.placeholder [] <| text n.name
+           , label =
+               if String.length n.name == 0 then
+                   Input.labelHidden n.name
 
+               else
+                   Input.labelLeft [ padding 10, Background.color color.content.background ]
+                       (text (n.name ++ " ="))
+           }
+        -}
         ObsValue (ValueSelection.SelectedValue _ for name) ->
             row [ height fill, htmlAttribute <| Attr.title name ]
                 [ text <|

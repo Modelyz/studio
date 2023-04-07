@@ -15,6 +15,7 @@
 * Reordered the steps of some AddPages
 * Impoved the Fragment selection in the zone display configuration
 * Added a Today button in the date selector
+* Allow percentage as rational input fields
 * Internal changes
 
 ## version 12 -- 2023-01-20

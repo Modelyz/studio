@@ -12,6 +12,7 @@ import Expression.DeepLink.Select
 import Expression.DeepLink.View
 import Expression.Observable as Obs exposing (Observable(..))
 import Expression.Rational as Rational
+import Expression.RationalInput as RationalInput
 import Expression.Unary as U
 import Expression.Value.Select
 import Expression.ValueSelection exposing (ValueSelection(..))
@@ -251,15 +252,11 @@ editObservable s ( stackNum, exprPath ) obs =
                         }
                     ]
                 , row [ Font.size size.text.small ]
-                    [ Input.text [ width (px 70) ]
-                        { onChange =
-                            \x ->
-                                InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x, val = Result.map Tuple.first <| Rational.fromString x })
-                        , text = n.input
-                        , placeholder =
-                            Just <| Input.placeholder [] <| text "Default value"
-                        , label = Input.labelHidden <| "Default value"
-                        }
+                    [ RationalInput.inputText
+                        Rational.fromString
+                        (Just "Default value")
+                        (\x -> InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x }))
+                        n.input
                     ]
                 ]
 

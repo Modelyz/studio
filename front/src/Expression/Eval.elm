@@ -7,7 +7,7 @@ import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.HardLink as HardLink exposing (HardLink(..))
 import Expression.Observable exposing (Observable(..))
-import Expression.Rational exposing (Rational)
+import Expression.Rational as Rational exposing (Rational)
 import Expression.Unary as U
 import Expression.ValueSelection exposing (ValueSelection(..))
 import Flow
@@ -37,7 +37,7 @@ exeval s c allVals expr =
         Leaf obs ->
             case obs of
                 ObsNumber n ->
-                    n.val
+                    Rational.fromString n.input
 
                 ObsValue vs ->
                     case vs of

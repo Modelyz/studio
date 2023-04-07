@@ -1,4 +1,4 @@
-module Util exposing (andMapR, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, otherwise, otherwiseR, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, otherwise, otherwiseR, third)
 
 import Dict exposing (Dict)
 
@@ -107,3 +107,18 @@ andMapR : Result err a -> Result err (a -> b) -> Result err b
 andMapR =
     -- flipped applicative Tie fighter <*> for Result
     Result.map2 (|>)
+
+
+checkAllOk : (a -> Result String ()) -> List a -> Result String ()
+checkAllOk check xs =
+    List.foldl
+        (\x r ->
+            case check x of
+                Ok _ ->
+                    r
+
+                Err str ->
+                    Err str
+        )
+        (Ok ())
+        xs

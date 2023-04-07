@@ -11,6 +11,7 @@ import EventType.EventType exposing (EventType)
 import Expression exposing (Expression)
 import Expression.Input
 import Expression.Rational as Rational
+import Expression.RationalInput as RationalInput exposing (RationalInput)
 import Flow exposing (Flow(..))
 import Flow.Input
 import Group.Group as Group
@@ -23,7 +24,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
-import Process.Reconcile exposing (Reconciliation)
+import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialProcesses, toPartialProcesses)
 import ProcessType.ProcessType as PT exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
@@ -35,7 +36,7 @@ import State exposing (State)
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (andMapR, checkEmptyDict, checkMaybe, chooseIfSingleton, third)
+import Util exposing (andMapR, checkAllOk, checkEmptyDict, checkMaybe, chooseIfSingleton, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -68,6 +69,9 @@ type alias Model =
     , receiver : Maybe Uuid
     , qty : Maybe Expression
     , flow : Maybe Flow
+    , partialProcesses : List ( Uuid, RationalInput )
+    , reconciliations : Dict String Reconciliation
+    , oldReconciliations : Dict String Reconciliation
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -85,6 +89,7 @@ type Step
     | StepProvider
     | StepReceiver
     | StepFlow
+    | StepReconcile
     | StepDate
     | StepIdentifiers
     | StepValues
@@ -99,6 +104,7 @@ type Msg
     | SelectReceiver (Maybe Uuid)
     | InputQty Expression
     | InputFlow (Maybe Flow)
+    | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
@@ -197,6 +203,9 @@ init s f =
                                 |> Dict.values
                            )
                     )
+            , partialProcesses = []
+            , reconciliations = Dict.empty
+            , oldReconciliations = Dict.empty
             , qty = met |> Maybe.map .qty
             , calendar = calinit
             , uuid = newUuid
@@ -206,7 +215,19 @@ init s f =
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepProcessTypes
-            , steps = [ Step.Step StepProcessTypes, Step.Step StepType, Step.Step StepProcess, Step.Step StepProvider, Step.Step StepReceiver, Step.Step StepFlow, Step.Step StepDate, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps =
+                [ Step.Step StepProcessTypes
+                , Step.Step StepType
+                , Step.Step StepProcess
+                , Step.Step StepProvider
+                , Step.Step StepReceiver
+                , Step.Step StepFlow
+                , Step.Step StepReconcile
+                , Step.Step StepDate
+                , Step.Step StepIdentifiers
+                , Step.Step StepValues
+                , Step.Step StepGroups
+                ]
             }
     in
     f.uuid
@@ -217,7 +238,7 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
                     reconciliations =
-                        Dict.filter (\_ r -> r.event == uuid) s.state.reconciliations
+                        s.state.reconciliations |> Reconcile.byEvent uuid
 
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
@@ -240,6 +261,9 @@ init s f =
                     , receiver = event |> Maybe.map .receiver
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
+                    , partialProcesses = toPartialProcesses reconciliations
+                    , oldReconciliations = reconciliations
+                    , reconciliations = reconciliations
                     , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
@@ -304,7 +328,26 @@ update s msg model =
             )
 
         SelectProcesses uuids ->
-            ( { model | processes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList }, Effect.none )
+            let
+                reconciliations =
+                    uuids
+                        |> List.map
+                            (\p ->
+                                let
+                                    r =
+                                        { qty = Rational.zero, process = p, event = model.uuid }
+                                in
+                                ( Reconcile.compare r, r )
+                            )
+                        |> Dict.fromList
+            in
+            ( { model
+                | processes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList
+                , reconciliations = reconciliations
+                , partialProcesses = toPartialProcesses reconciliations
+              }
+            , Effect.none
+            )
 
         SelectProcessTypes pts ->
             ( { model | processTypes = pts |> List.map (\pt -> ( PT.compare pt, pt )) |> Dict.fromList }, Effect.none )
@@ -320,6 +363,14 @@ update s msg model =
 
         InputFlow flow ->
             ( { model | flow = flow }, Effect.none )
+
+        InputPartialProcesses partialProcesses ->
+            ( { model
+                | partialProcesses = partialProcesses
+                , reconciliations = fromPartialProcesses model.uuid partialProcesses
+              }
+            , Effect.none
+            )
 
         CalendarMsg submsg ->
             let
@@ -411,6 +462,9 @@ checkStep model =
         Step StepFlow ->
             checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
 
+        Step StepReconcile ->
+            checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.partialProcesses
+
         Step StepProcessTypes ->
             checkEmptyDict model.processTypes "You must choose at least one Process Types" |> Result.map (\_ -> ())
 
@@ -429,6 +483,30 @@ validate m =
         |> andMapR (checkMaybe m.provider "You must select a Provider")
         |> andMapR (checkMaybe m.receiver "You must select a Receiver")
         |> andMapR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+
+
+inputPartialProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
+inputPartialProcess s partialProcesses index ( process, input ) =
+    -- send an event to replace the partialProcess at index in the partialProcesses
+    row [ spacing 5 ]
+        [ RationalInput.inputText Rational.fromString
+            (Just "amount")
+            (\str ->
+                InputPartialProcesses
+                    (partialProcesses
+                        |> List.indexedMap
+                            (\i partialProcess ->
+                                if i == index then
+                                    ( process, str )
+
+                                else
+                                    partialProcess
+                            )
+                    )
+            )
+            input
+        , text <| "for: " ++ displayZone s SmallcardTitle (Type.TType TType.Process) process
+        ]
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -559,6 +637,13 @@ viewContent model s =
                         model.eventType
                         model.qty
                         |> Maybe.withDefault (text "This event has no type")
+
+                Step.Step StepReconcile ->
+                    column [ spacing 20 ]
+                        [ h1 "Allocation"
+                        , p "What amount do you allocate on each process?"
+                        , column [] <| List.indexedMap (\i pp -> inputPartialProcess s.state model.partialProcesses i pp) model.partialProcesses
+                        ]
 
                 Step.Step StepDate ->
                     column [ spacing 20, width fill ]

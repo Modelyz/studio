@@ -56,12 +56,12 @@ toValue s t uuid zone fragment =
             case t of
                 Type.TType TType.Commitment ->
                     Dict.get (Uuid.toString uuid) s.commitments
-                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.toRString)
+                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.resultToString)
                         |> Maybe.withDefault ""
 
                 Type.TType TType.Event ->
                     Dict.get (Uuid.toString uuid) s.events
-                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.toRString)
+                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.resultToString)
                         |> Maybe.withDefault ""
 
                 _ ->

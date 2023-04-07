@@ -1,7 +1,6 @@
 module Expression.Observable exposing (Observable(..), allObs, decoder, encode, toString)
 
 import Expression.DeepLink as DeepLink exposing (DeepLink(..))
-import Expression.Rational as Rational exposing (Rational)
 import Expression.ValueSelection as VS exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -12,7 +11,7 @@ import Type
 type
     Observable
     -- a single number with a name and a value
-    = ObsNumber { name : String, input : String, val : Result String Rational }
+    = ObsNumber { name : String, input : String }
       -- the value maybe existing for entity of gived type and uuid
     | ObsValue ValueSelection
     | ObsLink DeepLink
@@ -38,7 +37,7 @@ toString obs =
 
 number : String -> String -> Observable
 number name input =
-    ObsNumber { name = name, input = input, val = Err "" }
+    ObsNumber { name = name, input = input }
 
 
 encode : Observable -> Encode.Value
@@ -49,7 +48,6 @@ encode obs =
                 [ ( "type", Encode.string "Number" )
                 , ( "name", Encode.string n.name )
                 , ( "input", Encode.string n.input )
-                , ( "val", Result.map Rational.encode n.val |> Result.withDefault (Encode.string "") )
                 ]
 
         ObsValue vs ->
@@ -81,10 +79,9 @@ decoder =
             (\t ->
                 case t of
                     "Number" ->
-                        Decode.map3 (\n i v -> ObsNumber { name = n, input = i, val = v })
+                        Decode.map2 (\n i -> ObsNumber { name = n, input = i })
                             (Decode.field "name" Decode.string)
                             (Decode.field "input" Decode.string)
-                            (Decode.field "val" Rational.rdecoder)
 
                     "SelectedValue" ->
                         Decode.map ObsValue VS.decoder

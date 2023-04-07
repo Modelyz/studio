@@ -1,4 +1,4 @@
-module Expression.Rational exposing (Rational(..), adaptRF, add, decoder, encode, fromFloatString, fromString, inv, multiply, neg, one, rdecoder, toFloatString, toRString, toString, zero)
+module Expression.Rational exposing (Rational, add, decoder, denominator, divide, encode, fromString, inv, multiply, neg, numerator, one, parse, resultToString, toFloatString, toString, zero)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -6,6 +6,16 @@ import Json.Encode as Encode
 
 type Rational
     = Rational Int Int
+
+
+numerator : Rational -> Int
+numerator (Rational n _) =
+    n
+
+
+denominator : Rational -> Int
+denominator (Rational _ d) =
+    d
 
 
 zero : Rational
@@ -38,6 +48,11 @@ multiply (Rational n1 d1) (Rational n2 d2) =
     Rational (n1 * n2) (d1 * d2)
 
 
+divide : Rational -> Rational -> Rational
+divide r1 r2 =
+    multiply r1 (inv r2)
+
+
 fromSlashString : String -> Result String Rational
 fromSlashString =
     -- Try to parse a "n/d" string
@@ -54,13 +69,17 @@ fromSlashString =
                                 >> (\maybeRight ->
                                         case maybeRight of
                                             Just right ->
-                                                Ok <| Rational left right
+                                                if right == 0 then
+                                                    Err "Infinite number"
+
+                                                else
+                                                    Ok <| Rational left right
 
                                             Nothing ->
-                                                Err (String.join "/" split)
+                                                Err "Invalid denominator"
                                    )
                         )
-                    >> Maybe.withDefault (Err (String.join "/" split))
+                    >> Maybe.withDefault (Err "Invalid numerator")
            )
 
 
@@ -68,25 +87,29 @@ fromFloatString : String -> String -> Result String Rational
 fromFloatString sep =
     -- Parse a Float String to a Rational (with custom separator)
     String.split sep
-        >> (\split ->
-                List.head split
-                    |> Maybe.andThen
-                        (\left ->
-                            List.tail split
-                                |> Maybe.andThen
-                                    (\tails ->
-                                        let
-                                            right =
-                                                String.concat tails
+        >> (\parts ->
+                if List.length parts > 2 then
+                    Nothing
 
-                                            lr =
-                                                String.length right
-                                        in
-                                        Maybe.map2 Rational (String.toInt (left ++ right)) (Just (10 ^ lr))
-                                    )
-                        )
+                else
+                    List.head parts
+                        |> Maybe.andThen
+                            (\left ->
+                                List.tail parts
+                                    |> Maybe.andThen
+                                        (\tails ->
+                                            let
+                                                right =
+                                                    String.concat tails
+
+                                                lr =
+                                                    String.length right
+                                            in
+                                            Maybe.map2 Rational (String.toInt (left ++ right)) (Just (10 ^ lr))
+                                        )
+                            )
            )
-        >> Result.fromMaybe "Invalid number"
+        >> Result.fromMaybe "Invalid floating point number"
 
 
 fromInt : String -> Result String Rational
@@ -94,25 +117,49 @@ fromInt s =
     String.toInt s |> Maybe.map (\n -> Rational n 1) |> Result.fromMaybe s
 
 
-fromString : String -> Result String ( Rational, String )
+fromPercent : String -> Result String Rational
+fromPercent s =
+    let
+        percent =
+            String.right 1 s
+
+        number =
+            String.slice 0 -1 s
+    in
+    if percent == "%" then
+        oneOf "Invalid left part of the percentage" [ fromInt, fromFloatString ".", fromFloatString "," ] number
+            |> Result.map (multiply (Rational 1 100))
+
+    else
+        Err "Invalid percentage"
+
+
+fromString : String -> Result String Rational
 fromString s =
-    oneOf [ fromInt, fromSlashString, fromFloatString ".", fromFloatString "," ] s |> Result.map (\r -> ( r, s ))
+    oneOf "Invalid number. It should look like an integer, float, rational or percentage"
+        [ fromInt
+        , fromSlashString
+        , fromFloatString "."
+        , fromFloatString ","
+        , fromPercent
+        ]
+        s
 
 
-oneOf : List (String -> Result String Rational) -> String -> Result String Rational
-oneOf ds s =
+oneOf : String -> List (String -> Result String Rational) -> String -> Result String Rational
+oneOf error ds s =
     -- return the first successful result using a list of rational decoders
     case ds of
         [] ->
-            Err s
+            Err error
 
         first :: rest ->
             case first s of
-                Ok rat ->
-                    Ok rat
+                Ok rational ->
+                    Ok rational
 
                 Err _ ->
-                    oneOf rest s
+                    oneOf error rest s
 
 
 toString : Rational -> String
@@ -131,8 +178,8 @@ toFloatString (Rational n d) =
     String.fromFloat (toFloat n / toFloat d)
 
 
-toRString : Result String Rational -> String
-toRString result =
+resultToString : Result String Rational -> String
+resultToString result =
     case result of
         Ok rational ->
             toString rational
@@ -141,10 +188,9 @@ toRString result =
             err
 
 
-rdecoder : Decoder (Result String Rational)
-rdecoder =
-    Decode.string
-        |> Decode.map (fromString >> Result.map Tuple.first)
+parse : String -> String
+parse =
+    fromString >> resultToString
 
 
 decoder : Decoder Rational
@@ -152,7 +198,6 @@ decoder =
     Decode.string
         |> Decode.andThen
             (fromString
-                >> Result.map Tuple.first
                 >> (\r ->
                         case r of
                             Ok rational ->
@@ -167,16 +212,3 @@ decoder =
 encode : Rational -> Encode.Value
 encode (Rational n d) =
     Encode.string (String.fromInt n ++ "/" ++ String.fromInt d)
-
-
-adaptRF : Result String Rational -> Int
-adaptRF r =
-    -- adapt the input form width to the content
-    50
-        + (case r of
-            Ok (Rational n d) ->
-                ((String.fromInt n |> String.length) + (String.fromInt d |> String.length)) |> (*) 10
-
-            Err err ->
-                9 * String.length err
-          )

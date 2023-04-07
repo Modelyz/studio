@@ -3,8 +3,8 @@ module Process.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Input as Input
-import Expression.Rational as Rational exposing (Rational)
+import Expression.Rational as Rational
+import Expression.RationalInput as RationalInput exposing (RationalInput)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -15,14 +15,14 @@ import Ident.Input exposing (inputIdentifiers)
 import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
-import Process.Reconcile as Reconcile exposing (Reconciliation)
+import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialEvents, toPartialEvents)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (third)
+import Util exposing (checkAllOk, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -59,7 +59,7 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , type_ : Maybe Uuid
-    , partialEvents : List ( Uuid, Result String ( Rational, String ) )
+    , partialEvents : List ( Uuid, RationalInput )
     , reconciliations : Dict String Reconciliation
     , oldReconciliations : Dict String Reconciliation
     , identifiers : Dict String Identifier
@@ -73,7 +73,7 @@ type alias Model =
 
 type Step
     = StepType
-    | StepEvents
+    | StepReconcile
     | StepIdentifiers
     | StepValues
     | StepGroups
@@ -81,7 +81,7 @@ type Step
 
 type Msg
     = InputType (Maybe Uuid)
-    | InputPartialEvents (List ( Uuid, Result String ( Rational, String ) ))
+    | InputPartialEvents (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
@@ -140,7 +140,7 @@ init s f =
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepEvents, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepReconcile, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -162,7 +162,7 @@ init s f =
                 ( { adding
                     | type_ = realType
                     , uuid = uuid
-                    , partialEvents = fromReconciliations oldReconciliations
+                    , partialEvents = toPartialEvents oldReconciliations
                     , oldReconciliations = oldReconciliations
                     , reconciliations = oldReconciliations
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
@@ -184,32 +184,6 @@ init s f =
             )
 
 
-fromReconciliations : Dict String Reconciliation -> List ( Uuid, Result String ( Rational, String ) )
-fromReconciliations reconciliations =
-    reconciliations
-        |> Dict.values
-        |> List.map (\r -> ( r.event, Ok ( r.qty, Rational.toFloatString r.qty ) ))
-
-
-toReconciliations : Uuid -> List ( Uuid, Result String ( Rational, String ) ) -> Dict String Reconciliation
-toReconciliations process partialEvents =
-    partialEvents
-        |> List.foldl
-            (\( event, rqty ) aggregate ->
-                case rqty of
-                    Ok ( qty, _ ) ->
-                        let
-                            r =
-                                Reconciliation qty event process
-                        in
-                        Dict.insert (Reconcile.compare r) r aggregate
-
-                    Err _ ->
-                        aggregate
-            )
-            Dict.empty
-
-
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
@@ -224,9 +198,8 @@ update s msg model =
 
         InputPartialEvents partialEvents ->
             ( { model
-                | partialEvents =
-                    partialEvents
-                , reconciliations = toReconciliations model.uuid partialEvents
+                | partialEvents = partialEvents
+                , reconciliations = fromPartialEvents model.uuid partialEvents
               }
             , Effect.none
             )
@@ -285,6 +258,9 @@ checkStep model =
         Step StepType ->
             Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Process Type")
 
+        Step StepReconcile ->
+            checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.partialEvents
+
         _ ->
             Ok ()
 
@@ -300,37 +276,46 @@ validate m =
             Err "You must select a Process Type"
 
 
-inputPartialEvent : List ( Uuid, Result String ( Rational, String ) ) -> Int -> ( Uuid, Result String ( Rational, String ) ) -> Element Msg
-inputPartialEvent partialEvents index partialEvent =
-    Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
-        { onChange =
-            \str ->
-                case Rational.fromString str of
-                    Ok ( qty, sq ) ->
-                        InputPartialEvents
-                            (partialEvents
-                                |> List.indexedMap
-                                    (\i ( event, rqty ) ->
-                                        if i == index then
-                                            ( event, Ok ( qty, sq ) )
+inputPartialEvent : List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
+inputPartialEvent partialEvents index ( event, input ) =
+    RationalInput.inputText Rational.fromString
+        (Just "amount")
+        (\str ->
+            InputPartialEvents
+                (partialEvents
+                    |> List.indexedMap
+                        (\i partialEvent ->
+                            if i == index then
+                                ( event, str )
 
-                                        else
-                                            ( event, rqty )
-                                    )
-                            )
+                            else
+                                partialEvent
+                        )
+                )
+        )
+        input
 
-                    Err _ ->
-                        InputPartialEvents partialEvents
-        , text =
-            case Tuple.second partialEvent of
-                Ok ( _, strqty ) ->
-                    strqty
 
-                Err errqty ->
-                    errqty
-        , placeholder = Just <| Input.placeholder [] <| text "amount"
-        , label = Input.labelHidden "Reconciliation"
-        }
+
+{- Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+   { onChange =
+       \str ->
+           InputPartialEvents
+               (partialEvents
+                   |> List.indexedMap
+                       (\i partialEvent ->
+                           if i == index then
+                               ( event, str )
+
+                           else
+                               partialEvent
+                       )
+               )
+   , text = input
+   , placeholder = Just <| Input.placeholder [] <| text "amount"
+   , label = Input.labelHidden "Reconciliation"
+   }
+-}
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -349,7 +334,7 @@ viewContent model s =
                         }
                         (s.state.processTypes |> Dict.map (\_ a -> a.uuid))
 
-                Step.Step StepEvents ->
+                Step.Step StepReconcile ->
                     multiSelect
                         model
                         { inputMsg = InputPartialEvents
@@ -364,7 +349,7 @@ viewContent model s =
                         }
                         -- FIXME filter on unreconciled events
                         (Dict.values s.state.events
-                            |> List.map (\e -> ( e.uuid, Ok ( Rational.zero, Rational.toFloatString Rational.zero ) ))
+                            |> List.map (\e -> ( e.uuid, Rational.toFloatString Rational.zero ))
                         )
 
                 Step.Step StepGroups ->

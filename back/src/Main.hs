@@ -223,6 +223,7 @@ maxWait = 10
 connectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
 connectClient waitTime previousTime host port msgPath storeChan stateMV = do
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
+
     threadDelay $ waitTime * 1000000
     putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "..."
     catch
