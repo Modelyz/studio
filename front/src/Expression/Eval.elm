@@ -1,4 +1,4 @@
-module Expression.Eval exposing (Config, dleval, exeval, veval)
+module Expression.Eval exposing (Config, checkEval, dleval, exeval, veval)
 
 import Agent.Agent as Agent
 import Dict exposing (Dict)
@@ -29,6 +29,13 @@ type alias Config =
 veval : State -> Config -> Dict String Value -> Value -> Result String Rational
 veval s c allVals value =
     exeval s c allVals value.expr
+
+
+checkEval : State -> Config -> Dict String Value -> Maybe Expression -> Result String Expression
+checkEval s c vs me =
+    me
+        |> Maybe.map (\e -> exeval s c vs e |> Result.map (always e))
+        |> Maybe.withDefault (Err "Invalid value")
 
 
 exeval : State -> Config -> Dict String Value -> Expression -> Result String Rational

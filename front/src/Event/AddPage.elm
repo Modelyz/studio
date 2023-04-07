@@ -9,6 +9,7 @@ import Element.Border as Border
 import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
 import Expression exposing (Expression)
+import Expression.Eval as Eval
 import Expression.Input
 import Expression.Rational as Rational
 import Expression.RationalInput as RationalInput exposing (RationalInput)
@@ -25,7 +26,6 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialProcesses, toPartialProcesses)
-import ProcessType.ProcessType as PT exposing (ProcessType)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Scope as Scope exposing (Scope(..))
@@ -403,8 +403,12 @@ update s msg model =
             ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
-            case validate model of
+            case validate s.state model of
                 Ok e ->
+                    let
+                        qty =
+                            Eval.exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values e.qty
+                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
@@ -418,16 +422,17 @@ update s msg model =
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
                                             |> List.concatMap
                                                 (\( nextUuid, _, pt ) ->
-                                                    [ Message.AddedProcess <| Process TType.Process nextUuid pt
-
-                                                    -- FIXME Rational.one ??
-                                                    , Message.Reconciled <| Reconciliation Rational.one e.uuid nextUuid
-                                                    ]
+                                                    Result.map
+                                                        (\rational ->
+                                                            [ Message.AddedProcess <| Process TType.Process nextUuid pt
+                                                            , Message.Reconciled <| Reconciliation rational e.uuid nextUuid
+                                                            ]
+                                                        )
+                                                        qty
+                                                        |> Result.withDefault []
                                                 )
 
                                     else
-                                        -- FIXME Rational.zero
-                                        -- FIXME foldl also with uuidAggregator
                                         List.map (\r -> Message.Reconciled r) <| Dict.values model.reconciliations
                                    )
                             )
@@ -455,8 +460,8 @@ view model =
     }
 
 
-checkStep : Model -> Result String ()
-checkStep model =
+checkStep : State -> Model -> Result String ()
+checkStep s model =
     case model.step of
         Step StepType ->
             checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
@@ -468,7 +473,9 @@ checkStep model =
             checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
         Step StepFlow ->
-            checkMaybe model.flow "You must input a Resource or Resource Type Flow" |> Result.map (\_ -> ())
+            checkMaybe model.flow "You must input a Resource or Resource Type Flow"
+                |> Result.andThen (\_ -> Eval.checkEval s { context = ( Type.TType TType.Event, model.uuid ) } s.values model.qty)
+                |> Result.map (\_ -> ())
 
         Step StepReconcile ->
             checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.partialProcesses
@@ -480,13 +487,13 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String Event
-validate m =
+validate : State -> Model -> Result String Event
+validate s m =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
         (Event TType.Event m.uuid (DateTime.View.toPosix m.calendar))
-        (checkMaybe m.qty "The quantity is invalid")
+        (Eval.checkEval s { context = ( Type.TType TType.Event, m.uuid ) } s.values m.qty)
         |> andMapR (checkMaybe m.type_ "You must select an Event Type")
         |> andMapR (checkMaybe m.provider "You must select a Provider")
         |> andMapR (checkMaybe m.receiver "You must select a Receiver")
@@ -679,6 +686,6 @@ viewContent model s =
     floatingContainer s
         (Just <| Button Step.Cancel)
         "Adding an Event"
-        (List.map (Element.map Button) (buttons model (checkStep model)))
+        (List.map (Element.map Button) (buttons model (checkStep s.state model)))
         [ step
         ]
