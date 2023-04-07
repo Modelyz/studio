@@ -243,7 +243,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 IsItem (Type.TType TType.Process) _ ->
-                    [ EventList "" ]
+                    [ EventList "" "" ]
 
                 IsItem (Type.TType TType.Group) _ ->
                     [ Parent ]
@@ -255,7 +255,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 HasUserType (Type.TType TType.Process) _ ->
-                    [ EventList "" ]
+                    [ EventList "" "" ]
 
                 HasUserType (Type.TType TType.Group) _ ->
                     [ Parent ]
@@ -267,7 +267,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 HasType (Type.TType TType.Process) ->
-                    [ EventList "" ]
+                    [ EventList "" "" ]
 
                 HasType (Type.TType TType.Group) ->
                     [ Parent ]
@@ -342,22 +342,42 @@ inputFragment fragments index fragment =
         Receiver ->
             none
 
-        EventList value ->
-            Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
-                { onChange =
-                    \v ->
-                        InputFragments
-                            (fragments
-                                |> List.indexedMap
-                                    (\i f ->
-                                        if i == index then
-                                            EventList v
+        EventList qSep rSep ->
+            row [ spacing 5 ]
+                [ Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+                    { onChange =
+                        \v ->
+                            InputFragments
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                EventList v rSep
 
-                                        else
-                                            f
-                                    )
-                            )
-                , text = value
-                , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
-                , label = Input.labelHidden "Separator"
-                }
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = qSep
+                    , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                    , label = Input.labelHidden "Separator"
+                    }
+                , Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+                    { onChange =
+                        \v ->
+                            InputFragments
+                                (fragments
+                                    |> List.indexedMap
+                                        (\i f ->
+                                            if i == index then
+                                                EventList qSep v
+
+                                            else
+                                                f
+                                        )
+                                )
+                    , text = rSep
+                    , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                    , label = Input.labelHidden "Separator"
+                    }
+                ]

@@ -20,7 +20,7 @@ toString =
 adaptWidth : RationalInput -> Int
 adaptWidth r =
     -- adapt the input form width to the content
-    50 + 10 * String.length r
+    75 + 10 * String.length r
 
 
 mandatory : Bool -> String -> Result String Rational

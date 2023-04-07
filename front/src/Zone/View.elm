@@ -125,13 +125,13 @@ toValue s t uuid zone fragment =
                     )
                 |> Maybe.withDefault ""
 
-        EventList separator ->
+        EventList qSep rSep ->
             case t of
                 Type.TType TType.Process ->
                     Dict.filter (\_ r -> r.process == uuid) s.reconciliations
                         |> Dict.values
-                        |> List.map (.event >> displayZone s zone (Type.TType TType.Event))
-                        |> String.join separator
+                        |> List.map (\r -> Rational.toFloatString r.qty ++ qSep ++ displayZone s zone (Type.TType TType.Event) r.event)
+                        |> String.join rSep
 
                 _ ->
                     ""

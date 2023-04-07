@@ -5,18 +5,26 @@ import Json.Encode as Encode
 import Scope exposing (Scope(..))
 
 
+type alias Separator =
+    String
+
+
+type alias Name =
+    String
+
+
 type
     Fragment
     -- TODO: add Types to be able to display the type in the zone
-    = IdentifierName String
-    | GroupIdentifierName String
+    = IdentifierName Name
+    | GroupIdentifierName Name
     | Parent
     | Fixed String
     | Quantity
     | Flow
     | Provider
     | Receiver
-    | EventList String
+    | EventList Separator Separator
 
 
 toString : Fragment -> String
@@ -46,7 +54,7 @@ toString fragment =
         Receiver ->
             "Receiver"
 
-        EventList _ ->
+        EventList _ _ ->
             "EventList"
 
 
@@ -77,8 +85,8 @@ toDesc fragment =
         Receiver ->
             "Display the receiver of the Event or Commitment"
 
-        EventList _ ->
-            "Display the list of Events, separated by a configurable separator."
+        EventList _ _ ->
+            "Display the list of partial Events, separated by a configurable separator."
 
 
 encode : Fragment -> Encode.Value
@@ -111,9 +119,12 @@ encode fragment =
         Receiver ->
             Encode.string "Receiver"
 
-        EventList separator ->
+        EventList qSeparator rSeparator ->
             Encode.object
-                [ ( "EventList", Encode.string separator ) ]
+                [ ( "type", Encode.string "EventList" )
+                , ( "qSep", Encode.string qSeparator )
+                , ( "rSep", Encode.string rSeparator )
+                ]
 
 
 decoder : Decoder Fragment
@@ -144,5 +155,8 @@ decoder =
                 )
         , Decode.map GroupIdentifierName <| Decode.field "GroupIdentifierName" Decode.string
         , Decode.map Fixed <| Decode.field "Fixed" Decode.string
-        , Decode.map EventList <| Decode.field "EventList" Decode.string
+        , Decode.map3 (\_ q r -> EventList q r)
+            (Decode.field "type" Decode.string)
+            (Decode.field "qSep" Decode.string)
+            (Decode.field "rSep" Decode.string)
         ]
