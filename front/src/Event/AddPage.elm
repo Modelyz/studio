@@ -61,7 +61,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , processTypes : Dict String ProcessType
+    , processTypes : Dict String Uuid
     , processes : Dict String Uuid
     , type_ : Maybe Uuid
     , eventType : Maybe EventType
@@ -71,7 +71,6 @@ type alias Model =
     , flow : Maybe Flow
     , partialProcesses : List ( Uuid, RationalInput )
     , reconciliations : Dict String Reconciliation
-    , oldReconciliations : Dict String Reconciliation
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -98,7 +97,7 @@ type Step
 
 type Msg
     = SelectType (Maybe Uuid)
-    | SelectProcessTypes (List ProcessType)
+    | SelectProcessTypes (List Uuid)
     | SelectProcesses (List Uuid)
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
@@ -135,7 +134,7 @@ match route =
             Nothing
 
 
-toProcessTypes : State -> Maybe Uuid -> Dict String ProcessType
+toProcessTypes : State -> Maybe Uuid -> Dict String Uuid
 toProcessTypes s muuid =
     -- return the processTypes corresponding to an eventType
     s.processTypes
@@ -146,6 +145,9 @@ toProcessTypes s muuid =
                     |> Dict.isEmpty
                     |> not
             )
+        |> Dict.values
+        |> List.map (\pt -> ( Uuid.toString pt.uuid, pt.uuid ))
+        |> Dict.fromList
 
 
 init : Shared.Model -> Flags -> ( Model, Effect Shared.Msg Msg )
@@ -205,7 +207,6 @@ init s f =
                     )
             , partialProcesses = []
             , reconciliations = Dict.empty
-            , oldReconciliations = Dict.empty
             , qty = met |> Maybe.map .qty
             , calendar = calinit
             , uuid = newUuid
@@ -251,9 +252,17 @@ init s f =
 
                     caledit =
                         event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
+
+                    processes =
+                        reconciliations |> Dict.values |> List.map (\r -> ( Uuid.toString r.process, r.process )) |> Dict.fromList
                 in
                 ( { adding
-                    | processes = reconciliations |> Dict.values |> List.map (\r -> ( Uuid.toString r.process, r.process )) |> Dict.fromList
+                    | processes = processes
+                    , processTypes =
+                        Dict.values processes
+                            |> List.filterMap (\p -> Dict.get (Uuid.toString p) s.state.types |> Maybe.andThen third)
+                            |> List.map (\t -> ( Uuid.toString t, t ))
+                            |> Dict.fromList
                     , type_ = realType
                     , uuid = uuid
                     , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
@@ -262,7 +271,6 @@ init s f =
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
                     , partialProcesses = toPartialProcesses reconciliations
-                    , oldReconciliations = reconciliations
                     , reconciliations = reconciliations
                     , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) uuid realType False
@@ -350,7 +358,7 @@ update s msg model =
             )
 
         SelectProcessTypes pts ->
-            ( { model | processTypes = pts |> List.map (\pt -> ( PT.compare pt, pt )) |> Dict.fromList }, Effect.none )
+            ( { model | processTypes = pts |> List.map (\pt -> ( Uuid.toString pt, pt )) |> Dict.fromList }, Effect.none )
 
         SelectProvider uuid ->
             ( { model | provider = uuid }, Effect.none )
@@ -410,7 +418,7 @@ update s msg model =
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
                                             |> List.concatMap
                                                 (\( nextUuid, _, pt ) ->
-                                                    [ Message.AddedProcess <| Process TType.Process nextUuid pt.uuid
+                                                    [ Message.AddedProcess <| Process TType.Process nextUuid pt
 
                                                     -- FIXME Rational.one ??
                                                     , Message.Reconciled <| Reconciliation Rational.one e.uuid nextUuid
@@ -420,7 +428,7 @@ update s msg model =
                                     else
                                         -- FIXME Rational.zero
                                         -- FIXME foldl also with uuidAggregator
-                                        List.map (\p -> Message.Reconciled (Reconciliation Rational.zero model.uuid p)) <| Dict.values model.processes
+                                        List.map (\r -> Message.Reconciled r) <| Dict.values model.reconciliations
                                    )
                             )
 
@@ -520,14 +528,15 @@ viewContent model s =
                         , selection = .processTypes >> Dict.values
                         , title = "Process Types: "
                         , description = "Select all the Process Types related to this new Event"
-                        , toString = .uuid >> displayZone s.state SmallcardTitle (Type.HType HType.ProcessType)
+                        , toString = displayZone s.state SmallcardTitle (Type.HType HType.ProcessType)
                         , empty = "There are no Process Types yet to choose from"
                         , toDesc = always ""
                         , height = 50
                         , input = \_ _ _ -> none
                         }
                     <|
-                        Dict.values s.state.processTypes
+                        List.map .uuid <|
+                            Dict.values s.state.processTypes
 
                 Step.Step StepProcess ->
                     multiSelect model
@@ -559,6 +568,7 @@ viewContent model s =
                         }
                         (model.processTypes
                             |> Dict.values
+                            |> List.filterMap (\pt -> Dict.get (Uuid.toString pt) s.state.processTypes)
                             |> List.map .eventTypes
                             |> List.foldl Dict.union Dict.empty
                         )
