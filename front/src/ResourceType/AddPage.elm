@@ -3,7 +3,6 @@ module ResourceType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, pa
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Expression as Expression exposing (Expression)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -19,7 +18,6 @@ import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
 import Type
-import Typed.Type as TType
 import Util exposing (third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
@@ -32,14 +30,6 @@ import View.Step as Step exposing (Step(..), buttons)
 hereType : Type.Type
 hereType =
     Type.HType HType.ResourceType
-
-
-constructor =
-    ResourceType
-
-
-hierarchicConstructor =
-    HType.ResourceType
 
 
 type alias Flags =
@@ -210,7 +200,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Adding a Resource Type"
     , attributes = []
     , element = viewContent model
@@ -236,7 +226,7 @@ checkStep model =
 
 validate : Model -> Result String ResourceType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Ok <| ResourceType HType.ResourceType m.uuid m.type_
 
 
 viewContent : Model -> Shared.Model -> Element Msg

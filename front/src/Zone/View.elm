@@ -22,7 +22,7 @@ displayZone s zone t uuid =
     -- TODO replace types configs allIds allGroupLinks with just s
     Config.getMostSpecific s.types s.configs zone (IsItem t uuid)
         |> Maybe.map
-            (\(ZoneConfig _ fragments _) ->
+            (\(ZoneDisplay _ fragments _) ->
                 String.concat <|
                     List.map (toValue s t uuid zone) fragments
             )

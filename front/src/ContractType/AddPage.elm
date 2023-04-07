@@ -31,14 +31,6 @@ hereType =
     Type.HType HType.ContractType
 
 
-constructor =
-    ContractType
-
-
-hierarchicConstructor =
-    HType.ContractType
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -207,7 +199,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Adding a Contract Type"
     , attributes = []
     , element = viewContent model
@@ -233,7 +225,7 @@ checkStep model =
 
 validate : Model -> Result String ContractType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Ok <| ContractType HType.ContractType m.uuid m.type_
 
 
 viewContent : Model -> Shared.Model -> Element Msg

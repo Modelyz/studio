@@ -103,7 +103,7 @@ init s f =
      else
         Dict.get f.zid s.state.configs
             |> Maybe.map
-                (\(ZoneConfig zone fragments scope) ->
+                (\(ZoneDisplay zone fragments scope) ->
                     { adding
                         | zone = zone
                         , scope = scope
@@ -165,7 +165,7 @@ update s msg model =
 
 validate : Model -> Result String Configuration
 validate m =
-    Result.map3 ZoneConfig
+    Result.map3 ZoneDisplay
         (Ok m.zone)
         (checkEmptyList m.fragments "You must choose at least an identifier")
         (if m.scope == Scope.empty then

@@ -11,7 +11,7 @@ view : Configuration -> String
 view c =
     -- TODO convert to a separate title and description to feed in to a smallcard
     case c of
-        ZoneConfig zone fragments _ ->
+        ZoneDisplay zone fragments _ ->
             Zone.toDesc zone
                 ++ " : "
                 ++ (String.concat <| List.map Fragment.toString fragments)
@@ -20,5 +20,5 @@ view c =
 description : Shared.Model -> Configuration -> String
 description s c =
     case c of
-        ZoneConfig _ _ scope ->
+        ZoneDisplay _ _ scope ->
             Scope.View.toDisplay s.state scope

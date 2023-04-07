@@ -32,14 +32,6 @@ hereType =
     Type.HType HType.AgentType
 
 
-constructor =
-    AgentType
-
-
-hierarchicConstructor =
-    HType.AgentType
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -208,7 +200,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Adding an Agent Type"
     , attributes = []
     , element = viewContent model
@@ -234,7 +226,7 @@ checkStep model =
 
 validate : Model -> Result String AgentType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_
+    Ok <| AgentType HType.AgentType m.uuid m.type_
 
 
 viewContent : Model -> Shared.Model -> Element Msg

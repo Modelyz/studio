@@ -34,14 +34,6 @@ hereType =
     Type.HType HType.GroupType
 
 
-constructor =
-    GroupType
-
-
-hierarchicConstructor =
-    HType.GroupType
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -229,7 +221,7 @@ update s msg model =
 
 
 view : Shared.Model -> Model -> View Msg
-view s model =
+view _ model =
     { title = "Adding a Group Type"
     , attributes = []
     , element = viewContent model
@@ -261,7 +253,7 @@ checkStep model =
 
 validate : Model -> Result String GroupType
 validate m =
-    Ok <| constructor hierarchicConstructor m.uuid m.type_ m.unique m.treeType
+    Ok <| GroupType HType.GroupType m.uuid m.type_ m.unique m.treeType
 
 
 viewContent : Model -> Shared.Model -> Element Msg

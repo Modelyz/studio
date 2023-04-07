@@ -37,11 +37,6 @@ hereType =
     Type.HType HType.EventType
 
 
-hierarchicConstructor : HType.Type
-hierarchicConstructor =
-    HType.EventType
-
-
 type alias Flags =
     { route : Route, uuid : Maybe Uuid }
 
@@ -300,7 +295,7 @@ checkStep model =
 validate : Model -> Result String EventType
 validate m =
     Result.map
-        (EventType hierarchicConstructor m.uuid m.type_ m.providers m.receivers m.flowscope)
+        (EventType HType.EventType m.uuid m.type_ m.providers m.receivers m.flowscope)
         (Expression.Editor.checkExpression m.editor)
 
 
