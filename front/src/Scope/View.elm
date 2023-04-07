@@ -29,19 +29,19 @@ toDisplay s scope =
             "Anything"
 
         IsItem (Type.TType tt) uuid ->
-            (Type.toString (Type.TType tt) ++ ": ") ++ displayZone s SmallcardTitle {- FIXME?(Identifier.fromUuid uuid ids) -} (Type.TType tt) uuid
+            (Type.toString (Type.TType tt) ++ ": ") ++ displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.TType tt) uuid
 
         IsItem (Type.HType ht) uuid ->
-            (Type.toString (Type.HType ht) ++ ": ") ++ displayZone s SmallcardTitle {- FIXME?(Identifier.fromUuid uuid ids) -} (Type.HType ht) uuid
+            (Type.toString (Type.HType ht) ++ ": ") ++ displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.HType ht) uuid
 
         HasType t ->
             Type.toPluralString t
 
         HasUserType (Type.TType tt) tuid ->
-            TType.toPluralString tt ++ " of type: " ++ displayZone s SmallcardTitle {- (FIXME?Identifier.fromUuid tuid ids) -} (Type.HType (TType.toHierarchic tt)) tuid
+            TType.toPluralString tt ++ " of type: " ++ displayZone s SmallcardTitle {- (TODO check?Identifier.fromUuid tuid ids) -} (Type.HType (TType.toHierarchic tt)) tuid
 
         HasUserType (Type.HType ht) tuid ->
-            HType.toPluralString ht ++ " of type: " ++ displayZone s SmallcardTitle {- FIXME?(Identifier.fromUuid tuid ids) -} (Type.HType ht) tuid
+            HType.toPluralString ht ++ " of type: " ++ displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid tuid ids) -} (Type.HType ht) tuid
 
         Identified _ ->
             "Identified"

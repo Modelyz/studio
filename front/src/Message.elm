@@ -258,7 +258,8 @@ base (Message b _) =
 
 compare : Message -> Int
 compare =
-    -- FIXME what if 2 messages at the same time?
+    -- TODO what if 2 messages at the exact same time?
+    -- => also use a session uuid
     getTime >> posixToMillis
 
 

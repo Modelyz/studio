@@ -167,7 +167,7 @@ toType scope =
             Nothing
 
         Anything ->
-            -- FIXME this is inconsistent
+            -- TODO this is inconsistent. Try to remove this function
             Nothing
 
         IsItem t _ ->
@@ -183,13 +183,13 @@ toType scope =
             Nothing
 
         And _ _ ->
-            -- FIXME this is inconsistent
+            -- TODO this is inconsistent. Try to remove this function
             Nothing
 
         Or _ _ ->
-            -- FIXME this is inconsistent
+            -- TODO this is inconsistent. Try to remove this function
             Nothing
 
         Not _ ->
-            -- FIXME this is inconsistent
+            -- TODO this is inconsistent. Try to remove this function
             Nothing

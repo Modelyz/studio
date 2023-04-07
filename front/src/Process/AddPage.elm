@@ -347,7 +347,7 @@ viewContent model s =
                         , height = 100
                         , input = inputPartialEvent
                         }
-                        -- FIXME filter on unreconciled events
+                        -- TODO filter on unreconciled events
                         (Dict.values s.state.events
                             |> List.map (\e -> ( e.uuid, Rational.toFloatString Rational.zero ))
                         )

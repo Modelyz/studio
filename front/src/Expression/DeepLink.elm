@@ -1,7 +1,6 @@
 module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isComplete, terminate, toScope)
 
 import Expression.HardLink as HardLink exposing (HardLink)
-import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope as Scope exposing (Scope(..))
@@ -20,7 +19,6 @@ encode deeplink =
     case deeplink of
         -- TODO we shouldn't be able to add an incomplete deeplink here
         Link hl dl ->
-            -- FIXME
             Encode.object
                 [ ( "type", Encode.string "Link" )
                 , ( "hardlink", HardLink.encode hl )
@@ -28,13 +26,11 @@ encode deeplink =
                 ]
 
         Null ->
-            -- FIXME
             Encode.object
                 [ ( "type", Encode.string "Null" )
                 ]
 
         EndPoint scope name ->
-            -- FIXME
             Encode.object
                 [ ( "type", Encode.string "Endpoint" )
                 , ( "scope", Scope.encode scope )

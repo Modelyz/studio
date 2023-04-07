@@ -13,7 +13,7 @@ import Expression.ValueSelection exposing (ValueSelection(..))
 import Flow
 import Group.Group as Group
 import Prng.Uuid exposing (Uuid)
-import Scope exposing (Scope(..), toType)
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import State exposing (State)
 import Tree exposing (parentOf)
@@ -204,7 +204,7 @@ step s hl uuid =
             Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
 
         _ ->
-            -- FIXME missing EventTypeFlow and CommitmentTypeFlow
+            -- TODO missing EventTypeFlow and CommitmentTypeFlow
             []
 
 
@@ -224,9 +224,10 @@ dleval s deeplink currentlist =
 
         EndPoint scope name ->
             -- use the transmitted list of uuid and find the corresponding values
-            -- FIXME TODO not only groups
+            -- TODO not only groups
             let
                 groups =
-                    currentlist |> List.filter (\u -> toType scope |> Maybe.map (\t -> containsScope s.types (IsItem t u) scope) |> Maybe.withDefault False)
+                    -- TODO: try to remove toType
+                    currentlist |> List.filter (\u -> Scope.toType scope |> Maybe.map (\t -> containsScope s.types (IsItem t u) scope) |> Maybe.withDefault False)
             in
             List.map (\g -> s.values |> Dict.filter (\_ v -> v.for == g && v.name == name) |> Dict.values) groups |> List.concat
