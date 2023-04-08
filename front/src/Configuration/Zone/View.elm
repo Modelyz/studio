@@ -1,6 +1,8 @@
 module Configuration.Zone.View exposing (displayZone)
 
-import Configuration as Config exposing (Configuration(..))
+import Configuration as Config exposing (Configuration(..), onlyZone)
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.Fragment exposing (Fragment(..))
 import Dict
 import Expression.Eval as Eval
 import Expression.Rational as Rational
@@ -13,14 +15,12 @@ import Scope exposing (Scope(..))
 import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
-import Configuration.Zone.Fragment exposing (Fragment(..))
-import Configuration.Zone exposing (Zone(..))
 
 
 displayZone : State -> Zone -> Type -> Uuid -> String
 displayZone s zone t uuid =
     -- TODO replace types configs allIds allGroupLinks with just s
-    Config.getMostSpecific s.types s.configs zone (IsItem t uuid)
+    Config.getMostSpecific s.types (onlyZone (Just zone) s.configs) zone (IsItem t uuid)
         |> Maybe.map
             (\conf ->
                 case conf of

@@ -1,5 +1,7 @@
 module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific, onlyZone)
 
+import Configuration.Zone as Zone exposing (Zone)
+import Configuration.Zone.Fragment as Fragment exposing (Fragment)
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -7,8 +9,6 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
 import Type exposing (Type)
-import Configuration.Zone.Fragment as Fragment exposing (Fragment)
-import Configuration.Zone as Zone exposing (Zone)
 
 
 type
@@ -18,17 +18,23 @@ type
     | MenuDisplay Type Uuid Bool
 
 
-onlyZone : Dict String Configuration -> Dict String Configuration
-onlyZone confs =
+onlyZone : Maybe Zone -> Dict String Configuration -> Dict String Configuration
+onlyZone mzone confs =
     confs
         |> Dict.filter
             (\_ v ->
-                case v of
-                    ZoneDisplay _ _ _ ->
-                        True
+                mzone
+                    |> Maybe.map
+                        (\requestedZone ->
+                            case v of
+                                ZoneDisplay foundZone _ _ ->
+                                    requestedZone == foundZone
 
-                    _ ->
-                        False
+                                _ ->
+                                    False
+                        )
+                    -- we didn't specify a zone all zones are ok
+                    |> Maybe.withDefault True
             )
 
 
