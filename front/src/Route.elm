@@ -1,11 +1,13 @@
-module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
+module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, isMenu, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
 
 import Browser.Navigation as Nav
+import Configuration as Config exposing (Configuration(..))
 import Configuration.Zone exposing (Zone(..))
 import Configuration.Zone.View exposing (displayZone)
+import Dict
 import Element exposing (Color, rgb255)
 import Hierarchy.Type as HType
-import Prng.Uuid as Uuid
+import Prng.Uuid as Uuid exposing (Uuid)
 import State exposing (State)
 import Type exposing (Type)
 import Url exposing (Url, percentEncode)
@@ -48,6 +50,22 @@ type ViewSegment
     | Edit String (Maybe String)
     | List (Maybe String)
     | Add (Maybe String)
+
+
+segmentToUuid : ViewSegment -> Maybe Uuid
+segmentToUuid vs =
+    case vs of
+        View uuid _ ->
+            Uuid.fromString uuid
+
+        Edit uuid _ ->
+            Uuid.fromString uuid
+
+        List muuid ->
+            muuid |> Maybe.andThen Uuid.fromString
+
+        Add muuid ->
+            muuid |> Maybe.andThen Uuid.fromString
 
 
 toTypeFilter : ViewSegment -> Maybe String
@@ -124,9 +142,30 @@ toColor route =
             rgb255 0xF7 0xF7 0xF7
 
 
-toType : EntitySegment -> Maybe Type
-toType s =
+toHType : EntitySegment -> Maybe Type
+toHType s =
     case s of
+        ResourceType ->
+            Just <| Type.HType HType.ResourceType
+
+        EventType ->
+            Just <| Type.HType HType.EventType
+
+        AgentType ->
+            Just <| Type.HType HType.AgentType
+
+        CommitmentType ->
+            Just <| Type.HType HType.CommitmentType
+
+        ContractType ->
+            Just <| Type.HType HType.ContractType
+
+        ProcessType ->
+            Just <| Type.HType HType.ProcessType
+
+        GroupType ->
+            Just <| Type.HType HType.GroupType
+
         Resource ->
             Just <| Type.HType HType.ResourceType
 
@@ -355,8 +394,8 @@ toRoute url =
 
 
 toString : Route -> String
-toString r =
-    case r of
+toString route =
+    case route of
         Home ->
             absolute [] []
 
@@ -365,16 +404,46 @@ toString r =
 
 
 toDesc : State -> Route -> String
-toDesc s r =
-    case r of
+toDesc s route =
+    case route of
         Home ->
             "Home"
 
         Entity e (List (Just uuid)) ->
-            Maybe.map2 (displayZone s MenuZone) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+            Maybe.map2 (displayZone s MenuZone) (toHType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e
+
+
+isMenu : State -> Route -> Bool
+isMenu s route =
+    case route of
+        Entity e vs ->
+            let
+                muuid =
+                    segmentToUuid vs
+
+                menudisplay =
+                    Maybe.map3 MenuDisplay (toHType e) muuid (Just False)
+
+                mconfig =
+                    menudisplay |> Maybe.andThen (\md -> Dict.get (Config.compare md) s.configs)
+            in
+            Maybe.map
+                (\config ->
+                    case config of
+                        MenuDisplay _ _ bool ->
+                            bool
+
+                        _ ->
+                            False
+                )
+                mconfig
+                |> Maybe.withDefault False
+
+        _ ->
+            False
 
 
 redirect : Nav.Key -> Route -> Cmd msg

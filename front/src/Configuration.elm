@@ -1,4 +1,4 @@
-module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific, onlyZone)
+module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific, onlyMenu, onlyZone)
 
 import Configuration.Zone as Zone exposing (Zone)
 import Configuration.Zone.Fragment as Fragment exposing (Fragment)
@@ -16,6 +16,20 @@ type
     -- the list of identifier types to display on each zone
     = ZoneDisplay Zone (List Fragment) Scope
     | MenuDisplay Type Uuid Bool
+
+
+onlyMenu : Dict String Configuration -> Dict String Configuration
+onlyMenu confs =
+    confs
+        |> Dict.filter
+            (\_ v ->
+                case v of
+                    MenuDisplay _ _ _ ->
+                        True
+
+                    _ ->
+                        False
+            )
 
 
 onlyZone : Maybe Zone -> Dict String Configuration -> Dict String Configuration
@@ -100,12 +114,12 @@ encode c =
                 , ( "scope", Scope.encode scope )
                 ]
 
-        MenuDisplay type_ uuid visible ->
+        MenuDisplay type_ uuid isMenu ->
             Encode.object
                 [ ( "what", Encode.string "MenuDisplay" )
                 , ( "type", Type.encode type_ )
                 , ( "uuid", Encode.string (Uuid.toString uuid) )
-                , ( "visible", Encode.bool visible )
+                , ( "isMenu", Encode.bool isMenu )
                 ]
 
 
@@ -120,6 +134,12 @@ decoder =
                             (Decode.field "zone" Zone.decoder)
                             (Decode.field "fragments" (Decode.list Fragment.decoder))
                             (Decode.field "scope" Scope.decoder)
+
+                    "MenuDisplay" ->
+                        Decode.map3 MenuDisplay
+                            (Decode.field "type" Type.decoder)
+                            (Decode.field "uuid" Uuid.decoder)
+                            (Decode.field "isMenu" Decode.bool)
 
                     _ ->
                         Decode.fail <| "Unknown Configuration: " ++ what
