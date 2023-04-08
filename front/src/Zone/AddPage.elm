@@ -103,13 +103,18 @@ init s f =
      else
         Dict.get f.zid s.state.configs
             |> Maybe.map
-                (\(ZoneDisplay zone fragments scope) ->
-                    { adding
-                        | zone = zone
-                        , scope = scope
-                        , fragments = fragments
-                        , warning = ""
-                    }
+                (\conf ->
+                    case conf of
+                        ZoneDisplay zone fragments scope ->
+                            { adding
+                                | zone = zone
+                                , scope = scope
+                                , fragments = fragments
+                                , warning = ""
+                            }
+
+                        _ ->
+                            adding
                 )
             |> Maybe.withDefault adding
     )

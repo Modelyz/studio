@@ -1,9 +1,9 @@
-module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific)
+module Configuration exposing (Configuration(..), compare, decoder, encode, getMostSpecific, onlyZone)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid exposing (Uuid)
+import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
 import Type exposing (Type)
@@ -15,12 +15,38 @@ type
     Configuration
     -- the list of identifier types to display on each zone
     = ZoneDisplay Zone (List Fragment) Scope
+    | MenuDisplay Type Uuid Bool
+
+
+onlyZone : Dict String Configuration -> Dict String Configuration
+onlyZone confs =
+    confs
+        |> Dict.filter
+            (\_ v ->
+                case v of
+                    ZoneDisplay _ _ _ ->
+                        True
+
+                    _ ->
+                        False
+            )
 
 
 getConfig : Dict String Configuration -> Scope -> Maybe Configuration
 getConfig configs scope =
-    -- find the first config that correspond exactly to the scope
-    List.head <| Dict.values <| Dict.filter (\_ (ZoneDisplay _ _ s) -> s == scope) configs
+    -- find the first ZoneDisplay config that correspond exactly to the scope
+    List.head <|
+        Dict.values <|
+            Dict.filter
+                (\_ conf ->
+                    case conf of
+                        ZoneDisplay _ _ s ->
+                            s == scope
+
+                        _ ->
+                            False
+                )
+                configs
 
 
 getMostSpecific : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
@@ -53,6 +79,9 @@ compare config =
         ZoneDisplay zone _ scope ->
             "ZoneDisplay" ++ "/" ++ Zone.compare zone ++ "/" ++ Scope.compare scope
 
+        MenuDisplay type_ uuid _ ->
+            "MenuDisplay" ++ "/" ++ Type.compare type_ ++ "/" ++ Uuid.toString uuid
+
 
 encode : Configuration -> Encode.Value
 encode c =
@@ -63,6 +92,14 @@ encode c =
                 , ( "zone", Zone.encode zone )
                 , ( "fragments", Encode.list Fragment.encode names )
                 , ( "scope", Scope.encode scope )
+                ]
+
+        MenuDisplay type_ uuid visible ->
+            Encode.object
+                [ ( "what", Encode.string "MenuDisplay" )
+                , ( "type", Type.encode type_ )
+                , ( "uuid", Encode.string (Uuid.toString uuid) )
+                , ( "visible", Encode.bool visible )
                 ]
 
 

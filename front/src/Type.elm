@@ -5,7 +5,6 @@ import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Set
 import Typed.Type as TType
 import Util exposing (third)
 
