@@ -38,16 +38,16 @@ onlyZone mzone confs =
             )
 
 
-getConfig : Dict String Configuration -> Scope -> Maybe Configuration
-getConfig configs scope =
+getConfig : Zone -> Dict String Configuration -> Scope -> Maybe Configuration
+getConfig requestedZone configs scope =
     -- find the first ZoneDisplay config that correspond exactly to the scope
     List.head <|
         Dict.values <|
             Dict.filter
                 (\_ conf ->
                     case conf of
-                        ZoneDisplay _ _ s ->
-                            s == scope
+                        ZoneDisplay foundZone _ s ->
+                            foundZone == requestedZone && s == scope
 
                         _ ->
                             False
@@ -56,22 +56,22 @@ getConfig configs scope =
 
 
 getMostSpecific : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String Configuration -> Zone -> Scope -> Maybe Configuration
-getMostSpecific types configs _ scope =
+getMostSpecific types configs zone scope =
     -- returns the most specific config for a given zone and scope
-    findFirst configs (List.reverse <| getUpperList types scope [])
+    findFirst zone configs (List.reverse <| getUpperList types scope [])
 
 
-findFirst : Dict String Configuration -> List Scope -> Maybe Configuration
-findFirst configs scopes =
+findFirst : Zone -> Dict String Configuration -> List Scope -> Maybe Configuration
+findFirst zone configs scopes =
     -- from a list of upperScopes, find the first one for which a config exists
     scopes
         |> List.head
         |> Maybe.map
             (\firstScope ->
-                case getConfig configs firstScope of
+                case getConfig zone configs firstScope of
                     Nothing ->
                         List.tail scopes
-                            |> Maybe.andThen (findFirst configs)
+                            |> Maybe.andThen (findFirst zone configs)
 
                     Just config ->
                         Just config
