@@ -1,4 +1,4 @@
-module Zone.AddPage exposing (Flags, Model, Msg(..), match, page)
+module Configuration.Zone.AddPage exposing (Flags, Model, Msg(..), match, page)
 
 import Configuration exposing (Configuration(..))
 import Dict exposing (Dict)
@@ -22,8 +22,8 @@ import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.MultiSelect exposing (multiSelect)
 import View.Style exposing (..)
-import Zone.Fragment as Fragment exposing (Fragment(..))
-import Zone.Zone as Zone exposing (Zone(..))
+import Configuration.Zone.Fragment as Fragment exposing (Fragment(..))
+import Configuration.Zone as Zone exposing (Zone(..))
 
 
 type Msg

@@ -1,4 +1,4 @@
-module Zone.Fragment exposing (Fragment(..), decoder, encode, toDesc, toString)
+module Configuration.Zone.Fragment exposing (Fragment(..), decoder, encode, toDesc, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

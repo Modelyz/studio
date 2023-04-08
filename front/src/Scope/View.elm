@@ -14,8 +14,8 @@ import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
-import Zone.View exposing (displayZone)
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone exposing (Zone(..))
 
 
 toDisplay : State -> Scope -> String

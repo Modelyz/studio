@@ -1,4 +1,4 @@
-module Zone.View exposing (displayZone)
+module Configuration.Zone.View exposing (displayZone)
 
 import Configuration as Config exposing (Configuration(..))
 import Dict
@@ -13,8 +13,8 @@ import Scope exposing (Scope(..))
 import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
-import Zone.Fragment exposing (Fragment(..))
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.Fragment exposing (Fragment(..))
+import Configuration.Zone exposing (Zone(..))
 
 
 displayZone : State -> Zone -> Type -> Uuid -> String

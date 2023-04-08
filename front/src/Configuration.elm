@@ -7,8 +7,8 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
 import Type exposing (Type)
-import Zone.Fragment as Fragment exposing (Fragment)
-import Zone.Zone as Zone exposing (Zone)
+import Configuration.Zone.Fragment as Fragment exposing (Fragment)
+import Configuration.Zone as Zone exposing (Zone)
 
 
 type

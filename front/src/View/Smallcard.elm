@@ -1,5 +1,7 @@
 module View.Smallcard exposing (clickableCard, clickableRemovableCard, halfCard, itemClickableCard, tClickableCard, tClickableRemovableCard, viewHalfCard)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict
 import Element exposing (..)
 import Element.Background as Background
@@ -12,8 +14,6 @@ import Type exposing (Type)
 import Util exposing (third)
 import View exposing (..)
 import View.Style exposing (..)
-import Zone.View
-import Zone.Zone exposing (Zone(..))
 
 
 
@@ -50,7 +50,7 @@ halfCard onDelete title =
 viewHalfCard : State -> Maybe msg -> Type -> Uuid -> Element msg
 viewHalfCard s maybeOnDelete t uuid =
     row [ Background.color color.item.selected ]
-        [ el [ padding 10 ] (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        [ el [ padding 10 ] (text <| displayZone s SmallcardTitle t uuid)
         , Maybe.map (\onDelete -> button.secondary (Ok onDelete) "×") maybeOnDelete |> Maybe.withDefault none
         ]
 
@@ -59,10 +59,10 @@ itemClickableCard : State -> (Scope -> msg) -> Type -> Uuid -> Element msg
 itemClickableCard s onInput t uuid =
     clickableCard
         (onInput (IsItem t uuid))
-        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (text <| displayZone s SmallcardTitle t uuid)
         (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- TODO check? (Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> displayZone s SmallcardTitle {- TODO check? (Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
@@ -72,10 +72,10 @@ tClickableCard : State -> msg -> Type -> Uuid -> Element msg
 tClickableCard s onInput t uuid =
     clickableCard
         onInput
-        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (text <| displayZone s SmallcardTitle t uuid)
         (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )
@@ -86,10 +86,10 @@ tClickableRemovableCard s onChoose onDelete t uuid =
     clickableRemovableCard
         onChoose
         onDelete
-        (text <| Zone.View.displayZone s SmallcardTitle t uuid)
+        (text <| displayZone s SmallcardTitle t uuid)
         (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> Zone.View.displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
             |> Maybe.withDefault ""
             |> text
         )

@@ -1,6 +1,8 @@
 module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
 
 import Browser.Navigation as Nav
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Element exposing (Color, rgb255)
 import Hierarchy.Type as HType
 import Prng.Uuid as Uuid
@@ -10,8 +12,6 @@ import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (QueryParameter, absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
-import Zone.View
-import Zone.Zone exposing (Zone(..))
 
 
 type Route
@@ -371,7 +371,7 @@ toDesc s r =
             "Home"
 
         Entity e (List (Just uuid)) ->
-            Maybe.map2 (Zone.View.displayZone s SmallcardTitle) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+            Maybe.map2 (displayZone s SmallcardTitle) (toType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e

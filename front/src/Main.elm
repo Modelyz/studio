@@ -14,6 +14,9 @@ import Commitment.ViewPage
 import CommitmentType.AddPage
 import CommitmentType.ListPage
 import CommitmentType.ViewPage
+import Configuration.Zone.AddPage
+import Configuration.Zone.ListPage
+import Configuration.Zone.ViewPage
 import Contract.AddPage
 import Contract.ListPage
 import Contract.ViewPage
@@ -62,9 +65,6 @@ import Value.ViewPage
 import View exposing (View, h1)
 import View.Navbar as Navbar
 import View.Style as Style exposing (WindowSize, color)
-import Zone.AddPage
-import Zone.ListPage
-import Zone.ViewPage
 
 
 port messagesReader : (Encode.Value -> msg) -> Sub msg
@@ -213,9 +213,9 @@ main =
         |> Spa.addPublicPage mappers Ident.ListPage.match Ident.ListPage.page
         |> Spa.addPublicPage mappers Ident.AddPage.match Ident.AddPage.page
         |> Spa.addPublicPage mappers Ident.ViewPage.match Ident.ViewPage.page
-        |> Spa.addPublicPage mappers Zone.ListPage.match Zone.ListPage.page
-        |> Spa.addPublicPage mappers Zone.AddPage.match Zone.AddPage.page
-        |> Spa.addPublicPage mappers Zone.ViewPage.match Zone.ViewPage.page
+        |> Spa.addPublicPage mappers Configuration.Zone.ListPage.match Configuration.Zone.ListPage.page
+        |> Spa.addPublicPage mappers Configuration.Zone.AddPage.match Configuration.Zone.AddPage.page
+        |> Spa.addPublicPage mappers Configuration.Zone.ViewPage.match Configuration.Zone.ViewPage.page
         -- Value
         |> Spa.addPublicPage mappers Value.ListPage.match Value.ListPage.page
         |> Spa.addPublicPage mappers Value.AddPage.match Value.AddPage.page

@@ -1,4 +1,4 @@
-module Zone.Zone exposing (Zone(..), all, compare, decoder, encode, toDesc)
+module Configuration.Zone exposing (Zone(..), all, compare, decoder, encode, toDesc)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

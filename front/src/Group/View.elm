@@ -10,8 +10,8 @@ import Type exposing (Type)
 import Typed.Type as TType
 import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
-import Zone.View exposing (displayZone)
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone exposing (Zone(..))
 
 
 displayGroupTable : String -> List String -> Element msg

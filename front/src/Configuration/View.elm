@@ -5,9 +5,9 @@ import Prng.Uuid as Uuid
 import Scope.View
 import Shared
 import Type
-import Zone.Fragment as Fragment
-import Zone.View exposing (displayZone)
-import Zone.Zone as Zone exposing (Zone(..))
+import Configuration.Zone.Fragment as Fragment
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone as Zone exposing (Zone(..))
 
 
 view : Configuration -> String

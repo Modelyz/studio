@@ -8,8 +8,8 @@ import Shared
 import Type exposing (Type, toType)
 import View exposing (headerCell)
 import View.Style exposing (..)
-import Zone.View exposing (displayZone)
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone exposing (Zone(..))
 
 
 typeColumn : Shared.Model -> Column ( Uuid, Type, Maybe Uuid ) msg

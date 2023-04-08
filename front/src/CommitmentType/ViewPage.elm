@@ -21,8 +21,8 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Zone.View exposing (displayZone)
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone exposing (Zone(..))
 
 
 mainHType : Type

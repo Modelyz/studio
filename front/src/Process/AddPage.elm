@@ -30,8 +30,8 @@ import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import Zone.View exposing (displayZone)
-import Zone.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
+import Configuration.Zone exposing (Zone(..))
 
 
 typedConstructor : TType.Type

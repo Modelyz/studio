@@ -1,4 +1,4 @@
-module Zone.ListPage exposing (Flags, Model, Msg, match, page)
+module Configuration.Zone.ListPage exposing (Flags, Model, Msg, match, page)
 
 import Configuration exposing (Configuration)
 import Configuration.View
