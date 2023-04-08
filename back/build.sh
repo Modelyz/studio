@@ -1,7 +1,7 @@
 #!/bin/bash
 
 OPT_DEVEL='--ghc-options="-Wall"'
-OPT_OPTIMIZE=' -O2 --ghc-options="-Wall" --enable-split-objs --enable-executable-stripping --enable-library-stripping --enable-executable-static'
+OPT_OPTIMIZE=' -O2 --ghc-options="-Wall" --enable-executable-stripping --enable-library-stripping --enable-executable-static'
 INSTALLDIR=../build
 OPT_INSTALL="--installdir=$INSTALLDIR --overwrite-policy=always --install-method=copy"
 
