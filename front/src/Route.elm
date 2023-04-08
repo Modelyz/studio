@@ -52,25 +52,9 @@ type ViewSegment
     | Add (Maybe String)
 
 
-segmentToUuid : ViewSegment -> Maybe Uuid
-segmentToUuid vs =
-    case vs of
-        View uuid _ ->
-            Uuid.fromString uuid
-
-        Edit uuid _ ->
-            Uuid.fromString uuid
-
-        List muuid ->
-            muuid |> Maybe.andThen Uuid.fromString
-
-        Add muuid ->
-            muuid |> Maybe.andThen Uuid.fromString
-
-
 toTypeFilter : ViewSegment -> Maybe String
-toTypeFilter v =
-    case v of
+toTypeFilter vs =
+    case vs of
         View _ f ->
             f
 
@@ -416,34 +400,19 @@ toDesc s route =
             entityToDesc e
 
 
-isMenu : State -> Route -> Bool
-isMenu s route =
-    case route of
-        Entity e vs ->
-            let
-                muuid =
-                    segmentToUuid vs
+isMenu : State -> { a | uuid : Uuid, what : HType.Type } -> Bool
+isMenu s entity =
+    Dict.get (Config.compare (MenuDisplay entity.what entity.uuid False)) s.configs
+        |> Maybe.map
+            (\config ->
+                case config of
+                    MenuDisplay _ _ bool ->
+                        bool
 
-                menudisplay =
-                    Maybe.map3 MenuDisplay (toHType e) muuid (Just False)
-
-                mconfig =
-                    menudisplay |> Maybe.andThen (\md -> Dict.get (Config.compare md) s.configs)
-            in
-            Maybe.map
-                (\config ->
-                    case config of
-                        MenuDisplay _ _ bool ->
-                            bool
-
-                        _ ->
-                            False
-                )
-                mconfig
-                |> Maybe.withDefault False
-
-        _ ->
-            False
+                    _ ->
+                        True
+            )
+        |> Maybe.withDefault True
 
 
 redirect : Nav.Key -> Route -> Cmd msg

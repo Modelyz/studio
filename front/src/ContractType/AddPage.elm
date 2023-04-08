@@ -1,9 +1,13 @@
 module ContractType.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Configuration as Config exposing (Configuration(..))
+import Configuration.Zone exposing (Zone(..))
 import ContractType.ContractType exposing (ContractType)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Element.Font as Font
+import Element.Input as Input
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -24,6 +28,7 @@ import Value.Value as Value exposing (Value)
 import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
+import View.Style exposing (size)
 
 
 hereType : Type.Type
@@ -47,6 +52,8 @@ type alias Model =
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
+    , hadMenu : Bool
+    , isMenu : Bool
     }
 
 
@@ -55,11 +62,13 @@ type Step
     | StepIdentifiers
     | StepValues
     | StepGroups
+    | StepOptions
 
 
 type Msg
     = InputType (Maybe Uuid)
     | InputIdentifier Identifier
+    | InputIsMenu Bool
     | GroupMsg Group.Input.Msg
     | InputValue Value
     | Button Step.Msg
@@ -109,9 +118,11 @@ init s f =
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , gsubmodel = initgroups
+            , isMenu = True
+            , hadMenu = True
             , warning = ""
             , step = Step.Step StepType
-            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepGroups ]
+            , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepOptions, Step.Step StepGroups ]
             }
     in
     f.uuid
@@ -124,6 +135,20 @@ init s f =
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
 
+                    hadMenu =
+                        Config.onlyMenu s.state.configs
+                            |> Dict.get (Config.compare (MenuDisplay HType.ContractType uuid False))
+                            |> Maybe.map
+                                (\config ->
+                                    case config of
+                                        MenuDisplay _ _ isMenu ->
+                                            isMenu
+
+                                        _ ->
+                                            False
+                                )
+                            |> Maybe.withDefault False
+
                     ( editgroups, editcmd ) =
                         Group.Input.init s gs
                 in
@@ -133,6 +158,8 @@ init s f =
                     , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
                     , gsubmodel = editgroups
+                    , hadMenu = hadMenu
+                    , isMenu = hadMenu
                   }
                 , Effect.batch
                     [ closeMenu f s.menu
@@ -167,6 +194,9 @@ update s msg model =
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
 
+        InputIsMenu isMenu ->
+            ( { model | isMenu = isMenu }, Effect.none )
+
         GroupMsg submsg ->
             let
                 ( submodel, subcmd ) =
@@ -185,6 +215,12 @@ update s msg model =
                                 ++ List.map Message.AddedValue (Dict.values model.values)
                                 ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                                ++ (if model.hadMenu == model.isMenu then
+                                        []
+
+                                    else
+                                        [ Message.Configured <| MenuDisplay HType.ContractType t.uuid model.isMenu ]
+                                   )
                             )
                         , redirect s.navkey (Route.Entity Route.ContractType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
                         ]
@@ -210,16 +246,7 @@ view _ model =
 checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
-        Step StepType ->
-            Ok ()
-
-        Step StepIdentifiers ->
-            Ok ()
-
-        Step StepValues ->
-            Ok ()
-
-        Step StepGroups ->
+        _ ->
             Ok ()
 
 
@@ -235,7 +262,7 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     flatSelect s
-                        { what = Type.HType HType.ContractType
+                        { what = hereType
                         , muuid = model.type_
                         , onInput = InputType
                         , title = "Parent Type:"
@@ -246,6 +273,20 @@ viewContent model s =
 
                 Step.Step StepGroups ->
                     Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+
+                Step.Step StepOptions ->
+                    column [ alignTop, width <| minimum 200 fill, spacing 10 ]
+                        [ h3 "Options:"
+                        , row [ Font.size size.text.main ]
+                            [ Input.checkbox
+                                []
+                                { onChange = InputIsMenu
+                                , icon = Input.defaultCheckbox
+                                , checked = model.isMenu
+                                , label = Input.labelRight [] <| text "Display as a menu item"
+                                }
+                            ]
+                        ]
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers

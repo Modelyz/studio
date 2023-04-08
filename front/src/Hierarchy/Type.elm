@@ -1,4 +1,4 @@
-module Hierarchy.Type exposing (Type(..), all, decoder, encode, fromString, toPluralString, toString)
+module Hierarchy.Type exposing (Type(..), all, compare, decoder, encode, fromString, toPluralString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -44,6 +44,11 @@ toString t =
 
         GroupType ->
             "GroupType"
+
+
+compare : Type -> String
+compare =
+    toString
 
 
 encode : Type -> Encode.Value

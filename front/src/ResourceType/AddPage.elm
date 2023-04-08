@@ -119,8 +119,8 @@ init s f =
             , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , gsubmodel = initgroups
-            , isMenu = False
-            , hadMenu = False
+            , isMenu = True
+            , hadMenu = True
             , warning = ""
             , step = Step.Step StepType
             , steps = [ Step.Step StepType, Step.Step StepIdentifiers, Step.Step StepValues, Step.Step StepOptions, Step.Step StepGroups ]
@@ -138,7 +138,7 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay hereType uuid False))
+                            |> Dict.get (Config.compare (MenuDisplay HType.ResourceType uuid False))
                             |> Maybe.map
                                 (\config ->
                                     case config of
@@ -220,7 +220,7 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Message.Configured <| MenuDisplay hereType t.uuid model.isMenu ]
+                                        [ Message.Configured <| MenuDisplay HType.ResourceType t.uuid model.isMenu ]
                                    )
                             )
                         , redirect s.navkey (Route.Entity Route.ResourceType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd

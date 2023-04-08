@@ -3,19 +3,20 @@ module Configuration exposing (Configuration(..), compare, decoder, encode, getM
 import Configuration.Zone as Zone exposing (Zone)
 import Configuration.Zone.Fragment as Fragment exposing (Fragment)
 import Dict exposing (Dict)
+import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope as Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
-import Type exposing (Type)
+import Type exposing (Type(..))
 
 
 type
     Configuration
     -- the list of identifier types to display on each zone
     = ZoneDisplay Zone (List Fragment) Scope
-    | MenuDisplay Type Uuid Bool
+    | MenuDisplay HType.Type Uuid Bool
 
 
 onlyMenu : Dict String Configuration -> Dict String Configuration
@@ -100,7 +101,7 @@ compare config =
             "ZoneDisplay" ++ "/" ++ Zone.compare zone ++ "/" ++ Scope.compare scope
 
         MenuDisplay type_ uuid _ ->
-            "MenuDisplay" ++ "/" ++ Type.compare type_ ++ "/" ++ Uuid.toString uuid
+            "MenuDisplay" ++ "/" ++ HType.compare type_ ++ "/" ++ Uuid.toString uuid
 
 
 encode : Configuration -> Encode.Value
@@ -117,7 +118,7 @@ encode c =
         MenuDisplay type_ uuid isMenu ->
             Encode.object
                 [ ( "what", Encode.string "MenuDisplay" )
-                , ( "type", Type.encode type_ )
+                , ( "type", HType.encode type_ )
                 , ( "uuid", Encode.string (Uuid.toString uuid) )
                 , ( "isMenu", Encode.bool isMenu )
                 ]
@@ -137,7 +138,7 @@ decoder =
 
                     "MenuDisplay" ->
                         Decode.map3 MenuDisplay
-                            (Decode.field "type" Type.decoder)
+                            (Decode.field "type" HType.decoder)
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "isMenu" Decode.bool)
 

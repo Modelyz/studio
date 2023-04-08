@@ -49,37 +49,37 @@ userLinks s r =
     menuitem s r Route.Home
         :: (s.state.resourceTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Resource (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.eventTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.agentTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.commitmentTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.contractTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.processTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid)))
            )
         ++ (s.state.groupTypes
                 |> Dict.values
-                |> List.filter (always <| Route.isMenu s.state r)
+                |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid)))
            )
 
