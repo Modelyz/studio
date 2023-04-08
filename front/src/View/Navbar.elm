@@ -10,7 +10,7 @@ import Prng.Uuid as Uuid
 import Route exposing (Route, toString)
 import Shared
 import Type exposing (Type(..))
-import View exposing (hamburger, separator, switch)
+import View
 import View.Style as Style exposing (color, navbarHoverstyle)
 import Websocket as WS
 
@@ -88,9 +88,9 @@ mobile : String -> Shared.Model -> Route -> Element Shared.Msg
 mobile title s r =
     column [ width fill, padding 0, Font.color color.navbar.text, Background.color color.navbar.background ] <|
         List.intersperse
-            (separator color.navbar.separator)
+            (View.separator color.navbar.separator)
         <|
-            hamburger title
+            View.hamburger title
                 :: (if s.menu == Style.MobileClosed then
                         []
 
@@ -104,17 +104,19 @@ desktop s r =
     column
         [ width (px 250), padding 10, alignTop, height fill, Font.color color.navbar.text, Background.color color.navbar.background, clip ]
     <|
-        List.intersperse (separator color.navbar.separator) (links s r)
+        List.intersperse (View.separator color.navbar.separator) (links s r)
             ++ [ column [ width fill, spacing 5, alignBottom ]
                     [ row [ centerX, Font.color color.navbar.text, padding 10, Font.size 15, Font.bold ] [ text "Studio ", newTabLink [ Font.regular ] { url = "/changelog", label = text <| "(version " ++ String.fromInt s.version ++ ")" } ]
-                    , separator color.navbar.separator
+                    , View.separator color.navbar.separator
                     , row [ width fill ]
                         [ column [ width fill ]
                             [ el [ paddingXY 0 5, htmlAttribute <| Attr.title <| WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
                             , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| "IO  " ++ IO.toEmoji s.iostatus)
                             ]
                         , column [ width fill, centerX, centerY ]
-                            [ switch Shared.SwitchAdmin s.admin "user" "admin" ]
+                            [ View.switch Shared.SwitchAdmin s.admin "user" "admin"
+                            , View.switch Shared.SwitchOffline s.admin "online" "offline"
+                            ]
                         ]
                     ]
                ]

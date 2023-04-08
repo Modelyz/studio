@@ -2,8 +2,9 @@
 
 [Back to app](../)
 
-## version 13 -- unreleased
+## version 13 -- 2023-04-08
 
+* First draft on 3 micro-services and a shared Message lib
 * Improved display of value selection in a deeplink
 * Allow to display the qty, flow, provider and receiver in the display configuration of a commitment or event
 * Allow to choose the Process Type when creating an Event
@@ -16,8 +17,9 @@
 * Impoved the Fragment selection in the zone display configuration
 * Added a Today button in the date selector
 * Allow percentage as rational input fields
-* Added the Menu as a distinct display zone for configuration
-* Internal changes
+* Allow to change the display of the menu items
+* Allow to choose which entity Types to display in the menu
+* Internal changes and improvements
 
 ## version 12 -- 2023-01-20
 

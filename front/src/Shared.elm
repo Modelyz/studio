@@ -30,6 +30,7 @@ type alias Model =
     , windowSize : WindowSize
     , menu : Menu
     , admin : Bool
+    , offline : Bool
 
     -- ES and WS related
     , iostatus : IOStatus
@@ -50,6 +51,7 @@ type Msg
     = WindowResized WindowSize
     | ToggleMenu
     | SwitchAdmin Bool
+    | SwitchOffline Bool
     | SetRoute Route
     | WSDisconnected Decode.Value
     | WSError Decode.Value
@@ -107,6 +109,7 @@ init value navkey =
                     else
                         Desktop
               , admin = True
+              , offline = True
               , iostatus = ESReading
               , wsstatus = WSClosed
               , timeoutReconnect = 1
@@ -126,6 +129,7 @@ init value navkey =
               , navkey = navkey
               , windowSize = WindowSize 1024 768
               , admin = False
+              , offline = True
               , menu = Desktop
               , iostatus = IOError <| "Wrong init flags: " ++ errorToString err
               , wsstatus = WSClosed
@@ -182,6 +186,13 @@ update msg model =
         SwitchAdmin b ->
             ( { model
                 | admin = b
+              }
+            , Cmd.none
+            )
+
+        SwitchOffline b ->
+            ( { model
+                | offline = b
               }
             , Cmd.none
             )
@@ -279,16 +290,20 @@ update msg model =
         SendMessages messages ->
             -- send the new messages and the pending ones
             ( { model | iostatus = WSSending, currentSeed = newSeed }
-            , WS.wsSend <|
-                Encode.object <|
-                    List.singleton <|
-                        Tuple.pair "messages" <|
-                            Encode.list Message.encode <|
-                                Dict.values <|
-                                    Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
-                                        Dict.fromList <|
-                                            List.map (\m -> ( Message.compare m, m )) <|
-                                                messages
+            , if model.offline then
+                Cmd.none
+
+              else
+                WS.wsSend <|
+                    Encode.object <|
+                        List.singleton <|
+                            Tuple.pair "messages" <|
+                                Encode.list Message.encode <|
+                                    Dict.values <|
+                                        Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
+                                            Dict.fromList <|
+                                                List.map (\m -> ( Message.compare m, m )) <|
+                                                    messages
             )
 
         StoreMessagesToSend messages ->
