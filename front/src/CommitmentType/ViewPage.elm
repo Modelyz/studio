@@ -114,12 +114,12 @@ viewContent model s =
         "Commitment Type"
         [ button.primary (Ok Edit) "Edit" ]
         [ h2 "Identifiers:"
-        , text <| displayZone s.state SmallcardTitle mainHType model.uuid
+        , text <| displayZone s.state SmallcardZone mainHType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardZone mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> text
         , h2 "Values:"
@@ -127,7 +127,7 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.HType HType.CommitmentType, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         , h2 "Default quantity"
         , model.ct |> Maybe.map .qty |> Maybe.map (Expression.View.inputExpression s.state { context = ( Type.HType HType.CommitmentType, model.uuid ) }) |> Maybe.withDefault (text "(none)")

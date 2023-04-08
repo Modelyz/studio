@@ -39,7 +39,7 @@ description s c =
             Scope.View.toDisplay s.state scope
 
         MenuDisplay type_ uuid hasMenu ->
-            displayZone s.state SmallcardTitle type_ uuid
+            displayZone s.state SmallcardZone type_ uuid
                 ++ ": "
                 ++ (if hasMenu then
                         "visible"

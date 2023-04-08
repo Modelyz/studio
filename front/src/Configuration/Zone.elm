@@ -5,33 +5,33 @@ import Json.Encode as Encode
 
 
 type Zone
-    = SmallcardTitle
-    | SmallcardDescription
+    = SmallcardZone
+    | MenuZone
 
 
 all : List Zone
 all =
-    [ SmallcardTitle, SmallcardDescription ]
+    [ SmallcardZone, MenuZone ]
 
 
 toString : Zone -> String
 toString zone =
     case zone of
-        SmallcardTitle ->
-            "SmallcardTitle"
+        SmallcardZone ->
+            "SmallcardZone"
 
-        SmallcardDescription ->
-            "SmallcardDescription"
+        MenuZone ->
+            "MenuZone"
 
 
 toDesc : Zone -> String
 toDesc zone =
     case zone of
-        SmallcardTitle ->
+        SmallcardZone ->
             "Smallcard Title"
 
-        SmallcardDescription ->
-            "Smallcard Description"
+        MenuZone ->
+            "Menu Title"
 
 
 compare : Zone -> String
@@ -50,11 +50,11 @@ decoder =
         |> Decode.andThen
             (\zone ->
                 case zone of
-                    "SmallcardTitle" ->
-                        Decode.succeed SmallcardTitle
+                    "SmallcardZone" ->
+                        Decode.succeed SmallcardZone
 
-                    "SmallcardDescription" ->
-                        Decode.succeed SmallcardDescription
+                    "MenuZone" ->
+                        Decode.succeed MenuZone
 
                     _ ->
                         Decode.fail <| "Unknown Zone: " ++ zone

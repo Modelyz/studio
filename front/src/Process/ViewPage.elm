@@ -131,10 +131,10 @@ viewContent model s =
         "Process"
         [ button.primary (Ok Edit) "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardZone mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
-        , text <| displayZone s.state SmallcardTitle mainTType model.uuid
+        , text <| displayZone s.state SmallcardZone mainTType model.uuid
         , h2 "Contains:"
         , row [ spacing 5 ]
             (model.reconciliations
@@ -151,6 +151,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.TType TType.Process, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

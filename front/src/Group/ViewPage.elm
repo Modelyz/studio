@@ -118,12 +118,12 @@ viewContent model s =
         "Group"
         [ button.primary (Ok Edit) "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardZone mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
-        , text <| displayZone s.state SmallcardTitle mainTType model.uuid
+        , text <| displayZone s.state SmallcardZone mainTType model.uuid
         , h2 "Parent group:"
-        , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Group)) |> Maybe.withDefault "(None)" |> text
+        , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Group)) |> Maybe.withDefault "(None)" |> text
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Can contain:"
@@ -133,6 +133,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.TType TType.Group, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

@@ -19,7 +19,7 @@ typeColumn s =
     , view =
         \( _, t, mpuuid ) ->
             mpuuid
-                |> Maybe.map (displayZone s.state SmallcardTitle (toType t))
+                |> Maybe.map (displayZone s.state SmallcardZone (toType t))
                 |> Maybe.map (text >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ])
                 |> Maybe.withDefault (text "")
     }

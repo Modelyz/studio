@@ -134,7 +134,7 @@ viewContent model s =
         "Event"
         [ button.primary (Ok Edit) "Edit" ]
         [ Dict.get (Uuid.toString model.uuid) s.state.types
-            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardTitle mainHType puuid) mpuuid)
+            |> Maybe.andThen (\( _, _, mpuuid ) -> Maybe.map (\puuid -> displayZone s.state SmallcardZone mainHType puuid) mpuuid)
             |> Maybe.withDefault ""
             |> h1
         , h2 ("Date: " ++ DateTime.toString s.zone model.when)
@@ -142,11 +142,11 @@ viewContent model s =
             ("What: "
                 ++ (model.qty |> Maybe.map (\expr -> exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
                 ++ " "
-                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardTitle (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardZone (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )
-        , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
-        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardTitle (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
-        , text <| displayZone s.state SmallcardTitle mainTType model.uuid
+        , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
+        , text <| displayZone s.state SmallcardZone mainTType model.uuid
         , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
             |> displayIdentifierDict ""
         , h2 "Values:"
@@ -154,6 +154,6 @@ viewContent model s =
             |> displayValueDict s { context = ( Type.TType TType.Event, model.uuid ) } "(none)" s.state.values
         , h2 "Groups:"
         , model.groups
-            |> List.map (\guuid -> displayZone s.state SmallcardTitle (Type.TType TType.Group) guuid)
+            |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
         ]

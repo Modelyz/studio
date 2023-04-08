@@ -20,10 +20,10 @@ view s onChoose onDelete r =
     clickableRemovableCard
         (onChoose r.event)
         (onDelete r)
-        (text <| Rational.toFloatString r.qty ++ " / " ++ displayZone s SmallcardTitle (Type.TType TType.Event) r.event)
+        (text <| Rational.toFloatString r.qty ++ " / " ++ displayZone s SmallcardZone (Type.TType TType.Event) r.event)
         (Dict.get (Uuid.toString r.event) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> displayZone s SmallcardTitle {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.HType HType.EventType) puuid)
+            |> Maybe.map (\puuid -> displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.HType HType.EventType) puuid)
             |> Maybe.withDefault ""
             |> text
         )

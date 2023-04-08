@@ -16,6 +16,7 @@
 * Impoved the Fragment selection in the zone display configuration
 * Added a Today button in the date selector
 * Allow percentage as rational input fields
+* Added the Menu as a distinct display zone for configuration
 * Internal changes
 
 ## version 12 -- 2023-01-20

@@ -520,7 +520,7 @@ inputPartialProcess s partialProcesses index ( process, input ) =
                     )
             )
             input
-        , text <| "for: " ++ displayZone s SmallcardTitle (Type.TType TType.Process) process
+        , text <| "for: " ++ displayZone s SmallcardZone (Type.TType TType.Process) process
         ]
 
 
@@ -535,7 +535,7 @@ viewContent model s =
                         , selection = .processTypes >> Dict.values
                         , title = "Process Types: "
                         , description = "Select all the Process Types related to this new Event"
-                        , toString = displayZone s.state SmallcardTitle (Type.HType HType.ProcessType)
+                        , toString = displayZone s.state SmallcardZone (Type.HType HType.ProcessType)
                         , empty = "There are no Process Types yet to choose from"
                         , toDesc = always ""
                         , height = 50
@@ -551,7 +551,7 @@ viewContent model s =
                         , selection = .processes >> Dict.values
                         , title = "Processes: "
                         , description = "Select the processes that correspond to this new event. Leave empty to create a new process."
-                        , toString = displayZone s.state SmallcardTitle (Type.TType TType.Process)
+                        , toString = displayZone s.state SmallcardZone (Type.TType TType.Process)
                         , empty = "There are no processes yet to choose from"
                         , toDesc = always ""
                         , height = 50

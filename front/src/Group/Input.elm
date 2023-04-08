@@ -187,7 +187,7 @@ inputGroups c s model =
                                 button.secondary
                             )
                                 (Ok <| SetCurrentGT gt)
-                                (displayZone s.state SmallcardTitle (Type.HType HType.GroupType) gt.uuid)
+                                (displayZone s.state SmallcardZone (Type.HType HType.GroupType) gt.uuid)
                         )
                 )
             , column [ spacing 10 ]
@@ -197,7 +197,7 @@ inputGroups c s model =
                         (\( gt, gdict ) ->
                             let
                                 gtdisplay =
-                                    displayZone s.state SmallcardTitle (Type.HType HType.GroupType) gt.uuid
+                                    displayZone s.state SmallcardZone (Type.HType HType.GroupType) gt.uuid
                             in
                             column [ spacing 20 ]
                                 [ wrappedRow [ width <| minimum 50 shrink, height (px 48), Border.width 2, padding 3, spacing 5, Border.color color.item.border ] <|
