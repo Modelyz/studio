@@ -5,10 +5,6 @@ set -e
 export APPVERSION=13 # don't forget the CHANGELOG
 export IDBVERSION=46 ### IndexedDB version. Upgrade when a json format change occurs ###
 
-if [[ -z "${WSS}" ]]; then
-    export WSS="ws://localhost:8080"
-fi
-
 # change to the dir of this script
 pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -34,9 +30,6 @@ else
     echo "    SIZE = `ls -lh ../build/static/app.js | cut -d' ' -f5`"
     export APP=app
 fi
-
-# build the index
-envsubst < src/index.html > ../build/index.html
 
 # generate the changelog
 markdown ../CHANGELOG.md > ../build/static/changelog.html
