@@ -14,6 +14,7 @@ import Url exposing (Url, percentEncode)
 import Url.Builder as Builder exposing (QueryParameter, absolute)
 import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
 import Url.Parser.Query as Query
+import View.Style exposing (color)
 
 
 type Route
@@ -72,7 +73,7 @@ toColor : Route -> Color
 toColor route =
     case route of
         Home ->
-            rgb255 0xC5 0xE8 0xF7
+            color.content.background
 
         Entity Resource _ ->
             rgb255 0xD3 0x87 0xF7

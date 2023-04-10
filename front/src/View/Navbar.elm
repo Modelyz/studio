@@ -86,8 +86,8 @@ userLinks s r =
                 |> View.withDefaultContent
                     (row
                         [ Font.size 15, spacing 10, padding 10, width fill, mouseOver navbarHoverstyle, Background.color color.navbar.hover ]
-                        [ el [ width (px 15), alignLeft ] (text " ")
-                        , View.p "Start configuring some user types in the admin menu ↓"
+                        [ el [ Background.color color.content.background, width (px 15), alignLeft ] (text " ")
+                        , View.p "(no configuration yet)"
                         ]
                     )
            )

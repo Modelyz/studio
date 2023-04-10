@@ -4,6 +4,7 @@ import Dict
 import Effect exposing (Effect)
 import Element as E exposing (..)
 import Element.Background as Background
+import Element.Font as Font
 import Prng.Uuid as Uuid
 import Route exposing (Route)
 import Shared
@@ -103,5 +104,12 @@ userHome s =
                 ++ (s.state.contractTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid))))
                 ++ (s.state.processTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid))))
                 ++ (s.state.groupTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid))))
+                |> View.withDefaultContent
+                    (row
+                        [ Font.size 15, spacing 10, padding 10, width fill, Background.color color.navbar.hover ]
+                        [ el [ width (px 15), alignLeft ] (text " ")
+                        , View.p "Start configuring some user types by switching to the admin menu in the bottom-left corner"
+                        ]
+                    )
             )
         ]
