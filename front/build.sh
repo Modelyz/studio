@@ -38,7 +38,7 @@ else # dev build
 fi
 
 # index file (will be completed with WSS in the docker entry-point
-envsubst < ../build/index.html > src/index.html
+envsubst < src/index.html > ../build/index.html
 
 # generate the changelog
 markdown ../CHANGELOG.md > ../build/static/changelog.html
