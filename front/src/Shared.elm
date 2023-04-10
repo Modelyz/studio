@@ -108,7 +108,7 @@ init value navkey =
 
                     else
                         Desktop
-              , admin = True
+              , admin = False
               , offline = False
               , iostatus = ESReading
               , wsstatus = WSClosed
@@ -128,7 +128,7 @@ init value navkey =
               , route = Route.Home
               , navkey = navkey
               , windowSize = WindowSize 1024 768
-              , admin = False
+              , admin = True
               , offline = True
               , menu = Desktop
               , iostatus = IOError <| "Wrong init flags: " ++ errorToString err
