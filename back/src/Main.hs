@@ -22,7 +22,7 @@ import Network.WebSockets qualified as WS
 import Options.Applicative
 
 -- dir, port, file
-data Options = Options !String !Port !FilePath !Host !Port
+data Options = Options !String !Host !Port !FilePath !Host !Port
 
 type NumClient = Int
 
@@ -42,7 +42,8 @@ options :: Parser Options
 options =
     Options
         <$> strOption (short 'd' <> long "dir" <> value "." <> help "Directory containing the index file and static directory")
-        <*> option auto (long "port" <> short 'p' <> metavar "PORT" <> value 8080 <> help "Bind socket to this port.  [default: 8080]")
+        <*> strOption (long "host" <> value "localhost" <> help "IP or Hostname to listen to. [default: localhost]")
+        <*> option auto (long "port" <> short 'p' <> metavar "PORT" <> value 8080 <> help "Port number to listen to.  [default: 8080]")
         <*> strOption (short 'f' <> long "file" <> value "messagestore.txt" <> help "Filename of the file containing messages")
         <*> strOption (long "store_host" <> value "localhost" <> help "Hostname of the Store service. [default: localhost]")
         <*> option auto (long "store_port" <> metavar "STORE_PORT" <> value 8081 <> help "Port of the Store service.  [default: 8081]")
@@ -202,7 +203,7 @@ handleMessageFromStore msgPath conn nc chan msg =
         writeChan chan (nc, msg)
 
 httpApp :: Options -> Wai.Application
-httpApp (Options d _ _ _ _) request respond = do
+httpApp (Options d _ _ _ _ _) request respond = do
     Wai.rawPathInfo request
         & decodeUtf8
         & T.append "Request "
@@ -235,7 +236,7 @@ connectClient waitTime previousTime host port msgPath storeChan stateMV = do
         )
 
 serve :: Options -> IO ()
-serve (Options d p msgPath host port) = do
+serve (Options d host port msgPath storeHost storePort) = do
     ncMV <- newMVar 0
     chan <- newChan -- initial channel
     stateMV <- newMVar emptyState
@@ -252,10 +253,10 @@ serve (Options d p msgPath host port) = do
     putStrLn "New State:"
     print newState
     -- keep connection to the Store
-    _ <- forkIO $ connectClient 1 firstTime host port msgPath storeChan stateMV
-    putStrLn $ "Modelyz Studio, serving on http://localhost:" ++ show p ++ "/"
+    _ <- forkIO $ connectClient 1 firstTime storeHost port msgPath storeChan stateMV
+    putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
-    Warp.run p $ websocketsOr WS.defaultConnectionOptions (wsApp msgPath chan ncMV stateMV) $ httpApp (Options d p msgPath host port)
+    Warp.run port $ websocketsOr WS.defaultConnectionOptions (wsApp msgPath chan ncMV stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
 
 main :: IO ()
 main =
