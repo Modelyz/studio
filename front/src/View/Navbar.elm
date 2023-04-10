@@ -47,40 +47,48 @@ adminLinks s r =
 userLinks : Shared.Model -> Route -> List (Element Shared.Msg)
 userLinks s r =
     menuitem s r Route.Home
-        :: (s.state.resourceTypes
+        :: ((s.state.resourceTypes
                 |> Dict.values
                 |> List.filter (Route.isMenu s.state)
                 |> List.map (\e -> menuitem s r (Route.Entity Route.Resource (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.eventTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.agentTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.commitmentTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.contractTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.processTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid)))
-           )
-        ++ (s.state.groupTypes
-                |> Dict.values
-                |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid)))
+            )
+                ++ (s.state.eventTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                ++ (s.state.agentTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                ++ (s.state.commitmentTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                ++ (s.state.contractTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                ++ (s.state.processTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                ++ (s.state.groupTypes
+                        |> Dict.values
+                        |> List.filter (Route.isMenu s.state)
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid)))
+                   )
+                |> View.withDefaultContent
+                    (row
+                        [ Font.size 15, spacing 10, padding 10, width fill, mouseOver navbarHoverstyle, Background.color color.navbar.hover ]
+                        [ el [ width (px 15), alignLeft ] (text " ")
+                        , View.p "Start configuring some user types in the admin menu ↓"
+                        ]
+                    )
            )
 
 
