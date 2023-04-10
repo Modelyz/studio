@@ -31,6 +31,9 @@ else
     export APP=app
 fi
 
+# index file
+cp src/index.html build/index.html
+
 # generate the changelog
 markdown ../CHANGELOG.md > ../build/static/changelog.html
 
