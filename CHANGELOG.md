@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 14 -- unreleased
+
+* Switch to work offline
+
 ## version 13 -- 2023-04-08
 
 * First draft on 3 micro-services and a shared Message lib

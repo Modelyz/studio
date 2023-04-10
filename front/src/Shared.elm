@@ -16,7 +16,7 @@ import State exposing (State)
 import Task
 import Time exposing (millisToPosix, posixToMillis)
 import Url exposing (Url)
-import View.Style exposing (Menu(..), WindowSize, isMobile)
+import View.Style exposing (Menu(..), WindowSize, isMobile, size)
 import Websocket as WS exposing (WSStatus(..), wsConnect, wsSend)
 
 
@@ -109,7 +109,7 @@ init value navkey =
                     else
                         Desktop
               , admin = True
-              , offline = True
+              , offline = False
               , iostatus = ESReading
               , wsstatus = WSClosed
               , timeoutReconnect = 1
@@ -190,11 +190,21 @@ update msg model =
             , Cmd.none
             )
 
-        SwitchOffline b ->
+        SwitchOffline isOffline ->
             ( { model
-                | offline = b
+                | offline = isOffline
+                , wsstatus =
+                    if isOffline then
+                        WSOffline
+
+                    else
+                        WSConnecting
               }
-            , Cmd.none
+            , if isOffline then
+                Cmd.none
+
+              else
+                wsConnect ()
             )
 
         SetRoute route ->

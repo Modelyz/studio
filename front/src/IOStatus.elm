@@ -38,10 +38,10 @@ toEmoji status =
             "🔴"
 
         ESReading ->
-            "🔵"
+            "🟠"
 
         ESStoring ->
-            "🔵"
+            "🟠"
 
         WSSending ->
-            "🔵"
+            "🟠"

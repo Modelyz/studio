@@ -123,7 +123,7 @@ desktop s r =
                             ]
                         , column [ width fill, centerX, centerY ]
                             [ View.switch Shared.SwitchAdmin s.admin "user" "admin"
-                            , View.switch Shared.SwitchOffline s.admin "online" "offline"
+                            , View.switch Shared.SwitchOffline s.offline "online" "offline"
                             ]
                         ]
                     ]

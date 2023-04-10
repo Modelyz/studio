@@ -19,6 +19,7 @@ type WSStatus
     | WSClosed -- readyState 3: CLOSED
     | WSClosing -- readyState 2: CLOSING
     | WSConnecting -- readyState 0: CONNECTING
+    | WSOffline
 
 
 toText : WSStatus -> String
@@ -37,6 +38,9 @@ toText status =
         WSConnecting ->
             "WSConnecting"
 
+        WSOffline ->
+            "WSOffline"
+
 
 toEmoji : WSStatus -> String
 toEmoji status =
@@ -53,6 +57,9 @@ toEmoji status =
 
         WSConnecting ->
             "🟠"
+
+        WSOffline ->
+            "⚫"
 
 
 fromReadyState : Decode.Value -> WSStatus
