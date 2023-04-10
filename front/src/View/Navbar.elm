@@ -3,6 +3,7 @@ module View.Navbar exposing (view)
 import Dict
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Html.Attributes as Attr
 import IOStatus as IO
@@ -10,7 +11,7 @@ import Prng.Uuid as Uuid
 import Route exposing (Route, toString)
 import Shared
 import Type exposing (Type(..))
-import View
+import View exposing (zero)
 import View.Style as Style exposing (color, navbarHoverstyle)
 import Websocket as WS
 
@@ -117,11 +118,11 @@ desktop s r =
                     [ row [ centerX, Font.color color.navbar.text, padding 10, Font.size 15, Font.bold ] [ text "Studio ", newTabLink [ Font.regular ] { url = "/changelog", label = text <| "(version " ++ String.fromInt s.version ++ ")" } ]
                     , View.separator color.navbar.separator
                     , row [ width fill ]
-                        [ column [ width fill ]
-                            [ el [ paddingXY 0 5, htmlAttribute <| Attr.title <| WS.toText s.wsstatus ] (text <| "WS  " ++ WS.toEmoji s.wsstatus)
-                            , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| "IO  " ++ IO.toEmoji s.iostatus)
+                        [ column [ width fill, paddingXY 5 0 ]
+                            [ el [ paddingXY 0 5, htmlAttribute <| Attr.title <| WS.toText s.wsstatus ] (text <| WS.toEmoji s.wsstatus ++ " WS")
+                            , el [ htmlAttribute <| Attr.title <| IO.toText s.iostatus ] (text <| IO.toEmoji s.iostatus ++ " IO")
                             ]
-                        , column [ width fill, centerX, centerY ]
+                        , column [ Border.color color.navbar.separator, Border.widthEach { zero | left = 1 }, width fill, centerX, centerY ]
                             [ View.switch Shared.SwitchAdmin s.admin "user" "admin"
                             , View.switch Shared.SwitchOffline s.offline "online" "offline"
                             ]
