@@ -1,17 +1,9 @@
 module DateTime exposing (decodeMonth, decodeWeekday, encodeMonth, encodeWeekday, monthToLongString, monthToString, toStrMM, toString, weekdayToLongString, weekdayToString, zoneNameToString)
 
-import Calendar
-import Date exposing (Date, fromPosix)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events exposing (onClick)
-import Element.Font as Font
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Task
-import Time exposing (Month(..), Posix, Weekday(..), Zone, millisToPosix)
-import View.Style exposing (color, isMobile)
+import Time exposing (Month(..), Posix, Weekday(..), Zone)
 
 
 toString : Zone -> Posix -> String
@@ -197,48 +189,48 @@ weekdayToString weekday =
 
 decodeMonth : Decoder Month
 decodeMonth =
-    Decode.int
+    Decode.string
         |> Decode.andThen
             (\m ->
                 case m of
-                    1 ->
+                    "Jan" ->
                         Decode.succeed Jan
 
-                    2 ->
+                    "Feb" ->
                         Decode.succeed Feb
 
-                    3 ->
+                    "Mar" ->
                         Decode.succeed Mar
 
-                    4 ->
+                    "Apr" ->
                         Decode.succeed Apr
 
-                    5 ->
+                    "May" ->
                         Decode.succeed May
 
-                    6 ->
+                    "Jun" ->
                         Decode.succeed Jun
 
-                    7 ->
+                    "Jul" ->
                         Decode.succeed Jul
 
-                    8 ->
+                    "Aug" ->
                         Decode.succeed Aug
 
-                    9 ->
+                    "Sep" ->
                         Decode.succeed Sep
 
-                    10 ->
+                    "Oct" ->
                         Decode.succeed Oct
 
-                    11 ->
+                    "Nov" ->
                         Decode.succeed Nov
 
-                    12 ->
+                    "Dec" ->
                         Decode.succeed Dec
 
                     _ ->
-                        Decode.fail <| "Unkown month: " ++ String.fromInt m
+                        Decode.fail <| "Unkown month: " ++ m
             )
 
 
