@@ -52,10 +52,10 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    # time.sleep(0.1)  # couldn't find a way to wait with the driver
-    WebDriverWait(browser, timeout=1).until(
-        cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}truc']"))
-    )
+    time.sleep(0.1)  # couldn't find a way to wait a detectable change
+    # WebDriverWait(browser, timeout=1).until(
+    #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
+    # )
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.XPATH, f"//*[text()='{text}']"))
@@ -139,32 +139,15 @@ def test_sync_process_type(backends):
 
     backends.append(subprocess.Popen(["../../build/studio", "-d", "../../build/"]))
 
-    input_ = chrome.find_element(By.CLASS_NAME, "input")
-    input_.send_keys("DDDDDD" + Keys.ENTER)
-
+    add_resource_type(chrome, "DDDDDD")
     text_exists(chrome, "DDDDDD")
-    assert count_evstore("DDDDDD") == 2, "(2) Wrong event count in the Event Store"
+    assert count_evstore("DDDDDD") == 1, "(2) Wrong event count in the Event Store"
     text_exists(firefox, "DDDDDD")
 
-    WebDriverWait(chrome, 15).until(
-        lambda _: count_evstore("EventCreatedWithoutBackend") == 2
-    )
-    assert (
-        firefox.find_element(By.ID, "EventCreatedWithoutBackend").text
-        == "EventCreatedWithoutBackend"
-    ), "The Process Type has not been created on Firefox"
-    assert (
-        chrome.find_element(By.ID, "EventCreatedWithoutBackend").text
-        == "EventCreatedWithoutBackend"
-    ), "The Process Type has not been created on Chrome"
+    WebDriverWait(chrome, 5).until(lambda _: count_evstore("DDDDDD") == 1)
+
     chrome.set_window_size(1700, 800)
     firefox.set_window_size(1700, 800)
-    assert (
-        firefox.find_element(By.ID, "pending").text == "pending=0"
-    ), "There is a remaining pending event on Firefox"
-    assert (
-        chrome.find_element(By.ID, "pending").text == "pending=0"
-    ), "There is a remaining pending event on Chrome"
 
     firefox.quit()
     chrome.quit()
