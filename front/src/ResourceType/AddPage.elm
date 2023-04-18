@@ -88,7 +88,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ResourceType (Route.Add _) ->
+        Route.Entity Route.ResourceType (Route.Add _ _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.ResourceType (Route.Edit uuid _) ->

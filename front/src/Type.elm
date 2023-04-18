@@ -1,4 +1,4 @@
-module Type exposing (Type(..), compare, decoder, encode, fromType, hasCommonParent, isChildOf, isParentOf, isType, parents, toHierarchic, toPluralString, toString, toType, typeOf)
+module Type exposing (Type(..), compare, decoder, encode, fromType, hasCommonParent, isChildOf, isParentOf, isType, parents, toDisplay, toHierarchic, toPluralDisplay, toString, toType, typeOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
@@ -16,6 +16,16 @@ type
     | HType HType.Type
 
 
+toDisplay : Type -> String
+toDisplay t =
+    case t of
+        TType tt ->
+            TType.toString tt
+
+        HType ht ->
+            HType.toString ht
+
+
 toString : Type -> String
 toString t =
     case t of
@@ -26,14 +36,14 @@ toString t =
             HType.toString ht
 
 
-toPluralString : Type -> String
-toPluralString t =
+toPluralDisplay : Type -> String
+toPluralDisplay t =
     case t of
         TType tt ->
-            TType.toPluralString tt
+            TType.toPluralDisplay tt
 
         HType ht ->
-            HType.toPluralString ht
+            HType.toPluralDisplay ht
 
 
 fromString : String -> Maybe Type

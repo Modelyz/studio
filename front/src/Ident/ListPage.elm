@@ -61,7 +61,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.Add Nothing) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.Add Nothing Nothing) )
 
         View vtid ->
             ( model, Route.redirect s.navkey (Route.Entity Route.IdentifierType (Route.View vtid Nothing)) |> Effect.fromCmd )
@@ -70,7 +70,7 @@ update s msg model =
 view : Model -> View Msg
 view =
     always
-        { title = "IdentifierTypes"
+        { title = "Identifier Types"
         , attributes = []
         , element = viewContent
         , route = Route.Entity Route.IdentifierType (Route.List Nothing)
@@ -81,7 +81,7 @@ viewContent : Shared.Model -> Element Msg
 viewContent s =
     flatContainer s
         Nothing
-        "IdentifierTypes"
+        "Identifier Types"
         [ button.primary (Ok Add) "Add..."
         ]
         none

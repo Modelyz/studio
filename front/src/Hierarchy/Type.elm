@@ -1,4 +1,4 @@
-module Hierarchy.Type exposing (Type(..), all, compare, decoder, encode, fromString, toPluralString, toString)
+module Hierarchy.Type exposing (Type(..), all, compare, decoder, encode, fromString, toDisplay, toPluralDisplay, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -21,29 +21,34 @@ all =
     [ ResourceType, EventType, AgentType, CommitmentType, ContractType, ProcessType, GroupType ]
 
 
-toString : Type -> String
-toString t =
+toDisplay : Type -> String
+toDisplay t =
     case t of
         ResourceType ->
-            "ResourceType"
+            "Resource Type"
 
         EventType ->
-            "EventType"
+            "Event Type"
 
         AgentType ->
-            "AgentType"
+            "Agent Type"
 
         CommitmentType ->
-            "CommitmentType"
+            "Commitment Type"
 
         ContractType ->
-            "ContractType"
+            "Contract Type"
 
         ProcessType ->
-            "ProcessType"
+            "Process Type"
 
         GroupType ->
-            "GroupType"
+            "Group Type"
+
+
+toString : Type -> String
+toString t =
+    toDisplay t |> String.split " " |> String.join ""
 
 
 compare : Type -> String
@@ -61,10 +66,10 @@ decoder =
     Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))
 
 
-toPluralString : Type -> String
-toPluralString t =
+toPluralDisplay : Type -> String
+toPluralDisplay t =
     -- TODO not i18n friendly
-    toString t ++ "s"
+    toDisplay t ++ "s"
 
 
 fromString : String -> Maybe Type

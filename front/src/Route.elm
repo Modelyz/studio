@@ -1,4 +1,4 @@
-module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, isMenu, redirect, redirectAdd, toColor, toDesc, toRoute, toString, toTypeFilter)
+module Route exposing (EntitySegment(..), Route(..), ViewSegment(..), allBehaviours, allEntities, allTypes, entityToDesc, goBack, isMenu, redirect, redirectAdd, setHash, toColor, toDesc, toRoute, toString, toTypeFilter)
 
 import Browser.Navigation as Nav
 import Configuration as Config exposing (Configuration(..))
@@ -8,12 +8,14 @@ import Dict
 import Element exposing (Color, rgb255)
 import Hierarchy.Type as HType
 import Prng.Uuid as Uuid exposing (Uuid)
+import Scope exposing (Scope(..))
 import State exposing (State)
 import Type exposing (Type)
 import Url exposing (Url, percentEncode)
-import Url.Builder as Builder exposing (QueryParameter, absolute)
-import Url.Parser exposing ((</>), (<?>), Parser, custom, map, oneOf, s, top)
+import Url.Builder as Builder exposing (QueryParameter, Root(..), absolute)
+import Url.Parser as Parser exposing ((</>), (<?>), Parser, fragment, map, oneOf, s, top)
 import Url.Parser.Query as Query
+import Util exposing (otherwise)
 import View.Style exposing (color)
 
 
@@ -23,7 +25,7 @@ type Route
 
 
 type CustomUrl
-    = CustomUrl (List String) (List QueryParameter)
+    = CustomUrl (List String) (List QueryParameter) (Maybe String)
 
 
 type EntitySegment
@@ -50,7 +52,7 @@ type ViewSegment
     = View String (Maybe String)
     | Edit String (Maybe String)
     | List (Maybe String)
-    | Add (Maybe String)
+    | Add (Maybe String) (Maybe String) -- type=filter #hash
 
 
 toTypeFilter : ViewSegment -> Maybe String
@@ -65,7 +67,7 @@ toTypeFilter vs =
         List f ->
             f
 
-        Add f ->
+        Add f _ ->
             f
 
 
@@ -327,7 +329,7 @@ viewParser : Parser (ViewSegment -> a) a
 viewParser =
     oneOf
         [ map View (s "view" </> encodedString <?> Query.string "type")
-        , map Add (s "add" <?> Query.string "type")
+        , map Add (s "add" <?> Query.string "type" </> fragment identity)
         , map Edit (s "edit" </> encodedString <?> Query.string "type")
         , map List (s "list" <?> Query.string "type")
         ]
@@ -337,26 +339,41 @@ viewToCustomUrl : ViewSegment -> CustomUrl
 viewToCustomUrl v =
     case v of
         View s t ->
-            CustomUrl [ "view", percentEncode s ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
+            CustomUrl [ "view", percentEncode s ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
 
-        Add t ->
-            CustomUrl [ "add" ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
+        Add t mh ->
+            CustomUrl [ "add" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) mh
 
         Edit s t ->
-            CustomUrl [ "edit", percentEncode s ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
+            CustomUrl [ "edit", percentEncode s ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
 
         List t ->
-            CustomUrl [ "list" ] <| Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t
+            CustomUrl [ "list" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
 
 
 and : CustomUrl -> CustomUrl -> CustomUrl
-and (CustomUrl p1s q1s) (CustomUrl p2s q2s) =
-    CustomUrl (p1s ++ p2s) (q1s ++ q2s)
+and (CustomUrl p1s q1s mh1) (CustomUrl p2s q2s mh2) =
+    CustomUrl (p1s ++ p2s) (q1s ++ q2s) (mh2 |> otherwise mh1)
+
+
+setHash : Route -> Maybe Int -> Route
+setHash route stepnb =
+    case route of
+        Entity e v ->
+            case v of
+                Add t _ ->
+                    Entity e <| Add t (Maybe.map String.fromInt stepnb)
+
+                _ ->
+                    route
+
+        _ ->
+            route
 
 
 customToString : CustomUrl -> String
-customToString (CustomUrl ps qs) =
-    absolute ps qs
+customToString (CustomUrl ps qs mh) =
+    Builder.custom Absolute ps qs mh
 
 
 routeParser : Parser (Route -> a) a
@@ -369,12 +386,12 @@ routeParser =
 
 encodedString : Parser (String -> a) a
 encodedString =
-    custom "ENCODED STRING" Url.percentDecode
+    Parser.custom "ENCODED STRING" Url.percentDecode
 
 
 toRoute : Url -> Route
 toRoute url =
-    Url.Parser.parse routeParser url
+    Parser.parse routeParser url
         |> Maybe.withDefault Home
 
 
@@ -385,7 +402,7 @@ toString route =
             absolute [] []
 
         Entity e v ->
-            customToString (viewToCustomUrl v |> and (CustomUrl [ entityToUrl e ] []))
+            customToString (viewToCustomUrl v |> and (CustomUrl [ entityToUrl e ] [] Nothing))
 
 
 toDesc : State -> Route -> String
@@ -425,7 +442,7 @@ redirect navkey =
 getType : ViewSegment -> Maybe String
 getType v =
     case v of
-        Add t ->
+        Add t _ ->
             t
 
         Edit _ t ->
@@ -444,7 +461,7 @@ redirectAdd navkey route =
         toString <|
             case route of
                 Entity e v ->
-                    Entity e (Add (getType v))
+                    Entity e (Add (getType v) Nothing)
 
                 Home ->
                     Home
@@ -466,7 +483,7 @@ goBack navkey route =
                         View _ t ->
                             Entity e (List t)
 
-                        Add t ->
+                        Add t _ ->
                             Entity e (List t)
 
                         List _ ->

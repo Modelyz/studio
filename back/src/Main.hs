@@ -237,13 +237,13 @@ connectClient waitTime previousTime host port msgPath storeChan stateMV = do
 
 serve :: Options -> IO ()
 serve (Options d host port msgPath storeHost storePort) = do
-  ncMV <- newMVar 0
-  chan <- newChan -- initial channel
-  stateMV <- newMVar emptyState
+  ncMV <- newMVar 0 -- connection number
+  chan <- newChan -- main channel
+  stateMV <- newMVar emptyState -- application state
   storeChan <- dupChan chan -- output channel to the central message store
   firstTime <- getPOSIXTime
   -- Reconstruct the state
-  putStrLn "Reconstructing the State"
+  putStrLn "Reconstructing the State..."
   msgs <- readMessages msgPath
   state <- takeMVar stateMV
   let newState = foldl update state msgs

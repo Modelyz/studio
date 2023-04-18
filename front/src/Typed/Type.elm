@@ -1,4 +1,4 @@
-module Typed.Type exposing (Type(..), all, decoder, encode, fromString, toHierarchic, toPluralString, toString)
+module Typed.Type exposing (Type(..), all, decoder, encode, fromString, toDisplay, toHierarchic, toPluralDisplay, toString)
 
 import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
@@ -72,6 +72,11 @@ toString t =
             "Group"
 
 
+toDisplay : Type -> String
+toDisplay =
+    toString
+
+
 encode : Type -> Encode.Value
 encode =
     toString >> Encode.string
@@ -82,15 +87,15 @@ decoder =
     Decode.string |> Decode.andThen (fromString >> Maybe.map Decode.succeed >> Maybe.withDefault (Decode.fail "Unknown Type"))
 
 
-toPluralString : Type -> String
-toPluralString t =
+toPluralDisplay : Type -> String
+toPluralDisplay t =
     -- TODO not i18n friendly
     case t of
         Process ->
             "Processes"
 
         _ ->
-            toString t ++ "s"
+            toDisplay t ++ "s"
 
 
 fromString : String -> Maybe Type

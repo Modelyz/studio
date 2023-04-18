@@ -1,4 +1,4 @@
-module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, otherwise, otherwiseR, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, indexOf, otherwise, otherwiseR, third)
 
 import Dict exposing (Dict)
 
@@ -122,3 +122,11 @@ checkAllOk check xs =
         )
         (Ok ())
         xs
+
+
+indexOf : a -> List a -> Maybe Int
+indexOf x =
+    List.indexedMap Tuple.pair
+        >> List.filter (\z -> x == Tuple.second z)
+        >> List.head
+        >> Maybe.map Tuple.first

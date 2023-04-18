@@ -1,4 +1,4 @@
 #!/bin/bash
 
-../build.sh
+#../build.sh
 pipenv run pytest ./test.py

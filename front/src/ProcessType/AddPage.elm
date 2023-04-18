@@ -93,7 +93,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ProcessType (Route.Add _) ->
+        Route.Entity Route.ProcessType (Route.Add _ _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.ProcessType (Route.Edit uuid _) ->

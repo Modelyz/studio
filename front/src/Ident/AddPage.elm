@@ -10,7 +10,7 @@ import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
 import Message
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope)
+import Scope exposing (Scope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -107,7 +107,7 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/identifierType?step=2
     case route of
-        Route.Entity Route.IdentifierType (Route.Add _) ->
+        Route.Entity Route.IdentifierType (Route.Add _ _) ->
             Just { route = route, itid = "" }
 
         Route.Entity Route.IdentifierType (Route.Edit itid _) ->
@@ -195,7 +195,7 @@ update s msg model =
 
 view : Model -> View Msg
 view model =
-    { title = "Adding an IdentifierType"
+    { title = "Adding an Identifier Type"
     , attributes = []
     , element = viewContent model
     , route = model.route
@@ -264,7 +264,7 @@ viewContent model s =
     in
     floatingContainer s
         (Just <| Button Step.Cancel)
-        "Adding an identifierType"
+        "Adding an Identifier Type"
         (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

@@ -101,7 +101,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Group (Route.Add tuuid) ->
+        Route.Entity Route.Group (Route.Add tuuid _) ->
             Just { route = route, uuid = Nothing, tuuid = tuuid }
 
         Route.Entity Route.Group (Route.Edit uuid tuuid) ->

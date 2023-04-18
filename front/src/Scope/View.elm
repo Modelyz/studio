@@ -1,5 +1,7 @@
 module Scope.View exposing (selectScope, toDisplay)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict
 import Element exposing (..)
 import Element.Background as Background
@@ -14,8 +16,6 @@ import Typed.Type as TType
 import View exposing (..)
 import View.Smallcard exposing (clickableCard)
 import View.Style exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 toDisplay : State -> Scope -> String
@@ -29,19 +29,19 @@ toDisplay s scope =
             "Anything"
 
         IsItem (Type.TType tt) uuid ->
-            (Type.toString (Type.TType tt) ++ ": ") ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.TType tt) uuid
+            (Type.toDisplay (Type.TType tt) ++ ": ") ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.TType tt) uuid
 
         IsItem (Type.HType ht) uuid ->
-            (Type.toString (Type.HType ht) ++ ": ") ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.HType ht) uuid
+            (Type.toDisplay (Type.HType ht) ++ ": ") ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid uuid ids) -} (Type.HType ht) uuid
 
         HasType t ->
-            Type.toPluralString t
+            Type.toPluralDisplay t
 
         HasUserType (Type.TType tt) tuid ->
-            TType.toPluralString tt ++ " of type: " ++ displayZone s SmallcardZone {- (TODO check?Identifier.fromUuid tuid ids) -} (Type.HType (TType.toHierarchic tt)) tuid
+            TType.toPluralDisplay tt ++ " of type: " ++ displayZone s SmallcardZone {- (TODO check?Identifier.fromUuid tuid ids) -} (Type.HType (TType.toHierarchic tt)) tuid
 
         HasUserType (Type.HType ht) tuid ->
-            HType.toPluralString ht ++ " of type: " ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid tuid ids) -} (Type.HType ht) tuid
+            HType.toPluralDisplay ht ++ " of type: " ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid tuid ids) -} (Type.HType ht) tuid
 
         Identified _ ->
             "Identified"

@@ -169,13 +169,14 @@ buildButton color msg txt =
          , Background.color color
          , padding 10
          , height fill
+         , htmlAttribute (Attr.id txt)
          ]
             ++ (case msg of
                     Ok _ ->
                         []
 
                     Err err ->
-                        [ htmlAttribute <| Attr.title err ]
+                        [ htmlAttribute (Attr.title err) ]
                )
         )
         { onPress = Result.toMaybe msg, label = text txt }

@@ -5,6 +5,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Route exposing (Route)
 import Shared
+import Util exposing (indexOf)
 import View exposing (..)
 import View.Style exposing (color)
 
@@ -30,7 +31,7 @@ type alias Model model step =
 
 
 buttonNextOrValidate : msg -> Model model step -> Result String field -> Element Msg
-buttonNextOrValidate added model result =
+buttonNextOrValidate _ model result =
     -- TODO try to suppress using at View.Step.nextMsg
     case result of
         Ok _ ->
@@ -66,12 +67,6 @@ nextMsg model c next added =
 
     else
         c next
-
-
-indexOf : a -> List a -> Maybe Int
-indexOf x =
-    -- 1st index is 1
-    List.indexedMap Tuple.pair >> List.filter (\z -> x == Tuple.second z) >> List.head >> Maybe.map Tuple.first
 
 
 getItem : Int -> List a -> Maybe a
@@ -124,8 +119,8 @@ update s msg model =
     case msg of
         PreviousPage ->
             case previousStep model.step model.steps of
-                Just x ->
-                    ( { model | step = x }, Effect.none )
+                Just step ->
+                    ( { model | step = step }, Effect.none )
 
                 Nothing ->
                     ( model, Route.goBack s.navkey model.route |> Effect.fromCmd )
