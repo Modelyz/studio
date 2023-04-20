@@ -3,6 +3,7 @@ module Shared exposing (Model, Msg(..), dispatch, dispatchMany, identity, init, 
 import Browser.Navigation as Nav
 import Dict
 import Effect exposing (Effect)
+import Html exposing (time)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
@@ -193,6 +194,7 @@ update msg model =
         SwitchOffline isOffline ->
             ( { model
                 | offline = isOffline
+                , timeoutReconnect = 1
                 , wsstatus =
                     if isOffline then
                         WSOffline
@@ -251,8 +253,12 @@ update msg model =
                 , currentSeed = newSeed
                 , wsstatus = WSClosed
               }
-            , Task.perform WSConnect
-                (Process.sleep (toFloat (1000 * model.timeoutReconnect)))
+            , if model.offline then
+                Cmd.none
+
+              else
+                Task.perform WSConnect
+                    (Process.sleep (toFloat (1000 * model.timeoutReconnect)))
             )
 
         MessagesRead results ->
