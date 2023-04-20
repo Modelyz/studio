@@ -3,6 +3,7 @@ module Ident.Input exposing (Config, inputIdentifiers)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Input as Input
+import Html.Attributes as Attr
 import Ident.Fragment exposing (Fragment(..))
 import Ident.Identifier as Identifier exposing (Identifier)
 import View exposing (..)
@@ -46,6 +47,7 @@ inputFragment c index fragment ident =
                 [ width <| minimum 200 fill
                 , Input.focusedOnLoad
                 , View.onEnter c.onEnter
+                , htmlAttribute <| Attr.id (ident.name ++ "/" ++ String.fromInt index)
                 ]
                 { onChange = \v -> c.onInput <| Identifier.update index (Free v) ident
                 , text = value
