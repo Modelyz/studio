@@ -1,7 +1,7 @@
 module Expression.Input exposing (Config, inputExpression)
 
 import Element exposing (..)
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.Eval as Eval
@@ -47,7 +47,7 @@ inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expres
 inputObservable c s targetPath obs expr =
     case obs of
         ObsNumber n ->
-            RationalInput.inputText Rational.fromString (Just n.name) (\str -> c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str }) expr) n.input
+            RationalInput.inputText Rational.fromString (targetPath |> List.map String.fromInt |> String.join "/") (Just n.name) (\str -> c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str }) expr) n.input
 
         {- Input.text
            [ width <| px <| RationalInput.adaptWidth n.input

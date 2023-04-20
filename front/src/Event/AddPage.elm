@@ -1,5 +1,7 @@
 module Event.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Date
 import DateTime.View
 import Dict exposing (Dict)
@@ -28,7 +30,7 @@ import Process.Process as Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialProcesses, toPartialProcesses)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
@@ -45,8 +47,6 @@ import View.FlatSelect exposing (flatSelect)
 import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (color)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 type alias Flags =
@@ -505,6 +505,7 @@ inputPartialProcess s partialProcesses index ( process, input ) =
     -- send an event to replace the partialProcess at index in the partialProcesses
     row [ spacing 5 ]
         [ RationalInput.inputText Rational.fromString
+            (String.fromInt index)
             (Just "amount")
             (\str ->
                 InputPartialProcesses

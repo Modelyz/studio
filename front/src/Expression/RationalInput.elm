@@ -32,11 +32,12 @@ mandatory isMandatory str =
         Ok Rational.zero
 
 
-inputText : (String -> Result String a) -> Maybe String -> (RationalInput -> msg) -> RationalInput -> Element msg
-inputText validate placeholder onInput input =
+inputText : (String -> Result String a) -> String -> Maybe String -> (RationalInput -> msg) -> RationalInput -> Element msg
+inputText validate strid placeholder onInput input =
     Input.text
         [ width <| px <| adaptWidth input
         , htmlAttribute <| Attr.title <| Rational.parse input
+        , htmlAttribute <| Attr.id strid
         , Background.color
             (case validate input of
                 Ok _ ->

@@ -5,7 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Binary as B
 import Expression.DeepLink as DeepLink
 import Expression.DeepLink.Select
@@ -17,7 +17,7 @@ import Expression.Unary as U
 import Expression.Value.Select
 import Expression.ValueSelection exposing (ValueSelection(..))
 import Html.Attributes as Attr
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Shared
 import Util exposing (checkListOne, otherwise)
 import Value.Value as Value exposing (..)
@@ -241,7 +241,10 @@ editObservable s ( stackNum, exprPath ) obs =
         ObsNumber n ->
             row [ Background.color color.item.background ]
                 [ row [ Font.size size.text.small ]
-                    [ Input.text [ width (px 70) ]
+                    [ Input.text
+                        [ width (px 70)
+                        , htmlAttribute <| Attr.id ("name" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
+                        ]
                         { onChange =
                             \x ->
                                 InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | name = x })
@@ -254,6 +257,7 @@ editObservable s ( stackNum, exprPath ) obs =
                 , row [ Font.size size.text.small ]
                     [ RationalInput.inputText
                         Rational.fromString
+                        ("defaultValue" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
                         (Just "Default value")
                         (\x -> InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x }))
                         n.input

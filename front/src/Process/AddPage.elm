@@ -1,5 +1,7 @@
 module Process.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -30,8 +32,6 @@ import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 typedConstructor : TType.Type
@@ -279,6 +279,7 @@ validate m =
 inputPartialEvent : List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
 inputPartialEvent partialEvents index ( event, input ) =
     RationalInput.inputText Rational.fromString
+        (String.fromInt index)
         (Just "amount")
         (\str ->
             InputPartialEvents
