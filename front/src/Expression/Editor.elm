@@ -243,7 +243,7 @@ editObservable s ( stackNum, exprPath ) obs =
                 [ row [ Font.size size.text.small ]
                     [ Input.text
                         [ width (px 70)
-                        , htmlAttribute <| Attr.id ("name" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
+                        , htmlAttribute <| Attr.id ("var" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
                         ]
                         { onChange =
                             \x ->
@@ -257,7 +257,7 @@ editObservable s ( stackNum, exprPath ) obs =
                 , row [ Font.size size.text.small ]
                     [ RationalInput.inputText
                         Rational.fromString
-                        ("defaultValue" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
+                        ("def" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
                         (Just "Default value")
                         (\x -> InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x }))
                         n.input
