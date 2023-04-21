@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
@@ -48,7 +46,7 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    time.sleep(0.01)  # couldn't find a way to wait a detectable change
+    time.sleep(0.05)  # couldn't find a way to wait a detectable change
     print("### click on " + text)
     # WebDriverWait(browser, timeout=1).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
