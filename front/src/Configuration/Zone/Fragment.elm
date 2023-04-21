@@ -40,7 +40,7 @@ toString fragment =
             "Parent"
 
         Fixed _ ->
-            "Fixed:"
+            "Fixed"
 
         Quantity ->
             "Quantity"

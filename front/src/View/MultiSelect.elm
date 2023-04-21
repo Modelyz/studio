@@ -50,7 +50,7 @@ multiSelect model c all =
                                                 )
                                         )
                                         "×"
-                                    , text <| c.toString item
+                                    , text <| c.toString item ++ ":"
                                     , c.input (c.selection model) i item
                                     ]
                             )

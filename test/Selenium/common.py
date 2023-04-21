@@ -48,11 +48,12 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    time.sleep(0.02)  # couldn't find a way to wait a detectable change
+    time.sleep(0.01)  # couldn't find a way to wait a detectable change
     print("### click on " + text)
     # WebDriverWait(browser, timeout=1).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
     # )
+    text = text.replace("'", "\\'")
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.XPATH, f"//*[text()='{text}']"))
@@ -81,6 +82,7 @@ def find_by_id(browser, text):
 
 
 def find_by_text(browser, text):
+    text = text.replace("'", "\'")
     return browser.find_element(By.XPATH, f"//*[contains(text(),'{text}')]")
 
 
@@ -105,8 +107,25 @@ def add_identifier_type(browser, name, scope=[], options={}, fragments=[]):
         click(browser, f[0] if type(f) is tuple else f)
     for i, f in enumerate(fragments):
         if type(f) is tuple:
-            if f[0] == "Fixed:":
+            if f[0] == "Fixed":
                 fill_by_id(browser, "segment/" + str(i), f[1])
+    click(browser, "Validate and finish")
+
+def add_value_type(browser, name, scope=[], options={}, expression=[], fields={}):
+    open_url(browser, f"/value-type/add")
+    for s in scope:
+        click(browser, s)
+    click(browser, "Next →")
+    fill(browser, name)
+    click(browser, "Next →")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
+    click(browser, "Next →")
+    for e in expression:
+        click(browser, e)
+    for x, y in fields.items():
+        fill_by_id(browser, x, y)
     click(browser, "Validate and finish")
 
 
@@ -119,7 +138,7 @@ def add_zone(browser, zone="", scope=[], fragments=[]):
         click(browser, f[0] if type(f) is tuple else f)
     for i, f in enumerate(fragments):
         if type(f) is tuple:
-            if f[0] == "Fixed:":
+            if f[0] == "Fixed":
                 fill_by_id(browser, "segment/" + str(i), f[1])
     click(browser, "Validate and finish")
 
@@ -184,7 +203,7 @@ def add_event_type(
     receivers=[],
     flow=[],
     expression=[],
-    expfields={},
+    fields={},
     options={},
 ):
     open_url(browser, "/event-type/add")
@@ -203,7 +222,7 @@ def add_event_type(
         click(browser, s)
     for e in expression:
         click(browser, e)
-    for x, y in expfields.items():
+    for x, y in fields.items():
         fill_by_id(browser, x, y)
     click(browser, "Next →")
     for o, doClick in options.items():

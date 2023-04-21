@@ -327,7 +327,7 @@ inputFragment fragments index fragment =
                                     )
                             )
                 , text = value
-                , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                , placeholder = Nothing
                 , label = Input.labelHidden "Fixed"
                 }
 
@@ -369,7 +369,7 @@ inputFragment fragments index fragment =
                                         )
                                 )
                     , text = qSep
-                    , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                    , placeholder = Nothing
                     , label = Input.labelHidden "Separator"
                     }
                 , Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
@@ -387,7 +387,7 @@ inputFragment fragments index fragment =
                                         )
                                 )
                     , text = rSep
-                    , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
+                    , placeholder = Nothing
                     , label = Input.labelHidden "Separator"
                     }
                 ]
