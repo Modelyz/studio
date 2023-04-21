@@ -60,6 +60,7 @@ def click(browser, text):
 
 
 def fill(browser, text):
+    time.sleep(0.05)  # couldn't find a way to wait a detectable change
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.TAG_NAME, "input"))
@@ -68,6 +69,7 @@ def fill(browser, text):
 
 
 def fill_by_id(browser, id_, text):
+    time.sleep(0.05)  # couldn't find a way to wait a detectable change
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.ID, id_))
