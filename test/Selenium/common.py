@@ -48,7 +48,7 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    time.sleep(0.05)  # couldn't find a way to wait a detectable change
+    time.sleep(0.02)  # couldn't find a way to wait a detectable change
     print("### click on " + text)
     # WebDriverWait(browser, timeout=1).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
@@ -90,43 +90,66 @@ def text_exists(browser, text):
     ), f"The text '{text}' could not be found"
 
 
-def add_identifier_type(browser, scope, name):
+def add_identifier_type(browser, name, scope=[], options={}, fragments=[]):
     open_url(browser, f"/identifier-type/add")
     for s in scope:
         click(browser, s)
     click(browser, "Next →")
     fill(browser, name)
     click(browser, "Next →")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
     click(browser, "Next →")
-    click(browser, "Next →")
-    click(browser, "Free")
+    for _, f in enumerate(fragments):
+        click(browser, f[0] if type(f) is tuple else f)
+    for i, f in enumerate(fragments):
+        if type(f) is tuple:
+            if f[0] == "Fixed:":
+                fill_by_id(browser, "segment/" + str(i), f[1])
     click(browser, "Validate and finish")
 
 
-def add_zone(browser, entity_route, zone, scope, fragments):
-    open_url(browser, f"/{entity_route}/add")
+def add_zone(browser, zone="", scope=[], fragments=[]):
+    open_url(browser, "/configuration/add")
     click(browser, zone)
     for s in scope:
         click(browser, s)
-    for f in fragments:
-        click(browser, f)
-    click(browser, "Name")
+    for _, f in enumerate(fragments):
+        click(browser, f[0] if type(f) is tuple else f)
+    for i, f in enumerate(fragments):
+        if type(f) is tuple:
+            if f[0] == "Fixed:":
+                fill_by_id(browser, "segment/" + str(i), f[1])
     click(browser, "Validate and finish")
 
 
-def add_type(browser, vsegment, name, visible=True):
+def add_any_type(browser, vsegment, identifiers={}, values={}, options={}):
     open_url(browser, f"/{vsegment}/add")
     click(browser, "Next →")
-    fill(browser, name)
+    for name, value in identifiers.items():
+        print(identifiers)
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
+    for name, value in values.items():
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
-    if not visible:
-        click(browser, "Display as a menu item")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
     click(browser, "Next →")
     click(browser, "Validate and finish")
 
 
-def add_group_type(browser, name="", types=[], single=False, tree="Not", visible=True):
+def add_group_type(
+    browser,
+    types=[],
+    identifiers={},
+    single=False,
+    tree="Not",
+    values={},
+    options={},
+):
     assert tree in (
         "Not hierarchical",
         "Hierarchical, an intermediate node can be selected",
@@ -136,39 +159,44 @@ def add_group_type(browser, name="", types=[], single=False, tree="Not", visible
     for p in types:
         click(browser, p)
     click(browser, "Next →")
-    fill(browser, name)
+    for name, value in identifiers.items():
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
     if not single:
         click(browser, str(single))
     click(browser, "Next →")
     click(browser, tree)
     click(browser, "Next →")
+    for name, value in values.items():
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
-    if not visible:
-        click(browser, "Display as a menu item")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
     click(browser, "Next →")
     click(browser, "Validate and finish")
 
 
 def add_event_type(
     browser,
-    name,
-    provider,
-    receiver,
-    flow,
-    expression,
-    expfields,
-    visible=True,
+    identifiers={},
+    providers=[],
+    receivers=[],
+    flow=[],
+    expression=[],
+    expfields={},
+    options={},
 ):
     open_url(browser, "/event-type/add")
     click(browser, "Next →")
-    fill(browser, name)
+    for name, value in identifiers.items():
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
     click(browser, "Next →")
-    for s in provider:
+    for s in providers:
         click(browser, s)
     click(browser, "Next →")
-    for s in receiver:
+    for s in receivers:
         click(browser, s)
     click(browser, "Next →")
     for s in flow:
@@ -178,26 +206,47 @@ def add_event_type(
     for x, y in expfields.items():
         fill_by_id(browser, x, y)
     click(browser, "Next →")
-    if not visible:
-        click(browser, "Display as a menu item")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
     click(browser, "Next →")
     click(browser, "Validate and finish")
 
 
-def add_process_type(browser, types=[], name="", eventTypes=[], visible=True):
+def add_process_type(browser, types=[], identifiers={}, eventTypes=[], options={}):
     open_url(browser, "/process-type/add")
     for t in types:
         click(browser, t)
     click(browser, "Next →")
-    fill(browser, name)
+    for name, value in identifiers.items():
+        fill_by_id(browser, name, value)
     click(browser, "Next →")
     for e in eventTypes:
         click(browser, e)
     click(browser, "Next →")
     click(browser, "Next →")
-    if not visible:
-        click(browser, "Display as a menu item")
+    for o, doClick in options.items():
+        if doClick:
+            click(browser, o)
     click(browser, "Next →")
+    click(browser, "Validate and finish")
+
+
+def add_entity(browser, vsegment, types=[], identifiers={}, values={}, groups={}):
+    open_url(browser, f"/{vsegment}/add")
+    for t in types:
+        click(browser, t)
+    click(browser, "Next →")
+    for name, value in identifiers.items():
+        fill_by_id(browser, name, value)
+    click(browser, "Next →")
+    for name, value in values.items():
+        fill_by_id(browser, name, value)
+    click(browser, "Next →")
+    for groupType, groups in groups.items():
+        click(browser, groupType)
+        for group in groups:
+            click(browser, group)
     click(browser, "Validate and finish")
 
 
