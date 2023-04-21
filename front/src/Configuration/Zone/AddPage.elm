@@ -1,6 +1,8 @@
 module Configuration.Zone.AddPage exposing (Flags, Model, Msg(..), match, page)
 
 import Configuration exposing (Configuration(..))
+import Configuration.Zone as Zone exposing (Zone(..))
+import Configuration.Zone.Fragment as Fragment exposing (Fragment(..))
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -8,9 +10,10 @@ import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Attr
 import Message
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Scope.View exposing (selectScope)
 import Shared
@@ -22,8 +25,6 @@ import Util exposing (checkEmptyList)
 import View exposing (..)
 import View.MultiSelect exposing (multiSelect)
 import View.Style exposing (..)
-import Configuration.Zone.Fragment as Fragment exposing (Fragment(..))
-import Configuration.Zone as Zone exposing (Zone(..))
 
 
 type Msg
@@ -305,9 +306,13 @@ inputZone model =
 
 inputFragment : List Fragment -> Int -> Fragment -> Element Msg
 inputFragment fragments index fragment =
+    let
+        attrId =
+            htmlAttribute <| Attr.id ("segment" ++ "/" ++ String.fromInt index)
+    in
     case fragment of
         Fixed value ->
-            Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+            Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
                 { onChange =
                     \v ->
                         InputFragments
@@ -349,7 +354,7 @@ inputFragment fragments index fragment =
 
         EventList qSep rSep ->
             row [ spacing 5 ]
-                [ Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+                [ Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
                     { onChange =
                         \v ->
                             InputFragments
@@ -367,7 +372,7 @@ inputFragment fragments index fragment =
                     , placeholder = Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                     , label = Input.labelHidden "Separator"
                     }
-                , Input.text [ width (px 75), height shrink, padding 5, spacing 5 ]
+                , Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
                     { onChange =
                         \v ->
                             InputFragments

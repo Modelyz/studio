@@ -272,12 +272,16 @@ viewContent model s =
 
 inputFragment : List Fragment -> Int -> Fragment -> Element Msg
 inputFragment fragments index fragment =
+    let
+        attrId =
+            htmlAttribute <| Attr.id ("segment" ++ "/" ++ String.fromInt index)
+    in
     -- TODO refactor to
     case fragment of
         Fixed value ->
             Input.text
                 [ width (px 75)
-                , htmlAttribute <| Attr.id ("segment" ++ String.fromInt index)
+                , attrId
                 ]
                 { onChange =
                     \v ->
@@ -301,7 +305,7 @@ inputFragment fragments index fragment =
         Existing _ value ->
             Input.text
                 [ width (px 75)
-                , htmlAttribute <| Attr.id ("segment" ++ String.fromInt index)
+                , attrId
                 ]
                 { onChange =
                     \n ->
@@ -323,7 +327,7 @@ inputFragment fragments index fragment =
                 }
 
         DateFrom name posix ->
-            Input.text [ width (px 75), htmlAttribute <| Attr.id ("segment" ++ String.fromInt index) ]
+            Input.text [ width (px 75), attrId ]
                 { onChange =
                     \n ->
                         InputFragments
@@ -345,7 +349,7 @@ inputFragment fragments index fragment =
 
         Sequence name padding step start value ->
             row []
-                [ Input.text [ width (px 50), htmlAttribute <| Attr.title "name", htmlAttribute <| Attr.id ("segment" ++ String.fromInt index) ]
+                [ Input.text [ width (px 50), htmlAttribute <| Attr.title "name", attrId ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -364,7 +368,7 @@ inputFragment fragments index fragment =
                         Just <| Input.placeholder [] <| text "Name"
                     , label = Input.labelHidden <| "Name"
                     }
-                , Input.text [ width (px 50), htmlAttribute <| Attr.title "padding", htmlAttribute <| Attr.id ("segment" ++ String.fromInt index) ]
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "padding", attrId ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -385,7 +389,7 @@ inputFragment fragments index fragment =
                         Just <| Input.placeholder [] <| text "Padding"
                     , label = Input.labelHidden <| "Padding"
                     }
-                , Input.text [ width (px 50), htmlAttribute <| Attr.title "step", htmlAttribute <| Attr.id ("segment" ++ String.fromInt index) ]
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "step", attrId ]
                     { onChange =
                         \x ->
                             InputFragments
@@ -406,7 +410,7 @@ inputFragment fragments index fragment =
                         Just <| Input.placeholder [] <| text "Step"
                     , label = Input.labelHidden <| "Step"
                     }
-                , Input.text [ width (px 50), htmlAttribute <| Attr.title "start", htmlAttribute <| Attr.id ("segment" ++ String.fromInt index) ]
+                , Input.text [ width (px 50), htmlAttribute <| Attr.title "start", attrId ]
                     { onChange =
                         \x ->
                             InputFragments
