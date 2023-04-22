@@ -11,9 +11,15 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
-WAIT=0.15
+WAIT = 0.03
 
 is_running = lambda proc: proc.poll() is None
+
+
+def wait():
+    global WAIT
+    time.sleep(WAIT)
+    WAIT = WAIT * 1.01
 
 
 def backends():
@@ -47,35 +53,33 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
     print("### click on " + text)
-    # WebDriverWait(browser, timeout=1).until(
+    # WebDriverWait(browser, timeout=2).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
     # )
-    text = text.replace("'", "\\'")
-    return (
-        WebDriverWait(browser, timeout=1)
-        .until(lambda d: d.find_element(By.XPATH, f"//*[text()='{text}']"))
-        .click()
-    )
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
+    WebDriverWait(browser, timeout=2).until(
+        lambda d: d.find_element(By.XPATH, f'//*[text()="{text}"]')
+    ).click()
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
 
 
 def fill(browser, text):
+    print(f"### input {text}")
     time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-    return (
-        WebDriverWait(browser, timeout=1)
-        .until(lambda d: d.find_element(By.TAG_NAME, "input"))
-        .send_keys(text)
-    )
+    WebDriverWait(browser, timeout=2).until(
+        lambda d: d.find_element(By.TAG_NAME, "input")
+    ).send_keys(text)
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
 
 
 def fill_by_id(browser, id_, text):
+    print(f"### input {text} on id {id_}")
     time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-    return (
-        WebDriverWait(browser, timeout=1)
-        .until(lambda d: d.find_element(By.ID, id_))
-        .send_keys(text)
-    )
+    WebDriverWait(browser, timeout=2).until(
+        lambda d: d.find_element(By.ID, id_)
+    ).send_keys(text)
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
 
 
 def find_by_id(browser, text):
@@ -83,8 +87,7 @@ def find_by_id(browser, text):
 
 
 def find_by_text(browser, text):
-    text = text.replace("'", "\'")
-    return browser.find_element(By.XPATH, f"//*[contains(text(),'{text}')]")
+    return browser.find_element(By.XPATH, f'//*[contains(text(),"{text}")]')
 
 
 def text_exists(browser, text):
@@ -111,6 +114,7 @@ def add_identifier_type(browser, name, scope=[], options={}, fragments=[]):
             if f[0] == "Fixed":
                 fill_by_id(browser, "segment/" + str(i), f[1])
     click(browser, "Validate and finish")
+
 
 def add_value_type(browser, name, scope=[], options={}, expression=[], fields={}):
     open_url(browser, f"/value-type/add")
@@ -163,7 +167,7 @@ def add_any_type(browser, vsegment, identifiers={}, values={}, options={}):
 
 def add_group_type(
     browser,
-    types=[],
+    parentType="",
     identifiers={},
     single=False,
     tree="Not",
@@ -176,8 +180,8 @@ def add_group_type(
         "Hierarchical, a leaf must be selected",
     )
     open_url(browser, "/group-type/add")
-    for p in types:
-        click(browser, p)
+    if parentType:
+        click(browser, parentType)
     click(browser, "Next →")
     for name, value in identifiers.items():
         fill_by_id(browser, name, value)
@@ -233,10 +237,10 @@ def add_event_type(
     click(browser, "Validate and finish")
 
 
-def add_process_type(browser, types=[], identifiers={}, eventTypes=[], options={}):
+def add_process_type(browser, parentType="", identifiers={}, eventTypes=[], options={}):
     open_url(browser, "/process-type/add")
-    for t in types:
-        click(browser, t)
+    if parentType:
+        click(browser, parentType)
     click(browser, "Next →")
     for name, value in identifiers.items():
         fill_by_id(browser, name, value)
@@ -252,10 +256,10 @@ def add_process_type(browser, types=[], identifiers={}, eventTypes=[], options={
     click(browser, "Validate and finish")
 
 
-def add_entity(browser, vsegment, types=[], identifiers={}, values={}, groups={}):
+def add_entity(browser, vsegment, parentType="", identifiers={}, values={}, groups={}):
     open_url(browser, f"/{vsegment}/add")
-    for t in types:
-        click(browser, t)
+    if parentType:
+        click(browser, parentType)
     click(browser, "Next →")
     for name, value in identifiers.items():
         fill_by_id(browser, name, value)
@@ -270,6 +274,32 @@ def add_entity(browser, vsegment, types=[], identifiers={}, values={}, groups={}
     click(browser, "Validate and finish")
 
 
+def add_group(
+    browser, type_, contains=[], identifiers={}, parent="", values={}, groups={}
+):
+    open_url(browser, f"/group/add")
+    click(browser, type_)
+    click(browser, "Next →")
+    for scope in contains:
+        click(browser, scope)
+    click(browser, "Next →")
+    for name, value in identifiers.items():
+        fill_by_id(browser, name, value)
+    click(browser, "Next →")
+    if parent:
+        click(browser, parent)
+    click(browser, "Next →")
+    for name, value in values.items():
+        fill_by_id(browser, name, value)
+    click(browser, "Next →")
+    for group in groups.items():
+        click(browser, group[0])
+        for group in group[1]:
+            click(browser, group)
+    click(browser, "Validate and finish")
+
+
 def open_url(browser, path):
     print("### open " + path)
     browser.get(site + path)
+    time.sleep(4 * WAIT)
