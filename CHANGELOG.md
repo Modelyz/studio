@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 15 -- unreleased
+
+* Internal changes, fixes and improvements
+
 ## version 14 -- 2023-04-23
 
 * Switch to work offline
