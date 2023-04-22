@@ -164,9 +164,9 @@ init s f =
                                             isMenu
 
                                         _ ->
-                                            False
+                                            True
                                 )
-                            |> Maybe.withDefault False
+                            |> Maybe.withDefault True
 
                     ( editgroups, editcmd ) =
                         Group.Input.init s gs
@@ -182,7 +182,7 @@ init s f =
                     , gsubmodel = editgroups
                     , hadMenu = hadMenu
                     , isMenu = hadMenu
-                    , unique = Maybe.map .unique gt |> Maybe.withDefault False
+                    , unique = Maybe.map .unique gt |> Maybe.withDefault True
                     , treeType = Maybe.map .treeType gt |> Maybe.withDefault Flat
                   }
                 , Effect.batch

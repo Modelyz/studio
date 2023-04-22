@@ -180,9 +180,9 @@ init s f =
                                             isMenu
 
                                         _ ->
-                                            False
+                                            True
                                 )
-                            |> Maybe.withDefault False
+                            |> Maybe.withDefault True
 
                     ( editgroups, editcmd ) =
                         Group.Input.init s gs
