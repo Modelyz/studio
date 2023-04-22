@@ -3,7 +3,7 @@
 set -e
 
 export APPVERSION=14 # don't forget the CHANGELOG
-export IDBVERSION=46 ### IndexedDB version. Upgrade when a json format change occurs ###
+export IDBVERSION=47 ### IndexedDB version. Upgrade when a json format change occurs ###
 
 # change to the dir of this script
 pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

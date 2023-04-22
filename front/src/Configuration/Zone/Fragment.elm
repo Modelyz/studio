@@ -3,6 +3,7 @@ module Configuration.Zone.Fragment exposing (Fragment(..), decoder, encode, toDe
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Scope exposing (Scope(..))
+import Time exposing (Month(..))
 
 
 type alias Separator =
@@ -17,7 +18,7 @@ type
     Fragment
     -- TODO: add Types to be able to display the type in the zone
     = IdentifierName Name
-    | GroupIdentifierName Name
+    | GroupIdentifierName Scope Name {- to display the name of a group of the entity -}
     | Parent
     | Fixed String
     | Quantity
@@ -33,8 +34,8 @@ toString fragment =
         IdentifierName name ->
             name
 
-        GroupIdentifierName name ->
-            name
+        GroupIdentifierName scope name ->
+            name ++ " of " ++ Scope.toString scope
 
         Parent ->
             "Parent"
@@ -64,8 +65,8 @@ toDesc fragment =
         IdentifierName _ ->
             "Identifier"
 
-        GroupIdentifierName _ ->
-            "Group Identifier"
+        GroupIdentifierName _ _ ->
+            "Identifier of a Group"
 
         Parent ->
             "Display the zone configuration of the Parent"
@@ -94,30 +95,32 @@ encode fragment =
     case fragment of
         IdentifierName name ->
             Encode.object
-                [ ( "IdentifierName", Encode.string name ) ]
+                [ ( "type", Encode.string "IdentifierName" ), ( "name", Encode.string name ) ]
 
-        GroupIdentifierName name ->
+        GroupIdentifierName group name ->
             Encode.object
-                [ ( "GroupIdentifierName", Encode.string name ) ]
+                [ ( "type", Encode.string "GroupIdentifierName" )
+                , ( "scope", Scope.encode group )
+                , ( "name", Encode.string name )
+                ]
 
         Parent ->
-            Encode.string "Parent"
+            Encode.object [ ( "type", Encode.string "Parent" ) ]
 
         Fixed string ->
-            Encode.object
-                [ ( "Fixed", Encode.string string ) ]
+            Encode.object [ ( "type", Encode.string "Fixed" ), ( "string", Encode.string string ) ]
 
         Quantity ->
-            Encode.string "Quantity"
+            Encode.object [ ( "type", Encode.string "Quantity" ) ]
 
         Flow ->
-            Encode.string "Flow"
+            Encode.object [ ( "type", Encode.string "Flow" ) ]
 
         Provider ->
-            Encode.string "Provider"
+            Encode.object [ ( "type", Encode.string "Provider" ) ]
 
         Receiver ->
-            Encode.string "Receiver"
+            Encode.object [ ( "type", Encode.string "Receiver" ) ]
 
         EventList qSeparator rSeparator ->
             Encode.object
@@ -129,34 +132,37 @@ encode fragment =
 
 decoder : Decoder Fragment
 decoder =
-    Decode.oneOf
-        [ Decode.map IdentifierName <| Decode.field "IdentifierName" Decode.string
-        , Decode.string
-            |> Decode.andThen
-                (\s ->
-                    case s of
-                        "Parent" ->
-                            Decode.succeed Parent
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\t ->
+                case t of
+                    "Parent" ->
+                        Decode.succeed Parent
 
-                        "Quantity" ->
-                            Decode.succeed Quantity
+                    "Quantity" ->
+                        Decode.succeed Quantity
 
-                        "Flow" ->
-                            Decode.succeed Flow
+                    "Flow" ->
+                        Decode.succeed Flow
 
-                        "Provider" ->
-                            Decode.succeed Provider
+                    "Provider" ->
+                        Decode.succeed Provider
 
-                        "Receiver" ->
-                            Decode.succeed Receiver
+                    "Receiver" ->
+                        Decode.succeed Receiver
 
-                        _ ->
-                            Decode.fail ("Unknown fragment: " ++ s)
-                )
-        , Decode.map GroupIdentifierName <| Decode.field "GroupIdentifierName" Decode.string
-        , Decode.map Fixed <| Decode.field "Fixed" Decode.string
-        , Decode.map3 (\_ q r -> EventList q r)
-            (Decode.field "type" Decode.string)
-            (Decode.field "qSep" Decode.string)
-            (Decode.field "rSep" Decode.string)
-        ]
+                    "Fixed" ->
+                        Decode.map Fixed (Decode.field "string" Decode.string)
+
+                    "IdentifierName" ->
+                        Decode.map IdentifierName (Decode.field "name" Decode.string)
+
+                    "GroupIdentifierName" ->
+                        Decode.map2 GroupIdentifierName (Decode.field "scope" Scope.decoder) (Decode.field "name" Decode.string)
+
+                    "EventList" ->
+                        Decode.map2 EventList (Decode.field "qSep" Decode.string) (Decode.field "rSep" Decode.string)
+
+                    _ ->
+                        Decode.fail ("Unknown fragment: " ++ t)
+            )

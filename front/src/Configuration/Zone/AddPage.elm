@@ -237,7 +237,7 @@ allByScope s scope =
                 |> Dict.values
                 |> List.filter
                     (\it -> containsScope s.types it.scope (HasType (Type.TType TType.Group)))
-                |> List.map (.name >> GroupIdentifierName)
+                |> List.map (\it -> GroupIdentifierName it.scope it.name)
     in
     identifierNames
         ++ Fixed ""
@@ -337,7 +337,7 @@ inputFragment fragments index fragment =
         IdentifierName _ ->
             none
 
-        GroupIdentifierName _ ->
+        GroupIdentifierName _ _ ->
             none
 
         Quantity ->

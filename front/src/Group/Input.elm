@@ -1,5 +1,7 @@
 module Group.Input exposing (Config, Model, Msg, added, init, inputGroups, removed, update)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Border as Border
@@ -16,8 +18,6 @@ import Util exposing (third)
 import View exposing (..)
 import View.Smallcard exposing (tClickableCard, viewHalfCard)
 import View.Style exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 type alias Config =
@@ -38,20 +38,6 @@ type alias Model =
     -- currently edited group
     , currentG : Maybe Uuid
     }
-
-
-
--- cux où on peut appuyer une seule fois sont les anciens groupes, qui ne sont pas hierarchiques.
--- ceux où on peut appuyer plusieurs fois sont les hiérarchiques.
--- mais on appuie une seule fois : ça permet de choisir le corps,
-{-
-      si Flat : on ne peut appuyer qu'une fois
-      si Node : on peut appuyer une seule fois, et une card supplémentaire s'affiche pour sélectionner le noeud en cours (en disant Unknown
-      Si Leaf : on peut appuyer une seule fois, et il faut aller jusqu'à la feuille pour finir l'ajout du groupe.
-      Ensuite en fonction du unique=True ou False, on peut ajouter plusieurs groupes sur chaque ligne de type de groupe.
-   Si unique, la liste de choix ne s'affiche pas s'il y a déjà un groupe.
-
--}
 
 
 type Msg

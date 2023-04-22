@@ -75,7 +75,7 @@ tClickableCard s onInput t uuid =
         (text <| displayZone s SmallcardZone t uuid)
         (Dict.get (Uuid.toString uuid) s.types
             |> Maybe.andThen third
-            |> Maybe.map (\puuid -> displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid)
+            |> Maybe.map (\puuid -> "(" ++ displayZone s SmallcardZone {- TODO check?(Identifier.fromUuid puuid ids) -} (Type.toHierarchic t) puuid ++ ")")
             |> Maybe.withDefault ""
             |> text
         )

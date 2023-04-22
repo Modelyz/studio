@@ -39,10 +39,10 @@ toValue s t uuid zone fragment =
         IdentifierName name ->
             Identifier.select name (Identifier.fromUuid uuid s.identifiers) |> List.map Identifier.toValue |> String.join ", "
 
-        GroupIdentifierName name ->
+        GroupIdentifierName _ name ->
             let
                 groupids =
-                    List.map (\guuid -> Identifier.fromUuid guuid s.identifiers |> Dict.toList) (Group.groupsOf s.grouped uuid) |> List.concat |> Dict.fromList
+                    Group.groupsOf s.grouped uuid |> List.map (\guuid -> Identifier.fromUuid guuid s.identifiers |> Dict.toList) |> List.concat |> Dict.fromList
             in
             Identifier.select name groupids |> List.map Identifier.toValue |> String.join ", "
 

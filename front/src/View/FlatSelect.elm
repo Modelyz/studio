@@ -33,7 +33,7 @@ flatSelect s c uuids =
             ]
         , c.muuid |> Maybe.map (\_ -> none) |> Maybe.withDefault (h2 c.explain)
         , c.muuid
-            |> Maybe.map (\_ -> none)
+            |> Maybe.map (always none)
             |> Maybe.withDefault
                 (wrappedRow [ padding 10, spacing 10 ]
                     (uuids

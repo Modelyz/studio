@@ -14,7 +14,7 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope)
+import Scope exposing (Scope)
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -31,11 +31,6 @@ import View.Step as Step exposing (Step(..), buttons)
 
 type alias TypedType =
     Group
-
-
-typedConstructor : TType.Type
-typedConstructor =
-    TType.Group
 
 
 hereType : Type.Type
@@ -276,7 +271,7 @@ validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| Group typedConstructor m.uuid uuid m.parent m.scope
+            Ok <| Group TType.Group m.uuid uuid m.parent m.scope
 
         Nothing ->
             Err "You must select a Group Type"
