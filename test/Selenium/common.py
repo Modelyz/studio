@@ -11,6 +11,7 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
+WAIT=0.15
 
 is_running = lambda proc: proc.poll() is None
 
@@ -46,7 +47,7 @@ def count_evstore(string):
 
 
 def click(browser, text):
-    time.sleep(0.05)  # couldn't find a way to wait a detectable change
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
     print("### click on " + text)
     # WebDriverWait(browser, timeout=1).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
@@ -60,7 +61,7 @@ def click(browser, text):
 
 
 def fill(browser, text):
-    time.sleep(0.05)  # couldn't find a way to wait a detectable change
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.TAG_NAME, "input"))
@@ -69,7 +70,7 @@ def fill(browser, text):
 
 
 def fill_by_id(browser, id_, text):
-    time.sleep(0.05)  # couldn't find a way to wait a detectable change
+    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
     return (
         WebDriverWait(browser, timeout=1)
         .until(lambda d: d.find_element(By.ID, id_))
