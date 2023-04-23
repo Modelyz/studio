@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.support import expected_conditions as econd
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -11,15 +12,15 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
-WAIT = 0.03
+WAIT = 0.0
 
 is_running = lambda proc: proc.poll() is None
 
 
-def wait():
+def wait(more=0.0):
     global WAIT
-    time.sleep(WAIT)
-    WAIT = WAIT * 1.01
+    time.sleep(WAIT + more)
+    WAIT = WAIT  # + 0.0003
 
 
 def backends():
@@ -52,47 +53,61 @@ def count_evstore(string):
         return es.read().count(string)
 
 
+def open_url(browser, path):
+    print("### open " + path)
+    wait()
+    browser.get(site + path)
+    wait(0.1)
+
+
 def click(browser, text):
-    print("### click on " + text)
-    # WebDriverWait(browser, timeout=2).until(
+    print(f"### click on '{text}'")
+    # WebDriverWait(browser, timeout=60).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
     # )
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=2).until(
+    wait()  # couldn't find a way to wait a detectable change
+    WebDriverWait(browser, timeout=60).until(
+        econd.presence_of_element_located((By.XPATH, f'//*[text()="{text}"]'))
+    )
+    WebDriverWait(browser, timeout=60).until(
+        econd.element_to_be_clickable((By.XPATH, f'//*[text()="{text}"]'))
+    )
+    WebDriverWait(browser, timeout=60).until(
         lambda d: d.find_element(By.XPATH, f'//*[text()="{text}"]')
     ).click()
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
+    wait()  # couldn't find a way to wait a detectable change
 
 
 def fill(browser, text):
-    print(f"### input {text}")
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=2).until(
+    print(f"### input '{text}'")
+    wait()  # couldn't find a way to wait a detectable change
+    WebDriverWait(browser, timeout=60).until(
+        econd.presence_of_element_located((By.TAG_NAME, "input"))
+    )
+    WebDriverWait(browser, timeout=60).until(
         lambda d: d.find_element(By.TAG_NAME, "input")
     ).send_keys(text)
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
+    wait()  # couldn't find a way to wait a detectable change
 
 
 def fill_by_id(browser, id_, text):
-    print(f"### input {text} on id {id_}")
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=2).until(
+    print(f"### input '{text}' on id {id_}")
+    wait()  # couldn't find a way to wait a detectable change
+    WebDriverWait(browser, timeout=60).until(
+        econd.presence_of_element_located((By.ID, id_))
+    )
+    WebDriverWait(browser, timeout=60).until(
         lambda d: d.find_element(By.ID, id_)
     ).send_keys(text)
-    time.sleep(WAIT)  # couldn't find a way to wait a detectable change
-
-
-def find_by_id(browser, text):
-    return browser.find_element(By.ID, text)
-
-
-def find_by_text(browser, text):
-    return browser.find_element(By.XPATH, f'//*[contains(text(),"{text}")]')
+    wait()  # couldn't find a way to wait a detectable change
 
 
 def text_exists(browser, text):
+    WebDriverWait(browser, timeout=60).until(
+        econd.presence_of_element_located((By.XPATH, f'//*[contains(text(),"{text}")]'))
+    )
     assert (
-        find_by_text(browser, text).text == text
+        browser.find_element(By.XPATH, f'//*[contains(text(),"{text}")]').text == text
     ), f"The text '{text}' could not be found"
 
 
@@ -297,9 +312,3 @@ def add_group(
         for group in group[1]:
             click(browser, group)
     click(browser, "Validate and finish")
-
-
-def open_url(browser, path):
-    print("### open " + path)
-    browser.get(site + path)
-    time.sleep(4 * WAIT)
