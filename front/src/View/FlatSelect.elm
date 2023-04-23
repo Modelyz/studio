@@ -31,7 +31,7 @@ flatSelect s c uuids =
                 |> Maybe.map (\uuid -> viewHalfCard s.state (Just <| c.onInput Nothing) c.what uuid)
                 |> Maybe.withDefault (el [ padding 5, Font.color color.text.disabled ] (text "Empty"))
             ]
-        , c.muuid |> Maybe.map (\_ -> none) |> Maybe.withDefault (h2 c.explain)
+        , c.muuid |> Maybe.map (always none) |> Maybe.withDefault (h2 c.explain)
         , c.muuid
             |> Maybe.map (always none)
             |> Maybe.withDefault

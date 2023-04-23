@@ -28,10 +28,6 @@ import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
 
 
-constructor =
-    Resource
-
-
 typedConstructor : TType.Type
 typedConstructor =
     TType.Resource
@@ -86,7 +82,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -208,8 +204,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding a Resource"
     , attributes = []
     , element = viewContent model
@@ -238,7 +234,7 @@ validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| constructor typedConstructor m.uuid uuid
+            Ok <| Resource typedConstructor m.uuid uuid
 
         Nothing ->
             Err "You must select a Resource Type"

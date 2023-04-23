@@ -12,7 +12,7 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
-WAIT = 0.0
+WAIT = 0.02
 
 is_running = lambda proc: proc.poll() is None
 

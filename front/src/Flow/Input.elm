@@ -4,7 +4,7 @@ import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Flow exposing (Flow(..))
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Type
@@ -36,7 +36,7 @@ input c s =
             )
         |> Maybe.withDefault (el [ centerY ] <| text "Nothing chosen yet")
     , c.flow
-        |> Maybe.map (\_ -> none)
+        |> Maybe.map (always none)
         |> Maybe.withDefault
             (column [ spacing 10 ]
                 [ column [ alignTop, padding 10, spacing 10, width <| minimum 200 fill, Background.color color.content.choice ]

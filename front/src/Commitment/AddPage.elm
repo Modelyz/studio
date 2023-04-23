@@ -1,6 +1,5 @@
 module Commitment.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 
-import Agent.Agent exposing (Agent)
 import Commitment.Commitment exposing (Commitment)
 import CommitmentType.CommitmentType exposing (CommitmentType)
 import Date
@@ -8,14 +7,12 @@ import DateTime.View
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
-import Element.Font as Font
 import Expression exposing (Expression)
 import Expression.Input
 import Flow exposing (Flow(..))
 import Flow.Input
-import Group.Group as Group exposing (Group)
+import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
 import Hierarchy.Type as HType
@@ -26,15 +23,14 @@ import Message
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
-import Task
 import Time exposing (millisToPosix)
 import Type
 import Typed.Type as TType
-import Util exposing (andMapR, checkMaybe, chooseIfSingleton, flip, third)
+import Util exposing (andMapR, checkMaybe, chooseIfSingleton, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -42,10 +38,6 @@ import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
 import View.Style exposing (color)
-
-
-constructor =
-    Commitment
 
 
 typedConstructor : TType.Type
@@ -115,7 +107,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -208,7 +200,7 @@ init s f =
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
 
-                    ( editgroups, editcmd ) =
+                    ( editgroups, _ ) =
                         Group.Input.init s gs
 
                     commitment =
@@ -349,8 +341,8 @@ update s msg model =
                 |> (\( x, y ) -> ( x, Effect.map Button y ))
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Adding an Commitment"
     , attributes = []
     , element = viewContent model
@@ -391,7 +383,7 @@ validate m =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
-        (constructor typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
+        (Commitment typedConstructor m.uuid (DateTime.View.toPosix m.calendar))
         (checkMaybe m.qty "The quantity is invalid")
         |> andMapR (checkMaybe m.type_ "You must select a Commitment Type")
         |> andMapR (checkMaybe m.provider "You must select a Provider")
