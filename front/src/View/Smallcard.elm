@@ -34,10 +34,10 @@ clickableRemovableCard onChoose onDelete title description =
 
 clickableCard : msg -> Element msg -> Element msg -> Element msg
 clickableCard onInput title description =
-    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle, width (px 250) ]
+    column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle ]
         [ row [ alignLeft, Font.size size.text.main ]
             [ button.primary (Ok onInput) "+"
-            , el [ paddingXY 10 0 ] title
+            , el [ paddingXY 10 0, width <| minimum 250 fill ] title
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
         ]
