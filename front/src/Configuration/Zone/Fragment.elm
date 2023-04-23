@@ -34,8 +34,8 @@ toString fragment =
         IdentifierName name ->
             name
 
-        GroupIdentifierName scope name ->
-            name ++ " of " ++ Scope.toString scope
+        GroupIdentifierName _ name ->
+            name
 
         Parent ->
             "Parent"
@@ -65,8 +65,8 @@ toDesc fragment =
         IdentifierName _ ->
             "Identifier"
 
-        GroupIdentifierName _ _ ->
-            "Identifier of a Group"
+        GroupIdentifierName scope _ ->
+            "Identifier of a " ++ Scope.toString scope
 
         Parent ->
             "Display the zone configuration of the Parent"

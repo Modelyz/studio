@@ -7,6 +7,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Html.Attributes as Attr
 import Prng.Uuid as Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
 import State exposing (State)
@@ -50,7 +51,12 @@ halfCard onDelete title =
 viewHalfCard : State -> Maybe msg -> Type -> Uuid -> Element msg
 viewHalfCard s maybeOnDelete t uuid =
     row [ Background.color color.item.selected ]
-        [ el [ padding 10 ] (text <| displayZone s SmallcardZone t uuid)
+        [ el
+            [ padding 10
+            , htmlAttribute <| Attr.id (Uuid.toString uuid)
+            , htmlAttribute <| Attr.attribute "type" (Type.toString t)
+            ]
+            (text <| displayZone s SmallcardZone t uuid)
         , Maybe.map (\onDelete -> button.secondary (Ok onDelete) "×") maybeOnDelete |> Maybe.withDefault none
         ]
 

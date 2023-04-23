@@ -20,10 +20,10 @@ toDisplay : Type -> String
 toDisplay t =
     case t of
         TType tt ->
-            TType.toString tt
+            TType.toDisplay tt
 
         HType ht ->
-            HType.toString ht
+            HType.toDisplay ht
 
 
 toString : Type -> String

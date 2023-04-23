@@ -173,7 +173,7 @@ validate : Model -> Result String Configuration
 validate m =
     Result.map3 ZoneDisplay
         (Ok m.zone)
-        (checkEmptyList m.fragments "You must choose at least an identifier")
+        (checkEmptyList m.fragments "Your zone format is empty")
         (if m.scope == Scope.empty then
             Err "You must choose a scope"
 
@@ -209,7 +209,7 @@ viewContent model s =
             { inputMsg = InputFragments
             , selection = .fragments
             , title = "Format: "
-            , description = "Click on the items below to construct the display of your identifier"
+            , description = "Click on the items below to construct the display of your zone"
             , toString = Fragment.toString
             , toDesc = Fragment.toDesc
             , empty = "No identifier available"
