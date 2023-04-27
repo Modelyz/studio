@@ -1,9 +1,10 @@
-module View.Table exposing (tView)
+module View.Table exposing (hView, tView)
 
 import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Group.View exposing (groupsColumn)
+import Hierarchy.Type as HType
 import Ident.View exposing (identifierColumn)
 import Prng.Uuid exposing (Uuid)
 import Scope exposing (Scope(..))
@@ -22,7 +23,27 @@ tView s scope entities =
         [ table [ width fill, Background.color color.table.inner.background ]
             { data =
                 entities
-                    |> List.map (\a -> ( a.uuid, Type.TType a.what, Just a.type_ ))
+                    |> List.map (\e -> ( e.uuid, Type.TType e.what, Just e.type_ ))
+            , columns =
+                Type.View.typeColumn s
+                    :: (s.state.identifierTypes
+                            |> Dict.values
+                            |> List.filter (\it -> containsScope s.state.types it.scope scope)
+                            |> List.map (identifierColumn s)
+                       )
+                    ++ [ groupsColumn s ]
+            }
+        ]
+
+
+hView : Shared.Model -> Scope -> List { a | what : HType.Type, uuid : Uuid, parent : Maybe Uuid } -> Element msg
+hView s scope entityTypes =
+    wrappedRow
+        [ spacing 10 ]
+        [ table [ width fill, Background.color color.table.inner.background ]
+            { data =
+                entityTypes
+                    |> List.map (\h -> ( h.uuid, Type.HType h.what, h.parent ))
             , columns =
                 Type.View.typeColumn s
                     :: (s.state.identifierTypes

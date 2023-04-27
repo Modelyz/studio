@@ -3,22 +3,18 @@ module CommitmentType.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Group.View exposing (groupsColumn)
 import Hierarchy.Type as HType
-import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route)
 import Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Type
-import Type.View
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
+import View.Table exposing (hView)
 import View.Type as ViewType
 
 
@@ -44,7 +40,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -80,8 +76,8 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Commitment Types"
     , attributes = []
     , element = viewContent model
@@ -103,7 +99,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.commitmentTypes
-                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid)  (Type.HType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) (Type.HType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Commitment Types yet. Add your first one!")
                     )
@@ -119,18 +115,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ table [ width fill, Background.color color.table.inner.background ]
-                        { data =
-                            Dict.values s.state.commitmentTypes
-                                |> List.map (\a -> ( a.uuid, Type.HType a.what, a.parent ))
-                        , columns =
-                            Type.View.typeColumn s
-                                :: (s.state.identifierTypes
-                                        |> Dict.values
-                                        |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.HType HType.CommitmentType)))
-                                        |> List.map (identifierColumn s)
-                                   )
-                                ++ [ groupsColumn s ]
-                        }
+                    [ hView s (HasType (Type.HType HType.CommitmentType)) (Dict.values s.state.resourceTypes)
                     ]
                 ]

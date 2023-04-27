@@ -19,6 +19,7 @@ import Type.View
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
+import View.Table exposing (hView)
 import View.Type as ViewType
 
 
@@ -103,7 +104,7 @@ viewContent model s =
                 [ wrappedRow
                     [ spacing 10 ]
                     (s.state.eventTypes
-                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid)  (Type.HType t.what) t.uuid)
+                        |> Dict.map (\_ t -> tClickableRemovableCard s.state (View t.uuid) (Removed t.uuid) (Type.HType t.what) t.uuid)
                         |> Dict.values
                         |> withDefaultContent (p "There are no Event Types yet. Add your first one!")
                     )
@@ -119,18 +120,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ table [ width fill, Background.color color.table.inner.background ]
-                        { data =
-                            Dict.values s.state.eventTypes
-                                |> List.map (\a -> ( a.uuid, Type.HType a.what, a.parent ))
-                        , columns =
-                            Type.View.typeColumn s
-                                :: (s.state.identifierTypes
-                                        |> Dict.values
-                                        |> List.filter (\it -> containsScope s.state.types it.scope (HasType (Type.HType HType.EventType)))
-                                        |> List.map (identifierColumn s)
-                                   )
-                                ++ [ groupsColumn s ]
-                        }
+                    [ hView s (HasType (Type.HType HType.EventType)) (Dict.values s.state.resourceTypes)
                     ]
                 ]
