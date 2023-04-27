@@ -12,9 +12,40 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
-WAIT = 0.02
+WAIT = 0.05
+LASTSTEP_FILE = "resume"  # store the nb of function execution
+LASTSTEP = int(open(LASTSTEP_FILE).read()) if os.path.exists(LASTSTEP_FILE) else 0
+CURRENT = 0
+TIMEOUT = 600
 
 is_running = lambda proc: proc.poll() is None
+
+# wait = selenium.WebDriverWait(chrome, timeout=10, poll_frequency=1)
+
+
+def resumable(f):
+    """decorator to allow to resume a failed run"""
+
+    def resume(*args, **kw):
+        global CURRENT, LASTSTEP
+        if CURRENT > LASTSTEP:
+            os.unlink(LASTSTEP_FILE)
+            raise Exception("Invalid resume file deleted. Please restart")
+        if CURRENT == LASTSTEP:
+            try:
+                result = f(*args, **kw)
+            except:
+                with open(LASTSTEP_FILE, "w") as fnb:
+                    fnb.write(str(CURRENT))
+                raise
+            CURRENT += 1
+            LASTSTEP = CURRENT
+            return result
+        else:
+            print(f"skipping nb {CURRENT}")
+            CURRENT += 1
+
+    return resume
 
 
 def wait(more=0.0):
@@ -62,17 +93,17 @@ def open_url(browser, path):
 
 def click(browser, text):
     print(f"### click on '{text}'")
-    # WebDriverWait(browser, timeout=60).until(
+    # WebDriverWait(browser, timeout=TIMEOUT).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
     # )
     wait()  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         econd.presence_of_element_located((By.XPATH, f'//*[text()="{text}"]'))
     )
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         econd.element_to_be_clickable((By.XPATH, f'//*[text()="{text}"]'))
     )
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         lambda d: d.find_element(By.XPATH, f'//*[text()="{text}"]')
     ).click()
     wait()  # couldn't find a way to wait a detectable change
@@ -81,10 +112,10 @@ def click(browser, text):
 def fill(browser, text):
     print(f"### input '{text}'")
     wait()  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         econd.presence_of_element_located((By.TAG_NAME, "input"))
     )
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         lambda d: d.find_element(By.TAG_NAME, "input")
     ).send_keys(text)
     wait()  # couldn't find a way to wait a detectable change
@@ -93,17 +124,17 @@ def fill(browser, text):
 def fill_by_id(browser, id_, text):
     print(f"### input '{text}' on id {id_}")
     wait()  # couldn't find a way to wait a detectable change
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         econd.presence_of_element_located((By.ID, id_))
     )
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         lambda d: d.find_element(By.ID, id_)
     ).send_keys(text)
     wait()  # couldn't find a way to wait a detectable change
 
 
 def text_exists(browser, text):
-    WebDriverWait(browser, timeout=60).until(
+    WebDriverWait(browser, timeout=TIMEOUT).until(
         econd.presence_of_element_located((By.XPATH, f'//*[contains(text(),"{text}")]'))
     )
     assert (
@@ -184,8 +215,8 @@ def add_group_type(
     browser,
     parentType="",
     identifiers={},
-    single=False,
-    tree="Not",
+    single=None,
+    tree="Not hierarchical",
     values={},
     options={},
 ):
@@ -201,7 +232,7 @@ def add_group_type(
     for name, value in identifiers.items():
         fill_by_id(browser, name, value)
     click(browser, "Next →")
-    if not single:
+    if single:
         click(browser, str(single))
     click(browser, "Next →")
     click(browser, tree)
