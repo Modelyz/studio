@@ -37,7 +37,7 @@ clickableCard onInput title description =
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle ]
         [ row [ alignLeft, Font.size size.text.main ]
             [ button.primary (Ok onInput) "+"
-            , el [ paddingXY 10 0, width <| minimum 250 fill ] title
+            , el [ paddingXY 10 0, width <| minimum 150 fill ] title
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
         ]
