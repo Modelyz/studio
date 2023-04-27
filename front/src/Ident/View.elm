@@ -1,15 +1,11 @@
-module Ident.View exposing (displayIdentifierDict, identifierColumn)
+module Ident.View exposing (displayIdentifierDict)
 
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (IdentifierType)
-import Prng.Uuid exposing (Uuid)
-import Shared
-import Type exposing (Type)
-import View exposing (headerCell, innerCell)
 import View.Style exposing (..)
+import View.Table exposing (innerCell)
 
 
 displayIdentifierDict : String -> Dict String Identifier -> Element msg
@@ -26,19 +22,3 @@ displayIdentifierDict default data =
 
     else
         text default
-
-
-identifierColumn : Shared.Model -> IdentifierType -> Column ( Uuid, Type, Maybe Uuid ) msg
-identifierColumn s it =
-    { header = headerCell color.table.header.background it.name
-    , width = fill
-    , view =
-        \( uuid, _, _ ) ->
-            s.state.identifiers
-                |> Dict.values
-                |> List.filter (\id -> id.name == it.name && id.for == uuid)
-                |> List.map Identifier.toValue
-                |> List.head
-                |> Maybe.withDefault ""
-                |> innerCell
-    }

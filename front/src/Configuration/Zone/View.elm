@@ -4,6 +4,7 @@ import Configuration as Config exposing (Configuration(..))
 import Configuration.Zone exposing (Zone(..))
 import Configuration.Zone.Fragment exposing (Fragment(..))
 import Dict
+import Element exposing (..)
 import Expression.Eval as Eval
 import Expression.Rational as Rational
 import Flow exposing (Flow(..))
@@ -15,6 +16,7 @@ import Scope exposing (Scope(..))
 import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
+import View.Style exposing (..)
 
 
 displayZone : State -> Zone -> Type -> Uuid -> String

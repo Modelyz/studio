@@ -3,19 +3,14 @@ module EventType.ListPage exposing (Flags, Model, Msg, match, page)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Background as Background
-import Group.View exposing (groupsColumn)
 import Hierarchy.Type as HType
-import Ident.View exposing (identifierColumn)
 import Message exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route)
 import Scope exposing (Scope(..))
-import Scope.State exposing (containsScope)
 import Shared
 import Spa.Page
 import Type
-import Type.View
 import View exposing (..)
 import View.Smallcard exposing (tClickableRemovableCard)
 import View.Style exposing (..)
@@ -45,7 +40,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -81,8 +76,8 @@ update s msg model =
             ( { model | viewtype = vt }, Effect.none )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Event Types"
     , attributes = []
     , element = viewContent model
@@ -120,6 +115,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ hView s (HasType (Type.HType HType.EventType)) (Dict.values s.state.resourceTypes)
+                    [ hView s.state (HasType (Type.HType HType.EventType)) (Dict.values s.state.resourceTypes)
                     ]
                 ]

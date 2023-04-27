@@ -7,8 +7,8 @@ import Expression.Eval as Eval
 import Expression.Rational as Rational
 import Shared
 import Value.Value exposing (Value)
-import View exposing (innerCell)
 import View.Style exposing (..)
+import View.Table exposing (innerCell)
 
 
 displayValueDict : Shared.Model -> Eval.Config -> String -> Dict String Value -> Dict String Value -> Element msg

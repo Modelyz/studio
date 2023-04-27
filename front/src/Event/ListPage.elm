@@ -121,6 +121,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ tView s (HasType (Type.TType TType.Event)) entities
+                    [ tView s.state (HasType (Type.TType TType.Event)) entities
                     ]
                 ]

@@ -119,5 +119,5 @@ viewContent model s =
                 ]
                 none
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
-                [ tView s (HasType (Type.TType TType.Resource)) entities
+                [ tView s.state (HasType (Type.TType TType.Resource)) entities
                 ]

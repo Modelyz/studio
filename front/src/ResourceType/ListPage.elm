@@ -115,6 +115,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ hView s (HasType (Type.HType HType.ResourceType)) (Dict.values s.state.resourceTypes)
+                    [ hView s.state (HasType (Type.HType HType.ResourceType)) (Dict.values s.state.resourceTypes)
                     ]
                 ]

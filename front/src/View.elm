@@ -1,4 +1,4 @@
-module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, headerCell, innerCell, lenToPx, map, notFound, onEnter, p, separator, switch, viewSelector, withDefaultContent, zero)
+module View exposing (View, button, closeMenu, flatContainer, floatingContainer, floatingContainer2, h1, h2, h3, hamburger, lenToPx, map, notFound, onEnter, p, separator, switch, viewSelector, withDefaultContent, zero)
 
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -234,16 +234,6 @@ onEnter msg =
                     )
             )
         )
-
-
-headerCell : Color -> String -> Element msg
-headerCell c =
-    text >> el [ padding 5, Border.width 2, Border.color color.content.background, Background.color c ]
-
-
-innerCell : String -> Element msg
-innerCell =
-    text >> el [ height fill, padding 5, Border.width 2, Border.color color.content.background, Background.color color.table.inner.background ]
 
 
 viewSelector : List ViewType.Type -> ViewType.Type -> (ViewType.Type -> msg) -> Element msg

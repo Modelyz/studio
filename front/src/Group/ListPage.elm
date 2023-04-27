@@ -112,6 +112,13 @@ viewContent model s =
                 ]
 
         ViewType.Table ->
+            let
+                t =
+                    Type.TType TType.Group
+
+                scope =
+                    model.filter |> Maybe.map (HasUserType t) |> Maybe.withDefault (HasType t)
+            in
             flatContainer s
                 Nothing
                 "Groups"
@@ -121,6 +128,6 @@ viewContent model s =
                 (View.viewSelector [ ViewType.Smallcard, ViewType.Table ] model.viewtype ChangeView)
                 [ wrappedRow
                     [ spacing 10 ]
-                    [ tView s (HasType (Type.TType TType.Group)) entities
+                    [ tView s.state scope entities
                     ]
                 ]
