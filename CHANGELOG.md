@@ -4,7 +4,9 @@
 
 ## version 15 -- unreleased
 
-- Added the (uuid of) the scope in the GroupIdentfier zone fragment
+- Added (the uuid of) the scope in the GroupIdentfier zone fragment
+- Improved Selenium automation
+- Improved Table View with values and better columns and
 * Internal changes, fixes and improvements
 
 ## version 14 -- 2023-04-23
