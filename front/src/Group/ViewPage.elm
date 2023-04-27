@@ -124,7 +124,7 @@ viewContent model s =
         , text <| displayZone s.state SmallcardZone mainTType model.uuid
         , h2 "Parent group:"
         , Dict.get (Uuid.toString model.uuid) s.state.groups |> Maybe.andThen .parent |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Group)) |> Maybe.withDefault "(None)" |> text
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+        , getIdentifiers s.state model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Can contain:"
         , text <| Scope.View.toDisplay s.state model.scope

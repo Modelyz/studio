@@ -122,7 +122,7 @@ init s f =
             , eventTypes = Dict.empty
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid Nothing True
+            , identifiers = getIdentifiers s.state hereType newUuid Nothing True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , gsubmodel = initgroups
             , isMenu = True
@@ -173,7 +173,7 @@ init s f =
                     | type_ = realType
                     , uuid = uuid
                     , eventTypes = eventTypes
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
+                    , identifiers = getIdentifiers s.state hereType uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
                     , gsubmodel = editgroups
                     , hadMenu = hadMenu
@@ -200,7 +200,7 @@ update s msg model =
         InputType mh ->
             ( { model
                 | type_ = mh
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
+                , identifiers = getIdentifiers s.state hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none

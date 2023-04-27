@@ -2,8 +2,9 @@ module Ident.Identifiable exposing (getIdentifiers)
 
 import Dict exposing (Dict)
 import Ident.Identifier as Identifier exposing (Identifier)
-import Ident.IdentifierType exposing (IdentifierType, initIdentifiers)
+import Ident.IdentifierType exposing (initIdentifiers)
 import Prng.Uuid exposing (Uuid)
+import State exposing (State)
 import Type exposing (Type)
 
 
@@ -12,8 +13,8 @@ import Type exposing (Type)
 -- TODO or restore a separated Identifiable type?
 
 
-getIdentifiers : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String IdentifierType -> Dict String Identifier -> Type -> Uuid -> Maybe Uuid -> Bool -> Dict String Identifier
-getIdentifiers types allIdts allIds t uuid mpuuid isNew =
+getIdentifiers : State -> Type -> Uuid -> Maybe Uuid -> Bool -> Dict String Identifier
+getIdentifiers s t uuid mpuuid isNew =
     -- start with empty identifiers from identifierTypes, then merge with existing identifiers
-    initIdentifiers types allIdts t mpuuid uuid isNew
-        |> Dict.union (Identifier.fromUuid uuid allIds)
+    initIdentifiers s.types s.identifierTypes t mpuuid uuid isNew
+        |> Dict.union (Identifier.fromUuid uuid s.identifiers)

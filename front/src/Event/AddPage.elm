@@ -211,7 +211,7 @@ init s f =
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) newUuid wantedType True
+            , identifiers = getIdentifiers s.state (Type.TType TType.Event) newUuid wantedType True
             , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid wantedType True
             , gsubmodel = initgroups
             , warning = ""
@@ -273,7 +273,7 @@ init s f =
                     , partialProcesses = toPartialProcesses reconciliations
                     , reconciliations = reconciliations
                     , calendar = Tuple.first caledit
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) uuid realType False
+                    , identifiers = getIdentifiers s.state (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
                     , gsubmodel = editgroups
                   }
@@ -329,7 +329,7 @@ update s msg model =
                                     |> Dict.values
                                )
                         )
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers (Type.TType TType.Event) model.uuid muuid True
+                , identifiers = getIdentifiers s.state (Type.TType TType.Event) model.uuid muuid True
                 , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) model.uuid muuid True
               }
             , Effect.none

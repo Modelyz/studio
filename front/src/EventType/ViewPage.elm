@@ -115,7 +115,7 @@ viewContent model s =
         [ button.primary (Ok Edit) "Edit" ]
         [ h2 "Identifiers:"
         , text <| displayZone s.state SmallcardZone mainHType model.uuid
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+        , getIdentifiers s.state model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Type:"
         , Dict.get (Uuid.toString model.uuid) s.state.types

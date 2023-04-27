@@ -118,7 +118,7 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> h1
         , text <| displayZone s.state SmallcardZone mainTType model.uuid
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+        , getIdentifiers s.state model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False

@@ -144,7 +144,7 @@ viewContent model s =
                         Process.Reconcile.View.view s.state ViewEvent Unreconciled r
                     )
             )
-        , getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers model.what model.uuid model.type_ False
+        , getIdentifiers s.state model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
         , getValues s.state.types s.state.valueTypes s.state.values model.what model.uuid model.type_ False

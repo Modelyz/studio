@@ -129,7 +129,7 @@ init s f =
             , scope = Scope.anything
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType newUuid wantedType True
+            , identifiers = getIdentifiers s.state hereType newUuid wantedType True
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid wantedType True
             , gsubmodel = initgroups
             , warning = ""
@@ -161,7 +161,7 @@ init s f =
                     , parent = Maybe.andThen .parent group
                     , scope = scope
                     , uuid = uuid
-                    , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType uuid realType False
+                    , identifiers = getIdentifiers s.state hereType uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
                     , gsubmodel = editgroups
                   }
@@ -186,7 +186,7 @@ update s msg model =
         InputType mh ->
             ( { model
                 | type_ = mh
-                , identifiers = getIdentifiers s.state.types s.state.identifierTypes s.state.identifiers hereType model.uuid mh True
+                , identifiers = getIdentifiers s.state hereType model.uuid mh True
                 , values = getValues s.state.types s.state.valueTypes s.state.values hereType model.uuid mh True
               }
             , Effect.none
