@@ -2,10 +2,10 @@
 
 [Back to app](../)
 
-## version 15 -- unreleased
+## version 15 -- 2023-04-28
 
-- Added (the uuid of) the scope in the GroupIdentfier zone fragment
 - Improved Selenium automation
+- Added (the uuid of) the scope in the GroupIdentfier zone fragment
 - Improved Table View with values and better columns and
 * Internal changes, fixes and improvements
 
