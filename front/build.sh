@@ -14,6 +14,7 @@ grep "## version ${APPVERSION} --" ../CHANGELOG.md \
 
 # update the static dir
 echo "Updating the static dir"
+mkdir -p ../build
 rsync -v -r --delete src/static/ ../build/static/
 
 # build
