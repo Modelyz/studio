@@ -253,7 +253,7 @@ serve (Options d host port msgPath storeHost storePort) = do
   putStrLn "New State:"
   print newState
   -- keep connection to the Store
-  _ <- forkIO $ connectClient 1 firstTime storeHost port msgPath storeChan stateMV
+  _ <- forkIO $ connectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
   putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
   -- listen for client browsers
   Warp.run port $ websocketsOr WS.defaultConnectionOptions (websocketServerApp msgPath chan ncMV stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
