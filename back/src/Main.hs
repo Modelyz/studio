@@ -36,7 +36,7 @@ newtype State = State {pending :: Set Message}
 type StateMV = MVar State
 
 emptyState :: State
-emptyState = State {pending = Set.empty}
+emptyState = State{pending = Set.empty}
 
 options :: Parser Options
 options =
@@ -96,7 +96,7 @@ clientApp msgPath storeChan stateMV conn = do
   putStrLn "Connected!"
   -- Just reconnected, first send the pending messages to the Store
   state <- takeMVar stateMV
-  putMVar stateMV $! state {pending = Set.empty}
+  putMVar stateMV $! state{pending = Set.empty}
   catch
     ( unless (null (pending state)) $ do
         -- Send pending messages and store a flow=Sent version
@@ -107,7 +107,7 @@ clientApp msgPath storeChan stateMV conn = do
     ( \(SomeException _) -> do
         -- if something got wrong, put back the messages in the pending list
         st <- takeMVar stateMV
-        putMVar stateMV $! state {pending = pending state <> pending st}
+        putMVar stateMV $! state{pending = pending state <> pending st}
     )
   -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
   -- fork a thread to send back data from the channel to the central store
@@ -119,9 +119,9 @@ clientApp msgPath storeChan stateMV conn = do
         putStrLn $ "\nForwarding to the store this message coming from browser " ++ show n ++ ": " ++ show ev
         -- Remove the current msg from the pending list
         st <- takeMVar stateMV
-        putMVar stateMV $! st {pending = updatePending ev $ pending st}
+        putMVar stateMV $! st{pending = updatePending ev $ pending st}
         -- send to the Store
-        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
+        WS.sendTextData conn $ JSON.encode [ev]
 
   forever $ do
     putStrLn "Waiting for messages coming from the store"
@@ -138,7 +138,7 @@ clientApp msgPath storeChan stateMV conn = do
 update :: State -> Message -> State
 update state msg =
   -- update the pending field
-  state {pending = updatePending msg $ pending state}
+  state{pending = updatePending msg $ pending state}
 
 updatePending :: Message -> Set Message -> Set Message
 updatePending msg pendings =
@@ -261,11 +261,11 @@ serve (Options d host port msgPath storeHost storePort) = do
 main :: IO ()
 main =
   serve =<< execParser opts
-  where
-    opts =
-      info
-        (options <**> helper)
-        ( fullDesc
-            <> progDesc "Studio helps you define your application domain"
-            <> header "Modelyz Studio"
-        )
+ where
+  opts =
+    info
+      (options <**> helper)
+      ( fullDesc
+          <> progDesc "Studio helps you define your application domain"
+          <> header "Modelyz Studio"
+      )
