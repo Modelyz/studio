@@ -10,7 +10,6 @@ author:              Christophe Combelles
 maintainer:          ccomb@free.fr
 -- copyright:
 -- category:
-build-type:          Simple
 -- extra-source-files:  CHANGELOG.md
 
 source-repository head
@@ -18,14 +17,13 @@ source-repository head
     location: https://github.com/Modelyz/studio
 
 executable studio
-    main-is:             Main.hs
-    hs-source-dirs:
-        src
+    main-is:          Main.hs
+    hs-source-dirs:   src
   -- other-extensions:
     ghc-options: -Wall -O2
     build-depends:
-        base ^>=4.16
-        , aeson ^>= 2.1
+        base >=4.16
+        , aeson >= 2.1
         , bytestring
         , containers
         , http-types

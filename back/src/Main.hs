@@ -13,7 +13,7 @@ import Data.Set as Set (Set, delete, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
-import Message (Message, appendMessage, getFlow, getMessages, getMetaString, getUuids, isType, readMessages, setFlow)
+import Message (Message (..), MessageFlow (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, setFlow, uuid, uuids)
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp qualified as Warp
@@ -36,7 +36,7 @@ newtype State = State {pending :: Set Message}
 type StateMV = MVar State
 
 emptyState :: State
-emptyState = State{pending = Set.empty}
+emptyState = State {pending = Set.empty}
 
 options :: Parser Options
 options =
@@ -71,7 +71,7 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
       fix
         ( \loop -> do
             (n, ev) <- readChan elmChan
-            when (n /= nc && not (isType "InitiatedConnection" ev)) $ do
+            when (n /= nc && not (ev `isType` "InitiatedConnection")) $ do
               putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from connected browser " ++ show n ++ ": Sent through WS : " ++ show ev
               WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
             loop
@@ -84,11 +84,12 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
       messages <- WS.receiveDataMessage conn
       putStrLn $ "\nReceived stuff through websocket from Elm client " ++ show nc ++ ". Handling it : " ++ show messages
       case JSON.decode
-        ( case messages of
-            WS.Text bs _ -> WS.fromLazyByteString bs
-            WS.Binary bs -> WS.fromLazyByteString bs
-        ) of
-        Just msgs -> mapM_ (handleMessageFromBrowser msgPath conn nc elmChan stateMV) $ getMessages msgs
+             ( case messages of
+                 WS.Text bs _ -> WS.fromLazyByteString bs
+                 WS.Binary bs -> WS.fromLazyByteString bs
+             ) ::
+             Maybe Message of
+        Just msg -> handleMessageFromBrowser msgPath conn nc elmChan stateMV msg
         Nothing -> sequence_ [putStrLn "\nError decoding incoming message"]
 
 clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
@@ -96,18 +97,18 @@ clientApp msgPath storeChan stateMV conn = do
   putStrLn "Connected!"
   -- Just reconnected, first send the pending messages to the Store
   state <- takeMVar stateMV
-  putMVar stateMV $! state{pending = Set.empty}
+  putMVar stateMV $! state {pending = Set.empty}
   catch
     ( unless (null (pending state)) $ do
         -- Send pending messages and store a flow=Sent version
         let pendings = pending state
         WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" pendings
-        mapM_ (appendMessage msgPath . setFlow "Sent") pendings
+        mapM_ (appendMessage msgPath . setFlow Sent) pendings
     )
     ( \(SomeException _) -> do
         -- if something got wrong, put back the messages in the pending list
         st <- takeMVar stateMV
-        putMVar stateMV $! state{pending = pending state <> pending st}
+        putMVar stateMV $! state {pending = pending state <> pending st}
     )
   -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
   -- fork a thread to send back data from the channel to the central store
@@ -115,11 +116,11 @@ clientApp msgPath storeChan stateMV conn = do
     putStrLn "Waiting for messages coming from the client browsers"
     forever $ do
       (n, ev) <- readChan storeChan
-      unless (n == -1 || isType "InitiatedConnection" ev) $ do
+      unless (n == -1 || ev `isType` "InitiatedConnection") $ do
         putStrLn $ "\nForwarding to the store this message coming from browser " ++ show n ++ ": " ++ show ev
         -- Remove the current msg from the pending list
         st <- takeMVar stateMV
-        putMVar stateMV $! st{pending = updatePending ev $ pending st}
+        putMVar stateMV $! st {pending = updatePending ev $ pending st}
         -- send to the Store
         WS.sendTextData conn $ JSON.encode [ev]
 
@@ -138,69 +139,60 @@ clientApp msgPath storeChan stateMV conn = do
 update :: State -> Message -> State
 update state msg =
   -- update the pending field
-  state{pending = updatePending msg $ pending state}
+  state {pending = updatePending msg $ pending state}
 
 updatePending :: Message -> Set Message -> Set Message
 updatePending msg pendings =
   case getFlow msg of
-    Just "Requested" -> Set.insert msg pendings
-    Just "Sent" -> Set.insert msg pendings
-    Just "Processed" -> Set.delete msg pendings
-    _ -> pendings
+    Requested -> Set.insert msg pendings
+    Sent -> Set.insert msg pendings
+    Processed -> Set.delete msg pendings
 
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> StateMV -> Message -> IO ()
-handleMessageFromBrowser msgPath conn nc chan stateMV msg =
-  do
-    -- store the message in the message store
-    unless (isType "InitiatedConnection" msg) $ do
-      appendMessage msgPath msg
-      WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow "Sent" msg)
-      putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
-      -- Add it to the pending list (if Requested or Sent)
-      state <- takeMVar stateMV
-      putMVar stateMV $! update state msg
-    -- if the message is a InitiatedConnection, get the uuid list from it,
-    -- and send back all the missing messages (with an added ack)
-    when (isType "InitiatedConnection" msg) $ do
-      let uuids = getUuids msg
-      esevs <- readMessages msgPath
-      let msgs =
-            filter
-              ( \e -> case getMetaString "uuid" e of
-                  Just u -> T.unpack u `notElem` uuids
-                  Nothing -> False
-              )
-              esevs
-      WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
-      putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
-    -- send msg to other connected clients
-    putStrLn $ "\nWriting to the chan as client " ++ show nc
-    writeChan chan (nc, msg)
+handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
+  case payload msg of
+    InitiatedConnection connection ->
+      -- if the message is a InitiatedConnection, get the uuid list from it,
+      -- and send back all the missing messages (with an added ack)
+      do
+        let alluuids = uuids connection
+        esevs <- readMessages msgPath
+        -- the messages to send to the browser are the processed ones coming from another browser or service
+        let msgs = filter (\e -> uuid (metadata e) `notElem` alluuids) esevs
+        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
+        putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
+    _ ->
+      do
+        -- store the message in the message store
+        appendMessage msgPath msg
+        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow Sent msg)
+        putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
+        -- Add it to the pending list (if Requested or Sent)
+        state <- takeMVar stateMV
+        putMVar stateMV $! update state msg
+  -- send msg to other connected clients
+  putStrLn $ "\nWriting to the chan as client " ++ show nc
+  writeChan chan (nc, msg)
 
 handleMessageFromStore :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromStore msgPath conn nc chan msg =
-  do
-    -- store the message in the message store
-    unless (isType "InitiatedConnection" msg) $ do
-      appendMessage msgPath msg
-      putStrLn $ "\nStored message" ++ show msg
-    -- if the message is a InitiatedConnection, get the uuid list from it,
-    -- and send back all the missing messages (with an added ack)
-    when (isType "InitiatedConnection" msg) $ do
-      let uuids = getUuids msg
-      esevs <- readMessages msgPath
-      let msgs =
-            filter
-              ( \e -> case getMetaString "uuid" e of
-                  Just u -> T.unpack u `notElem` uuids
-                  Nothing -> False
-              )
-              esevs
-      WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
-      putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
-    -- send msg to other connected clients
-    putStrLn $ "\nWriting to the chan as client " ++ show nc
-    writeChan chan (nc, msg)
+handleMessageFromStore msgPath conn nc chan msg = do
+  case payload msg of
+    InitiatedConnection connection ->
+      do
+        -- if the message is a InitiatedConnection, get the uuid list from it,
+        -- and send back all the missing messages (with an added ack)
+        esevs <- readMessages msgPath
+        let msgs = filter (\e -> uuid (metadata e) `notElem` uuids connection) esevs
+        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
+        putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
+    _ ->
+      do
+        -- store the message in the message store
+        appendMessage msgPath msg
+        putStrLn $ "\nStored message" ++ show msg
+  -- send msg to other connected clients
+  putStrLn $ "\nWriting to the chan as client " ++ show nc
+  writeChan chan (nc, msg)
 
 httpApp :: Options -> Wai.Application
 httpApp (Options d _ _ _ _ _) request respond = do
@@ -261,11 +253,11 @@ serve (Options d host port msgPath storeHost storePort) = do
 main :: IO ()
 main =
   serve =<< execParser opts
- where
-  opts =
-    info
-      (options <**> helper)
-      ( fullDesc
-          <> progDesc "Studio helps you define your application domain"
-          <> header "Modelyz Studio"
-      )
+  where
+    opts =
+      info
+        (options <**> helper)
+        ( fullDesc
+            <> progDesc "Studio helps you define your application domain"
+            <> header "Modelyz Studio"
+        )

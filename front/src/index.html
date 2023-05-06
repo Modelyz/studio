@@ -64,7 +64,7 @@
 
         // store an message to IDB
         const store = function (send) {
-            return function (letter) {
+            return function (letter) { // TODO try to replace the letter by a single list
                 console.log("ELM port storeMessages")
                 console.log("JS IDB store(letter): " + letter)
                 let request = window.indexedDB.open('messagestore', ${IDBVERSION});
