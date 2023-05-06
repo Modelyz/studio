@@ -8,7 +8,7 @@ import View exposing (..)
 import View.Style exposing (color)
 
 
-inputTreeType : (Tree.Type -> msg) -> Tree.Type -> Element msg
+inputTreeType : (Tree.TreeType -> msg) -> Tree.TreeType -> Element msg
 inputTreeType onInput treetype =
     column [ spacing 5, width fill ] <|
         List.map

@@ -1,4 +1,4 @@
-module Tree exposing (Type(..), all, decoder, encode, isAscendentOf, isDescendentOf, isDirectChildOf, parentOf, parents, toString)
+module Tree exposing (TreeType(..), all, decoder, encode, isAscendentOf, isDescendentOf, isDirectChildOf, parentOf, parents, toString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -7,7 +7,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 
 
 type
-    Type
+    TreeType
     -- non hierarchical group (or any tree-like structure)
     = Flat
       -- hierarchical and node-selectable
@@ -62,12 +62,12 @@ parents uuid items currents =
         |> Maybe.withDefault currents
 
 
-all : List Type
+all : List TreeType
 all =
     [ Flat, Node, Leaf ]
 
 
-toString : Type -> String
+toString : TreeType -> String
 toString t =
     case t of
         Flat ->
@@ -80,7 +80,7 @@ toString t =
             "Hierarchical, a leaf must be selected"
 
 
-encode : Type -> Encode.Value
+encode : TreeType -> Encode.Value
 encode t =
     case t of
         Flat ->
@@ -93,7 +93,7 @@ encode t =
             Encode.string "Leaf"
 
 
-decoder : Decoder Type
+decoder : Decoder TreeType
 decoder =
     Decode.string
         |> Decode.andThen

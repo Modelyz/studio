@@ -21,7 +21,7 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import Tree exposing (Type(..))
+import Tree exposing (TreeType(..))
 import Tree.View exposing (inputTreeType)
 import Type
 import Util exposing (third)
@@ -58,7 +58,7 @@ type alias Model =
     , hadMenu : Bool
     , isMenu : Bool
     , unique : Bool
-    , treeType : Tree.Type
+    , treeType : Tree.TreeType
     }
 
 
@@ -79,7 +79,7 @@ type Msg
     | GroupMsg Group.Input.Msg
     | InputValue Value
     | InputUnique Bool
-    | InputTreeType Tree.Type
+    | InputTreeType Tree.TreeType
     | Button Step.Msg
 
 

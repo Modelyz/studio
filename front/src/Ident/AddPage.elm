@@ -302,7 +302,7 @@ inputFragment fragments index fragment =
                 , label = Input.labelHidden <| "Fixed"
                 }
 
-        Existing _ value ->
+        Existing e ->
             Input.text
                 [ width (px 75)
                 , attrId
@@ -314,19 +314,19 @@ inputFragment fragments index fragment =
                                 |> List.indexedMap
                                     (\i f ->
                                         if i == index then
-                                            Existing n value
+                                            Existing { e | value = n }
 
                                         else
                                             f
                                     )
                             )
-                , text = value
+                , text = e.value
                 , placeholder =
                     Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Existing"
                 }
 
-        DateFrom name posix ->
+        DateFrom d ->
             Input.text [ width (px 75), attrId ]
                 { onChange =
                     \n ->
@@ -335,35 +335,35 @@ inputFragment fragments index fragment =
                                 |> List.indexedMap
                                     (\i f ->
                                         if i == index then
-                                            DateFrom n posix
+                                            DateFrom { d | field = n }
 
                                         else
                                             f
                                     )
                             )
-                , text = name
+                , text = d.field
                 , placeholder =
                     Just <| Input.placeholder [] <| text <| Fragment.toString fragment
                 , label = Input.labelHidden <| "Existing"
                 }
 
-        Sequence name padding step start value ->
+        Sequence seq ->
             row []
                 [ Input.text [ width (px 50), htmlAttribute <| Attr.title "name", attrId ]
                     { onChange =
-                        \x ->
+                        \name ->
                             InputFragments
                                 (fragments
                                     |> List.indexedMap
                                         (\i f ->
                                             if i == index then
-                                                Sequence x padding step start value
+                                                Sequence { seq | name = name }
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = name
+                    , text = seq.name
                     , placeholder =
                         Just <| Input.placeholder [] <| text "Name"
                     , label = Input.labelHidden <| "Name"
@@ -377,14 +377,14 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\p -> Sequence name p step start value)
-                                                    |> Maybe.withDefault (Sequence name padding step start value)
+                                                    |> Maybe.map (\padding -> Sequence { seq | padding = padding })
+                                                    |> Maybe.withDefault (Sequence seq)
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = String.fromInt padding
+                    , text = String.fromInt seq.padding
                     , placeholder =
                         Just <| Input.placeholder [] <| text "Padding"
                     , label = Input.labelHidden <| "Padding"
@@ -398,14 +398,14 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\s -> Sequence name padding s start value)
-                                                    |> Maybe.withDefault (Sequence name padding step start value)
+                                                    |> Maybe.map (\step -> Sequence { seq | step = step })
+                                                    |> Maybe.withDefault (Sequence seq)
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = String.fromInt step
+                    , text = String.fromInt seq.step
                     , placeholder =
                         Just <| Input.placeholder [] <| text "Step"
                     , label = Input.labelHidden <| "Step"
@@ -419,14 +419,14 @@ inputFragment fragments index fragment =
                                         (\i f ->
                                             if i == index then
                                                 String.toInt x
-                                                    |> Maybe.map (\s -> Sequence name padding step s value)
-                                                    |> Maybe.withDefault (Sequence name padding step start value)
+                                                    |> Maybe.map (\start -> Sequence { seq | start = start })
+                                                    |> Maybe.withDefault (Sequence seq)
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = String.fromInt start
+                    , text = String.fromInt seq.start
                     , placeholder =
                         Just <| Input.placeholder [] <| text "First value"
                     , label = Input.labelHidden <| "First value"

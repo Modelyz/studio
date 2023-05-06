@@ -14,8 +14,8 @@ type alias Name =
 type Fragment
     = Free String
     | Fixed String
-    | Sequence Name Padding Step Start (Maybe Int)
-    | Existing Name String
+    | Sequence { name : Name, padding : Padding, step : Step, start : Start, val : Maybe Int }
+    | Existing { name : Name, value : String }
     | YYYY Int
     | YY Int
     | MMMM Month
@@ -25,7 +25,7 @@ type Fragment
     | Hour Int
     | Minute Int
     | Second Int
-    | DateFrom Name Posix
+    | DateFrom { field : Name, when : Posix }
 
 
 type alias Padding =
@@ -44,8 +44,8 @@ all : List Fragment
 all =
     [ Free ""
     , Fixed ""
-    , Sequence "" 4 1 0 Nothing
-    , Existing "" ""
+    , Sequence { name = "", padding = 4, step = 1, start = 0, val = Nothing }
+    , Existing { name = "", value = "" }
     , YYYY 0
     , YY 0
     , MMMM Jan
@@ -55,7 +55,7 @@ all =
     , Hour 0
     , Minute 0
     , Second 0
-    , DateFrom "" (millisToPosix 0)
+    , DateFrom { field = "", when = millisToPosix 0 }
     ]
 
 
@@ -68,10 +68,10 @@ toString f =
         Fixed _ ->
             "Fixed"
 
-        Sequence _ _ _ _ _ ->
+        Sequence _ ->
             "Sequence"
 
-        Existing _ _ ->
+        Existing _ ->
             "Existing"
 
         YYYY _ ->
@@ -101,7 +101,7 @@ toString f =
         Second _ ->
             "ss"
 
-        DateFrom _ _ ->
+        DateFrom _ ->
             "Date from another field"
 
 
@@ -114,11 +114,11 @@ toValue f =
         Fixed value ->
             value
 
-        Sequence _ padding _ _ value ->
-            padLeft padding '0' <| Maybe.withDefault "?" <| Maybe.map String.fromInt value
+        Sequence s ->
+            padLeft s.padding '0' <| Maybe.withDefault "?" <| Maybe.map String.fromInt s.val
 
-        Existing _ value ->
-            value
+        Existing e ->
+            e.value
 
         YYYY value ->
             String.fromInt value
@@ -147,8 +147,8 @@ toValue f =
         Second value ->
             String.fromInt value
 
-        DateFrom _ value ->
-            String.fromInt <| posixToMillis value
+        DateFrom d ->
+            String.fromInt <| posixToMillis d.when
 
 
 toDesc : Fragment -> String
@@ -160,10 +160,10 @@ toDesc f =
         Fixed _ ->
             "A fixed text that you define now and that will be always the same. For instance it can be a prefix, a suffix, a separator."
 
-        Sequence _ _ _ _ _ ->
+        Sequence _ ->
             "A sequence number used to identify an entity. You can configure the name of the sequence, the number of figures, the increment and the starting number"
 
-        Existing _ _ ->
+        Existing _ ->
             "An existing identifierType for an entity."
 
         YYYY _ ->
@@ -193,8 +193,8 @@ toDesc f =
         Second _ ->
             "Second on 2 digits"
 
-        DateFrom from _ ->
-            "Date coming from another field: " ++ from
+        DateFrom d ->
+            "Date coming from another field: " ++ d.field
 
 
 encode : Fragment -> Encode.Value
@@ -212,21 +212,21 @@ encode f =
                 , ( "value", Encode.string value )
                 ]
 
-        Sequence name padding step start value ->
+        Sequence s ->
             Encode.object
                 [ ( "type", Encode.string "Sequence" )
-                , ( "name", Encode.string name )
-                , ( "padding", Encode.int padding )
-                , ( "step", Encode.int step )
-                , ( "start", Encode.int start )
-                , ( "value", Maybe.map Encode.int value |> Maybe.withDefault Encode.null )
+                , ( "name", Encode.string s.name )
+                , ( "padding", Encode.int s.padding )
+                , ( "step", Encode.int s.step )
+                , ( "start", Encode.int s.start )
+                , ( "val", Maybe.map Encode.int s.val |> Maybe.withDefault Encode.null )
                 ]
 
-        Existing name value ->
+        Existing e ->
             Encode.object
                 [ ( "type", Encode.string "Existing" )
-                , ( "name", Encode.string name )
-                , ( "value", Encode.string value )
+                , ( "name", Encode.string e.name )
+                , ( "value", Encode.string e.value )
                 ]
 
         YYYY value ->
@@ -283,11 +283,11 @@ encode f =
                 , ( "value", Encode.int value )
                 ]
 
-        DateFrom name value ->
+        DateFrom d ->
             Encode.object
                 [ ( "type", Encode.string "DateFrom" )
-                , ( "name", Encode.string name )
-                , ( "value", Encode.int (posixToMillis value) )
+                , ( "field", Encode.string d.field )
+                , ( "when", Encode.int (posixToMillis d.when) )
                 ]
 
 
@@ -304,15 +304,26 @@ decoder =
                         Decode.map Fixed (Decode.field "value" Decode.string)
 
                     "Sequence" ->
-                        Decode.map5 Sequence
+                        Decode.map5
+                            (\name padding step start value ->
+                                Sequence
+                                    { name = name
+                                    , padding = padding
+                                    , step = step
+                                    , start = start
+                                    , val = value
+                                    }
+                            )
                             (Decode.field "name" Decode.string)
                             (Decode.field "padding" Decode.int)
                             (Decode.field "step" Decode.int)
                             (Decode.field "start" Decode.int)
-                            (Decode.field "value" (Decode.maybe Decode.int))
+                            (Decode.field "val" (Decode.maybe Decode.int))
 
                     "Existing" ->
-                        Decode.map2 Existing (Decode.field "name" Decode.string) (Decode.field "value" Decode.string)
+                        Decode.map2 (\name value -> Existing { name = name, value = value })
+                            (Decode.field "name" Decode.string)
+                            (Decode.field "value" Decode.string)
 
                     "YYYY" ->
                         Decode.map YYYY (Decode.field "value" Decode.int)
@@ -342,7 +353,9 @@ decoder =
                         Decode.map Second (Decode.field "value" Decode.int)
 
                     "DateFrom" ->
-                        Decode.map2 DateFrom (Decode.field "name" Decode.string) (Decode.field "value" Decode.int |> Decode.andThen (millisToPosix >> Decode.succeed))
+                        Decode.map2 (\field when -> DateFrom { field = field, when = when })
+                            (Decode.field "field" Decode.string)
+                            (Decode.field "when" Decode.int |> Decode.andThen (millisToPosix >> Decode.succeed))
 
                     _ ->
                         Decode.fail <| "Unknown Sequence Fragment: " ++ t

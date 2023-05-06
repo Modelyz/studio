@@ -13,7 +13,7 @@ type alias GroupType =
     , uuid : Uuid
     , parent : Maybe Uuid
     , unique : Bool
-    , treeType : Tree.Type
+    , treeType : Tree.TreeType
     }
 
 
