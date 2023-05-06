@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import Connection (uuids)
 import Control.Concurrent (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVar, readChan, takeMVar, threadDelay, writeChan)
 import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, unless, when)
@@ -13,7 +14,8 @@ import Data.Set as Set (Set, delete, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
-import Message (Message (..), MessageFlow (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, setFlow, uuid, uuids)
+import Message (Message (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, setFlow, uuid)
+import MessageFlow (MessageFlow (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp qualified as Warp
