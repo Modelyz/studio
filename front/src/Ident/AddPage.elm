@@ -180,7 +180,7 @@ update s msg model =
                     , Effect.batch
                         [ Shared.dispatch s <|
                             Maybe.withDefault (Message.AddedIdentifierType i) <|
-                                Maybe.map (Message.ChangedIdentifierType i) model.old
+                                Maybe.map (\old -> Message.ChangedIdentifierType { new = i, old = old }) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.List Nothing)
                         ]
                     )

@@ -8,7 +8,7 @@ import Element.Input as Input
 import Expression.Editor exposing (view)
 import Message
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -173,12 +173,12 @@ update s msg model =
 
         Button Step.Added ->
             case validate model of
-                Ok i ->
+                Ok v ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <|
-                            Maybe.withDefault (Message.AddedValueType i) <|
-                                Maybe.map (Message.ChangedValueType i) model.old
+                            Maybe.withDefault (Message.AddedValueType v) <|
+                                Maybe.map (\old -> Message.ChangedValueType { old = old, new = v }) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List Nothing)
                         ]
                     )

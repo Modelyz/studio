@@ -149,6 +149,7 @@ updatePending msg pendings =
         Requested -> Set.insert msg pendings
         Sent -> Set.insert msg pendings
         Processed -> Set.delete msg pendings
+        Error _ -> Set.insert msg pendings
 
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> StateMV -> Message -> IO ()
 handleMessageFromBrowser msgPath conn nc chan stateMV msg = do

@@ -86,10 +86,10 @@
                         addrequest.onsuccess = (e) => {
                             if (send) {
                                 console.log("-> ELM port messagesStoredToSend")
-                                app.ports.messagesStoredToSend.send([message]);
+                                app.ports.messagesStoredToSend.send(message);
                             } else {
                                 console.log("-> ELM port messagesStored")
-                                app.ports.messagesStored.send([message]);
+                                app.ports.messagesStored.send(message);
                             }
                         }
                         addrequest.onerror = (e) => {

@@ -59,7 +59,7 @@ type Msg
     | WSConnect ()
     | WSConnected Decode.Value
     | StoreMessagesToSend (List Message)
-    | SendMessages (List Message)
+    | SendMessages Message
     | MessagesStored Decode.Value
     | MessagesStoredTosend Decode.Value
     | MessagesRead Decode.Value
@@ -303,23 +303,25 @@ update msg model =
                 Err str ->
                     ( { model | currentSeed = newSeed, iostatus = IOError <| "Error decoding messages: " ++ errorToString str }, Cmd.none )
 
-        SendMessages messages ->
-            -- send the new messages and the pending ones
+        SendMessages message ->
+            -- send the new message and the pending ones
             ( { model | iostatus = WSSending, currentSeed = newSeed }
             , if model.offline then
                 Cmd.none
 
               else
-                WS.wsSend <|
-                    Encode.object <|
-                        List.singleton <|
-                            Tuple.pair "messages" <|
-                                Encode.list Message.encode <|
-                                    Dict.values <|
-                                        Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
-                                            Dict.fromList <|
-                                                List.map (\m -> ( Message.compare m, m )) <|
-                                                    messages
+                Cmd.batch <|
+                    List.map
+                        (\pm ->
+                            WS.wsSend <|
+                                Message.encode pm
+                        )
+                        (model.state.pendingMessages
+                            |> Dict.values
+                            |> List.filter
+                                (\(Message meta _) -> meta.flow == Requested)
+                        )
+                        ++ [ WS.wsSend <| Message.encode message ]
             )
 
         StoreMessagesToSend messages ->
@@ -332,26 +334,22 @@ update msg model =
                 )
             )
 
-        MessagesStoredTosend messages ->
-            case decodeValue (Decode.list Message.decoder) messages of
-                Ok evs ->
+        MessagesStoredTosend msgstr ->
+            case decodeValue Message.decoder msgstr of
+                Ok (Message m p) ->
                     if model.wsstatus == WSOpen then
                         ( { model | iostatus = ESReading }
                         , Cmd.batch
-                            [ Message.readMessages Encode.null
-
-                            -- send the new messages and the pending Requested ones
-                            , wsSend <|
-                                Encode.object <|
-                                    List.singleton <|
-                                        Tuple.pair "messages" <|
-                                            Encode.list Message.encode <|
-                                                Dict.values <|
-                                                    Dict.union (Dict.filter (\_ (Message meta _) -> meta.flow == Requested) model.state.pendingMessages) <|
-                                                        Dict.fromList <|
-                                                            List.map (\m -> ( Message.compare m, m )) <|
-                                                                evs
-                            ]
+                            (Message.readMessages Encode.null
+                                :: -- send the new message and the pending Requested ones
+                                   (List.map (\pending -> wsSend <| Message.encode pending) <|
+                                        List.filter
+                                            (\(Message meta _) -> meta.flow == Requested)
+                                        <|
+                                            Dict.values model.state.pendingMessages
+                                   )
+                                ++ [ wsSend <| Message.encode (Message m p) ]
+                            )
                         )
 
                     else
@@ -363,39 +361,29 @@ update msg model =
         MessagesStored _ ->
             ( { model | iostatus = IOIdle "Just stored messages", currentSeed = newSeed }, Message.readMessages Encode.null )
 
-        MessageSent letter ->
+        MessageSent message ->
             case
-                Result.map2 Tuple.pair
-                    (decodeValue
-                        (Decode.field "status" Decode.string
-                            |> Decode.andThen
-                                (\s ->
-                                    if s == "OK" then
-                                        Decode.succeed s
-
-                                    else
-                                        Decode.fail s
-                                )
-                        )
-                        letter
-                    )
-                    (decodeValue (Decode.field "messages" <| Decode.list Message.decoder) letter)
+                decodeValue Message.decoder message
             of
-                Ok ( status, messages ) ->
-                    if status == "OK" then
-                        let
-                            state =
-                                model.state
-                        in
-                        ( { model | iostatus = IOIdle "Just sent messages", state = { state | pendingMessages = List.foldl (\m agg -> Dict.remove (Message.compare m) agg) state.pendingMessages messages } }
-                        , Cmd.none
-                        )
+                Ok (Message m p) ->
+                    case m.flow of
+                        Error err ->
+                            ( { model | iostatus = IOError err }, Cmd.none )
 
-                    else
-                        ( { model | iostatus = IOError status }, Cmd.none )
+                        _ ->
+                            let
+                                state =
+                                    model.state
+                            in
+                            ( { model
+                                | iostatus = IOIdle "Just sent a message"
+                                , state = { state | pendingMessages = Dict.remove (Message.compare (Message m p)) state.pendingMessages }
+                              }
+                            , Cmd.none
+                            )
 
                 Err err ->
-                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error getting status of letter: " ++ errorToString err }, Cmd.none )
+                    ( { model | currentSeed = newSeed, iostatus = IOError <| "Error getting flow of message: " ++ errorToString err }, Cmd.none )
 
         MessagesReceived letter ->
             case decodeString (Decode.maybe <| Decode.field "messages" <| Decode.list Message.decoder) letter of
@@ -454,14 +442,13 @@ initiateConnection uuid model =
     Task.perform SendMessages <|
         Task.map
             (\t ->
-                List.singleton <|
-                    Message
-                        { uuid = uuid, when = t, flow = Requested }
-                        (InitiatedConnection
-                            { lastMessageTime = model.state.lastMessageTime
-                            , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
-                            }
-                        )
+                Message
+                    { uuid = uuid, when = t, flow = Requested }
+                    (InitiatedConnection
+                        { lastMessageTime = model.state.lastMessageTime
+                        , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
+                        }
+                    )
             )
             Time.now
 

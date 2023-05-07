@@ -95,11 +95,11 @@ type Payload
     | AddedProcess Process
     | RemovedProcess Uuid
     | AddedIdentifierType IdentifierType
-    | ChangedIdentifierType IdentifierType IdentifierType
+    | ChangedIdentifierType { old : IdentifierType, new : IdentifierType }
     | RemovedIdentifierType IdentifierType
     | AddedIdentifier Identifier
     | AddedValueType ValueType
-    | ChangedValueType ValueType ValueType
+    | ChangedValueType { old : ValueType, new : ValueType }
     | RemovedValueType ValueType
     | AddedValue Value
     | Configured Configuration
@@ -112,139 +112,6 @@ type Payload
     | Ungrouped GroupLink.Link
     | Reconciled Reconciliation
     | Unreconciled Reconciliation
-
-
-toString : Payload -> String
-toString p =
-    case p of
-        InitiatedConnection _ ->
-            "InitiatedConnection"
-
-        AddedIdentifierType _ ->
-            "AddedIdentifierType"
-
-        ChangedIdentifierType _ _ ->
-            "ChangedIdentifierType"
-
-        RemovedIdentifierType _ ->
-            "RemovedIdentifierType"
-
-        AddedValueType _ ->
-            "AddedValueType"
-
-        ChangedValueType _ _ ->
-            "ChangedValueType"
-
-        RemovedValueType _ ->
-            "RemovedValueType"
-
-        AddedValue _ ->
-            "AddedValue"
-
-        AddedResourceType _ ->
-            "AddedResourceType"
-
-        RemovedResourceType _ ->
-            "RemovedResourceType"
-
-        AddedEventType _ ->
-            "AddedEventType"
-
-        RemovedEventType _ ->
-            "RemovedEventType"
-
-        AddedAgentType _ ->
-            "AddedAgentType"
-
-        RemovedAgentType _ ->
-            "RemovedAgentType"
-
-        AddedCommitmentType _ ->
-            "AddedCommitmentType"
-
-        RemovedCommitmentType _ ->
-            "RemovedCommitmentType"
-
-        AddedContractType _ ->
-            "AddedContractType"
-
-        RemovedContractType _ ->
-            "RemovedContractType"
-
-        AddedProcessType _ ->
-            "AddedProcessType"
-
-        RemovedProcessType _ ->
-            "RemovedProcessType"
-
-        AddedResource _ ->
-            "AddedResource"
-
-        RemovedResource _ ->
-            "RemovedResource"
-
-        AddedEvent _ ->
-            "AddedEvent"
-
-        RemovedEvent _ ->
-            "RemovedEvent"
-
-        AddedAgent _ ->
-            "AddedAgent"
-
-        RemovedAgent _ ->
-            "RemovedAgent"
-
-        AddedCommitment _ ->
-            "AddedCommitment"
-
-        RemovedCommitment _ ->
-            "RemovedCommitment"
-
-        AddedContract _ ->
-            "AddedContract"
-
-        RemovedContract _ ->
-            "RemovedContract"
-
-        AddedProcess _ ->
-            "AddedProcess"
-
-        RemovedProcess _ ->
-            "RemovedProcess"
-
-        AddedIdentifier _ ->
-            "AddedIdentifier"
-
-        Configured _ ->
-            "Configured"
-
-        Unconfigured _ ->
-            "Unconfigured"
-
-        AddedGroupType _ ->
-            "AddedGroupType"
-
-        RemovedGroupType _ ->
-            "RemovedGroupType"
-
-        DefinedGroup _ ->
-            "DefinedGroup"
-
-        RemovedGroup _ ->
-            "RemovedGroup"
-
-        Grouped _ ->
-            "Grouped"
-
-        Ungrouped _ ->
-            "Ungrouped"
-
-        Reconciled _ ->
-            "Reconciled"
-
-        Unreconciled _ ->
-            "Unreconciled"
 
 
 type alias Connection =
@@ -286,8 +153,16 @@ exceptIC es =
 -- JSON encoding / decoding
 
 
-encodeBase : Metadata -> Encode.Value
-encodeBase b =
+encode : Message -> Encode.Value
+encode (Message m p) =
+    Encode.object
+        [ ( "load", encodePayload p )
+        , ( "meta", encodeMetadata m )
+        ]
+
+
+encodeMetadata : Metadata -> Encode.Value
+encodeMetadata b =
     Encode.object
         [ ( "uuid", Uuid.encode b.uuid )
         , ( "when", Encode.int <| posixToMillis b.when )
@@ -295,156 +170,281 @@ encodeBase b =
         ]
 
 
-encode : Message -> Encode.Value
-encode (Message b p) =
-    Encode.object
-        [ ( "what", Encode.string <| toString p )
-        , ( "meta", encodeBase b )
-        , case p of
-            InitiatedConnection e ->
-                ( "load"
-                , Encode.object
-                    [ ( "lastMessageTime", Encode.int <| posixToMillis e.lastMessageTime )
-                    , ( "uuids", Encode.list Uuid.encode (Dict.values e.uuids) )
-                    ]
-                )
+encodePayload : Payload -> Encode.Value
+encodePayload payload =
+    case payload of
+        InitiatedConnection c ->
+            Encode.object
+                [ ( "what", Encode.string "InitiatedConnection" )
+                , ( "load"
+                  , Encode.object
+                        [ ( "lastMessageTime", Encode.int <| posixToMillis c.lastMessageTime )
+                        , ( "uuids", Encode.list Uuid.encode (Dict.values c.uuids) )
+                        ]
+                  )
+                ]
 
-            ChangedIdentifierType new old ->
-                ( "load"
-                , Encode.object
-                    [ ( "new", IdentifierType.encode new )
-                    , ( "old", IdentifierType.encode old )
-                    ]
-                )
+        ChangedIdentifierType c ->
+            Encode.object
+                [ ( "what", Encode.string "ChangedIdentifierType" )
+                , ( "load"
+                  , Encode.object
+                        [ ( "old", IdentifierType.encode c.old )
+                        , ( "new", IdentifierType.encode c.new )
+                        ]
+                  )
+                ]
 
-            AddedIdentifierType it ->
-                ( "load", IdentifierType.encode it )
+        AddedIdentifierType it ->
+            Encode.object
+                [ ( "what", Encode.string "AddedIdentifierType" )
+                , ( "load", IdentifierType.encode it )
+                ]
 
-            RemovedIdentifierType it ->
-                ( "load", IdentifierType.encode it )
+        RemovedIdentifierType it ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedIdentifierType" )
+                , ( "load", IdentifierType.encode it )
+                ]
 
-            AddedValueType vt ->
-                ( "load", ValueType.encode vt )
+        AddedValueType vt ->
+            Encode.object
+                [ ( "what", Encode.string "AddedValueType" )
+                , ( "load", ValueType.encode vt )
+                ]
 
-            ChangedValueType new old ->
-                ( "load"
-                , Encode.object
-                    [ ( "new", ValueType.encode new )
-                    , ( "old", ValueType.encode old )
-                    ]
-                )
+        ChangedValueType c ->
+            Encode.object
+                [ ( "what", Encode.string "ChangedValueType" )
+                , ( "load"
+                  , Encode.object
+                        [ ( "old", ValueType.encode c.old )
+                        , ( "new", ValueType.encode c.new )
+                        ]
+                  )
+                ]
 
-            RemovedValueType vt ->
-                ( "load", ValueType.encode vt )
+        RemovedValueType vt ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedValueType" )
+                , ( "load", ValueType.encode vt )
+                ]
 
-            AddedValue v ->
-                ( "load", Value.encode v )
+        AddedValue v ->
+            Encode.object
+                [ ( "what", Encode.string "AddedValue" )
+                , ( "load", Value.encode v )
+                ]
 
-            AddedResourceType e ->
-                ( "load", ResourceType.encode e )
+        AddedResourceType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedResourceType" )
+                , ( "load", ResourceType.encode e )
+                ]
 
-            RemovedResourceType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedResourceType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedResourceType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedEventType e ->
-                ( "load", EventType.encode e )
+        AddedEventType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedEventType" )
+                , ( "load", EventType.encode e )
+                ]
 
-            RemovedEventType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedEventType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedEventType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedAgentType e ->
-                ( "load", AgentType.encode e )
+        AddedAgentType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedAgentType" )
+                , ( "load", AgentType.encode e )
+                ]
 
-            RemovedAgentType e ->
-                ( "load", Uuid.encode e )
+        RemovedAgentType e ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedAgentType" )
+                , ( "load", Uuid.encode e )
+                ]
 
-            AddedCommitmentType e ->
-                ( "load", CommitmentType.encode e )
+        AddedCommitmentType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedCommitmentType" )
+                , ( "load", CommitmentType.encode e )
+                ]
 
-            RemovedCommitmentType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedCommitmentType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedCommitmentType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedContractType e ->
-                ( "load", ContractType.encode e )
+        AddedContractType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedContractType" )
+                , ( "load", ContractType.encode e )
+                ]
 
-            RemovedContractType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedContractType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedContractType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedProcessType e ->
-                ( "load", ProcessType.encode e )
+        AddedProcessType e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedProcessType" )
+                , ( "load", ProcessType.encode e )
+                ]
 
-            RemovedProcessType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedProcessType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedProcessType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedResource e ->
-                ( "load", Resource.encode e )
+        AddedResource e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedResource" )
+                , ( "load", Resource.encode e )
+                ]
 
-            RemovedResource uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedResource uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedResource" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedEvent e ->
-                ( "load", Event.encode e )
+        AddedEvent e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedEvent" )
+                , ( "load", Event.encode e )
+                ]
 
-            RemovedEvent uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedEvent uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedEvent" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedAgent e ->
-                ( "load", Agent.encode e )
+        AddedAgent e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedAgent" )
+                , ( "load", Agent.encode e )
+                ]
 
-            RemovedAgent uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedAgent uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedAgent" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedCommitment e ->
-                ( "load", Commitment.encode e )
+        AddedCommitment e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedCommitment" )
+                , ( "load", Commitment.encode e )
+                ]
 
-            RemovedCommitment uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedCommitment uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedCommitment" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedContract e ->
-                ( "load", Contract.encode e )
+        AddedContract e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedContract" )
+                , ( "load", Contract.encode e )
+                ]
 
-            RemovedContract uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedContract uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedContract" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedProcess e ->
-                ( "load", Process.encode e )
+        AddedProcess e ->
+            Encode.object
+                [ ( "what", Encode.string "AddedProcess" )
+                , ( "load", Process.encode e )
+                ]
 
-            RemovedProcess uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedProcess uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedProcess" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            AddedIdentifier i ->
-                ( "load", Identifier.encode i )
+        AddedIdentifier i ->
+            Encode.object
+                [ ( "what", Encode.string "AddedIdentifier" )
+                , ( "load", Identifier.encode i )
+                ]
 
-            Configured c ->
-                ( "load", Configuration.encode c )
+        Configured c ->
+            Encode.object
+                [ ( "what", Encode.string "Configured" )
+                , ( "load", Configuration.encode c )
+                ]
 
-            Unconfigured c ->
-                ( "load", Configuration.encode c )
+        Unconfigured c ->
+            Encode.object
+                [ ( "what", Encode.string "Unconfigured" )
+                , ( "load", Configuration.encode c )
+                ]
 
-            AddedGroupType gt ->
-                ( "load", GroupType.encode gt )
+        AddedGroupType gt ->
+            Encode.object
+                [ ( "what", Encode.string "AddedGroupType" )
+                , ( "load", GroupType.encode gt )
+                ]
 
-            RemovedGroupType uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedGroupType uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedGroupType" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            DefinedGroup g ->
-                ( "load", Group.encode g )
+        DefinedGroup g ->
+            Encode.object
+                [ ( "what", Encode.string "DefinedGroup" )
+                , ( "load", Group.encode g )
+                ]
 
-            RemovedGroup uuid ->
-                ( "load", Uuid.encode uuid )
+        RemovedGroup uuid ->
+            Encode.object
+                [ ( "what", Encode.string "RemovedGroup" )
+                , ( "load", Uuid.encode uuid )
+                ]
 
-            Grouped link ->
-                ( "load", GroupLink.encode link )
+        Grouped link ->
+            Encode.object
+                [ ( "what", Encode.string "Grouped" )
+                , ( "load", GroupLink.encode link )
+                ]
 
-            Ungrouped link ->
-                ( "load", GroupLink.encode link )
+        Ungrouped link ->
+            Encode.object
+                [ ( "what", Encode.string "Ungrouped" )
+                , ( "load", GroupLink.encode link )
+                ]
 
-            Reconciled reconciliation ->
-                ( "load", Reconcile.encode reconciliation )
+        Reconciled reconciliation ->
+            Encode.object
+                [ ( "what", Encode.string "Reconciled" )
+                , ( "load", Reconcile.encode reconciliation )
+                ]
 
-            Unreconciled reconciliation ->
-                ( "load", Reconcile.encode reconciliation )
-        ]
+        Unreconciled reconciliation ->
+            Encode.object
+                [ ( "what", Encode.string "Unreconciled" )
+                , ( "load", Reconcile.encode reconciliation )
+                ]
 
 
 toPosix : Int -> Decoder Time.Posix
@@ -452,194 +452,198 @@ toPosix t =
     Decode.succeed (millisToPosix t)
 
 
-baseDecoder : Decoder Metadata
-baseDecoder =
+decoder : Decoder Message
+decoder =
+    Decode.map2 Message
+        (Decode.field "meta" metadataDecoder)
+        (Decode.field "load" payloadDecoder)
+
+
+metadataDecoder : Decoder Metadata
+metadataDecoder =
     Decode.map3 Metadata
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "when" Decode.int |> andThen toPosix)
         (Decode.field "flow" MessageFlow.decoder)
 
 
-decoder : Decoder Message
-decoder =
-    Decode.map2 Message
-        (Decode.field "meta" baseDecoder)
-        (Decode.field "what" Decode.string
-            |> andThen
-                (\t ->
-                    case t of
-                        "InitiatedConnection" ->
-                            Decode.map InitiatedConnection
-                                (Decode.field "load"
-                                    (Decode.map2 Connection
-                                        (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
-                                        (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (List.map (\u -> ( Uuid.toString u, u )) >> Dict.fromList >> Decode.succeed))
-                                    )
+payloadDecoder : Decoder Payload
+payloadDecoder =
+    Decode.field "what" Decode.string
+        |> andThen
+            (\t ->
+                case t of
+                    "InitiatedConnection" ->
+                        Decode.map InitiatedConnection
+                            (Decode.field "load"
+                                (Decode.map2 Connection
+                                    (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
+                                    (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (List.map (\u -> ( Uuid.toString u, u )) >> Dict.fromList >> Decode.succeed))
                                 )
+                            )
 
-                        "AddedIdentifierType" ->
-                            Decode.map AddedIdentifierType
-                                (Decode.field "load" IdentifierType.decoder)
+                    "AddedIdentifierType" ->
+                        Decode.map AddedIdentifierType
+                            (Decode.field "load" IdentifierType.decoder)
 
-                        "ChangedIdentifierType" ->
-                            Decode.map2 ChangedIdentifierType
-                                (Decode.at [ "load", "new" ] IdentifierType.decoder)
-                                (Decode.at [ "load", "old" ] IdentifierType.decoder)
+                    "ChangedIdentifierType" ->
+                        Decode.map2 (\old new -> ChangedIdentifierType { old = old, new = new })
+                            (Decode.field "new" IdentifierType.decoder)
+                            (Decode.field "old" IdentifierType.decoder)
 
-                        "RemovedIdentifierType" ->
-                            Decode.map RemovedIdentifierType
-                                (Decode.field "load" IdentifierType.decoder)
+                    "RemovedIdentifierType" ->
+                        Decode.map RemovedIdentifierType
+                            (Decode.field "load" IdentifierType.decoder)
 
-                        "AddedValueType" ->
-                            Decode.map AddedValueType
-                                (Decode.field "load" ValueType.decoder)
+                    "AddedValueType" ->
+                        Decode.map AddedValueType
+                            (Decode.field "load" ValueType.decoder)
 
-                        "ChangedValueType" ->
-                            Decode.map2 ChangedValueType
-                                (Decode.at [ "load", "new" ] ValueType.decoder)
-                                (Decode.at [ "load", "old" ] ValueType.decoder)
+                    "ChangedValueType" ->
+                        Decode.map2 (\old new -> ChangedValueType { old = old, new = new })
+                            (Decode.at [ "load", "new" ] ValueType.decoder)
+                            (Decode.at [ "load", "old" ] ValueType.decoder)
 
-                        "RemovedValueType" ->
-                            Decode.map RemovedValueType
-                                (Decode.field "load" ValueType.decoder)
+                    "RemovedValueType" ->
+                        Decode.map RemovedValueType
+                            (Decode.field "load" ValueType.decoder)
 
-                        "AddedValue" ->
-                            Decode.map AddedValue
-                                (Decode.field "load" Value.decoder)
+                    "AddedValue" ->
+                        Decode.map AddedValue
+                            (Decode.field "load" Value.decoder)
 
-                        "AddedResourceType" ->
-                            Decode.map AddedResourceType
-                                (Decode.field "load" ResourceType.decoder)
+                    "AddedResourceType" ->
+                        Decode.map AddedResourceType
+                            (Decode.field "load" ResourceType.decoder)
 
-                        "RemovedResourceType" ->
-                            Decode.map RemovedResourceType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedResourceType" ->
+                        Decode.map RemovedResourceType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedEventType" ->
-                            Decode.map AddedEventType
-                                (Decode.field "load" EventType.decoder)
+                    "AddedEventType" ->
+                        Decode.map AddedEventType
+                            (Decode.field "load" EventType.decoder)
 
-                        "RemovedEventType" ->
-                            Decode.map RemovedEventType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedEventType" ->
+                        Decode.map RemovedEventType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedAgentType" ->
-                            Decode.map AddedAgentType
-                                (Decode.field "load" AgentType.decoder)
+                    "AddedAgentType" ->
+                        Decode.map AddedAgentType
+                            (Decode.field "load" AgentType.decoder)
 
-                        "RemovedAgentType" ->
-                            Decode.map RemovedAgentType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedAgentType" ->
+                        Decode.map RemovedAgentType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedCommitmentType" ->
-                            Decode.map AddedCommitmentType
-                                (Decode.field "load" CommitmentType.decoder)
+                    "AddedCommitmentType" ->
+                        Decode.map AddedCommitmentType
+                            (Decode.field "load" CommitmentType.decoder)
 
-                        "RemovedCommitmentType" ->
-                            Decode.map RemovedCommitmentType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedCommitmentType" ->
+                        Decode.map RemovedCommitmentType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedContractType" ->
-                            Decode.map AddedContractType
-                                (Decode.field "load" ContractType.decoder)
+                    "AddedContractType" ->
+                        Decode.map AddedContractType
+                            (Decode.field "load" ContractType.decoder)
 
-                        "RemovedContractType" ->
-                            Decode.map RemovedContractType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedContractType" ->
+                        Decode.map RemovedContractType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedProcessType" ->
-                            Decode.map AddedProcessType
-                                (Decode.field "load" ProcessType.decoder)
+                    "AddedProcessType" ->
+                        Decode.map AddedProcessType
+                            (Decode.field "load" ProcessType.decoder)
 
-                        "RemovedProcessType" ->
-                            Decode.map RemovedProcessType
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedProcessType" ->
+                        Decode.map RemovedProcessType
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedResource" ->
-                            Decode.map AddedResource
-                                (Decode.field "load" Resource.decoder)
+                    "AddedResource" ->
+                        Decode.map AddedResource
+                            (Decode.field "load" Resource.decoder)
 
-                        "RemovedResource" ->
-                            Decode.map RemovedResource
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedResource" ->
+                        Decode.map RemovedResource
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedEvent" ->
-                            Decode.map AddedEvent
-                                (Decode.field "load" Event.decoder)
+                    "AddedEvent" ->
+                        Decode.map AddedEvent
+                            (Decode.field "load" Event.decoder)
 
-                        "RemovedEvent" ->
-                            Decode.map RemovedEvent
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedEvent" ->
+                        Decode.map RemovedEvent
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedAgent" ->
-                            Decode.map AddedAgent
-                                (Decode.field "load" Agent.decoder)
+                    "AddedAgent" ->
+                        Decode.map AddedAgent
+                            (Decode.field "load" Agent.decoder)
 
-                        "RemovedAgent" ->
-                            Decode.map RemovedAgent
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedAgent" ->
+                        Decode.map RemovedAgent
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedCommitment" ->
-                            Decode.map AddedCommitment
-                                (Decode.field "load" Commitment.decoder)
+                    "AddedCommitment" ->
+                        Decode.map AddedCommitment
+                            (Decode.field "load" Commitment.decoder)
 
-                        "RemovedCommitment" ->
-                            Decode.map RemovedCommitment
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedCommitment" ->
+                        Decode.map RemovedCommitment
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedContract" ->
-                            Decode.map AddedContract
-                                (Decode.field "load" Contract.decoder)
+                    "AddedContract" ->
+                        Decode.map AddedContract
+                            (Decode.field "load" Contract.decoder)
 
-                        "RemovedContract" ->
-                            Decode.map RemovedContract
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedContract" ->
+                        Decode.map RemovedContract
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedProcess" ->
-                            Decode.map AddedProcess
-                                (Decode.field "load" Process.decoder)
+                    "AddedProcess" ->
+                        Decode.map AddedProcess
+                            (Decode.field "load" Process.decoder)
 
-                        "RemovedProcess" ->
-                            Decode.map RemovedProcess
-                                (Decode.field "load" Uuid.decoder)
+                    "RemovedProcess" ->
+                        Decode.map RemovedProcess
+                            (Decode.field "load" Uuid.decoder)
 
-                        "AddedIdentifier" ->
-                            Decode.map AddedIdentifier
-                                (Decode.field "load" Identifier.decoder)
+                    "AddedIdentifier" ->
+                        Decode.map AddedIdentifier
+                            (Decode.field "load" Identifier.decoder)
 
-                        "Configured" ->
-                            Decode.map Configured
-                                (Decode.field "load" Configuration.decoder)
+                    "Configured" ->
+                        Decode.map Configured
+                            (Decode.field "load" Configuration.decoder)
 
-                        "Unconfigured" ->
-                            Decode.map Unconfigured
-                                (Decode.field "load" Configuration.decoder)
+                    "Unconfigured" ->
+                        Decode.map Unconfigured
+                            (Decode.field "load" Configuration.decoder)
 
-                        "AddedGroupType" ->
-                            Decode.map AddedGroupType (Decode.field "load" GroupType.decoder)
+                    "AddedGroupType" ->
+                        Decode.map AddedGroupType (Decode.field "load" GroupType.decoder)
 
-                        "RemovedGroupType" ->
-                            Decode.map RemovedGroupType (Decode.field "load" Uuid.decoder)
+                    "RemovedGroupType" ->
+                        Decode.map RemovedGroupType (Decode.field "load" Uuid.decoder)
 
-                        "DefinedGroup" ->
-                            Decode.map DefinedGroup (Decode.field "load" Group.decoder)
+                    "DefinedGroup" ->
+                        Decode.map DefinedGroup (Decode.field "load" Group.decoder)
 
-                        "RemovedGroup" ->
-                            Decode.map RemovedGroup (Decode.field "load" Uuid.decoder)
+                    "RemovedGroup" ->
+                        Decode.map RemovedGroup (Decode.field "load" Uuid.decoder)
 
-                        "Grouped" ->
-                            Decode.map Grouped (Decode.field "load" GroupLink.decoder)
+                    "Grouped" ->
+                        Decode.map Grouped (Decode.field "load" GroupLink.decoder)
 
-                        "Ungrouped" ->
-                            Decode.map Ungrouped (Decode.field "load" GroupLink.decoder)
+                    "Ungrouped" ->
+                        Decode.map Ungrouped (Decode.field "load" GroupLink.decoder)
 
-                        "Reconciled" ->
-                            Decode.map Reconciled (Decode.field "load" Reconcile.decoder)
+                    "Reconciled" ->
+                        Decode.map Reconciled (Decode.field "load" Reconcile.decoder)
 
-                        "Unreconciled" ->
-                            Decode.map Unreconciled (Decode.field "load" Reconcile.decoder)
+                    "Unreconciled" ->
+                        Decode.map Unreconciled (Decode.field "load" Reconcile.decoder)
 
-                        _ ->
-                            Decode.fail <| "Unknown Message type: " ++ t
-                )
-        )
+                    _ ->
+                        Decode.fail <| "Unknown Message type: " ++ t
+            )

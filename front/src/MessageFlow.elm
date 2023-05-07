@@ -12,30 +12,28 @@ type
     | Sent
       -- Returned as Processed:
     | Processed
-
-
-toString : MessageFlow -> String
-toString f =
-    case f of
-        Requested ->
-            "Requested"
-
-        Sent ->
-            "Sent"
-
-        Processed ->
-            "Processed"
+    | Error String
 
 
 encode : MessageFlow -> Encode.Value
 encode f =
-    Encode.string
-        (toString f)
+    case f of
+        Requested ->
+            Encode.object [ ( "type", Encode.string "Requested" ) ]
+
+        Sent ->
+            Encode.object [ ( "type", Encode.string "Sent" ) ]
+
+        Processed ->
+            Encode.object [ ( "type", Encode.string "Processed" ) ]
+
+        Error err ->
+            Encode.object [ ( "type", Encode.string "Error" ), ( "value", Encode.string err ) ]
 
 
 decoder : Decode.Decoder MessageFlow
 decoder =
-    Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen
             (\s ->
                 case s of
@@ -47,6 +45,9 @@ decoder =
 
                     "Processed" ->
                         Decode.succeed Processed
+
+                    "Error" ->
+                        Decode.map Error (Decode.field "value" Decode.string)
 
                     _ ->
                         Decode.fail "Unkown MessageFlow"
