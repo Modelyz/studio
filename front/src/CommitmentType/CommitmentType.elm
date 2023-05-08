@@ -1,14 +1,12 @@
-module CommitmentType.CommitmentType exposing (CommitmentType, decoder, encode)
+module CommitmentType.CommitmentType exposing (CommitmentType, compare, decoder, encode)
 
-import Expression as Expression exposing (Expression)
+import Expression exposing (Expression)
 import Hierarchy.Type as HType
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope)
-import Type exposing (Type)
-import Value.Value exposing (Value)
+import Scope exposing (Scope)
 
 
 type alias CommitmentType =

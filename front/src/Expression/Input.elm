@@ -36,11 +36,11 @@ inputExpression c s ( currentPath, currentExpr ) expr =
         Leaf obs ->
             inputObservable c s currentPath obs expr
 
-        Unary o e ->
-            row [] [ text (U.toShortString o), inputExpression c s ( 1 :: currentPath, e ) expr ]
+        Unary unary ->
+            row [] [ text (U.toShortString unary.uop), inputExpression c s ( 1 :: currentPath, unary.expr ) expr ]
 
-        Binary o e1 e2 ->
-            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, e1 ) expr, text <| B.toShortString o, inputExpression c s ( 3 :: currentPath, e2 ) expr, text " )" ]
+        Binary binary ->
+            row [] [ text "( ", inputExpression c s ( 2 :: currentPath, binary.expr1 ) expr, text <| B.toShortString binary.bop, inputExpression c s ( 3 :: currentPath, binary.expr2 ) expr, text " )" ]
 
 
 inputObservable : Config msg -> Shared.Model -> List Int -> Observable -> Expression -> Element msg

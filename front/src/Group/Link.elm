@@ -22,7 +22,7 @@ compare link =
 encode : Link -> Encode.Value
 encode link =
     Encode.object
-        [ ( "type", Type.encode link.what )
+        [ ( "what", Type.encode link.what )
         , ( "groupable", Uuid.encode link.groupable )
         , ( "group", Uuid.encode link.group )
         ]
@@ -31,6 +31,6 @@ encode link =
 decoder : Decoder Link
 decoder =
     Decode.map3 Link
-        (Decode.field "type" Type.decoder)
+        (Decode.field "what" Type.decoder)
         (Decode.field "groupable" Uuid.decoder)
         (Decode.field "group" Uuid.decoder)

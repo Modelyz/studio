@@ -1,7 +1,5 @@
 module Commitment.Commitment exposing (Commitment, decoder, encode)
 
-import Agent.Agent as Agent exposing (Agent)
-import Dict exposing (Dict)
 import Expression exposing (Expression)
 import Flow exposing (Flow)
 import Json.Decode as Decode

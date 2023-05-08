@@ -1,7 +1,7 @@
 module Expression.View exposing (Config, inputExpression, viewExpression)
 
 import Element exposing (..)
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Binary as B
 import Expression.DeepLink exposing (DeepLink(..))
 import Expression.DeepLink.View
@@ -33,11 +33,11 @@ viewExpression s expr =
         Leaf obs ->
             viewObservable s obs
 
-        Unary o e ->
-            wrappedRow [ width fill ] [ text (U.toShortString o), viewExpression s e ]
+        Unary unary ->
+            wrappedRow [ width fill ] [ text (U.toShortString unary.uop), viewExpression s unary.expr ]
 
-        Binary o e1 e2 ->
-            wrappedRow [ width fill ] [ viewExpression s e1, text <| B.toShortString o, viewExpression s e2 ]
+        Binary binary ->
+            wrappedRow [ width fill ] [ viewExpression s binary.expr1, text <| B.toShortString binary.bop, viewExpression s binary.expr2 ]
 
 
 inputExpression : State -> Config -> Expression -> Element msg
@@ -47,11 +47,11 @@ inputExpression s c expr =
         Leaf obs ->
             inputObservable s c obs
 
-        Unary o e ->
-            wrappedRow [ width fill ] [ text (U.toShortString o), inputExpression s c e ]
+        Unary unary ->
+            wrappedRow [ width fill ] [ text (U.toShortString unary.uop), inputExpression s c unary.expr ]
 
-        Binary o e1 e2 ->
-            wrappedRow [ width fill ] [ inputExpression s c e1, text <| B.toShortString o, inputExpression s c e2 ]
+        Binary binary ->
+            wrappedRow [ width fill ] [ inputExpression s c binary.expr1, text <| B.toShortString binary.bop, inputExpression s c binary.expr2 ]
 
 
 viewObservable : State -> Observable -> Element msg

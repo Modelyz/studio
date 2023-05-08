@@ -17,7 +17,7 @@ import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import State exposing (State)
 import Tree exposing (parentOf)
-import Type exposing (Type, typeOf)
+import Type exposing (Type, userTypeOf)
 import Util exposing (chooseIfSingleton)
 import Value.Value exposing (..)
 
@@ -66,12 +66,12 @@ exeval s c allVals expr =
                         |> Maybe.map (veval s c s.values)
                         |> Maybe.withDefault (Err "No result")
 
-        Unary op e ->
-            Result.map (U.eval op) (exeval s c allVals e)
+        Unary unary ->
+            Result.map (U.eval unary.uop) (exeval s c allVals unary.expr)
 
-        Binary op e f ->
+        Binary binary ->
             -- the error is displayed only for the 1st eval even if both fail
-            B.eval op (exeval s c allVals e) (exeval s c allVals f)
+            B.eval binary.bop (exeval s c allVals binary.expr1) (exeval s c allVals binary.expr2)
 
 
 step : State -> HardLink -> Uuid -> List Uuid
@@ -84,7 +84,7 @@ step s hl uuid =
             Group.groupsOf s.grouped uuid
 
         ResourceLink HardLink.ResourceType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         EventLink HardLink.EventProvider ->
             Agent.providerOf s.events s.agents uuid
@@ -93,22 +93,22 @@ step s hl uuid =
             Agent.receiverOf s.events s.agents uuid
 
         EventLink HardLink.EventInflow ->
-            Flow.flowOf s.events s.resources s.resourceTypes uuid
+            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
 
         EventLink HardLink.EventOutflow ->
-            Flow.flowOf s.events s.resources s.resourceTypes uuid
+            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
 
         EventLink HardLink.EventGroup ->
             Group.groupsOf s.grouped uuid
 
         EventLink HardLink.EventType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         AgentLink HardLink.AgentGroup ->
             Group.groupsOf s.grouped uuid
 
         AgentLink HardLink.AgentType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         CommitmentLink HardLink.CommitmentProvider ->
             Agent.providerOf s.commitments s.agents uuid
@@ -117,28 +117,28 @@ step s hl uuid =
             Agent.receiverOf s.commitments s.agents uuid
 
         CommitmentLink HardLink.CommitmentInflow ->
-            Flow.flowOf s.events s.resources s.resourceTypes uuid
+            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
 
         CommitmentLink HardLink.CommitmentOutflow ->
-            Flow.flowOf s.events s.resources s.resourceTypes uuid
+            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
 
         CommitmentLink HardLink.CommitmentGroup ->
             Group.groupsOf s.grouped uuid
 
         CommitmentLink HardLink.CommitmentType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         ContractLink HardLink.ContractGroup ->
             Group.groupsOf s.grouped uuid
 
         ContractLink HardLink.ContractType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         ProcessLink HardLink.ProcessGroup ->
             Group.groupsOf s.grouped uuid
 
         ProcessLink HardLink.ProcessType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         GroupLink HardLink.ParentGroup ->
             Maybe.withDefault [] <| Maybe.map List.singleton (parentOf s.groups uuid)
@@ -147,13 +147,13 @@ step s hl uuid =
             Group.groupsOf s.grouped uuid
 
         GroupLink HardLink.GroupType ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         ResourceTypeLink HardLink.ResourceTypeGroup ->
             Group.groupsOf s.grouped uuid
 
         ResourceTypeLink HardLink.ResourceTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         EventTypeLink HardLink.EventTypeReceiver ->
             Agent.receiversOf s.types s.eventTypes s.agents uuid
@@ -165,13 +165,13 @@ step s hl uuid =
             Group.groupsOf s.grouped uuid
 
         EventTypeLink HardLink.EventTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         AgentTypeLink HardLink.AgentTypeGroup ->
             Group.groupsOf s.grouped uuid
 
         AgentTypeLink HardLink.AgentTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         CommitmentTypeLink HardLink.CommitmentTypeReceiver ->
             Agent.receiversOf s.types s.commitmentTypes s.agents uuid
@@ -183,25 +183,25 @@ step s hl uuid =
             Group.groupsOf s.grouped uuid
 
         CommitmentTypeLink HardLink.CommitmentTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         ContractTypeLink HardLink.ContractTypeGroup ->
             Group.groupsOf s.grouped uuid
 
         ContractTypeLink HardLink.ContractTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         ProcessTypeLink HardLink.ProcessTypeGroup ->
             Group.groupsOf s.grouped uuid
 
         ProcessTypeLink HardLink.ProcessTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         GroupTypeLink HardLink.GroupTypeGroup ->
             Group.groupsOf s.grouped uuid
 
         GroupTypeLink HardLink.GroupTypeParent ->
-            Maybe.withDefault [] <| Maybe.map List.singleton (typeOf s.types uuid)
+            Maybe.withDefault [] <| Maybe.map List.singleton (userTypeOf s.types uuid)
 
         _ ->
             -- TODO missing EventTypeFlow and CommitmentTypeFlow

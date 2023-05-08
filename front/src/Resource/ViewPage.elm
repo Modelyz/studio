@@ -1,5 +1,7 @@
 module Resource.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -17,8 +19,6 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 mainTType : Type
@@ -57,7 +57,7 @@ page s =
     Spa.Page.element
         { init = init s
         , update = update s
-        , view = view s
+        , view = view
         , subscriptions = \_ -> Sub.none
         }
 
@@ -98,8 +98,8 @@ update s msg model =
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Resource <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
 
 
-view : Shared.Model -> Model -> View Msg
-view s model =
+view : Model -> View Msg
+view model =
     { title = "Resource"
     , attributes = []
     , element = viewContent model

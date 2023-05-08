@@ -11,18 +11,18 @@ import Json.Encode as Encode
 
 type Expression
     = Leaf Observable
-    | Unary U.Operator Expression
-    | Binary B.Operator Expression Expression
+    | Unary { uop : U.Operator, expr : Expression }
+    | Binary { bop : B.Operator, expr1 : Expression, expr2 : Expression }
 
 
 applyBinary : B.Operator -> List Expression -> List Expression
 applyBinary o stack =
-    Maybe.map3 (\f s t -> Binary o f s :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
+    Maybe.map3 (\f s t -> Binary { bop = o, expr1 = f, expr2 = s } :: t) (List.head stack) ((List.tail >> Maybe.andThen List.head) stack) ((List.tail >> Maybe.andThen List.tail) stack) |> Maybe.withDefault []
 
 
 applyUnary : U.Operator -> List Expression -> List Expression
 applyUnary o stack =
-    Maybe.map2 (\h t -> Unary o h :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
+    Maybe.map2 (\h t -> Unary { uop = o, expr = h } :: t) (List.head stack) (List.tail stack) |> Maybe.withDefault []
 
 
 updateExpr : List Int -> List Int -> Expression -> Expression -> Expression
@@ -36,11 +36,11 @@ updateExpr targetPath currentPath subExpr expr =
             else
                 expr
 
-        Unary o e ->
-            Unary o (updateExpr targetPath (1 :: currentPath) subExpr e)
+        Unary unary ->
+            Unary { uop = unary.uop, expr = updateExpr targetPath (1 :: currentPath) subExpr unary.expr }
 
-        Binary o e1 e2 ->
-            Binary o (updateExpr targetPath (2 :: currentPath) subExpr e1) (updateExpr targetPath (3 :: currentPath) subExpr e2)
+        Binary binary ->
+            Binary { bop = binary.bop, expr1 = updateExpr targetPath (2 :: currentPath) subExpr binary.expr1, expr2 = updateExpr targetPath (3 :: currentPath) subExpr binary.expr2 }
 
 
 encode : Expression -> Encode.Value
@@ -49,22 +49,22 @@ encode e =
         Leaf o ->
             Encode.object
                 [ ( "type", Encode.string "Leaf" )
-                , ( "obs", Obs.encode o )
+                , ( "value", Obs.encode o )
                 ]
 
-        Unary operator expr ->
+        Unary unary ->
             Encode.object
                 [ ( "type", Encode.string "Unary" )
-                , ( "op", U.encode operator )
-                , ( "expr", encode expr )
+                , ( "operator", U.encode unary.uop )
+                , ( "expr", encode unary.expr )
                 ]
 
-        Binary operator expr1 expr2 ->
+        Binary binary ->
             Encode.object
                 [ ( "type", Encode.string "Binary" )
-                , ( "op", B.encode operator )
-                , ( "expr1", encode expr1 )
-                , ( "expr2", encode expr2 )
+                , ( "operator", B.encode binary.bop )
+                , ( "expr1", encode binary.expr1 )
+                , ( "expr2", encode binary.expr2 )
                 ]
 
 
@@ -75,13 +75,13 @@ decoder =
             (\s ->
                 case s of
                     "Leaf" ->
-                        Decode.map Leaf (Decode.field "obs" Obs.decoder)
+                        Decode.map Leaf (Decode.field "value" Obs.decoder)
 
                     "Unary" ->
-                        Decode.map2 Unary (Decode.field "op" U.decoder) (Decode.field "expr" decoder)
+                        Decode.map2 (\o e -> Unary { uop = o, expr = e }) (Decode.field "op" U.decoder) (Decode.field "expr" decoder)
 
                     "Binary" ->
-                        Decode.map3 Binary (Decode.field "op" B.decoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
+                        Decode.map3 (\o e1 e2 -> Binary { bop = o, expr1 = e2, expr2 = e2 }) (Decode.field "op" B.decoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
 
                     _ ->
                         Decode.fail "Unknown Expression"
@@ -97,11 +97,11 @@ undo stack =
                     Leaf _ ->
                         []
 
-                    Unary _ e ->
-                        [ e ]
+                    Unary unary ->
+                        [ unary.expr ]
 
-                    Binary _ e1 e2 ->
-                        [ e1, e2 ]
+                    Binary binary ->
+                        [ binary.expr1, binary.expr2 ]
             )
         |> Maybe.withDefault []
     )

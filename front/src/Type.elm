@@ -1,4 +1,4 @@
-module Type exposing (Type(..), compare, decoder, encode, fromType, hasCommonParent, isChildOf, isParentOf, isType, parents, toDisplay, toHierarchic, toPluralDisplay, toString, toType, typeOf)
+module Type exposing (Type(..), compare, decoder, encode, fromType, hasCommonParent, isChildOf, isParentOf, isType, parents, toDisplay, toHierarchic, toPluralDisplay, toString, toType, typeOf, userTypeOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
@@ -6,12 +6,12 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Typed.Type as TType
-import Util exposing (third)
+import Util exposing (second, third)
 
 
 type
     Type
-    -- TODO see if it's still useful
+    -- Try to merge into a single type
     = TType TType.Type
     | HType HType.Type
 
@@ -86,8 +86,13 @@ compare =
     toString
 
 
-typeOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Maybe Uuid
+typeOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Maybe Type
 typeOf types uuid =
+    Dict.get (Uuid.toString uuid) types |> Maybe.map second
+
+
+userTypeOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Uuid -> Maybe Uuid
+userTypeOf types uuid =
     Dict.get (Uuid.toString uuid) types |> Maybe.andThen third
 
 

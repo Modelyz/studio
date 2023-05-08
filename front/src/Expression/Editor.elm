@@ -228,11 +228,11 @@ editExpression s model stackNum ( currentPath, expr ) =
         Leaf obs ->
             editObservable s ( stackNum, currentPath ) obs
 
-        Unary o e ->
-            row [] [ text (U.toShortString o), editExpression s model stackNum ( 1 :: currentPath, e ) ]
+        Unary unary ->
+            row [] [ text (U.toShortString unary.uop), editExpression s model stackNum ( 1 :: currentPath, unary.expr ) ]
 
-        Binary o e1 e2 ->
-            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, e1 ), text <| B.toShortString o, editExpression s model stackNum ( 3 :: currentPath, e2 ), text " )" ]
+        Binary binary ->
+            row [] [ text "( ", editExpression s model stackNum ( 2 :: currentPath, binary.expr1 ), text <| B.toShortString binary.bop, editExpression s model stackNum ( 3 :: currentPath, binary.expr2 ), text " )" ]
 
 
 editObservable : Shared.Model -> ( Int, List Int ) -> Observable -> Element Msg

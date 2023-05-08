@@ -74,7 +74,7 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
                     when (n /= nc && not (ev `isType` "InitiatedConnection")) $ do
-                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from connected browser " ++ show n ++ ": Sent through WS : " ++ show ev
+                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from browser " ++ show n ++ ": Sent through WS : " ++ show ev
                         WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
                     loop
                 )
@@ -84,7 +84,7 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
         forever $ do
             putStrLn $ "\nWaiting for new messages from browser " ++ show nc
             messages <- WS.receiveDataMessage conn
-            putStrLn $ "\nReceived stuff through websocket from Elm client " ++ show nc ++ ". Handling it : " ++ show messages
+            putStrLn $ "\nReceived stuff through websocket from browser " ++ show nc ++ ". Handling it : " ++ show messages
             case JSON.decode
                     ( case messages of
                         WS.Text bs _ -> WS.fromLazyByteString bs

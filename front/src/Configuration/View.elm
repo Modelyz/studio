@@ -15,10 +15,10 @@ view : Configuration -> String
 view c =
     -- TODO convert to a separate title and description to feed in to a smallcard
     case c of
-        ZoneDisplay zone fragments _ ->
-            Zone.toDesc zone
+        ZoneDisplay display ->
+            Zone.toDesc display.zone
                 ++ " : "
-                ++ (String.concat <| List.map Fragment.toString fragments)
+                ++ (String.concat <| List.map Fragment.toString display.fragments)
 
         MenuDisplay type_ uuid hasMenu ->
             HType.toString type_
@@ -36,8 +36,8 @@ view c =
 description : Shared.Model -> Configuration -> String
 description s c =
     case c of
-        ZoneDisplay _ _ scope ->
-            Scope.View.toDisplay s.state scope
+        ZoneDisplay display ->
+            Scope.View.toDisplay s.state display.scope
 
         MenuDisplay type_ uuid hasMenu ->
             displayZone s.state SmallcardZone (Type.HType type_) uuid

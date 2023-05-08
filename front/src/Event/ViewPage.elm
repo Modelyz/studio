@@ -142,7 +142,7 @@ viewContent model s =
             ("What: "
                 ++ (model.qty |> Maybe.map (\expr -> exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
                 ++ " "
-                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardZone (Flow.typeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardZone (Flow.userTypeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )
         , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))

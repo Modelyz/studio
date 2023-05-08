@@ -7,7 +7,7 @@ import Hierarchy.Type as HType
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope)
+import Scope exposing (Scope)
 import Scope.State exposing (getUpperList)
 import Type exposing (Type(..))
 
@@ -15,7 +15,7 @@ import Type exposing (Type(..))
 type
     Configuration
     -- the list of identifier types to display on each zone
-    = ZoneDisplay Zone (List Fragment) Scope
+    = ZoneDisplay { zone : Zone, fragments : List Fragment, scope : Scope }
     | MenuDisplay HType.Type Uuid Bool
 
 
@@ -42,8 +42,8 @@ onlyZone mzone confs =
                     |> Maybe.map
                         (\requestedZone ->
                             case v of
-                                ZoneDisplay foundZone _ _ ->
-                                    requestedZone == foundZone
+                                ZoneDisplay display ->
+                                    requestedZone == display.zone
 
                                 _ ->
                                     False
@@ -61,8 +61,8 @@ getConfig requestedZone configs scope =
             Dict.filter
                 (\_ conf ->
                     case conf of
-                        ZoneDisplay foundZone _ s ->
-                            foundZone == requestedZone && s == scope
+                        ZoneDisplay display ->
+                            display.zone == requestedZone && display.scope == scope
 
                         _ ->
                             False
@@ -97,8 +97,8 @@ findFirst zone configs scopes =
 compare : Configuration -> String
 compare config =
     case config of
-        ZoneDisplay zone _ scope ->
-            "ZoneDisplay" ++ "/" ++ Zone.compare zone ++ "/" ++ Scope.compare scope
+        ZoneDisplay display ->
+            "ZoneDisplay" ++ "/" ++ Zone.compare display.zone ++ "/" ++ Scope.compare display.scope
 
         MenuDisplay type_ uuid _ ->
             "MenuDisplay" ++ "/" ++ HType.compare type_ ++ "/" ++ Uuid.toString uuid
@@ -107,17 +107,17 @@ compare config =
 encode : Configuration -> Encode.Value
 encode c =
     case c of
-        ZoneDisplay zone names scope ->
+        ZoneDisplay display ->
             Encode.object
-                [ ( "what", Encode.string "ZoneDisplay" )
-                , ( "zone", Zone.encode zone )
-                , ( "fragments", Encode.list Fragment.encode names )
-                , ( "scope", Scope.encode scope )
+                [ ( "type", Encode.string "ZoneDisplay" )
+                , ( "zone", Zone.encode display.zone )
+                , ( "fragments", Encode.list Fragment.encode display.fragments )
+                , ( "scope", Scope.encode display.scope )
                 ]
 
         MenuDisplay type_ uuid isMenu ->
             Encode.object
-                [ ( "what", Encode.string "MenuDisplay" )
+                [ ( "type", Encode.string "MenuDisplay" )
                 , ( "type", HType.encode type_ )
                 , ( "uuid", Encode.string (Uuid.toString uuid) )
                 , ( "isMenu", Encode.bool isMenu )
@@ -126,12 +126,12 @@ encode c =
 
 decoder : Decoder Configuration
 decoder =
-    Decode.field "what" Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen
             (\what ->
                 case what of
                     "ZoneDisplay" ->
-                        Decode.map3 ZoneDisplay
+                        Decode.map3 (\z fs s -> ZoneDisplay { zone = z, fragments = fs, scope = s })
                             (Decode.field "zone" Zone.decoder)
                             (Decode.field "fragments" (Decode.list Fragment.decoder))
                             (Decode.field "scope" Scope.decoder)

@@ -1,4 +1,4 @@
-module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, indexOf, otherwise, otherwiseR, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, indexOf, otherwise, otherwiseR, second, third)
 
 import Dict exposing (Dict)
 
@@ -21,6 +21,11 @@ otherwiseR fallback main =
 
         Err _ ->
             fallback
+
+
+second : ( a, b, c ) -> b
+second =
+    \( _, x, _ ) -> x
 
 
 third : ( a, b, c ) -> c

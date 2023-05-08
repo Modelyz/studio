@@ -26,8 +26,8 @@ displayZone s zone t uuid =
         |> Maybe.map
             (\conf ->
                 case conf of
-                    ZoneDisplay _ fragments _ ->
-                        String.concat <| List.map (toValue s t uuid zone) fragments
+                    ZoneDisplay display ->
+                        String.concat <| List.map (toValue s t uuid zone) display.fragments
 
                     _ ->
                         ""

@@ -1,4 +1,4 @@
-module Flow exposing (Flow(..), decoder, encode, flowOf, typeOf, uuidOf)
+module Flow exposing (Flow(..), decoder, encode, flowOf, userTypeOf, uuidOf)
 
 import Dict exposing (Dict)
 import Hierarchy.Type as HType
@@ -8,7 +8,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType as ResourceType exposing (ResourceType)
 import Scope exposing (Scope(..))
-import Type exposing (Type)
+import Type exposing (Type, typeOf)
 import Typed.Type as TType
 
 
@@ -17,17 +17,33 @@ type Flow
     | ResourceTypeFlow ResourceType
 
 
-flowOf : Dict String { a | flow : Flow } -> Dict String Resource -> Dict String ResourceType -> Uuid -> List Uuid
-flowOf entities resources resourceTypes uuid =
-    Dict.get (Uuid.toString uuid) entities
-        |> Maybe.map
-            (\e ->
-                resources
-                    |> Dict.filter (\_ v -> v.uuid == uuidOf e.flow)
-                    |> Dict.values
-                    |> List.map .uuid
-            )
-        |> Maybe.withDefault []
+flowOf : Dict String ( Uuid, Type, Maybe Uuid ) -> Dict String { a | flow : Flow } -> Dict String Resource -> Dict String ResourceType -> Uuid -> List Uuid
+flowOf types entities resources resourceTypes uuid =
+    case typeOf types uuid of
+        Just (Type.TType TType.Resource) ->
+            Dict.get (Uuid.toString uuid) entities
+                |> Maybe.map
+                    (\e ->
+                        resources
+                            |> Dict.filter (\_ v -> v.uuid == uuidOf e.flow)
+                            |> Dict.values
+                            |> List.map .uuid
+                    )
+                |> Maybe.withDefault []
+
+        Just (Type.HType HType.ResourceType) ->
+            Dict.get (Uuid.toString uuid) entities
+                |> Maybe.map
+                    (\e ->
+                        resourceTypes
+                            |> Dict.filter (\_ v -> v.uuid == uuidOf e.flow)
+                            |> Dict.values
+                            |> List.map .uuid
+                    )
+                |> Maybe.withDefault []
+
+        _ ->
+            []
 
 
 encode : Flow -> Encode.Value
@@ -50,8 +66,8 @@ uuidOf flow =
             rt.uuid
 
 
-typeOf : Flow -> Type
-typeOf flow =
+userTypeOf : Flow -> Type
+userTypeOf flow =
     case flow of
         ResourceFlow _ ->
             Type.TType TType.Resource

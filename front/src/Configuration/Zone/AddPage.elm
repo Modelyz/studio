@@ -106,11 +106,11 @@ init s f =
             |> Maybe.map
                 (\conf ->
                     case conf of
-                        ZoneDisplay zone fragments scope ->
+                        ZoneDisplay display ->
                             { adding
-                                | zone = zone
-                                , scope = scope
-                                , fragments = fragments
+                                | zone = display.zone
+                                , scope = display.scope
+                                , fragments = display.fragments
                                 , warning = ""
                             }
 
@@ -171,7 +171,7 @@ update s msg model =
 
 validate : Model -> Result String Configuration
 validate m =
-    Result.map3 ZoneDisplay
+    Result.map3 (\z fs s -> ZoneDisplay { zone = z, fragments = fs, scope = s })
         (Ok m.zone)
         (checkEmptyList m.fragments "Your zone format is empty")
         (if m.scope == Scope.empty then
