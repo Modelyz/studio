@@ -6,7 +6,7 @@ import Ident.Identifier as Identifier exposing (Identifier)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import Type exposing (Type)
 

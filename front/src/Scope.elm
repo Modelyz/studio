@@ -50,31 +50,31 @@ encode : Scope -> Encode.Value
 encode scope =
     case scope of
         HasType t ->
-            Encode.object [ ( "IsType", Type.encode t ) ]
+            Encode.object [ ( "scope", Encode.string "HasType" ), ( "value", Type.encode t ) ]
 
-        HasUserType t uuid ->
-            Encode.object [ ( "HasUserType", Encode.object [ ( "what", Type.encode t ), ( "typeUuid", Uuid.encode uuid ) ] ) ]
+        HasUserType t u ->
+            Encode.object [ ( "scope", Encode.string "HasUserType" ), ( "what", Type.encode t ), ( "typeUuid", Uuid.encode u ) ]
 
-        IsItem t uuid ->
-            Encode.object [ ( "IsItem", Encode.object [ ( "type", Type.encode t ), ( "uuid", Uuid.encode uuid ) ] ) ]
+        IsItem t u ->
+            Encode.object [ ( "scope", Encode.string "IsItem" ), ( "type", Type.encode t ), ( "uuid", Uuid.encode u ) ]
 
         And s1 s2 ->
-            Encode.object [ ( "And", Encode.list encode [ s1, s2 ] ) ]
+            Encode.object [ ( "scope", Encode.string "And" ), ( "value", Encode.list encode [ s1, s2 ] ) ]
 
         Or s1 s2 ->
-            Encode.object [ ( "Or", Encode.list encode [ s1, s2 ] ) ]
+            Encode.object [ ( "scope", Encode.string "Or" ), ( "value", Encode.list encode [ s1, s2 ] ) ]
 
         Not s ->
-            Encode.object [ ( "Not", encode s ) ]
+            Encode.object [ ( "scope", Encode.string "Not" ), ( "value", encode s ) ]
 
         Identified id ->
-            Encode.object [ ( "Identified", Identification.encode id ) ]
+            Encode.object [ ( "scope", Encode.string "Identified" ), ( "value", Identification.encode id ) ]
 
         Anything ->
-            Encode.string "Anything"
+            Encode.object [ ( "scope", Encode.string "Anything" ) ]
 
         Empty ->
-            Encode.string "Nothing"
+            Encode.object [ ( "scope", Encode.string "Nothing" ) ]
 
 
 pairDecoder : (Scope -> Scope -> Scope) -> String -> Decoder Scope
@@ -94,32 +94,44 @@ pairDecoder constructor str =
 
 decoder : Decoder Scope
 decoder =
-    Decode.oneOf
-        [ Decode.map HasType (Decode.field "IsType" Type.decoder)
-        , Decode.map2 IsItem
-            (Decode.at [ "IsItem", "type" ] Type.decoder)
-            (Decode.at [ "IsItem", "uuid" ] Uuid.decoder)
-        , Decode.map2 HasUserType
-            (Decode.at [ "HasUserType", "what" ] Type.decoder)
-            (Decode.at [ "HasUserType", "typeUuid" ] Uuid.decoder)
-        , Decode.field "And" (Decode.lazy (\_ -> pairDecoder And "And"))
-        , Decode.field "Or" (Decode.lazy (\_ -> pairDecoder Or "Or"))
-        , Decode.map Not (Decode.field "Not" (Decode.lazy (\_ -> decoder)))
-        , Decode.map Identified (Decode.field "Identified" Identification.decoder)
-        , Decode.string
-            |> Decode.andThen
-                (\s ->
-                    case s of
-                        "Nothing" ->
-                            Decode.succeed Empty
+    Decode.field "scope" Decode.string
+        |> Decode.andThen
+            (\s ->
+                case s of
+                    "Empty" ->
+                        Decode.succeed Empty
 
-                        "Anything" ->
-                            Decode.succeed Anything
+                    "Anything" ->
+                        Decode.succeed Anything
 
-                        _ ->
-                            Decode.fail "Invalid scope definition"
-                )
-        ]
+                    "IsItem" ->
+                        Decode.map2 IsItem
+                            (Decode.field "type" Type.decoder)
+                            (Decode.field "uuid" Uuid.decoder)
+
+                    "HasUserType" ->
+                        Decode.map2 HasUserType
+                            (Decode.field "type" Type.decoder)
+                            (Decode.field "uuid" Uuid.decoder)
+
+                    "HasType" ->
+                        Decode.map HasType (Decode.field "value" Type.decoder)
+
+                    "And" ->
+                        Decode.field "value" (Decode.lazy (\_ -> pairDecoder And "And"))
+
+                    "Or" ->
+                        Decode.field "value" (Decode.lazy (\_ -> pairDecoder Or "Or"))
+
+                    "Not" ->
+                        Decode.field "value" (Decode.lazy (\_ -> decoder))
+
+                    "Identified" ->
+                        Decode.map Identified (Decode.field "value" Identification.decoder)
+
+                    _ ->
+                        Decode.fail "Invalid scope definition"
+            )
 
 
 toString : Scope -> String
