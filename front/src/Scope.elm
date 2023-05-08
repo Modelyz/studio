@@ -49,47 +49,32 @@ or s1 s2 =
 encode : Scope -> Encode.Value
 encode scope =
     case scope of
+        Empty ->
+            Encode.object [ ( "scope", Encode.string "Nothing" ) ]
+
+        Anything ->
+            Encode.object [ ( "scope", Encode.string "Anything" ) ]
+
+        IsItem t u ->
+            Encode.object [ ( "scope", Encode.string "IsItem" ), ( "value", Encode.object [ ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ] ) ]
+
+        HasUserType t u ->
+            Encode.object [ ( "scope", Encode.string "HasUserType" ), ( "value", Encode.object [ ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ] ) ]
+
         HasType t ->
             Encode.object [ ( "scope", Encode.string "HasType" ), ( "value", Type.encode t ) ]
 
-        HasUserType t u ->
-            Encode.object [ ( "scope", Encode.string "HasUserType" ), ( "what", Type.encode t ), ( "typeUuid", Uuid.encode u ) ]
-
-        IsItem t u ->
-            Encode.object [ ( "scope", Encode.string "IsItem" ), ( "type", Type.encode t ), ( "uuid", Uuid.encode u ) ]
-
         And s1 s2 ->
-            Encode.object [ ( "scope", Encode.string "And" ), ( "value", Encode.list encode [ s1, s2 ] ) ]
+            Encode.object [ ( "scope", Encode.string "And" ), ( "value", Encode.object [ ( "scope1", encode s1 ), ( "scope2", encode s2 ) ] ) ]
 
         Or s1 s2 ->
-            Encode.object [ ( "scope", Encode.string "Or" ), ( "value", Encode.list encode [ s1, s2 ] ) ]
+            Encode.object [ ( "scope", Encode.string "Or" ), ( "value", Encode.object [ ( "scope1", encode s1 ), ( "scope2", encode s2 ) ] ) ]
 
         Not s ->
             Encode.object [ ( "scope", Encode.string "Not" ), ( "value", encode s ) ]
 
         Identified id ->
             Encode.object [ ( "scope", Encode.string "Identified" ), ( "value", Identification.encode id ) ]
-
-        Anything ->
-            Encode.object [ ( "scope", Encode.string "Anything" ) ]
-
-        Empty ->
-            Encode.object [ ( "scope", Encode.string "Nothing" ) ]
-
-
-pairDecoder : (Scope -> Scope -> Scope) -> String -> Decoder Scope
-pairDecoder constructor str =
-    Decode.list decoder
-        |> Decode.andThen
-            (\l ->
-                Maybe.map2 constructor
-                    (List.head l)
-                    (List.tail l
-                        |> Maybe.andThen List.head
-                    )
-                    |> Maybe.map Decode.succeed
-                    |> Maybe.withDefault (Decode.fail <| "The " ++ str ++ " operator should contain exactly two scopes")
-            )
 
 
 decoder : Decoder Scope
@@ -118,10 +103,10 @@ decoder =
                         Decode.map HasType (Decode.field "value" Type.decoder)
 
                     "And" ->
-                        Decode.field "value" (Decode.lazy (\_ -> pairDecoder And "And"))
+                        Decode.field "value" (Decode.map2 And (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder))))
 
                     "Or" ->
-                        Decode.field "value" (Decode.lazy (\_ -> pairDecoder Or "Or"))
+                        Decode.field "value" (Decode.map2 Or (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder))))
 
                     "Not" ->
                         Decode.field "value" (Decode.lazy (\_ -> decoder))

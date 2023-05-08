@@ -18,19 +18,30 @@ encode : Identification -> Encode.Value
 encode id =
     case id of
         StartsWith str ->
-            Encode.object [ ( "StartsWith", Encode.string str ) ]
+            Encode.object [ ( "type", Encode.string "StartsWith" ), ( "value", Encode.object [ ( "value", Encode.string str ) ] ) ]
 
         EndsWith str ->
-            Encode.object [ ( "EndsWith", Encode.string str ) ]
+            Encode.object [ ( "type", Encode.string "EndsWith" ), ( "value", Encode.object [ ( "value", Encode.string str ) ] ) ]
 
         Contains str ->
-            Encode.object [ ( "Contains", Encode.string str ) ]
+            Encode.object [ ( "type", Encode.string "Contains" ), ( "value", Encode.object [ ( "value", Encode.string str ) ] ) ]
 
 
 decoder : Decoder Identification
 decoder =
-    Decode.oneOf
-        [ Decode.map StartsWith (Decode.field "StartsWith" Decode.string)
-        , Decode.map EndsWith (Decode.field "EndsWith" Decode.string)
-        , Decode.map Contains (Decode.field "Contains" Decode.string)
-        ]
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\t ->
+                case t of
+                    "StartsWith" ->
+                        Decode.map StartsWith (Decode.field "value" Decode.string)
+
+                    "EndsWith" ->
+                        Decode.map EndsWith (Decode.field "value" Decode.string)
+
+                    "Contains" ->
+                        Decode.map Contains (Decode.field "value" Decode.string)
+
+                    _ ->
+                        Decode.fail "Invalid Identification"
+            )
