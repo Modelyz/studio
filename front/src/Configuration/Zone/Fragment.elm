@@ -17,25 +17,25 @@ type alias Name =
 type
     Fragment
     -- TODO: add Types to be able to display the type in the zone
-    = IdentifierName Name
-    | GroupIdentifierName Scope Name {- to display the name of a group of the entity -}
+    = IdentifierName { name : Name }
+    | GroupIdentifierName { scope : Scope, name : Name } {- to display the name of a group of the entity -}
     | Parent
     | Fixed String
     | Quantity
     | Flow
     | Provider
     | Receiver
-    | EventList Separator Separator
+    | EventList { qtySep : Separator, eventSep : Separator }
 
 
 toString : Fragment -> String
 toString fragment =
     case fragment of
-        IdentifierName name ->
-            name
+        IdentifierName identifier ->
+            identifier.name
 
-        GroupIdentifierName _ name ->
-            name
+        GroupIdentifierName groupidentifier ->
+            groupidentifier.name
 
         Parent ->
             "Parent"
@@ -55,7 +55,7 @@ toString fragment =
         Receiver ->
             "Receiver"
 
-        EventList _ _ ->
+        EventList _ ->
             "EventList"
 
 
@@ -65,8 +65,8 @@ toDesc fragment =
         IdentifierName _ ->
             "Identifier"
 
-        GroupIdentifierName scope _ ->
-            "Identifier of a " ++ Scope.toString scope
+        GroupIdentifierName groupidentifier ->
+            "Identifier of a " ++ Scope.toString groupidentifier.scope
 
         Parent ->
             "Display the zone configuration of the Parent"
@@ -86,22 +86,22 @@ toDesc fragment =
         Receiver ->
             "Display the receiver of the Event or Commitment"
 
-        EventList _ _ ->
-            "Display the list of partial Events, separated by a configurable separator."
+        EventList _ ->
+            "Display the list of partial Events, separated by configurable separators."
 
 
 encode : Fragment -> Encode.Value
 encode fragment =
     case fragment of
-        IdentifierName name ->
+        IdentifierName identifier ->
             Encode.object
-                [ ( "type", Encode.string "IdentifierName" ), ( "name", Encode.string name ) ]
+                [ ( "type", Encode.string "IdentifierName" ), ( "name", Encode.string identifier.name ) ]
 
-        GroupIdentifierName group name ->
+        GroupIdentifierName groupidentifier ->
             Encode.object
                 [ ( "type", Encode.string "GroupIdentifierName" )
-                , ( "scope", Scope.encode group )
-                , ( "name", Encode.string name )
+                , ( "scope", Scope.encode groupidentifier.scope )
+                , ( "name", Encode.string groupidentifier.name )
                 ]
 
         Parent ->
@@ -122,11 +122,11 @@ encode fragment =
         Receiver ->
             Encode.object [ ( "type", Encode.string "Receiver" ) ]
 
-        EventList qSeparator rSeparator ->
+        EventList separators ->
             Encode.object
                 [ ( "type", Encode.string "EventList" )
-                , ( "qSep", Encode.string qSeparator )
-                , ( "rSep", Encode.string rSeparator )
+                , ( "qtySep", Encode.string separators.qtySep )
+                , ( "eventSep", Encode.string separators.eventSep )
                 ]
 
 
@@ -155,13 +155,18 @@ decoder =
                         Decode.map Fixed (Decode.field "string" Decode.string)
 
                     "IdentifierName" ->
-                        Decode.map IdentifierName (Decode.field "name" Decode.string)
+                        Decode.map (\name -> IdentifierName { name = name })
+                            (Decode.field "name" Decode.string)
 
                     "GroupIdentifierName" ->
-                        Decode.map2 GroupIdentifierName (Decode.field "scope" Scope.decoder) (Decode.field "name" Decode.string)
+                        Decode.map2 (\scope name -> GroupIdentifierName { scope = scope, name = name })
+                            (Decode.field "scope" Scope.decoder)
+                            (Decode.field "name" Decode.string)
 
                     "EventList" ->
-                        Decode.map2 EventList (Decode.field "qSep" Decode.string) (Decode.field "rSep" Decode.string)
+                        Decode.map2 (\qs es -> EventList { qtySep = qs, eventSep = es })
+                            (Decode.field "qtySep" Decode.string)
+                            (Decode.field "eventSep" Decode.string)
 
                     _ ->
                         Decode.fail ("Unknown fragment: " ++ t)

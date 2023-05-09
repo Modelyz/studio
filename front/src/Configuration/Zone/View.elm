@@ -38,15 +38,15 @@ displayZone s zone t uuid =
 toValue : State -> Type -> Uuid -> Zone -> Fragment -> String
 toValue s t uuid zone fragment =
     case fragment of
-        IdentifierName name ->
-            Identifier.select name (Identifier.fromUuid uuid s.identifiers) |> List.map Identifier.toValue |> String.join ", "
+        IdentifierName identifier ->
+            Identifier.select identifier.name (Identifier.fromUuid uuid s.identifiers) |> List.map Identifier.toValue |> String.join ", "
 
-        GroupIdentifierName _ name ->
+        GroupIdentifierName groupidentifier ->
             let
                 groupids =
                     Group.groupsOf s.grouped uuid |> List.map (\guuid -> Identifier.fromUuid guuid s.identifiers |> Dict.toList) |> List.concat |> Dict.fromList
             in
-            Identifier.select name groupids |> List.map Identifier.toValue |> String.join ", "
+            Identifier.select groupidentifier.name groupids |> List.map Identifier.toValue |> String.join ", "
 
         Parent ->
             let
@@ -131,13 +131,13 @@ toValue s t uuid zone fragment =
                     )
                 |> Maybe.withDefault ""
 
-        EventList qSep rSep ->
+        EventList separator ->
             case t of
                 Type.TType TType.Process ->
                     Dict.filter (\_ r -> r.process == uuid) s.reconciliations
                         |> Dict.values
-                        |> List.map (\r -> Rational.toFloatString r.qty ++ qSep ++ displayZone s zone (Type.TType TType.Event) r.event)
-                        |> String.join rSep
+                        |> List.map (\r -> Rational.toFloatString r.qty ++ separator.qtySep ++ displayZone s zone (Type.TType TType.Event) r.event)
+                        |> String.join separator.eventSep
 
                 _ ->
                     ""

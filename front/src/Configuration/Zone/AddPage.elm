@@ -230,14 +230,14 @@ allByScope s scope =
                 |> Dict.values
                 |> List.filter
                     (\it -> containsScope s.types scope it.scope)
-                |> List.map (.name >> IdentifierName)
+                |> List.map (.name >> (\name -> IdentifierName { name = name }))
 
         groupIdentifierNames =
             s.identifierTypes
                 |> Dict.values
                 |> List.filter
                     (\it -> containsScope s.types it.scope (HasType (Type.TType TType.Group)))
-                |> List.map (\it -> GroupIdentifierName it.scope it.name)
+                |> List.map (\it -> GroupIdentifierName { scope = it.scope, name = it.name })
     in
     identifierNames
         ++ Fixed ""
@@ -249,7 +249,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 IsItem (Type.TType TType.Process) _ ->
-                    [ EventList "" "" ]
+                    [ EventList { qtySep = "", eventSep = "" } ]
 
                 IsItem (Type.TType TType.Group) _ ->
                     [ Parent ]
@@ -261,7 +261,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 HasUserType (Type.TType TType.Process) _ ->
-                    [ EventList "" "" ]
+                    [ EventList { qtySep = "", eventSep = "" } ]
 
                 HasUserType (Type.TType TType.Group) _ ->
                     [ Parent ]
@@ -273,7 +273,7 @@ allByScope s scope =
                     [ Quantity, Flow, Provider, Receiver ]
 
                 HasType (Type.TType TType.Process) ->
-                    [ EventList "" "" ]
+                    [ EventList { qtySep = "", eventSep = "" } ]
 
                 HasType (Type.TType TType.Group) ->
                     [ Parent ]
@@ -337,7 +337,7 @@ inputFragment fragments index fragment =
         IdentifierName _ ->
             none
 
-        GroupIdentifierName _ _ ->
+        GroupIdentifierName _ ->
             none
 
         Quantity ->
@@ -352,7 +352,7 @@ inputFragment fragments index fragment =
         Receiver ->
             none
 
-        EventList qSep rSep ->
+        EventList separators ->
             row [ spacing 5 ]
                 [ Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
                     { onChange =
@@ -362,13 +362,13 @@ inputFragment fragments index fragment =
                                     |> List.indexedMap
                                         (\i f ->
                                             if i == index then
-                                                EventList v rSep
+                                                EventList { qtySep = v, eventSep = separators.eventSep }
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = qSep
+                    , text = separators.qtySep
                     , placeholder = Nothing
                     , label = Input.labelHidden "Separator"
                     }
@@ -380,13 +380,13 @@ inputFragment fragments index fragment =
                                     |> List.indexedMap
                                         (\i f ->
                                             if i == index then
-                                                EventList qSep v
+                                                EventList { qtySep = separators.qtySep, eventSep = v }
 
                                             else
                                                 f
                                         )
                                 )
-                    , text = rSep
+                    , text = separators.eventSep
                     , placeholder = Nothing
                     , label = Input.labelHidden "Separator"
                     }
