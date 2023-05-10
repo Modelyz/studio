@@ -91,10 +91,7 @@ def open_url(browser, path):
     wait(0.1)
 
 
-def click(browser, text, class_=None, id_=None):
-    """
-    class can be: clickableRemovableCard, clickableCard, halfCard
-    """
+def click(browser, text):
     print(f"### click on '{text}'")
     # WebDriverWait(browser, timeout=TIMEOUT).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
@@ -150,11 +147,9 @@ def text_exists(browser, text):
 
 
 def add_identifier_type(browser, name, scope=[], options={}, fragments=[]):
-    click(browser, "admin")
-    click(browser, "Identifier Types")
-    click(browser, "Add...")
+    open_url(browser, f"/identifier-type/add")
     for s in scope:
-        click(browser, s, class_="clickableCard")
+        click(browser, s)
     click(browser, "Next →")
     fill(browser, name)
     click(browser, "Next →")
@@ -172,11 +167,9 @@ def add_identifier_type(browser, name, scope=[], options={}, fragments=[]):
 
 
 def add_value_type(browser, name, scope=[], options={}, expression=[], fields={}):
-    click(browser, "admin")
-    click(browser, "Value Types")
-    click(browser, "Add...")
+    open_url(browser, f"/value-type/add")
     for s in scope:
-        click(browser, s, class_="clickableCard")
+        click(browser, s)
     click(browser, "Next →")
     fill(browser, name)
     click(browser, "Next →")
@@ -192,12 +185,10 @@ def add_value_type(browser, name, scope=[], options={}, expression=[], fields={}
 
 
 def add_zone(browser, zone="", scope=[], fragments=[]):
-    click(browser, "admin")
-    click(browser, "Configuration")
-    click(browser, "Add...")
+    open_url(browser, "/configuration/add")
     click(browser, zone)
     for s in scope:
-        click(browser, s, class_="clickableCard")
+        click(browser, s)
     for _, f in enumerate(fragments):
         click(browser, f[0] if type(f) is tuple else f)
     for i, f in enumerate(fragments):
@@ -238,9 +229,7 @@ def add_group_type(
         "Hierarchical, an intermediate node can be selected",
         "Hierarchical, a leaf must be selected",
     )
-    click(browser, "admin")
-    click(browser, "Group Types")
-    click(browser, "Add...")
+    open_url(browser, "/group-type/add")
     if parentType:
         click(browser, parentType)
     click(browser, "Next →")
@@ -272,9 +261,7 @@ def add_event_type(
     fields={},
     options={},
 ):
-    click(browser, "admin")
-    click(browser, "Event Types")
-    click(browser, "Add...")
+    open_url(browser, "/event-type/add")
     click(browser, "Next →")
     for name, value in identifiers.items():
         fill_by_id(browser, name, value)
@@ -301,9 +288,7 @@ def add_event_type(
 
 
 def add_process_type(browser, parentType="", identifiers={}, eventTypes=[], options={}):
-    click(browser, "admin")
-    click(browser, "Process Types")
-    click(browser, "Add...")
+    open_url(browser, "/process-type/add")
     if parentType:
         click(browser, parentType)
     click(browser, "Next →")
@@ -342,9 +327,7 @@ def add_entity(browser, vsegment, parentType="", identifiers={}, values={}, grou
 def add_group(
     browser, type_, contains=[], identifiers={}, parent="", values={}, groups={}
 ):
-    click(browser, "admin")
-    click(browser, "Groups Types")
-    click(browser, "Add...")
+    open_url(browser, f"/group/add")
     click(browser, type_)
     click(browser, "Next →")
     for scope in contains:
