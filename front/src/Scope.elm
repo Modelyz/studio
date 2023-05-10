@@ -50,36 +50,36 @@ encode : Scope -> Encode.Value
 encode scope =
     case scope of
         Empty ->
-            Encode.object [ ( "scope", Encode.string "Nothing" ) ]
+            Encode.object [ ( "type", Encode.string "Nothing" ) ]
 
         Anything ->
-            Encode.object [ ( "scope", Encode.string "Anything" ) ]
+            Encode.object [ ( "type", Encode.string "Anything" ) ]
 
         IsItem t u ->
-            Encode.object [ ( "scope", Encode.string "IsItem" ), ( "value", Encode.object [ ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ] ) ]
+            Encode.object [ ( "type", Encode.string "IsItem" ), ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ]
 
         HasUserType t u ->
-            Encode.object [ ( "scope", Encode.string "HasUserType" ), ( "value", Encode.object [ ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ] ) ]
+            Encode.object [ ( "type", Encode.string "HasUserType" ), ( "what", Type.encode t ), ( "uuid", Uuid.encode u ) ]
 
         HasType t ->
-            Encode.object [ ( "scope", Encode.string "HasType" ), ( "value", Type.encode t ) ]
+            Encode.object [ ( "type", Encode.string "HasType" ), ( "what", Type.encode t ) ]
 
         And s1 s2 ->
-            Encode.object [ ( "scope", Encode.string "And" ), ( "value", Encode.object [ ( "scope1", encode s1 ), ( "scope2", encode s2 ) ] ) ]
+            Encode.object [ ( "type", Encode.string "And" ), ( "scope1", encode s1 ), ( "scope2", encode s2 ) ]
 
         Or s1 s2 ->
-            Encode.object [ ( "scope", Encode.string "Or" ), ( "value", Encode.object [ ( "scope1", encode s1 ), ( "scope2", encode s2 ) ] ) ]
+            Encode.object [ ( "type", Encode.string "Or" ), ( "scope1", encode s1 ), ( "scope2", encode s2 ) ]
 
         Not s ->
-            Encode.object [ ( "scope", Encode.string "Not" ), ( "value", encode s ) ]
+            Encode.object [ ( "type", Encode.string "Not" ), ( "scope", encode s ) ]
 
         Identified id ->
-            Encode.object [ ( "scope", Encode.string "Identified" ), ( "value", Identification.encode id ) ]
+            Encode.object [ ( "type", Encode.string "Identified" ), ( "value", Identification.encode id ) ]
 
 
 decoder : Decoder Scope
 decoder =
-    Decode.field "scope" Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen
             (\s ->
                 case s of
@@ -91,25 +91,25 @@ decoder =
 
                     "IsItem" ->
                         Decode.map2 IsItem
-                            (Decode.field "type" Type.decoder)
+                            (Decode.field "what" Type.decoder)
                             (Decode.field "uuid" Uuid.decoder)
 
                     "HasUserType" ->
                         Decode.map2 HasUserType
-                            (Decode.field "type" Type.decoder)
+                            (Decode.field "what" Type.decoder)
                             (Decode.field "uuid" Uuid.decoder)
 
                     "HasType" ->
-                        Decode.map HasType (Decode.field "value" Type.decoder)
+                        Decode.map HasType (Decode.field "what" Type.decoder)
 
                     "And" ->
-                        Decode.field "value" (Decode.map2 And (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder))))
+                        Decode.map2 And (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder)))
 
                     "Or" ->
-                        Decode.field "value" (Decode.map2 Or (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder))))
+                        Decode.map2 Or (Decode.field "scope1" (Decode.lazy (\_ -> decoder))) (Decode.field "scope2" (Decode.lazy (\_ -> decoder)))
 
                     "Not" ->
-                        Decode.field "value" (Decode.lazy (\_ -> decoder))
+                        Decode.field "scope" (Decode.lazy (\_ -> decoder))
 
                     "Identified" ->
                         Decode.map Identified (Decode.field "value" Identification.decoder)
