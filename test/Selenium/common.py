@@ -91,24 +91,21 @@ def open_url(browser, path):
     wait(0.1)
 
 
-def click(browser, text):
+def click(browser, text, id_=None):
     print(f"### click on '{text}'")
     # WebDriverWait(browser, timeout=TIMEOUT).until(
     #    cond.presence_of_all_elements_located((By.XPATH, f"//*[text()='{text}']"))
     # )
     wait()  # couldn't find a way to wait a detectable change
-    class_ = f" and class='{class_}'" if class_ else ""
     id_ = f" and id='{id_}'" if id_ else ""
     WebDriverWait(browser, timeout=TIMEOUT).until(
-        econd.presence_of_element_located(
-            (By.XPATH, f"//*[text()='{text}'{class_}{id_}]")
-        )
+        econd.presence_of_element_located((By.XPATH, f"//*[text()='{text}'{id_}]"))
     )
     WebDriverWait(browser, timeout=TIMEOUT).until(
-        econd.element_to_be_clickable((By.XPATH, f"//*[text()='{text}'{class_}{id_}]"))
+        econd.element_to_be_clickable((By.XPATH, f"//*[text()='{text}'{id_}]"))
     )
     WebDriverWait(browser, timeout=TIMEOUT).until(
-        lambda d: d.find_element(By.XPATH, f"//*[text()='{text}'{class_}{id_}]")
+        lambda d: d.find_element(By.XPATH, f"//*[text()='{text}'{id_}]")
     ).click()
     wait()  # couldn't find a way to wait a detectable change
 
