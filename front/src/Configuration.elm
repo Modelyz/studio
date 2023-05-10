@@ -138,7 +138,7 @@ decoder =
 
                     "MenuDisplay" ->
                         Decode.map3 (\what uuid isMenu -> MenuDisplay { what = what, uuid = uuid, isMenu = isMenu })
-                            (Decode.field "type" HType.decoder)
+                            (Decode.field "what" HType.decoder)
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "isMenu" Decode.bool)
 
