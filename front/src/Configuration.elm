@@ -118,7 +118,7 @@ encode c =
         MenuDisplay display ->
             Encode.object
                 [ ( "type", Encode.string "MenuDisplay" )
-                , ( "type", HType.encode display.what )
+                , ( "what", HType.encode display.what )
                 , ( "uuid", Encode.string (Uuid.toString display.uuid) )
                 , ( "isMenu", Encode.bool display.isMenu )
                 ]
