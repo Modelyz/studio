@@ -25,7 +25,7 @@ clickableRemovableCard : msg -> msg -> Element msg -> Element msg -> Element msg
 clickableRemovableCard onChoose onDelete title description =
     column [ Background.color color.item.background ]
         [ row [ spacing 10, width fill ]
-            [ row [ htmlAttribute <| Attr.attribute "class" "clickableRemovableCard", Font.size size.text.main, padding 10, onClick onChoose, pointer ] [ title ]
+            [ row [ htmlAttribute <| Attr.attribute "id" "clickableRemovableCard", Font.size size.text.main, padding 10, onClick onChoose, pointer ] [ title ]
             , el [ alignRight ] (button.primary (Ok onDelete) "×")
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
@@ -37,7 +37,7 @@ clickableCard onInput title description =
     column [ pointer, onClick onInput, Background.color color.item.background, mouseOver itemHoverstyle ]
         [ row [ alignLeft, Font.size size.text.main ]
             [ button.primary (Ok onInput) "+"
-            , el [ htmlAttribute <| Attr.attribute "class" "clickableCard", paddingXY 10 0, width <| minimum 150 fill ] title
+            , el [ htmlAttribute <| Attr.attribute "id" "clickableCard", paddingXY 10 0, width <| minimum 150 fill ] title
             ]
         , row [ padding 10, Font.size size.text.small ] [ description ]
         ]
@@ -46,7 +46,7 @@ clickableCard onInput title description =
 halfCard : msg -> Element msg -> Element msg
 halfCard onDelete title =
     row [ Background.color color.item.selected ]
-        [ el [ htmlAttribute <| Attr.attribute "class" "halfCard", padding 10 ] title, button.secondary (Ok onDelete) "×" ]
+        [ el [ htmlAttribute <| Attr.attribute "id" "halfCard", padding 10 ] title, button.secondary (Ok onDelete) "×" ]
 
 
 viewHalfCard : State -> Maybe msg -> Type -> Uuid -> Element msg
