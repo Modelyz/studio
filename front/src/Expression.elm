@@ -55,14 +55,14 @@ encode e =
         Unary unary ->
             Encode.object
                 [ ( "type", Encode.string "Unary" )
-                , ( "operator", U.encode unary.uop )
+                , ( "uop", U.encode unary.uop )
                 , ( "expr", encode unary.expr )
                 ]
 
         Binary binary ->
             Encode.object
                 [ ( "type", Encode.string "Binary" )
-                , ( "operator", B.encode binary.bop )
+                , ( "bop", B.encode binary.bop )
                 , ( "expr1", encode binary.expr1 )
                 , ( "expr2", encode binary.expr2 )
                 ]
@@ -78,10 +78,10 @@ decoder =
                         Decode.map Leaf (Decode.field "value" Obs.decoder)
 
                     "Unary" ->
-                        Decode.map2 (\o e -> Unary { uop = o, expr = e }) (Decode.field "op" U.decoder) (Decode.field "expr" decoder)
+                        Decode.map2 (\o e -> Unary { uop = o, expr = e }) (Decode.field "uop" U.decoder) (Decode.field "expr" decoder)
 
                     "Binary" ->
-                        Decode.map3 (\o e1 e2 -> Binary { bop = o, expr1 = e2, expr2 = e2 }) (Decode.field "op" B.decoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
+                        Decode.map3 (\o e1 e2 -> Binary { bop = o, expr1 = e1, expr2 = e2 }) (Decode.field "bop" B.decoder) (Decode.field "expr1" decoder) (Decode.field "expr2" decoder)
 
                     _ ->
                         Decode.fail "Unknown Expression"

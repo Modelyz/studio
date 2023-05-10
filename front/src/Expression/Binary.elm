@@ -84,13 +84,13 @@ encode : Operator -> Encode.Value
 encode op =
     case op of
         Add ->
-            Encode.object [ ( "type", Encode.string "+" ) ]
+            Encode.object [ ( "type", Encode.string "Add" ) ]
 
         Multiply ->
-            Encode.object [ ( "type", Encode.string "*" ) ]
+            Encode.object [ ( "type", Encode.string "Multiply" ) ]
 
         Otherwise ->
-            Encode.object [ ( "type", Encode.string "??" ) ]
+            Encode.object [ ( "type", Encode.string "Otherwise" ) ]
 
         Or data ->
             Encode.object
@@ -107,16 +107,16 @@ decoder =
         |> Decode.andThen
             (\s ->
                 case s of
-                    "+" ->
+                    "Add" ->
                         Decode.succeed Add
 
-                    "*" ->
+                    "Multiply" ->
                         Decode.succeed Multiply
 
                     "Or" ->
                         Decode.map3 or (Decode.field "name" Decode.string) (Decode.field "desc" Decode.string) (Decode.field "choice" (Decode.nullable Decode.bool))
 
-                    "??" ->
+                    "Otherwise" ->
                         Decode.succeed Otherwise
 
                     _ ->
