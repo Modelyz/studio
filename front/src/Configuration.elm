@@ -16,7 +16,7 @@ type
     Configuration
     -- the list of identifier types to display on each zone
     = ZoneDisplay { zone : Zone, fragments : List Fragment, scope : Scope }
-    | MenuDisplay HType.Type Uuid Bool
+    | MenuDisplay { what : HType.Type, uuid : Uuid, isMenu : Bool }
 
 
 onlyMenu : Dict String Configuration -> Dict String Configuration
@@ -25,7 +25,7 @@ onlyMenu confs =
         |> Dict.filter
             (\_ v ->
                 case v of
-                    MenuDisplay _ _ _ ->
+                    MenuDisplay _ ->
                         True
 
                     _ ->
@@ -100,8 +100,8 @@ compare config =
         ZoneDisplay display ->
             "ZoneDisplay" ++ "/" ++ Zone.compare display.zone ++ "/" ++ Scope.compare display.scope
 
-        MenuDisplay type_ uuid _ ->
-            "MenuDisplay" ++ "/" ++ HType.compare type_ ++ "/" ++ Uuid.toString uuid
+        MenuDisplay display ->
+            "MenuDisplay" ++ "/" ++ HType.compare display.what ++ "/" ++ Uuid.toString display.uuid
 
 
 encode : Configuration -> Encode.Value
@@ -115,12 +115,12 @@ encode c =
                 , ( "scope", Scope.encode display.scope )
                 ]
 
-        MenuDisplay type_ uuid isMenu ->
+        MenuDisplay display ->
             Encode.object
                 [ ( "type", Encode.string "MenuDisplay" )
-                , ( "type", HType.encode type_ )
-                , ( "uuid", Encode.string (Uuid.toString uuid) )
-                , ( "isMenu", Encode.bool isMenu )
+                , ( "type", HType.encode display.what )
+                , ( "uuid", Encode.string (Uuid.toString display.uuid) )
+                , ( "isMenu", Encode.bool display.isMenu )
                 ]
 
 
@@ -128,8 +128,8 @@ decoder : Decoder Configuration
 decoder =
     Decode.field "type" Decode.string
         |> Decode.andThen
-            (\what ->
-                case what of
+            (\type_ ->
+                case type_ of
                     "ZoneDisplay" ->
                         Decode.map3 (\z fs s -> ZoneDisplay { zone = z, fragments = fs, scope = s })
                             (Decode.field "zone" Zone.decoder)
@@ -137,11 +137,11 @@ decoder =
                             (Decode.field "scope" Scope.decoder)
 
                     "MenuDisplay" ->
-                        Decode.map3 MenuDisplay
+                        Decode.map3 (\what uuid isMenu -> MenuDisplay { what = what, uuid = uuid, isMenu = isMenu })
                             (Decode.field "type" HType.decoder)
                             (Decode.field "uuid" Uuid.decoder)
                             (Decode.field "isMenu" Decode.bool)
 
                     _ ->
-                        Decode.fail <| "Unknown Configuration: " ++ what
+                        Decode.fail <| "Unknown Configuration type: " ++ type_
             )

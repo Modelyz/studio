@@ -420,12 +420,12 @@ toDesc s route =
 
 isMenu : State -> { a | uuid : Uuid, what : HType.Type } -> Bool
 isMenu s entity =
-    Dict.get (Config.compare (MenuDisplay entity.what entity.uuid False)) s.configs
+    Dict.get (Config.compare (MenuDisplay { what = entity.what, uuid = entity.uuid, isMenu = False })) s.configs
         |> Maybe.map
             (\config ->
                 case config of
-                    MenuDisplay _ _ bool ->
-                        bool
+                    MenuDisplay display ->
+                        display.isMenu
 
                     _ ->
                         True

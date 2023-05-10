@@ -20,12 +20,12 @@ view c =
                 ++ " : "
                 ++ (String.concat <| List.map Fragment.toString display.fragments)
 
-        MenuDisplay type_ uuid hasMenu ->
-            HType.toString type_
+        MenuDisplay display ->
+            HType.toString display.what
                 ++ " "
-                ++ Uuid.toString uuid
+                ++ Uuid.toString display.uuid
                 ++ ": "
-                ++ (if hasMenu then
+                ++ (if display.isMenu then
                         "visible"
 
                     else
@@ -39,10 +39,10 @@ description s c =
         ZoneDisplay display ->
             Scope.View.toDisplay s.state display.scope
 
-        MenuDisplay type_ uuid hasMenu ->
-            displayZone s.state SmallcardZone (Type.HType type_) uuid
+        MenuDisplay display ->
+            displayZone s.state SmallcardZone (Type.HType display.what) display.uuid
                 ++ ": "
-                ++ (if hasMenu then
+                ++ (if display.isMenu then
                         "visible"
 
                     else

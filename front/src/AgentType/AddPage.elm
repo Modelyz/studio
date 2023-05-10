@@ -138,12 +138,12 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay HType.AgentType uuid False))
+                            |> Dict.get (Config.compare (MenuDisplay {what=HType.AgentType, uuid=uuid, isMenu=False}))
                             |> Maybe.map
                                 (\config ->
                                     case config of
-                                        MenuDisplay _ _ isMenu ->
-                                            isMenu
+                                        MenuDisplay display ->
+                                            display.isMenu
 
                                         _ ->
                                             True
@@ -220,7 +220,7 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Message.Configured <| MenuDisplay HType.AgentType t.uuid model.isMenu ]
+                                        [ Message.Configured <| MenuDisplay {what=HType.AgentType, uuid=t.uuid, isMenu=model.isMenu} ]
                                    )
                             )
                         , redirect s.navkey (Route.Entity Route.AgentType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
