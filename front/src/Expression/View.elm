@@ -74,9 +74,9 @@ viewObservable s obs =
                                )
                             ++ "]"
 
-        ObsValue (ValueSelection.SelectedValue _ for name) ->
-            wrappedRow [ height fill, htmlAttribute <| Attr.title name ]
-                [ Value.getByUuid for s.values
+        ObsValue (ValueSelection.SelectedValue sv) ->
+            wrappedRow [ height fill, htmlAttribute <| Attr.title sv.name ]
+                [ Value.getByUuid sv.for s.values
                     |> Result.map .name
                     |> Result.withDefault "(value not found)"
                     |> text
@@ -97,11 +97,11 @@ inputObservable s c obs =
         ObsNumber n ->
             text <| Rational.parse n.input
 
-        ObsValue (ValueSelection.SelectedValue _ for name) ->
-            wrappedRow [ width fill, height fill, htmlAttribute <| Attr.title name ]
+        ObsValue (ValueSelection.SelectedValue sv) ->
+            wrappedRow [ width fill, height fill, htmlAttribute <| Attr.title sv.name ]
                 [ text <|
                     case
-                        Value.getByUuid for s.values
+                        Value.getByUuid sv.for s.values
                             |> Result.andThen (Eval.veval s { context = c.context } s.values)
                     of
                         Err err ->

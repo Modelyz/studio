@@ -80,11 +80,11 @@ inputObservable c s targetPath obs expr =
                        (text (n.name ++ " ="))
            }
         -}
-        ObsValue (ValueSelection.SelectedValue _ for name) ->
-            row [ height fill, htmlAttribute <| Attr.title name ]
+        ObsValue (ValueSelection.SelectedValue sv) ->
+            row [ height fill, htmlAttribute <| Attr.title sv.name ]
                 [ text <|
                     case
-                        Value.getByUuid for s.state.values
+                        Value.getByUuid sv.for s.state.values
                             |> Result.andThen (Eval.veval s.state { context = c.context } s.state.values)
                     of
                         Err err ->

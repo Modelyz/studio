@@ -120,7 +120,7 @@ update msg model =
 
         VlMsg (Expression.Value.Select.Choose vs stackNum targetPath) ->
             case vs of
-                SelectedValue _ _ _ ->
+                SelectedValue _ ->
                     -- TODO we don't use the selected value?
                     ( { model
                         | vlselector = Nothing
@@ -271,9 +271,9 @@ editObservable s ( stackNum, exprPath ) obs =
                         [ button.primary (Ok <| OpenValueSelector stackNum exprPath) "Choose value..."
                         ]
 
-                SelectedValue _ _ name ->
+                SelectedValue sv ->
                     row [ Background.color color.item.background, Font.size size.text.small, height fill ]
-                        [ button.primary (Ok <| OpenValueSelector stackNum exprPath) name
+                        [ button.primary (Ok <| OpenValueSelector stackNum exprPath) sv.name
                         ]
 
         ObsLink deeplink ->

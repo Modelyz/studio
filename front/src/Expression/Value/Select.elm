@@ -5,7 +5,7 @@ import Element exposing (..)
 import Element.Border as Border
 import Expression.ValueSelection exposing (ValueSelection(..))
 import Prng.Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Type exposing (Type)
@@ -76,8 +76,8 @@ view s model =
         [ wrappedRow [ width fill, spacing 20 ]
             [ button.secondary (Ok Cancel) "Cancel"
             , case model.selection of
-                ScopeAndValue (IsItem type_ uuid) name ->
-                    button.primary (Ok <| Choose (SelectedValue type_ uuid name) model.stackNum model.targetPath) "Choose"
+                ScopeAndValue (IsItem what uuid) name ->
+                    button.primary (Ok <| Choose (SelectedValue { what = what, for = uuid, name = name }) model.stackNum model.targetPath) "Choose"
 
                 _ ->
                     button.disabled (Err "Please select a value") "Choose"
@@ -87,13 +87,13 @@ view s model =
             None ->
                 [ selectScope s.state InputScope Scope.anything Scope.anything "Where do you want to select a value?" ]
 
-            OnlyScope (IsItem type_ uuid) ->
+            OnlyScope (IsItem what uuid) ->
                 let
                     scope =
-                        IsItem type_ uuid
+                        IsItem what uuid
                 in
                 [ selectScope s.state InputScope scope Scope.anything "Where do you want to select a value?"
-                , selectValue s scope (InputValue type_ uuid)
+                , selectValue s scope (InputValue what uuid)
                 ]
 
             OnlyScope scope ->

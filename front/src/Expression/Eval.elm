@@ -51,9 +51,9 @@ exeval s c allVals expr =
                         UndefinedValue ->
                             Err "Undefined"
 
-                        SelectedValue w f n ->
+                        SelectedValue sv ->
                             allVals
-                                |> Dict.filter (\_ x -> x.what == w && x.for == f && x.name == n)
+                                |> Dict.filter (\_ x -> x.what == sv.what && x.for == sv.for && x.name == sv.name)
                                 |> Dict.values
                                 |> List.head
                                 |> Result.fromMaybe "The value does not exist anymore"

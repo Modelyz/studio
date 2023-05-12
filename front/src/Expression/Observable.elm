@@ -4,8 +4,6 @@ import Expression.DeepLink as DeepLink exposing (DeepLink(..))
 import Expression.ValueSelection as VS exposing (ValueSelection(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Prng.Uuid as Uuid
-import Type
 
 
 type
@@ -45,31 +43,16 @@ encode obs =
     case obs of
         ObsNumber n ->
             Encode.object
-                [ ( "type", Encode.string "Number" )
+                [ ( "type", Encode.string "ObsNumber" )
                 , ( "name", Encode.string n.name )
                 , ( "input", Encode.string n.input )
                 ]
 
         ObsValue vs ->
-            case vs of
-                SelectedValue w f n ->
-                    Encode.object
-                        [ ( "type", Encode.string <| VS.toString vs )
-                        , ( "what", Type.encode w )
-                        , ( "for", Uuid.encode f )
-                        , ( "name", Encode.string n )
-                        ]
-
-                UndefinedValue ->
-                    Encode.object
-                        [ ( "type", Encode.string <| VS.toString vs )
-                        , ( "what", Encode.null )
-                        , ( "for", Encode.null )
-                        , ( "name", Encode.null )
-                        ]
+            Encode.object [ ( "type", Encode.string "ObsValue" ), ( "value", VS.encode vs ) ]
 
         ObsLink deeplink ->
-            Encode.object [ ( "type", Encode.string "DeepLink" ), ( "deeplink", DeepLink.encode deeplink ) ]
+            Encode.object [ ( "type", Encode.string "DeepLink" ), ( "value", DeepLink.encode deeplink ) ]
 
 
 decoder : Decoder Observable
@@ -90,7 +73,7 @@ decoder =
                         Decode.succeed (ObsValue UndefinedValue)
 
                     "DeepLink" ->
-                        Decode.field "deeplink" (Decode.map ObsLink DeepLink.decoder)
+                        Decode.field "value" (Decode.map ObsLink DeepLink.decoder)
 
                     _ ->
                         Decode.fail "Unknown Observable type"

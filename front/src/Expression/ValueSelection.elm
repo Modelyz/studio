@@ -1,23 +1,34 @@
-module Expression.ValueSelection exposing (ValueSelection(..), decoder, toString)
+module Expression.ValueSelection exposing (ValueSelection(..), decoder, encode)
 
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
 import Type exposing (Type)
 
 
 type ValueSelection
-    = SelectedValue Type Uuid String
+    = SelectedValue { what : Type, for : Uuid, name : String }
     | UndefinedValue
 
 
-toString : ValueSelection -> String
-toString v =
-    case v of
-        SelectedValue _ _ _ ->
-            "SelectedValue"
+encode : ValueSelection -> Encode.Value
+encode vs =
+    case vs of
+        SelectedValue sv ->
+            Encode.object
+                [ ( "type", Encode.string "SelectedValue" )
+                , ( "what", Type.encode sv.what )
+                , ( "for", Uuid.encode sv.for )
+                , ( "name", Encode.string sv.name )
+                ]
 
         UndefinedValue ->
-            "UndefinedValue"
+            Encode.object
+                [ ( "type", Encode.string "UndefinedValue" )
+                , ( "what", Encode.null )
+                , ( "for", Encode.null )
+                , ( "name", Encode.null )
+                ]
 
 
 decoder : Decoder ValueSelection
@@ -27,7 +38,7 @@ decoder =
             (\s ->
                 case s of
                     "SelectedValue" ->
-                        Decode.map3 SelectedValue
+                        Decode.map3 (\w f n -> SelectedValue { what = w, for = f, name = n })
                             (Decode.field "what" Type.decoder)
                             (Decode.field "for" Uuid.decoder)
                             (Decode.field "name" Decode.string)
