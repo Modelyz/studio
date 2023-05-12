@@ -9,7 +9,6 @@ import Data.Aeson qualified as JSON (decode, encode)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
-import Data.List qualified as List
 import Data.Set as Set (Set, delete, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -162,13 +161,13 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 esevs <- readMessages msgPath
                 -- the messages to send to the browser are the processed ones coming from another browser or service
                 let msgs = filter (\e -> uuid (metadata e) `notElem` alluuids) esevs
-                WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
-                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
+                WS.sendTextData conn $ JSON.encode msgs
+                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show msgs
         _ ->
             do
                 -- store the message in the message store
                 appendMessage msgPath msg
-                WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" $ List.singleton (setFlow Sent msg)
+                WS.sendTextData conn $ JSON.encode $ setFlow Sent msg
                 putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
                 -- Add it to the pending list (if Requested or Sent)
                 state <- takeMVar stateMV
