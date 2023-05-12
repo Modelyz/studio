@@ -2,11 +2,15 @@
 
 [Back to app](../)
 
+## version 16 -- 2023-05-12
+
+* Implemented all types on the backend
+
 ## version 15 -- 2023-04-28
 
-- Improved Selenium automation
-- Added (the uuid of) the scope in the GroupIdentfier zone fragment
-- Improved Table View with values and better columns and
+* Improved Selenium automation
+* Added (the uuid of) the scope in the GroupIdentfier zone fragment
+* Improved Table View with values and better columns and
 * Internal changes, fixes and improvements
 
 ## version 14 -- 2023-04-23
