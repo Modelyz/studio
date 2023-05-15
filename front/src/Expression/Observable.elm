@@ -61,16 +61,13 @@ decoder =
         |> Decode.andThen
             (\t ->
                 case t of
-                    "Number" ->
+                    "ObsNumber" ->
                         Decode.map2 (\n i -> ObsNumber { name = n, input = i })
                             (Decode.field "name" Decode.string)
                             (Decode.field "input" Decode.string)
 
-                    "SelectedValue" ->
-                        Decode.map ObsValue VS.decoder
-
-                    "UndefinedValue" ->
-                        Decode.succeed (ObsValue UndefinedValue)
+                    "ObsValue" ->
+                        Decode.field "value" (Decode.map ObsValue VS.decoder)
 
                     "DeepLink" ->
                         Decode.field "value" (Decode.map ObsLink DeepLink.decoder)
