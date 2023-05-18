@@ -124,6 +124,9 @@ empty =
 aggregate : Message -> State -> State
 aggregate (Message m p) state =
     case p of
+        Null ->
+            state
+
         InitiatedConnection _ ->
             { state
                 | lastMessageTime = m.when

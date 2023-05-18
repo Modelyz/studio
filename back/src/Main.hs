@@ -6,7 +6,6 @@ import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (decode, encode)
-import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
 import Data.Set as Set (Set, delete, empty, insert)
@@ -64,17 +63,18 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
     nc <- takeMVar ncMV
     putMVar ncMV $! nc + 1
     putStrLn $ "\nBrowser " ++ show nc ++ " connected"
-    -- wait for new messages coming from other connected browsers through the chan
-    -- and send them to the currently connected browser
 
     _ <-
+        -- wait for new messages coming from other connected browsers through the chan
+        -- and send them to the currently connected browser
+        -- TODO: only Processed messages should be forwared to other browsers??
         forkIO $
             fix
                 ( \loop -> do
                     (n, ev) <- readChan elmChan
                     when (n /= nc && not (ev `isType` "InitiatedConnection")) $ do
                         putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from browser " ++ show n ++ ": Sent through WS : " ++ show ev
-                        WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" [ev]
+                        (WS.sendTextData conn . JSON.encode) ev
                     loop
                 )
 
@@ -101,9 +101,8 @@ clientApp msgPath storeChan stateMV conn = do
     putMVar stateMV $! state{pending = Set.empty}
     catch
         ( unless (null (pending state)) $ do
-            -- Send pending messages and store a flow=Sent version
             let pendings = pending state
-            WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" pendings
+            mapM_ (WS.sendTextData conn . JSON.encode) pendings
             mapM_ (appendMessage msgPath . setFlow Sent) pendings
         )
         ( \(SomeException _) -> do
@@ -161,18 +160,24 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 esevs <- readMessages msgPath
                 -- the messages to send to the browser are the processed ones coming from another browser or service
                 let msgs = filter (\e -> uuid (metadata e) `notElem` alluuids) esevs
-                WS.sendTextData conn $ JSON.encode msgs
+                mapM_ (WS.sendTextData conn . JSON.encode) msgs
                 putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show msgs
         _ ->
+            -- otherwise, store the msg, then send and store the Sent version
             do
                 -- store the message in the message store
                 appendMessage msgPath msg
-                WS.sendTextData conn $ JSON.encode $ setFlow Sent msg
-                putStrLn $ "\nStored message and returned a Sent flow: " ++ show msg
-                -- Add it to the pending list (if Requested or Sent)
+                putStrLn $ "\nStored message: " ++ show msg
+                let sentMsg = setFlow Sent msg
+                WS.sendTextData conn $ JSON.encode sentMsg
+                appendMessage msgPath sentMsg
+                putStrLn $ "\nStored and returned a Sent flow: " ++ show sentMsg
+                -- Add it or remove to the pending list (if relevant)
                 state <- takeMVar stateMV
-                putMVar stateMV $! update state msg
+                putMVar stateMV $! update state sentMsg
+                print $ "updated state: " ++ show (update state sentMsg)
     -- send msg to other connected clients
+    -- TODO: remove? Only Processed msgs should be sent?
     putStrLn $ "\nWriting to the chan as client " ++ show nc
     writeChan chan (nc, msg)
 
@@ -185,8 +190,8 @@ handleMessageFromStore msgPath conn nc chan msg = do
                 -- and send back all the missing messages (with an added ack)
                 esevs <- readMessages msgPath
                 let msgs = filter (\e -> uuid (metadata e) `notElem` uuids connection) esevs
-                WS.sendTextData conn $ JSON.encode $ KeyMap.singleton "messages" msgs
-                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show (KeyMap.singleton "messages" msgs)
+                mapM_ (WS.sendTextData conn . JSON.encode) msgs
+                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
         _ ->
             do
                 -- store the message in the message store
@@ -240,7 +245,7 @@ serve (Options d host port msgPath storeHost storePort) = do
     putStrLn "Reconstructing the State..."
     msgs <- readMessages msgPath
     state <- takeMVar stateMV
-    let newState = foldl update state msgs
+    let newState = foldl update state msgs -- TODO foldr or strict foldl ?
     putMVar stateMV newState
     putStrLn "Old state:"
     print state

@@ -7,7 +7,7 @@ import Html exposing (time)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
-import Message exposing (Message(..), Payload(..), exceptIC, getTime)
+import Message exposing (Message(..), Payload(..), getTime)
 import MessageFlow exposing (MessageFlow(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
@@ -326,12 +326,7 @@ update msg model =
 
         StoreMessagesToSend messages ->
             ( { model | currentSeed = newSeed, iostatus = ESStoring }
-            , Message.storeMessagesToSend
-                (Encode.object <|
-                    List.singleton <|
-                        Tuple.pair "messages" <|
-                            Encode.list Message.encode messages
-                )
+            , Cmd.batch <| List.map (Message.encode >> Message.storeMessagesToSend) <| messages
             )
 
         MessagesStoredTosend msgstr ->
@@ -385,33 +380,15 @@ update msg model =
                 Err err ->
                     ( { model | currentSeed = newSeed, iostatus = IOError <| "Error getting flow of message: " ++ errorToString err }, Cmd.none )
 
-        MessagesReceived letter ->
-            case decodeString (Decode.maybe <| Decode.field "messages" <| Decode.list Message.decoder) letter of
-                Ok mbmessages ->
-                    let
-                        msgs =
-                            Maybe.withDefault [] <| Maybe.map exceptIC mbmessages
-                    in
+        MessagesReceived str ->
+            case decodeString Message.decoder str of
+                Ok message ->
                     ( { model
                         | wsstatus = WSOpen
-                        , iostatus =
-                            if List.length msgs > 0 then
-                                ESStoring
-
-                            else
-                                IOIdle "Just received messages"
+                        , iostatus = ESStoring
                       }
-                    , if List.length msgs > 0 then
-                        Message.storeMessages <|
-                            Encode.object <|
-                                List.singleton <|
-                                    Tuple.pair "messages" <|
-                                        Encode.list Message.encode <|
-                                            Maybe.withDefault [] <|
-                                                Maybe.map exceptIC mbmessages
-
-                      else
-                        Cmd.none
+                      -- TODO rename to singular
+                    , Message.storeMessages <| Message.encode message
                     )
 
                 Err err ->

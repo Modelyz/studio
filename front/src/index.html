@@ -64,9 +64,9 @@
 
         // store an message to IDB
         const store = function (send) {
-            return function (letter) { // TODO try to replace the letter by a single list
+            return function (message) {
                 console.log("ELM port storeMessages")
-                console.log("JS IDB store(letter): " + letter)
+                console.log("JS IDB store(message): " + message)
                 let request = window.indexedDB.open('messagestore', ${IDBVERSION});
                 request.onsuccess = function (e) {
                     const db = e.target.result;
@@ -77,36 +77,34 @@
                     transaction.onerror = function (e) {
                         const err = "IndexedDB transaction error while storing messages:" + transaction.error;
                         console.log(err);
-                        letter.status = err;
-                        app.ports.wsSendStatus.send(letter);
+                        message.meta.flow = { type: "Error", value: err };
+                        app.ports.wsSendStatus.send(message);
                     }
-                    letter.messages.forEach(function (message) {
-                        console.log("JS IDB messages.forEach transaction.objectStore('messages').add(message): " + message.what)
-                        const addrequest = transaction.objectStore('messages').add(message)
-                        addrequest.onsuccess = (e) => {
-                            if (send) {
-                                console.log("-> ELM port messagesStoredToSend")
-                                app.ports.messagesStoredToSend.send(message);
-                            } else {
-                                console.log("-> ELM port messagesStored")
-                                app.ports.messagesStored.send(message);
-                            }
+                    console.log("JS IDB messages.forEach transaction.objectStore('messages').add(message): " + message.what)
+                    const addrequest = transaction.objectStore('messages').add(message)
+                    addrequest.onsuccess = (e) => {
+                        if (send) {
+                            console.log("-> ELM port messagesStoredToSend")
+                            app.ports.messagesStoredToSend.send(message);
+                        } else {
+                            console.log("-> ELM port messagesStored")
+                            app.ports.messagesStored.send(message);
                         }
-                        addrequest.onerror = (e) => {
-                            const err = "IndexedDB store request error: " + addrequest.error;
-                            console.log(err);
-                            letter.status = err;
-                            app.ports.wsSendStatus.send(letter);
-                            addrequest.transaction.abort()
-                        }
-                    })
+                    }
+                    addrequest.onerror = (e) => {
+                        const err = "IndexedDB store request error: " + addrequest.error;
+                        console.log(err);
+                        message.meta.flow = { type: "Error", value: err };
+                        app.ports.wsSendStatus.send(message);
+                        addrequest.transaction.abort()
+                    }
                     db.close()
                 }
                 request.onerror = (e) => {
                     const err = "IndexedDB could not be opened to store messages: " + request.error;
                     console.log(err);
-                    letter.status = err;
-                    app.ports.wsSendStatus.send(letter);
+                    message.meta.flow = { type: "Error", value: err };
+                    app.ports.wsSendStatus.send(message);
                 }
             };
         };
@@ -130,13 +128,13 @@
                 openCursor.onerror = () => {
                     const err = "IndexedDB transaction error while reading messages:" + transaction.error;
                     console.log(err);
-                    app.ports.wsSendStatus.send({"messages": [], "status": err});
+                    app.ports.wsSendStatus.send({meta: {flow: {type: "Error", value: err}, uuid: "00000000-0000-0000-0000-000000000000", when: Date.now}, load: {what: "Null"}});
                 }
             }
             request.onerror = (e) => {
                 const err = "IndexedDB could not be opened to read messages. Please note that the browser private mode or some browser extensions can be the cause of this error:\n\n" + request.error;
                 console.log(err);
-                app.ports.wsSendStatus.send({"messages": [], "status": err});
+                app.ports.wsSendStatus.send({meta: {flow: {type: "Error", value: err}, uuid: "00000000-0000-0000-0000-000000000000", when: Date.now}, load: {what: "Null"}});
             }
         });
 
@@ -180,16 +178,14 @@
 
         // Elm asks to send messages to WS
         console.log("JS WS app.ports.wsSend.subscribe")
-        app.ports.wsSend.subscribe(function (letter) {
+        app.ports.wsSend.subscribe(function (message) {
             if (window.socket) {
                 console.log("ELM port wsSend")
-                console.log("JS WS window.socket.send(letter):")
-                console.log(letter)
-                window.socket.send(JSON.stringify(letter));
+                console.log("JS WS window.socket.send(message): " + message)
+                window.socket.send(JSON.stringify(message));
                 console.log("ELM wsSendStatus")
                 // TODO what if the send fails?
-                letter.status = "OK"
-                app.ports.wsSendStatus.send(letter);
+                app.ports.wsSendStatus.send(message);
             } else console.log("no websocket to send messages");
         });
 

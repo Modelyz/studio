@@ -69,7 +69,8 @@ type Message
 
 
 type Payload
-    = InitiatedConnection Connection
+    = Null
+    | InitiatedConnection Connection
     | AddedResourceType ResourceType
     | RemovedResourceType Uuid
     | AddedEventType EventType
@@ -173,6 +174,9 @@ encodeMetadata b =
 encodePayload : Payload -> Encode.Value
 encodePayload payload =
     case payload of
+        Null ->
+            Encode.object [ ( "what", Encode.string "Null" ) ]
+
         InitiatedConnection c ->
             Encode.object
                 [ ( "what", Encode.string "InitiatedConnection" )
@@ -473,6 +477,9 @@ payloadDecoder =
         |> andThen
             (\t ->
                 case t of
+                    "Null" ->
+                        Decode.succeed Null
+
                     "InitiatedConnection" ->
                         Decode.map InitiatedConnection
                             (Decode.field "load"
