@@ -175,7 +175,7 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 -- Add it or remove to the pending list (if relevant)
                 state <- takeMVar stateMV
                 putMVar stateMV $! update state sentMsg
-                print $ "updated state: " ++ show (update state sentMsg)
+                putStrLn "updated state"
     -- send msg to other connected clients
     -- TODO: remove? Only Processed msgs should be sent?
     putStrLn $ "\nWriting to the chan as client " ++ show nc
