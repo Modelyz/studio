@@ -5,7 +5,7 @@ import Control.Concurrent (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVa
 import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
-import Data.Aeson qualified as JSON (decode, encode)
+import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
 import Data.Set as Set (Set, delete, empty, insert)
@@ -84,14 +84,13 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
             putStrLn $ "\nWaiting for new messages from browser " ++ show nc
             messages <- WS.receiveDataMessage conn
             putStrLn $ "\nReceived stuff through websocket from browser " ++ show nc ++ ". Handling it : " ++ show messages
-            case JSON.decode
-                    ( case messages of
-                        WS.Text bs _ -> WS.fromLazyByteString bs
-                        WS.Binary bs -> WS.fromLazyByteString bs
-                    ) ::
-                    Maybe Message of
-                Just msg -> handleMessageFromBrowser msgPath conn nc elmChan stateMV msg
-                Nothing -> sequence_ [putStrLn "\nError decoding incoming message"]
+            case JSON.eitherDecode
+                ( case messages of
+                    WS.Text bs _ -> WS.fromLazyByteString bs
+                    WS.Binary bs -> WS.fromLazyByteString bs
+                ) of
+                Right msg -> handleMessageFromBrowser msgPath conn nc elmChan stateMV msg
+                Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
 clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
 clientApp msgPath storeChan stateMV conn = do
@@ -128,13 +127,13 @@ clientApp msgPath storeChan stateMV conn = do
         putStrLn "Waiting for messages coming from the store"
         messages <- WS.receiveDataMessage conn
         putStrLn $ "\nReceived stuff through websocket from the Store: " ++ show messages
-        case JSON.decode
+        case JSON.eitherDecode
             ( case messages of
                 WS.Text bs _ -> WS.fromLazyByteString bs
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
-            Just msgs -> mapM (handleMessageFromStore msgPath conn (-1) storeChan) msgs -- -1 is the Store. TODO use textual labels instead
-            Nothing -> sequence [putStrLn "\nError decoding incoming message"]
+            Right msgs -> handleMessageFromStore msgPath conn (-1) storeChan msgs -- -1 is the Store. TODO use textual labels instead
+            Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
 update :: State -> Message -> State
 update state msg =
