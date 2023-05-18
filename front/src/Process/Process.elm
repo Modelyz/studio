@@ -22,7 +22,7 @@ encode : Process -> Encode.Value
 encode p =
     Encode.object
         [ ( "what", TType.encode p.what )
-        , ( "type", Uuid.encode p.type_ )
+        , ( "type_", Uuid.encode p.type_ )
         , ( "uuid", Uuid.encode p.uuid )
         ]
 
@@ -39,7 +39,7 @@ decoder =
     Decode.map3 Process
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
+        (Decode.field "type_" Uuid.decoder)
 
 
 compare : Process -> String

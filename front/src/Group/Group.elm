@@ -5,7 +5,7 @@ import Group.Link as GroupLink
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope)
+import Scope exposing (Scope)
 import Typed.Type as TType
 
 
@@ -33,7 +33,7 @@ encode g =
     Encode.object
         ([ ( "what", TType.encode g.what )
          , ( "uuid", Uuid.encode g.uuid )
-         , ( "type", Uuid.encode g.type_ )
+         , ( "type_", Uuid.encode g.type_ )
          , ( "scope", Scope.encode g.scope )
          ]
             ++ (g.parent |> Maybe.map (\parent -> [ ( "parent", Uuid.encode parent ) ]) |> Maybe.withDefault [])
@@ -45,6 +45,6 @@ decoder =
     Decode.map5 Group
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
+        (Decode.field "type_" Uuid.decoder)
         (Decode.maybe (Decode.field "parent" Uuid.decoder))
         (Decode.field "scope" Scope.decoder)

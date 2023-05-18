@@ -22,7 +22,7 @@ encode c =
     Encode.object
         [ ( "what", TType.encode c.what )
         , ( "uuid", Uuid.encode c.uuid )
-        , ( "type", Uuid.encode c.type_ )
+        , ( "type_", Uuid.encode c.type_ )
 
         --        , ("parties", Encode.list Agent.encode c.parties)
         ]
@@ -33,4 +33,4 @@ decoder =
     Decode.map3 Contract
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
+        (Decode.field "type_" Uuid.decoder)

@@ -18,7 +18,7 @@ encode r =
     Encode.object <|
         [ ( "what", TType.encode r.what )
         , ( "uuid", Uuid.encode r.uuid )
-        , ( "type", Uuid.encode r.type_ )
+        , ( "type_", Uuid.encode r.type_ )
         ]
 
 
@@ -27,4 +27,4 @@ decoder =
     Decode.map3 Resource
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
+        (Decode.field "type_" Uuid.decoder)

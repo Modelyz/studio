@@ -74,7 +74,7 @@ encode a =
     Encode.object <|
         [ ( "what", TType.encode a.what )
         , ( "uuid", Uuid.encode a.uuid )
-        , ( "type", Uuid.encode a.type_ )
+        , ( "type_", Uuid.encode a.type_ )
         ]
 
 
@@ -83,4 +83,4 @@ decoder =
     Decode.map3 Agent
         (Decode.field "what" TType.decoder)
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "type" Uuid.decoder)
+        (Decode.field "type_" Uuid.decoder)
