@@ -24,7 +24,7 @@ encode gt =
         , ( "uuid", Uuid.encode gt.uuid )
         , ( "parent", Maybe.map Uuid.encode gt.parent |> Maybe.withDefault Encode.null )
         , ( "unique", Encode.bool gt.unique )
-        , ( "treetype", Tree.encode gt.treeType )
+        , ( "treeType", Tree.encode gt.treeType )
         ]
 
 
@@ -35,7 +35,7 @@ decoder =
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "unique" Decode.bool)
-        (Decode.field "treetype" Tree.decoder)
+        (Decode.field "treeType" Tree.decoder)
 
 
 compare : GroupType -> String
