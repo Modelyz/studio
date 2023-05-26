@@ -102,7 +102,6 @@ clientApp msgPath storeChan stateMV conn = do
         ( unless (null (pending state)) $ do
             let pendings = pending state
             mapM_ (WS.sendTextData conn . JSON.encode) pendings
-            mapM_ (appendMessage msgPath . setFlow Sent) pendings
         )
         ( \(SomeException _) -> do
             -- if something got wrong, put back the messages in the pending list
@@ -121,7 +120,7 @@ clientApp msgPath storeChan stateMV conn = do
                 st <- takeMVar stateMV
                 putMVar stateMV $! st{pending = updatePending ev $ pending st}
                 -- send to the Store
-                WS.sendTextData conn $ JSON.encode [ev]
+                WS.sendTextData conn $ JSON.encode ev
 
     forever $ do
         putStrLn "Waiting for messages coming from the store"
@@ -169,11 +168,10 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 putStrLn $ "\nStored message: " ++ show msg
                 let sentMsg = setFlow Sent msg
                 WS.sendTextData conn $ JSON.encode sentMsg
-                appendMessage msgPath sentMsg
-                putStrLn $ "\nStored and returned a Sent flow: " ++ show sentMsg
+                putStrLn $ "\nReturned a Sent flow: " ++ show sentMsg
                 -- Add it or remove to the pending list (if relevant)
                 state <- takeMVar stateMV
-                putMVar stateMV $! update state sentMsg
+                putMVar stateMV $! update state msg
                 putStrLn "updated state"
     -- send msg to other connected clients
     -- TODO: remove? Only Processed msgs should be sent?
