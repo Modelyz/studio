@@ -8,8 +8,8 @@ type
     MessageFlow
     -- Created and stored locally:
     = Requested
-      -- Sent to the backend:
-    | Sent
+      -- Received by the backend:
+    | Received
       -- Returned as Processed:
     | Processed
     | Error String
@@ -21,8 +21,8 @@ encode f =
         Requested ->
             Encode.object [ ( "type", Encode.string "Requested" ) ]
 
-        Sent ->
-            Encode.object [ ( "type", Encode.string "Sent" ) ]
+        Received ->
+            Encode.object [ ( "type", Encode.string "Received" ) ]
 
         Processed ->
             Encode.object [ ( "type", Encode.string "Processed" ) ]
@@ -40,8 +40,8 @@ decoder =
                     "Requested" ->
                         Decode.succeed Requested
 
-                    "Sent" ->
-                        Decode.succeed Sent
+                    "Received" ->
+                        Decode.succeed Received
 
                     "Processed" ->
                         Decode.succeed Processed

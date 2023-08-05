@@ -143,7 +143,7 @@ updatePending :: Message -> Set Message -> Set Message
 updatePending msg pendings =
     case getFlow msg of
         Requested -> Set.insert msg pendings
-        Sent -> Set.insert msg pendings
+        Received -> Set.insert msg pendings
         Processed -> Set.delete msg pendings
         Error _ -> Set.insert msg pendings
 
@@ -161,14 +161,14 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 mapM_ (WS.sendTextData conn . JSON.encode) msgs
                 putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show msgs
         _ ->
-            -- otherwise, store the msg, then send and store the Sent version
+            -- otherwise, store the msg, then send and store the Received version
             do
                 -- store the message in the message store
                 appendMessage msgPath msg
                 putStrLn $ "\nStored message: " ++ show msg
-                let sentMsg = setFlow Sent msg
-                WS.sendTextData conn $ JSON.encode sentMsg
-                putStrLn $ "\nReturned a Sent flow: " ++ show sentMsg
+                let receivedMsg = setFlow Received msg
+                WS.sendTextData conn $ JSON.encode receivedMsg
+                putStrLn $ "\nReturned a Received flow: " ++ show receivedMsg
                 -- Add it or remove to the pending list (if relevant)
                 state <- takeMVar stateMV
                 putMVar stateMV $! update state msg
