@@ -420,7 +420,7 @@ initiateConnection uuid model =
         Task.map
             (\t ->
                 Message
-                    { uuid = uuid, when = t, flow = Requested }
+                    { uuid = uuid, when = t, which = "front", flow = Requested }
                     (InitiatedConnection
                         { lastMessageTime = model.state.lastMessageTime
                         , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
@@ -443,7 +443,7 @@ dispatch model payload =
                         ( newUuid, _ ) =
                             Random.step Uuid.generator model.currentSeed
                     in
-                    List.singleton <| Message { uuid = newUuid, when = time, flow = Requested } payload
+                    List.singleton <| Message { uuid = newUuid, when = time, which = "front", flow = Requested } payload
                 )
                 Time.now
 
@@ -462,7 +462,7 @@ dispatchMany model payloads =
                     uuidMerger <|
                         List.reverse <|
                             List.foldl (uuidAggregator newSeed) [] <|
-                                List.map (Message { uuid = newUuid, when = time, flow = Requested }) payloads
+                                List.map (Message { uuid = newUuid, when = time, which = "front", flow = Requested }) payloads
                 )
                 Time.now
 
