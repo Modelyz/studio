@@ -223,6 +223,7 @@ update msg model =
 
                 timeoutReconnect =
                     if wsstatus == WSOpen then
+                        -- lastMessageTime is only used here. Seems unuseful
                         max 1 <| remainderBy 4 (posixToMillis model.state.lastMessageTime)
 
                     else

@@ -39,8 +39,10 @@ type alias State =
     -- Reminder: Dicts in the State are actually meant to bu used as Sets
     -- using a relevant comparable so that each entity can appear only once
     { pendingMessages : Dict Int Message -- pending Messages are in Requested or Received mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
-    , lastMessageTime : Time.Posix
-    , uuids : Dict String Uuid
+
+    {- probably unusedful: -}
+    , lastMessageTime : Time.Posix -- time of the last message
+    , uuids : Dict String Uuid -- the uuids of all messages
 
     -- entities
     , resources : Dict String Resource
