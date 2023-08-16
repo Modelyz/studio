@@ -424,7 +424,7 @@ initiateConnection uuid model =
                     { uuid = uuid, when = t, which = "front", flow = Requested }
                     (InitiatedConnection
                         { lastMessageTime = model.state.lastMessageTime
-                        , uuids = Dict.insert (Uuid.toString uuid) uuid model.state.uuids
+                        , uuids = model.state.uuids
                         }
                     )
             )

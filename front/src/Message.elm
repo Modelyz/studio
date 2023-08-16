@@ -117,7 +117,9 @@ type Payload
 
 
 type alias Connection =
-    { lastMessageTime : Time.Posix, uuids : Dict String Uuid }
+    { lastMessageTime : Time.Posix
+    , uuids : Dict String Uuid
+    }
 
 
 base : Message -> Metadata

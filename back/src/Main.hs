@@ -8,13 +8,13 @@ import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
-import Data.Set as Set (Set, delete, empty, insert)
+import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Metadata (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, setFlow, uuid)
+import Message (Message (..), Metadata (..), Payload (InitiatedConnection), appendMessage, isType, metadata, payload, readMessages, setFlow, updatePending, uuid)
 import MessageFlow (MessageFlow (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
@@ -154,14 +154,6 @@ update state msg =
         , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
         }
 
-updatePending :: Message -> Set Message -> Set Message
-updatePending msg pendings =
-    case getFlow msg of
-        Requested -> Set.insert msg pendings
-        Received -> Set.insert msg pendings
-        Processed -> Set.delete msg pendings
-        Error _ -> Set.insert msg pendings
-
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> StateMV -> Message -> IO ()
 handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
     case payload msg of
@@ -171,7 +163,6 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
             do
                 let allFrontUuids = Connection.uuids connection
                 esevs <- readMessages msgPath
-                -- the messages to send to the browser are the processed ones coming from another browser or service
                 let msgs = filter (\e -> uuid (metadata e) `notElem` allFrontUuids) esevs
                 mapM_ (WS.sendTextData conn . JSON.encode) msgs
                 putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
@@ -183,6 +174,7 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 putStrLn $ "\nStored message: " ++ show msg
                 -- Send back a Received flow
                 let receivedMsg = setFlow Received msg
+                appendMessage msgPath receivedMsg
                 WS.sendTextData conn $ JSON.encode receivedMsg
                 putStrLn $ "\nReturned a Received flow: " ++ show receivedMsg
                 -- Add it or remove to the pending list (if relevant) and keep the uuid
