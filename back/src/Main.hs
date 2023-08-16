@@ -174,13 +174,14 @@ handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
                 -- the messages to send to the browser are the processed ones coming from another browser or service
                 let msgs = filter (\e -> uuid (metadata e) `notElem` allFrontUuids) esevs
                 mapM_ (WS.sendTextData conn . JSON.encode) msgs
-                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messsages to client " ++ show nc ++ ": " ++ show msgs
+                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
         _ ->
             -- otherwise, store the msg, then send and store the Received version
             do
                 -- store the message in the message store
                 appendMessage msgPath msg
                 putStrLn $ "\nStored message: " ++ show msg
+                -- Send back a Received flow
                 let receivedMsg = setFlow Received msg
                 WS.sendTextData conn $ JSON.encode receivedMsg
                 putStrLn $ "\nReturned a Received flow: " ++ show receivedMsg
