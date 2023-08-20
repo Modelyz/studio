@@ -22,7 +22,7 @@ executable studio
   -- other-extensions:
     ghc-options: -Wall -O2
     build-depends:
-        base >=4.16
+        base >= 4.16
         , aeson >= 2.1
         , bytestring
         , containers

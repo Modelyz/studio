@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Connection (Connection (..))
-import Control.Concurrent (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVar, readChan, takeMVar, threadDelay, writeChan)
+import Control.Concurrent (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVar, readChan, readMVar, takeMVar, threadDelay, writeChan)
 import Control.Exception (SomeException (SomeException), catch)
 import Control.Monad qualified as Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
@@ -14,7 +14,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Metadata (..), Payload (InitiatedConnection), appendMessage, isType, metadata, payload, readMessages, setFlow, updatePending, uuid)
+import Message (Effect (SendMessage), Message (..), Metadata (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, setFlow, uuid)
 import MessageFlow (MessageFlow (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
@@ -33,7 +33,8 @@ type Host = String
 type Port = Int
 
 data State = State
-    { pending :: Set Message
+    { messagesToSend :: [Message]
+    , messagesToProcess :: [Message]
     , uuids :: Set UUID
     }
     deriving (Show)
@@ -41,7 +42,12 @@ data State = State
 type StateMV = MVar State
 
 emptyState :: State
-emptyState = State{pending = Set.empty, Main.uuids = Set.empty}
+emptyState =
+    State
+        { messagesToSend = []
+        , messagesToProcess = []
+        , Main.uuids = Set.empty
+        }
 
 options :: Parser Options
 options =
@@ -70,31 +76,54 @@ websocketServerApp msgPath chan ncMV stateMV pending_conn = do
     putStrLn $ "\nBrowser " ++ show nc ++ " connected"
 
     _ <-
-        -- wait for new messages coming from other connected browsers through the chan
+        -- wait for new message coming from other connected browsers through the chan
         -- and send them to the currently connected browser
-        -- TODO: only Processed messages should be forwared to other browsers??
+        -- TODO: only Processed message should be forwarded to other browsers??
         forkIO $
             fix
                 ( \loop -> do
-                    (n, ev) <- readChan elmChan
-                    Monad.when (n /= nc && not (ev `isType` "InitiatedConnection")) $ do
-                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from browser " ++ show n ++ ": Sent through WS : " ++ show ev
-                        (WS.sendTextData conn . JSON.encode) ev
+                    (n, msg) <- readChan elmChan
+                    Monad.when (n /= nc && not (msg `isType` "InitiatedConnection") && (getFlow msg == Requested || getFlow msg == Processed)) $ do
+                        putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from browser " ++ show n ++ ": Sent through WS : " ++ show msg
+                        (WS.sendTextData conn . JSON.encode) msg
                     loop
                 )
 
-    -- handle messages coming through websocket from the currently connected browser
+    -- handle message coming through websocket from the currently connected browser
     WS.withPingThread conn 30 (return ()) $
         Monad.forever $ do
-            putStrLn $ "\nWaiting for new messages from browser " ++ show nc
-            messages <- WS.receiveDataMessage conn
-            putStrLn $ "\nReceived stuff through websocket from browser " ++ show nc ++ ". Handling it : " ++ show messages
+            putStrLn $ "\nWaiting for new message from browser " ++ show nc
+            message <- WS.receiveDataMessage conn
+            putStrLn $ "\nReceived stuff through websocket from browser " ++ show nc ++ ". Handling it : " ++ show message
             case JSON.eitherDecode
-                ( case messages of
+                ( case message of
                     WS.Text bs _ -> WS.fromLazyByteString bs
                     WS.Binary bs -> WS.fromLazyByteString bs
                 ) of
-                Right msg -> handleMessageFromBrowser msgPath conn nc elmChan stateMV msg
+                Right msg -> do
+                    case payload msg of
+                        InitiatedConnection connection ->
+                            -- if the message is a InitiatedConnection, get the uuid list from it,
+                            -- and send back all the missing messages (with an added ack)
+                            do
+                                let remoteUuids = Connection.uuids connection
+                                esevs <- readMessages msgPath
+                                let msgs = filter (\e -> uuid (metadata e) `notElem` remoteUuids) esevs
+                                mapM_ (WS.sendTextData conn . JSON.encode) msgs
+                                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
+                        _ -> do
+                            Monad.when (uuid (metadata msg) `notElem` Main.uuids st) $ do
+                                -- store the message in the message store
+                                appendMessage msgPath msg
+                                putStrLn $ "\nStored message: " ++ show msg
+                                -- update the state and get the list of new generated messages
+                                state <- takeMVar stateMV
+                                let (newState, effects) = update state msg
+                                putMVar stateMV $! newState
+                                putStrLn "updated state"
+                -- TODO manage effects
+                -- handle the message
+                -- XXX remove handleMessageFromBrowser msgPath conn nc elmChan stateMV msg
                 Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
 clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
@@ -104,36 +133,37 @@ clientApp msgPath storeChan stateMV conn = do
     newUuid <- UUID.nextRandom
     currentTime <- getPOSIXTime
     state <- takeMVar stateMV
-    let initConn =
+    let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, when = currentTime, which = "studio", flow = Requested})
+                (Metadata{uuid = newUuid, Message.when = currentTime, which = "studio", flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
-    mapM_ (WS.sendTextData conn . JSON.encode) [initConn]
-    -- Just reconnected, send the pending messages to the Store
-    putMVar stateMV $! state{pending = Set.empty}
+    _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
+    -- Just reconnected, send the messagesToSend to the Store
     catch
-        ( Monad.unless (null (pending state)) $ do
-            let pendings = pending state
-            mapM_ (WS.sendTextData conn . JSON.encode) pendings
+        ( Monad.unless (null (messagesToSend state)) $ do
+            let tosend = messagesToSend state
+            mapM_ (WS.sendTextData conn . JSON.encode) tosend
+            putMVar stateMV $! state{messagesToSend = []}
         )
         ( \(SomeException _) -> do
-            -- if something got wrong, put back the messages in the pending list
+            -- if something got wrong, put back the messages in the messagesToSend list
             st <- takeMVar stateMV
-            putMVar stateMV $! state{pending = pending state <> pending st}
+            putMVar stateMV $! state{messagesToSend = messagesToSend state <> messagesToSend st}
         )
-    -- TODO: Use the Flow to determine if it has been received by the store, in case the store was not alive.
     -- fork a thread to send back data from the channel to the central store
     _ <- forkIO $ do
         putStrLn "Waiting for messages coming from the client browsers"
         Monad.forever $ do
-            (n, ev) <- readChan storeChan
-            Monad.unless (n == -1 || ev `isType` "InitiatedConnection") $ do
-                putStrLn $ "\nForwarding to the store this message coming from browser " ++ show n ++ ": " ++ show ev
-                -- Remove the current msg from the pending list
+            (n, msg) <- readChan storeChan -- here we get all messages from all browsers
+            Monad.unless (n == -1 || msg `isType` "InitiatedConnection") $ do
+                putStrLn $ "\nForwarding to the store this message coming from browser " ++ show n ++ ": " ++ show msg
                 st <- takeMVar stateMV
-                putMVar stateMV $! st{pending = updatePending ev $ pending st}
+                let (newst, effects) = update st msg
+                -- TODO: run the effects
+
+                putMVar stateMV $! newst
                 -- send to the Store
-                WS.sendTextData conn $ JSON.encode ev
+                WS.sendTextData conn $ JSON.encode msg
 
     Monad.forever $ do
         putStrLn "Waiting for messages coming from the store"
@@ -144,71 +174,76 @@ clientApp msgPath storeChan stateMV conn = do
                 WS.Text bs _ -> WS.fromLazyByteString bs
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
-            Right msgs -> handleMessageFromStore stateMV msgPath conn (-1) storeChan msgs -- -1 is the Store. TODO use textual labels instead
+            Right msgs -> handleMessageFromStore stateMV msgPath (-1) storeChan msgs -- -1 is the Store. TODO use textual labels instead
             Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
-update :: State -> Message -> State
-update state msg =
-    state
-        { pending = updatePending msg $ pending state
-        , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
-        }
+update :: (State, [Effect a]) -> Message -> (State, [Effect a])
+update (state, es) msg =
+    case flow (metadata msg) of
+        Requested -> case payload msg of
+            InitiatedConnection _ -> (state, [])
+            _ ->
+                -- set the message toSend
+                ( state
+                    { messagesToSend = messagesToSend state ++ [msg]
+                    , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
+                    }
+                , es ++ [SendMessage "store" msg]
+                )
+        Received ->
+            ( state
+                { -- remove the message from toSent, put in toProcess
+
+                  messagesToSend = filter (\m -> uuid (metadata m) /= uuid (metadata msg)) $ messagesToSend state
+                , messagesToProcess = messagesToProcess state ++ [msg]
+                }
+            , es
+            )
+        Processed ->
+            ( state
+                { -- remove from toProcess
+                  messagesToProcess = filter (\m -> uuid (metadata m) /= uuid (metadata msg)) $ messagesToProcess state
+                }
+            , es
+            )
+        Error _ -> (state, [])
 
 handleMessageFromBrowser :: FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> StateMV -> Message -> IO ()
 handleMessageFromBrowser msgPath conn nc chan stateMV msg = do
-    case payload msg of
-        InitiatedConnection connection ->
-            -- if the message is a InitiatedConnection, get the uuid list from it,
-            -- and send back all the missing messages (with an added ack)
-            do
-                let allFrontUuids = Connection.uuids connection
-                esevs <- readMessages msgPath
-                let msgs = filter (\e -> uuid (metadata e) `notElem` allFrontUuids) esevs
-                mapM_ (WS.sendTextData conn . JSON.encode) msgs
-                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
-        _ ->
-            -- otherwise, store the msg, then send and store the Received version
-            do
-                -- store the message in the message store
-                appendMessage msgPath msg
-                putStrLn $ "\nStored message: " ++ show msg
-                -- Send back a Received flow
-                let receivedMsg = setFlow Received msg
-                appendMessage msgPath receivedMsg
-                WS.sendTextData conn $ JSON.encode receivedMsg
-                putStrLn $ "\nReturned a Received flow: " ++ show receivedMsg
-                -- Add it or remove to the pending list (if relevant) and keep the uuid
-                state <- takeMVar stateMV
-                putMVar stateMV $! update state msg
-                putStrLn "updated state"
+    -- otherwise, store the msg, then send and store the Received version
+    st <- readMVar stateMV
+    Monad.when (uuid (metadata msg) `notElem` Main.uuids st) $ do
+        -- store the message in the message store
+        appendMessage msgPath msg
+        putStrLn $ "\nStored message: " ++ show msg
+        -- Send back a Received flow
+        let receivedMsg = setFlow Received msg
+        appendMessage msgPath receivedMsg
+        WS.sendTextData conn $ JSON.encode receivedMsg
+        putStrLn $ "\nReturned a Received flow: " ++ show receivedMsg
+        -- Add it or remove to the pending list (if relevant) and keep the uuid
+        state <- takeMVar stateMV
+        putMVar stateMV $! fst $ update state msg
+        putStrLn "updated state"
     -- send msg to other connected clients
     -- TODO: remove? Only Processed msgs should be sent?
     putStrLn $ "\nWriting to the chan as client " ++ show nc
     writeChan chan (nc, msg)
 
-handleMessageFromStore :: StateMV -> FilePath -> WS.Connection -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
-handleMessageFromStore stateMV msgPath conn nc chan msg = do
-    case payload msg of
-        InitiatedConnection connection ->
-            do
-                -- if the message is a InitiatedConnection, get the uuid list from it,
-                -- and send back all the missing messages (with an added ack)
-                esevs <- readMessages msgPath
-                let msgs = filter (\e -> uuid (metadata e) `notElem` Connection.uuids connection) esevs
-                mapM_ (WS.sendTextData conn . JSON.encode) msgs
-                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
-        _ ->
-            do
-                -- store the message in the message store
-                appendMessage msgPath msg
-                putStrLn $ "\nStored message" ++ show msg
-                -- Add it or remove to the pending list (if relevant) and keep the uuid
-                state <- takeMVar stateMV
-                putMVar stateMV $! update state msg
-                putStrLn "updated state"
-    -- send msg to other connected clients
-    putStrLn $ "\nWriting to the chan as client " ++ show nc
-    writeChan chan (nc, msg)
+handleMessageFromStore :: StateMV -> FilePath -> NumClient -> Chan (NumClient, Message) -> Message -> IO ()
+handleMessageFromStore stateMV msgPath nc chan msg = do
+    st <- readMVar stateMV
+    Monad.when (uuid (metadata msg) `notElem` Main.uuids st) $ do
+        -- store the message in the message store
+        appendMessage msgPath msg
+        putStrLn $ "\nStored message" ++ show msg
+        -- Add it or remove to the pending list (if relevant) and keep the uuid
+        state <- takeMVar stateMV
+        putMVar stateMV $! fst $ update state msg
+        putStrLn "updated state"
+        -- send msg to other connected clients
+        putStrLn $ "\nWriting to the chan as client " ++ show nc
+        writeChan chan (nc, msg)
 
 httpApp :: Options -> Wai.Application
 httpApp (Options d _ _ _ _ _) request respond = do
@@ -229,8 +264,8 @@ httpApp (Options d _ _ _ _ _) request respond = do
 maxWait :: Int
 maxWait = 10
 
-connectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
-connectClient waitTime previousTime host port msgPath storeChan stateMV = do
+reconnectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
+reconnectClient waitTime previousTime host port msgPath storeChan stateMV = do
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
     threadDelay $ waitTime * 1000000
     putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "..."
@@ -239,28 +274,37 @@ connectClient waitTime previousTime host port msgPath storeChan stateMV = do
         ( \(SomeException _) -> do
             disconnectTime <- getPOSIXTime
             let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
-            connectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
+            reconnectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
         )
+
+effectThread :: Chan (NumClient, Message) -> StateMV -> IO ()
+effectThread effectChan stateMV = do
+    putStrLn "Starting effect thread..."
+    (n, msg) <- readChan effectChan
+    state <- takeMVar stateMV
+    let (newState, effects) = update state msg
+    putMVar stateMV newState
 
 serve :: Options -> IO ()
 serve (Options d host port msgPath storeHost storePort) = do
     ncMV <- newMVar 0 -- connection number
-    chan <- newChan -- main channel
-    stateMV <- newMVar emptyState -- application state
-    storeChan <- dupChan chan -- output channel to the central message store
-    firstTime <- getPOSIXTime
+    chan <- newChan -- main channel, that will be duplicated once for the browsers, and one for the store
     -- Reconstruct the state
     putStrLn "Reconstructing the State..."
     msgs <- readMessages msgPath
+    stateMV <- newMVar emptyState -- shared application state
     state <- takeMVar stateMV
-    let newState = foldl update state msgs -- TODO foldr or strict foldl ?
+    -- TODO could be rewritten with a Writer monad?
+    let (newState, _) = foldl update (state, []) msgs -- TODO foldr or strict foldl ?
     putMVar stateMV newState
-    putStrLn "Old state:"
-    print state
-    putStrLn "New State:"
-    print newState
+    putStrLn $ "Computed State:" ++ show newState
     -- keep connection to the Store
-    _ <- forkIO $ connectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
+    firstTime <- getPOSIXTime
+    storeChan <- dupChan chan -- output channel to the central message store
+    _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
+    -- effect Thread with its own channel
+    effectChan <- dupChan chan
+    _ <- forkIO $ effectThread effectChan stateMV
     putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
     Warp.run port $ websocketsOr WS.defaultConnectionOptions (websocketServerApp msgPath chan ncMV stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
