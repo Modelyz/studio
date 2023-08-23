@@ -59,8 +59,8 @@ port renewSeed : () -> Cmd msg
 
 type alias Metadata =
     { uuid : Uuid
-    , when : Time.Posix
-    , which : String
+    , when : Time.Posix -- when asked?
+    , which : String -- who asked?
     , flow : MessageFlow
     }
 
@@ -131,6 +131,7 @@ compare : Message -> Int
 compare =
     -- TODO what if 2 messages at the exact same time?
     -- => also use a session uuid
+    -- TODO : use UUID instead? see updatePending
     getTime >> posixToMillis
 
 
