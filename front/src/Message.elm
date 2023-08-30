@@ -60,7 +60,7 @@ port renewSeed : () -> Cmd msg
 type alias Metadata =
     { uuid : Uuid
     , when : Time.Posix -- when asked?
-    , which : String -- who asked?
+    , from : String -- who asked?
     , flow : MessageFlow
     }
 
@@ -171,7 +171,7 @@ encodeMetadata b =
     Encode.object
         [ ( "uuid", Uuid.encode b.uuid )
         , ( "when", Encode.int <| posixToMillis b.when )
-        , ( "which", Encode.string b.which )
+        , ( "from", Encode.string b.from )
         , ( "flow", MessageFlow.encode b.flow )
         ]
 
@@ -473,7 +473,7 @@ metadataDecoder =
     Decode.map4 Metadata
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "when" Decode.int |> andThen toPosix)
-        (Decode.field "which" Decode.string)
+        (Decode.field "from" Decode.string)
         (Decode.field "flow" MessageFlow.decoder)
 
 
