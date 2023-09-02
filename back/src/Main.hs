@@ -208,10 +208,7 @@ update state msg =
                     , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
                     }
         Received -> state{pending = Set.delete msg $ pending state}
-        Processed ->
-            state
-                { pending = Set.insert msg $ pending state
-                }
+        Processed -> state{pending = Set.insert msg $ pending state}
         Error _ -> state
 
 httpApp :: Options -> Wai.Application

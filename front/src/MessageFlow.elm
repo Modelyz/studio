@@ -8,8 +8,6 @@ type
     MessageFlow
     -- Created and stored locally:
     = Requested
-      -- Received by the backend:
-    | Received
       -- Returned as Processed:
     | Processed
     | Error String
@@ -20,9 +18,6 @@ encode f =
     case f of
         Requested ->
             Encode.object [ ( "type", Encode.string "Requested" ) ]
-
-        Received ->
-            Encode.object [ ( "type", Encode.string "Received" ) ]
 
         Processed ->
             Encode.object [ ( "type", Encode.string "Processed" ) ]
@@ -39,9 +34,6 @@ decoder =
                 case s of
                     "Requested" ->
                         Decode.succeed Requested
-
-                    "Received" ->
-                        Decode.succeed Received
 
                     "Processed" ->
                         Decode.succeed Processed

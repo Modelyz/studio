@@ -38,7 +38,7 @@ import Value.ValueType as ValueType exposing (ValueType)
 type alias State =
     -- Reminder: Dicts in the State are actually meant to bu used as Sets
     -- using a relevant comparable so that each entity can appear only once
-    { pendingMessages : Dict Int Message -- pending Messages are in Requested or Received mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
+    { pendingMessages : Dict Int Message -- pending Messages are in Requested mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
 
     {- probably unusedful: -}
     , lastMessageTime : Time.Posix -- time of the last message
@@ -553,9 +553,6 @@ updatePending : Message -> Dict Int Message -> Dict Int Message
 updatePending (Message m p) ms =
     case m.flow of
         Requested ->
-            Dict.insert (Message.compare (Message m p)) (Message m p) ms
-
-        Received ->
             Dict.insert (Message.compare (Message m p)) (Message m p) ms
 
         Processed ->
