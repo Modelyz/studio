@@ -147,6 +147,7 @@ clientApp msgPath storeChan stateMV conn = do
     newUuid <- UUID.nextRandom
     currentTime <- getPOSIXTime
     state <- readMVar stateMV
+    -- send an initiatedConnection
     let initiatedConnection =
             Message
                 (Metadata{uuid = newUuid, Message.when = currentTime, from = "studio", flow = Requested})
@@ -172,10 +173,11 @@ clientApp msgPath storeChan stateMV conn = do
                     _ -> return ()
 
     -- CLIENT MAIN THREAD
+    -- loop on the handling of messages incoming through websocket
     Monad.forever $ do
         putStrLn "Waiting for messages coming from the store"
         message <- WS.receiveDataMessage conn
-        putStrLn $ "\nReceived stuff through websocket from the Store: " ++ show message
+        putStrLn $ "\nReceived msg through websocket from the Store: " ++ show message
         case JSON.eitherDecode
             ( case message of
                 WS.Text bs _ -> WS.fromLazyByteString bs
@@ -186,9 +188,7 @@ clientApp msgPath storeChan stateMV conn = do
                     Processed -> do
                         st' <- readMVar stateMV
                         Monad.when (from (metadata msg) == "ident" && uuid (metadata msg) `notElem` Main.uuids st') $ do
-                            -- store the message in the message store
                             appendMessage msgPath msg
-                            putStrLn $ "\nStored message" ++ show msg
                             -- send msg to other connected clients
                             putStrLn "\nWriting to the chan"
                             writeChan storeChan msg
@@ -239,9 +239,7 @@ reconnectClient waitTime previousTime host port msgPath storeChan stateMV = do
     catches
         (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
         [ Handler
-            ( \(_ :: ConnectionException) -> do
-                reconnectClient 1 previousTime host port msgPath storeChan stateMV
-            )
+            (\(_ :: ConnectionException) -> reconnectClient 1 previousTime host port msgPath storeChan stateMV)
         , Handler
             ( \(SomeException _) -> do
                 disconnectTime <- getPOSIXTime
@@ -258,7 +256,6 @@ serve (Options d host port msgPath storeHost storePort) = do
     msgs <- readMessages msgPath
     stateMV <- newMVar emptyState -- shared application state
     state <- takeMVar stateMV
-    -- TODO could be rewritten with a Writer monad?
     let newState = foldl update state msgs -- TODO foldr or strict foldl ?
     putMVar stateMV newState
     putStrLn $ "Computed State:" ++ show newState
