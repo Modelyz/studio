@@ -2,7 +2,7 @@
 
 import Connection (Connection (..))
 import Control.Concurrent (Chan, MVar, dupChan, forkIO, newChan, newMVar, putMVar, readChan, readMVar, takeMVar, threadDelay, writeChan)
-import Control.Exception (SomeException (SomeException), catch)
+import Control.Exception (Handler (..), SomeException (SomeException), catches)
 import Control.Monad qualified as Monad (forever, unless, when)
 import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
@@ -20,13 +20,12 @@ import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp qualified as Warp
 import Network.Wai.Handler.WebSockets (websocketsOr)
+import Network.WebSockets (ConnectionException (..))
 import Network.WebSockets qualified as WS
 import Options.Applicative
 
 -- dir, port, file
 data Options = Options !String !Host !Port !FilePath !Host !Port
-
-type NumClient = Int
 
 type Host = String
 
@@ -63,15 +62,14 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-serverApp :: FilePath -> Chan (NumClient, Message) -> MVar NumClient -> StateMV -> WS.ServerApp
-serverApp msgPath chan ncMV stateMV pending_conn = do
+serverApp :: FilePath -> Chan Message -> StateMV -> WS.ServerApp
+serverApp msgPath chan stateMV pending_conn = do
+    clientMV <- newMVar ""
     browserChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
     conn <- WS.acceptRequest pending_conn
     -- increment the client number
-    nc <- takeMVar ncMV
-    putMVar ncMV $! nc + 1
-    putStrLn $ "\nBrowser " ++ show nc ++ " connected"
+    putStrLn "\nNew browser connected"
 
     _ <- do
         -- SERVER WORKER THREAD (one per client thread)
@@ -81,16 +79,17 @@ serverApp msgPath chan ncMV stateMV pending_conn = do
         forkIO $
             fix
                 ( \loop -> do
-                    (n, msg) <- readChan browserChan
+                    msg <- readChan browserChan
+                    client <- readMVar clientMV
+                    putStrLn $ "Connected client: " ++ client -- display the client name instead
                     Monad.when
-                        ( n /= nc
-                            && not (msg `isType` "InitiatedConnection")
+                        ( not (msg `isType` "InitiatedConnection")
                             && (getFlow msg == Processed)
                             && from (metadata msg) /= "front"
                             && from (metadata msg) /= "store"
                         )
                         $ do
-                            putStrLn $ "\nThread " ++ show nc ++ " got stuff through the chan from browser " ++ show n ++ ": Sent through WS : " ++ show msg
+                            putStrLn $ "\nGot stuff through the chan from browser. Sent through WS : " ++ show msg
                             (WS.sendTextData conn . JSON.encode) msg
                     loop
                 )
@@ -99,9 +98,9 @@ serverApp msgPath chan ncMV stateMV pending_conn = do
     -- handle message coming through websocket from the currently connected browser
     WS.withPingThread conn 30 (return ()) $
         Monad.forever $ do
-            putStrLn $ "\nWaiting for new message from browser " ++ show nc
+            putStrLn "\nWaiting for new message from browser"
             message <- WS.receiveDataMessage conn
-            putStrLn $ "\nReceived stuff through websocket from browser " ++ show nc ++ ". Handling it : " ++ show message
+            putStrLn $ "\nReceived stuff through websocket from browser. Handling it : " ++ show message
             case JSON.eitherDecode
                 ( case message of
                     WS.Text bs _ -> WS.fromLazyByteString bs
@@ -109,15 +108,19 @@ serverApp msgPath chan ncMV stateMV pending_conn = do
                 ) of
                 Right msg -> do
                     case payload msg of
-                        InitiatedConnection connection ->
+                        InitiatedConnection connection -> do
                             -- if the message is a InitiatedConnection, get the uuid list from it,
                             -- and send back all the missing messages (with an added ack)
-                            do
-                                let remoteUuids = Connection.uuids connection
-                                esevs <- readMessages msgPath
-                                let msgs = filter (\e -> uuid (metadata e) `notElem` remoteUuids) esevs
-                                mapM_ (WS.sendTextData conn . JSON.encode) msgs
-                                putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client " ++ show nc ++ ": " ++ show msgs
+                            -- get the name of the connected client
+                            let from = T.unpack $ Message.from $ metadata msg
+                            _ <- takeMVar clientMV
+                            putMVar clientMV from
+                            putStrLn $ "Connected client: " ++ from -- right place to do auth?
+                            let remoteUuids = Connection.uuids connection
+                            esevs <- readMessages msgPath
+                            let msgs = filter (\e -> uuid (metadata e) `notElem` remoteUuids) esevs
+                            mapM_ (WS.sendTextData conn . JSON.encode) msgs
+                            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client: " ++ show msgs
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> do
@@ -131,13 +134,13 @@ serverApp msgPath chan ncMV stateMV pending_conn = do
                                         let newState = update state msg
                                         putMVar stateMV $! newState
                                         putStrLn "updated state"
-                                        writeChan browserChan (nc, msg)
+                                        writeChan browserChan msg
                                 _ -> return ()
                 -- TODO manage effects
                 -- handle the message
                 Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
-clientApp :: FilePath -> Chan (NumClient, Message) -> StateMV -> WS.ClientApp ()
+clientApp :: FilePath -> Chan Message -> StateMV -> WS.ClientApp ()
 clientApp msgPath storeChan stateMV conn = do
     putStrLn "Connected!"
     -- Just reconnected, first send an InitiatedConnection to the store
@@ -156,11 +159,11 @@ clientApp msgPath storeChan stateMV conn = do
     _ <- forkIO $ do
         putStrLn "Waiting for messages coming from the client browsers"
         Monad.forever $ do
-            (n, msg) <- readChan storeChan -- here we get all messages from all browsers
-            Monad.unless (n == -1 || (from (metadata msg) /= "front")) $ do
+            msg <- readChan storeChan -- here we get all messages from all browsers
+            Monad.unless (from (metadata msg) /= "front") $ do
                 case flow (metadata msg) of
                     Requested -> do
-                        putStrLn $ "\nForwarding to the store this msg coming from browser " ++ show n ++ ": " ++ show msg
+                        putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
                         st <- takeMVar stateMV
                         -- TODO: run the effects
                         putMVar stateMV $! update st msg
@@ -187,9 +190,8 @@ clientApp msgPath storeChan stateMV conn = do
                             appendMessage msgPath msg
                             putStrLn $ "\nStored message" ++ show msg
                             -- send msg to other connected clients
-                            let nc = -1 -- -1 is the current process
-                            putStrLn $ "\nWriting to the chan as client " ++ show nc
-                            writeChan storeChan (nc, msg)
+                            putStrLn "\nWriting to the chan"
+                            writeChan storeChan msg
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
                             st'' <- takeMVar stateMV
                             putMVar stateMV $! update st'' msg
@@ -207,7 +209,7 @@ update state msg =
                     { pending = Set.insert msg $ pending state
                     , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
                     }
-        Processed -> state{pending = Set.insert msg $ pending state}
+        Processed -> state{pending = Set.delete msg $ pending state}
         Error _ -> state
 
 httpApp :: Options -> Wai.Application
@@ -229,22 +231,27 @@ httpApp (Options d _ _ _ _ _) request respond = do
 maxWait :: Int
 maxWait = 10
 
-reconnectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan (NumClient, Message) -> StateMV -> IO ()
+reconnectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan Message -> StateMV -> IO ()
 reconnectClient waitTime previousTime host port msgPath storeChan stateMV = do
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
     threadDelay $ waitTime * 1000000
     putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "..."
-    catch
+    catches
         (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
-        ( \(SomeException _) -> do
-            disconnectTime <- getPOSIXTime
-            let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
-            reconnectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
-        )
+        [ Handler
+            ( \(_ :: ConnectionException) -> do
+                reconnectClient 1 previousTime host port msgPath storeChan stateMV
+            )
+        , Handler
+            ( \(SomeException _) -> do
+                disconnectTime <- getPOSIXTime
+                let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
+                reconnectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
+            )
+        ]
 
 serve :: Options -> IO ()
 serve (Options d host port msgPath storeHost storePort) = do
-    ncMV <- newMVar 0 -- connection number
     chan <- newChan -- main channel, that will be duplicated once for the browsers, and one for the store
     -- Reconstruct the state
     putStrLn "Reconstructing the State..."
@@ -261,7 +268,7 @@ serve (Options d host port msgPath storeHost storePort) = do
     _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
     putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
-    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgPath chan ncMV stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
+    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgPath chan stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
 
 main :: IO ()
 main =
