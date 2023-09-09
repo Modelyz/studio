@@ -7,7 +7,7 @@ import Html exposing (time)
 import IOStatus exposing (IOStatus(..))
 import Json.Decode as Decode exposing (decodeString, decodeValue, errorToString)
 import Json.Encode as Encode
-import Message exposing (Message(..), Payload(..), getTime)
+import Message exposing (Message(..), Origin(..), Payload(..), getTime)
 import MessageFlow exposing (MessageFlow(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process
@@ -421,7 +421,7 @@ initiateConnection uuid model =
         Task.map
             (\t ->
                 Message
-                    { uuid = uuid, when = t, from = "front", flow = Requested }
+                    { uuid = uuid, when = t, from = Front, flow = Requested }
                     (InitiatedConnection
                         { lastMessageTime = model.state.lastMessageTime
                         , uuids = model.state.uuids
@@ -444,7 +444,7 @@ dispatch model payload =
                         ( newUuid, _ ) =
                             Random.step Uuid.generator model.currentSeed
                     in
-                    List.singleton <| Message { uuid = newUuid, when = time, from = "front", flow = Requested } payload
+                    List.singleton <| Message { uuid = newUuid, when = time, from = Front, flow = Requested } payload
                 )
                 Time.now
 
@@ -463,7 +463,7 @@ dispatchMany model payloads =
                     uuidMerger <|
                         List.reverse <|
                             List.foldl (uuidAggregator newSeed) [] <|
-                                List.map (Message { uuid = newUuid, when = time, from = "front", flow = Requested }) payloads
+                                List.map (Message { uuid = newUuid, when = time, from = Front, flow = Requested }) payloads
                 )
                 Time.now
 

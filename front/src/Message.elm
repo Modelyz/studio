@@ -1,4 +1,4 @@
-port module Message exposing (Connection, Message(..), Metadata, Payload(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, renewSeed, storeMessages, storeMessagesToSend)
+port module Message exposing (Connection, Message(..), Metadata, Origin(..), Payload(..), base, compare, decoder, encode, exceptIC, getTime, metadataCompare, readMessages, renewSeed, storeMessages, storeMessagesToSend)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -60,9 +60,17 @@ port renewSeed : () -> Cmd msg
 type alias Metadata =
     { uuid : Uuid
     , when : Time.Posix -- when asked?
-    , from : String -- who asked?
+    , from : Origin -- who asked?
     , flow : MessageFlow
     }
+
+
+type Origin
+    = None
+    | Front
+    | Studio
+    | Store
+    | Ident
 
 
 type Message
@@ -118,7 +126,7 @@ type Payload
 
 type alias Connection =
     { lastMessageTime : Time.Posix
-    , uuids : Dict String Uuid
+    , uuids : Dict String Metadata
     }
 
 
@@ -166,12 +174,31 @@ encode (Message m p) =
         ]
 
 
+encodeOrigin : Origin -> Encode.Value
+encodeOrigin o =
+    case o of
+        None ->
+            Encode.string "None"
+
+        Front ->
+            Encode.string "Front"
+
+        Studio ->
+            Encode.string "Studio"
+
+        Store ->
+            Encode.string "Store"
+
+        Ident ->
+            Encode.string "Ident"
+
+
 encodeMetadata : Metadata -> Encode.Value
 encodeMetadata b =
     Encode.object
         [ ( "uuid", Uuid.encode b.uuid )
         , ( "when", Encode.int <| posixToMillis b.when )
-        , ( "from", Encode.string b.from )
+        , ( "from", encodeOrigin b.from )
         , ( "flow", MessageFlow.encode b.flow )
         ]
 
@@ -188,7 +215,7 @@ encodePayload payload =
                 , ( "load"
                   , Encode.object
                         [ ( "lastMessageTime", Encode.int <| posixToMillis c.lastMessageTime )
-                        , ( "uuids", Encode.list Uuid.encode (Dict.values c.uuids) )
+                        , ( "uuids", Encode.list encodeMetadata (Dict.values c.uuids) )
                         ]
                   )
                 ]
@@ -468,13 +495,44 @@ decoder =
         (Decode.field "load" payloadDecoder)
 
 
+originDecoder : Decoder Origin
+originDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\o ->
+                case o of
+                    "None" ->
+                        Decode.succeed None
+
+                    "Front" ->
+                        Decode.succeed Front
+
+                    "Studio" ->
+                        Decode.succeed Studio
+
+                    "Store" ->
+                        Decode.succeed Store
+
+                    "Ident" ->
+                        Decode.succeed Ident
+
+                    _ ->
+                        Decode.fail "Unknown Origin"
+            )
+
+
 metadataDecoder : Decoder Metadata
 metadataDecoder =
     Decode.map4 Metadata
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "when" Decode.int |> andThen toPosix)
-        (Decode.field "from" Decode.string)
+        (Decode.field "from" originDecoder)
         (Decode.field "flow" MessageFlow.decoder)
+
+
+metadataCompare : Metadata -> String
+metadataCompare m =
+    MessageFlow.toString m.flow ++ ":" ++ Uuid.toString m.uuid
 
 
 payloadDecoder : Decoder Payload
@@ -491,7 +549,7 @@ payloadDecoder =
                             (Decode.field "load"
                                 (Decode.map2 Connection
                                     (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
-                                    (Decode.field "uuids" (Decode.list Uuid.decoder) |> andThen (List.map (\u -> ( Uuid.toString u, u )) >> Dict.fromList >> Decode.succeed))
+                                    (Decode.field "uuids" (Decode.list metadataDecoder) |> andThen (List.map (\u -> ( metadataCompare u, u )) >> Dict.fromList >> Decode.succeed))
                                 )
                             )
 

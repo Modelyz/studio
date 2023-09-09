@@ -12,10 +12,10 @@ import Data.Set as Set (Set, delete, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
-import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Metadata (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages, uuid)
+import Message (Message (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages)
 import MessageFlow (MessageFlow (..))
+import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp qualified as Warp
@@ -33,7 +33,7 @@ type Port = Int
 
 data State = State
     { pending :: Set Message
-    , uuids :: Set UUID
+    , uuids :: Set Metadata
     }
     deriving (Show)
 
@@ -64,7 +64,7 @@ contentType filename = case reverse $ T.split (== '.') filename of
 
 serverApp :: FilePath -> Chan Message -> StateMV -> WS.ServerApp
 serverApp msgPath chan stateMV pending_conn = do
-    clientMV <- newMVar ""
+    clientMV <- newMVar None
     browserChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
     conn <- WS.acceptRequest pending_conn
@@ -81,12 +81,12 @@ serverApp msgPath chan stateMV pending_conn = do
                 ( \loop -> do
                     msg <- readChan browserChan
                     client <- readMVar clientMV
-                    putStrLn $ "Connected client: " ++ client -- display the client name instead
+                    putStrLn $ "Connected client: " ++ show client -- display the client name instead
                     Monad.when
                         ( not (msg `isType` "InitiatedConnection")
                             && (getFlow msg == Processed)
-                            && from (metadata msg) /= "front"
-                            && from (metadata msg) /= "store"
+                            && from (metadata msg) /= Front
+                            && from (metadata msg) /= Store
                         )
                         $ do
                             putStrLn $ "\nGot stuff through the chan from browser. Sent through WS : " ++ show msg
@@ -112,23 +112,22 @@ serverApp msgPath chan stateMV pending_conn = do
                             -- if the message is a InitiatedConnection, get the uuid list from it,
                             -- and send back all the missing messages (with an added ack)
                             -- get the name of the connected client
-                            let from = T.unpack $ Message.from $ metadata msg
+                            let from = Metadata.from $ metadata msg
                             _ <- takeMVar clientMV
                             putMVar clientMV from
-                            putStrLn $ "Connected client: " ++ from -- right place to do auth?
+                            putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
                             esevs <- readMessages msgPath
-                            let msgs = filter (\e -> uuid (metadata e) `notElem` remoteUuids) esevs
+                            let msgs = filter (\e -> metadata e `notElem` remoteUuids) esevs
                             mapM_ (WS.sendTextData conn . JSON.encode) msgs
                             putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client: " ++ show msgs
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> do
                                     st <- readMVar stateMV
-                                    Monad.when (((from . metadata) msg == "front") && uuid (metadata msg) `notElem` Main.uuids st) $ do
+                                    Monad.when (((from . metadata) msg == Front) && metadata msg `notElem` Main.uuids st) $ do
                                         -- store the message in the message store
                                         appendMessage msgPath msg
-                                        putStrLn $ "\nStored message: " ++ show msg
                                         -- update the state and get the list of new generated messages
                                         state <- takeMVar stateMV
                                         let newState = update state msg
@@ -150,7 +149,7 @@ clientApp msgPath storeChan stateMV conn = do
     -- send an initiatedConnection
     let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, Message.when = currentTime, from = "studio", flow = Requested})
+                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = Studio, flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
     -- Just reconnected, send the pending messages to the Store
@@ -161,7 +160,7 @@ clientApp msgPath storeChan stateMV conn = do
         putStrLn "Waiting for messages coming from the client browsers"
         Monad.forever $ do
             msg <- readChan storeChan -- here we get all messages from all browsers
-            Monad.unless (from (metadata msg) /= "front") $ do
+            Monad.unless (from (metadata msg) /= Front) $ do
                 case flow (metadata msg) of
                     Requested -> do
                         putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
@@ -187,7 +186,8 @@ clientApp msgPath storeChan stateMV conn = do
                 case flow (metadata msg) of
                     Processed -> do
                         st' <- readMVar stateMV
-                        Monad.when (from (metadata msg) == "ident" && uuid (metadata msg) `notElem` Main.uuids st') $ do
+                        Monad.when (from (metadata msg) == Ident && metadata msg `notElem` Main.uuids st') $ do
+                            -- TODO XXXXXXXXXXXXXXXXXXXXXX : le message n'est pas stocké car son uuid existe dans le store. Alors qu'il devrait l'être car c'est un Processed
                             appendMessage msgPath msg
                             -- send msg to other connected clients
                             putStrLn "\nWriting to the chan"
@@ -207,7 +207,7 @@ update state msg =
             _ ->
                 state
                     { pending = Set.insert msg $ pending state
-                    , Main.uuids = Set.insert (uuid (metadata msg)) (Main.uuids state)
+                    , Main.uuids = Set.insert (metadata msg) (Main.uuids state)
                     }
         Processed -> state{pending = Set.delete msg $ pending state}
         Error _ -> state

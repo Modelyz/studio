@@ -1,4 +1,4 @@
-module MessageFlow exposing (MessageFlow(..), decoder, encode)
+module MessageFlow exposing (MessageFlow(..), decoder, encode, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -11,6 +11,19 @@ type
       -- Returned as Processed:
     | Processed
     | Error String
+
+
+toString : MessageFlow -> String
+toString m =
+    case m of
+        Requested ->
+            "Requested"
+
+        Processed ->
+            "Processed"
+
+        Error err ->
+            "Error: " ++ err
 
 
 encode : MessageFlow -> Encode.Value
