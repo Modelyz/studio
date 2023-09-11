@@ -8,10 +8,12 @@ import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
-import Data.Set as Set (Set, delete, empty, insert)
+import Data.Map.Strict as Map (Map, delete, empty, insert)
+import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
+import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
 import Message (Message (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages)
 import MessageFlow (MessageFlow (..))
@@ -32,7 +34,7 @@ type Host = String
 type Port = Int
 
 data State = State
-    { pending :: Set Message
+    { pending :: Map UUID Message
     , uuids :: Set Metadata
     }
     deriving (Show)
@@ -42,7 +44,7 @@ type StateMV = MVar State
 emptyState :: State
 emptyState =
     State
-        { pending = Set.empty
+        { pending = Map.empty
         , Main.uuids = Set.empty
         }
 
@@ -206,10 +208,14 @@ update state msg =
             InitiatedConnection _ -> state
             _ ->
                 state
-                    { pending = Set.insert msg $ pending state
+                    { pending = Map.insert (Metadata.uuid (metadata msg)) msg $ pending state
                     , Main.uuids = Set.insert (metadata msg) (Main.uuids state)
                     }
-        Processed -> state{pending = Set.delete msg $ pending state}
+        Processed ->
+            state
+                { pending = Map.delete (Metadata.uuid (metadata msg)) $ pending state
+                , Main.uuids = Set.insert (metadata msg) (Main.uuids state)
+                }
         Error _ -> state
 
 httpApp :: Options -> Wai.Application
