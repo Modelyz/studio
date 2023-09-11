@@ -15,7 +15,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (InitiatedConnection), appendMessage, getFlow, isType, metadata, payload, readMessages)
+import Message (Message (..), Payload (..), appendMessage, getFlow, isType, metadata, payload, readMessages, setCreator, setFlow)
 import MessageFlow (MessageFlow (..))
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
@@ -36,6 +36,7 @@ type Port = Int
 data State = State
     { pending :: Map UUID Message
     , uuids :: Set Metadata
+    , syncing :: Bool
     }
     deriving (Show)
 
@@ -46,6 +47,7 @@ emptyState =
     State
         { pending = Map.empty
         , Main.uuids = Set.empty
+        , syncing = True
         }
 
 options :: Parser Options
@@ -162,15 +164,18 @@ clientApp msgPath storeChan stateMV conn = do
         putStrLn "Waiting for messages coming from the client browsers"
         Monad.forever $ do
             msg <- readChan storeChan -- here we get all messages from all browsers
-            Monad.unless (from (metadata msg) /= Front) $ do
+            Monad.when (from (metadata msg) == Front) $ do
                 case flow (metadata msg) of
                     Requested -> do
                         putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
                         st <- takeMVar stateMV
-                        -- TODO: run the effects
-                        putMVar stateMV $! update st msg
+                        -- process
+                        processedMsg <- processMessage stateMV msg
+                        putMVar stateMV $! foldl update st processedMsg
                         -- send to the Store
-                        WS.sendTextData conn $ JSON.encode msg
+                        putStrLn $ "Send back this msg to the store: " ++ show processedMsg
+                        mapM_ (appendMessage msgPath) processedMsg
+                        mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
                     _ -> return ()
 
     -- CLIENT MAIN THREAD
@@ -185,19 +190,34 @@ clientApp msgPath storeChan stateMV conn = do
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
             Right msg -> do
+                st' <- readMVar stateMV
                 case flow (metadata msg) of
-                    Processed -> do
-                        st' <- readMVar stateMV
-                        Monad.when (from (metadata msg) == Ident && metadata msg `notElem` Main.uuids st') $ do
-                            -- TODO XXXXXXXXXXXXXXXXXXXXXX : le message n'est pas stocké car son uuid existe dans le store. Alors qu'il devrait l'être car c'est un Processed
+                    Requested -> do
+                        Monad.when (from (metadata msg) /= Store && metadata msg `notElem` Main.uuids st') $ do
                             appendMessage msgPath msg
-                            -- send msg to other connected clients
-                            putStrLn "\nWriting to the chan"
-                            writeChan storeChan msg
+                            -- send msg to the worker thread and to other connected clients
+                            Monad.unless (syncing st') $ do
+                                putStrLn "\nWriting to the chan"
+                                writeChan storeChan msg
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
                             st'' <- takeMVar stateMV
                             putMVar stateMV $! update st'' msg
                             putStrLn "updated state"
+                    Processed -> do
+                        case payload msg of
+                            InitiatedConnection _ -> do
+                                st''' <- takeMVar stateMV
+                                putMVar stateMV $! st'''{syncing = False}
+                            _ -> do
+                                appendMessage msgPath msg
+                                -- send msg to the worker thread and to other connected clients
+                                Monad.unless (syncing st') $ do
+                                    putStrLn "\nWriting to the chan"
+                                    writeChan storeChan msg
+                                -- Add it or remove to the pending list (if relevant) and keep the uuid
+                                st'' <- takeMVar stateMV
+                                putMVar stateMV $! update st'' msg
+                                putStrLn "updated state"
                     _ -> return ()
             Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
@@ -233,6 +253,15 @@ httpApp (Options d _ _ _ _ _) request respond = do
             _ -> Wai.responseLBS status200 [("Content-Type", "text/html")] ""
         "changelog" : _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
         _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
+
+processMessage :: StateMV -> Message -> IO [Message]
+processMessage _ msg = do
+    case payload msg of
+        AddedIdentifier _ -> return []
+        AddedIdentifierType _ -> return []
+        RemovedIdentifierType _ -> return []
+        ChangedIdentifierType _ _ -> return []
+        _ -> return [setFlow Processed $ setCreator Studio msg]
 
 maxWait :: Int
 maxWait = 10
