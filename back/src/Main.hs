@@ -16,7 +16,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), appendMessage, creator, getFlow, metadata, payload, readMessages, setCreator, setFlow, setVisited)
+import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited)
 import MessageFlow (MessageFlow (..))
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
@@ -173,15 +173,21 @@ clientApp msgPath storeChan stateMV conn = do
                         -- it should just be sent to the store by the client worker thread (ie here)
                         -- and the requested from front coming from the store through the client main thread
                         -- it should be forwarded to the browsers by the server worker thread
-                        putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
-                        st <- takeMVar stateMV
-                        -- process
-                        processedMsg <- processMessage stateMV msg
-                        putMVar stateMV $! foldl update st processedMsg
-                        -- send to the Store
-                        putStrLn $ "Send back this msg to the store: " ++ show processedMsg
-                        mapM_ (appendMessage msgPath) processedMsg
-                        mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
+                        case lastVisited msg of
+                            Store -> do
+                                putStrLn $ "\nForwarding to the front this msg coming from the store: " ++ show msg
+                                st <- takeMVar stateMV
+                                -- process
+                                processedMsg <- processMessage stateMV msg
+                                putMVar stateMV $! foldl update st processedMsg
+                                -- send to the Store
+                                putStrLn $ "Send back this processed msgs to the store: " ++ show processedMsg
+                                mapM_ (appendMessage msgPath) processedMsg
+                                mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
+                            Front -> do
+                                putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
+                                WS.sendTextData conn $ JSON.encode msg
+                            _ -> return ()
                     _ -> return ()
                 _ -> return ()
 
