@@ -1,4 +1,4 @@
-port module Message exposing (Connection, Message(..), Metadata, Origin(..), Payload(..), base, compare, decoder, encode, exceptIC, getTime, metadataCompare, readMessages, renewSeed, storeMessages, storeMessagesToSend)
+port module Message exposing (Connection, Message(..), MessageId, Metadata, Origin(..), Payload(..), base, compare, compareMessageId, compareMetadataId, decoder, encode, exceptIC, getTime, messageId, metadataCompare, readMessages, renewSeed, storeMessages, storeMessagesToSend)
 
 import Agent.Agent as Agent exposing (Agent)
 import AgentType.AgentType as AgentType exposing (AgentType)
@@ -15,7 +15,7 @@ import Group.Link as GroupLink
 import GroupType.GroupType as GroupType exposing (GroupType)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Json.Decode as Decode exposing (Decoder, andThen)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import MessageFlow exposing (MessageFlow)
 import Prng.Uuid as Uuid exposing (Uuid)
@@ -63,6 +63,25 @@ type alias Metadata =
     , from : List Origin -- the path of visited services, the last is the creator
     , flow : MessageFlow
     }
+
+
+type alias MessageId =
+    ( Uuid, MessageFlow )
+
+
+compareMetadataId : Metadata -> String
+compareMetadataId m =
+    Uuid.toString m.uuid ++ "/" ++ MessageFlow.toString m.flow
+
+
+compareMessageId : MessageId -> String
+compareMessageId ( uuid, flow ) =
+    Uuid.toString uuid ++ "/" ++ MessageFlow.toString flow
+
+
+messageId : Metadata -> MessageId
+messageId m =
+    ( m.uuid, m.flow )
 
 
 type Origin
@@ -126,7 +145,7 @@ type Payload
 
 type alias Connection =
     { lastMessageTime : Time.Posix
-    , uuids : Dict String Metadata
+    , uuids : Dict String ( Uuid, MessageFlow )
     }
 
 
@@ -203,6 +222,11 @@ encodeMetadata b =
         ]
 
 
+encodeTuple : (a -> Encode.Value) -> (b -> Encode.Value) -> ( a, b ) -> Encode.Value
+encodeTuple enc1 enc2 ( val1, val2 ) =
+    Encode.list identity [ enc1 val1, enc2 val2 ]
+
+
 encodePayload : Payload -> Encode.Value
 encodePayload payload =
     case payload of
@@ -215,7 +239,7 @@ encodePayload payload =
                 , ( "load"
                   , Encode.object
                         [ ( "lastMessageTime", Encode.int <| posixToMillis c.lastMessageTime )
-                        , ( "uuids", Encode.list encodeMetadata (Dict.values c.uuids) )
+                        , ( "uuids", Encode.list (encodeTuple Uuid.encode MessageFlow.encode) (Dict.values c.uuids) )
                         ]
                   )
                 ]
@@ -521,11 +545,18 @@ originDecoder =
             )
 
 
+decodeUuids : Decode.Decoder ( Uuid, MessageFlow )
+decodeUuids =
+    Decode.map2 Tuple.pair
+        (Decode.index 0 Uuid.decoder)
+        (Decode.index 1 MessageFlow.decoder)
+
+
 metadataDecoder : Decoder Metadata
 metadataDecoder =
     Decode.map4 Metadata
         (Decode.field "uuid" Uuid.decoder)
-        (Decode.field "when" Decode.int |> andThen toPosix)
+        (Decode.field "when" Decode.int |> Decode.andThen toPosix)
         (Decode.field "from" <| Decode.list originDecoder)
         (Decode.field "flow" MessageFlow.decoder)
 
@@ -538,7 +569,7 @@ metadataCompare m =
 payloadDecoder : Decoder Payload
 payloadDecoder =
     Decode.field "what" Decode.string
-        |> andThen
+        |> Decode.andThen
             (\t ->
                 case t of
                     "Null" ->
@@ -548,8 +579,11 @@ payloadDecoder =
                         Decode.map InitiatedConnection
                             (Decode.field "load"
                                 (Decode.map2 Connection
-                                    (Decode.field "lastMessageTime" Decode.int |> andThen toPosix)
-                                    (Decode.field "uuids" (Decode.list metadataDecoder) |> andThen (List.map (\u -> ( metadataCompare u, u )) >> Dict.fromList >> Decode.succeed))
+                                    (Decode.field "lastMessageTime" Decode.int |> Decode.andThen toPosix)
+                                    (Decode.field "uuids" (Decode.list decodeUuids)
+                                        |> Decode.andThen (\l -> Decode.succeed (List.map (\i -> ( compareMessageId i, i )) l))
+                                        |> Decode.andThen (\l -> Decode.succeed (Dict.fromList l))
+                                    )
                                 )
                             )
 

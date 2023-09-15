@@ -8,7 +8,7 @@ import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
-import Data.List.NonEmpty qualified as NonEmpty
+import Data.List qualified as List
 import Data.Map.Strict as Map (Map, delete, empty, insert)
 import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
@@ -16,7 +16,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited)
+import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited, MessageId)
 import MessageFlow (MessageFlow (..))
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
@@ -36,7 +36,7 @@ type Port = Int
 
 data State = State
     { pending :: Map UUID Message
-    , uuids :: Set Metadata
+    , uuids :: Set MessageId
     , syncing :: Bool
     }
     deriving (Show)
@@ -121,7 +121,7 @@ serverApp msgPath chan stateMV pending_conn = do
                             putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
                             esevs <- readMessages msgPath
-                            let msgs = filter (\e -> metadata e `notElem` remoteUuids) esevs
+                            let msgs = filter (\m -> (uuid $ metadata m, flow $ metadata m) `notElem` remoteUuids) esevs
                             mapM_ (WS.sendTextData conn . JSON.encode) msgs
                             putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client: " ++ show msgs
                         _ -> do
@@ -129,7 +129,7 @@ serverApp msgPath chan stateMV pending_conn = do
                                 Requested -> do
                                     st <- readMVar stateMV
                                     case from of
-                                        Front -> Monad.when (metadata msg `notElem` Main.uuids st) $ do
+                                        Front -> Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st) $ do
                                             let msg' = setVisited Studio msg
                                             appendMessage msgPath msg'
                                             state <- takeMVar stateMV
@@ -139,8 +139,6 @@ serverApp msgPath chan stateMV pending_conn = do
                                             writeChan browserChan msg'
                                         _ -> return ()
                                 _ -> return ()
-                -- TODO manage effects
-                -- handle the message
                 Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
 clientApp :: FilePath -> Chan Message -> StateMV -> WS.ClientApp ()
@@ -153,7 +151,7 @@ clientApp msgPath storeChan stateMV conn = do
     -- send an initiatedConnection
     let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = NonEmpty.singleton Studio, flow = Requested})
+                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = List.singleton Studio, flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
     -- Just reconnected, send the pending messages to the Store
@@ -205,7 +203,7 @@ clientApp msgPath storeChan stateMV conn = do
                 case flow (metadata msg) of
                     Requested -> case creator msg of
                         Front ->
-                            Monad.when (metadata msg `notElem` Main.uuids st') $ do
+                            Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st') $ do
                                 -- send msg to the worker thread and to other connected clients
                                 Monad.unless (syncing st') $ do
                                     putStrLn "\nWriting to the chan"
@@ -217,7 +215,7 @@ clientApp msgPath storeChan stateMV conn = do
                         _ -> return ()
                     Processed -> case creator msg of
                         Studio -> do
-                            Monad.when (metadata msg `notElem` Main.uuids st') $ do
+                            Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st') $ do
                                 -- send msg to the worker thread and to other connected clients
                                 Monad.unless (syncing st') $ do
                                     putStrLn "\nWriting to the chan"
@@ -238,12 +236,12 @@ update state msg =
             _ ->
                 state
                     { pending = Map.insert (Metadata.uuid (metadata msg)) msg $ pending state
-                    , Main.uuids = Set.insert (metadata msg) (Main.uuids state)
+                    , Main.uuids = Set.insert (uuid $ metadata msg, flow $ metadata msg) (Main.uuids state)
                     }
         Processed ->
             state
                 { pending = Map.delete (Metadata.uuid (metadata msg)) $ pending state
-                , Main.uuids = Set.insert (metadata msg) (Main.uuids state)
+                , Main.uuids = Set.insert (uuid $ metadata msg, flow $ metadata msg) (Main.uuids state)
                 }
         Error _ -> state
 
