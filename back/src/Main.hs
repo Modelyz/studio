@@ -8,6 +8,7 @@ import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict as Map (Map, delete, empty, insert)
 import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
@@ -15,7 +16,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), appendMessage, getFlow, metadata, payload, readMessages, setCreator, setFlow)
+import Message (Message (..), Payload (..), appendMessage, creator, getFlow, metadata, payload, readMessages, setCreator, setFlow, setVisited)
 import MessageFlow (MessageFlow (..))
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
@@ -87,7 +88,7 @@ serverApp msgPath chan stateMV pending_conn = do
                     client <- readMVar clientMV
                     putStrLn $ "Connected client: " ++ show client -- display the client name instead
                     case getFlow msg of
-                        Processed -> case from (metadata msg) of
+                        Processed -> case creator msg of
                             Studio -> do
                                 putStrLn $ "\nGot stuff through the chan from browser. Sent through WS : " ++ show msg
                                 (WS.sendTextData conn . JSON.encode) msg
@@ -109,7 +110,7 @@ serverApp msgPath chan stateMV pending_conn = do
                     WS.Binary bs -> WS.fromLazyByteString bs
                 ) of
                 Right msg -> do
-                    let from = Metadata.from $ metadata msg
+                    let from = creator msg
                     case payload msg of
                         InitiatedConnection connection -> do
                             -- if the message is a InitiatedConnection, get the uuid list from it,
@@ -130,13 +131,14 @@ serverApp msgPath chan stateMV pending_conn = do
                                     case from of
                                         Front -> Monad.when (metadata msg `notElem` Main.uuids st) $ do
                                             -- store the message in the message store
-                                            appendMessage msgPath msg
+                                            let msg' = setVisited Studio msg
+                                            appendMessage msgPath msg'
                                             -- update the state and get the list of new generated messages
                                             state <- takeMVar stateMV
-                                            let newState = update state msg
+                                            let newState = update state msg'
                                             putMVar stateMV $! newState
                                             putStrLn "updated state"
-                                            writeChan browserChan msg
+                                            writeChan browserChan msg'
                                         _ -> return ()
                                 _ -> return ()
                 -- TODO manage effects
@@ -153,7 +155,7 @@ clientApp msgPath storeChan stateMV conn = do
     -- send an initiatedConnection
     let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = Studio, flow = Requested})
+                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = NonEmpty.singleton Studio, flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
     -- Just reconnected, send the pending messages to the Store
@@ -165,7 +167,7 @@ clientApp msgPath storeChan stateMV conn = do
         Monad.forever $ do
             msg <- readChan storeChan -- here we get all messages from all browsers
             case flow (metadata msg) of
-                Requested -> case from (metadata msg) of
+                Requested -> case creator msg of
                     Front -> do
                         -- here we get the requested from front coming from the browser through the server main thread
                         -- it should just be sent to the store by the client worker thread (ie here)
@@ -197,7 +199,7 @@ clientApp msgPath storeChan stateMV conn = do
             Right msg -> do
                 st' <- readMVar stateMV
                 case flow (metadata msg) of
-                    Requested -> case from (metadata msg) of
+                    Requested -> case creator msg of
                         Front ->
                             Monad.when (metadata msg `notElem` Main.uuids st') $ do
                                 -- send msg to the worker thread and to other connected clients
@@ -209,7 +211,7 @@ clientApp msgPath storeChan stateMV conn = do
                                 putMVar stateMV $! update st'' msg
                                 putStrLn "updated state"
                         _ -> return ()
-                    Processed -> case from (metadata msg) of
+                    Processed -> case creator msg of
                         Studio -> do
                             Monad.when (metadata msg `notElem` Main.uuids st') $ do
                                 -- send msg to the worker thread and to other connected clients
