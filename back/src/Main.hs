@@ -130,10 +130,8 @@ serverApp msgPath chan stateMV pending_conn = do
                                     st <- readMVar stateMV
                                     case from of
                                         Front -> Monad.when (metadata msg `notElem` Main.uuids st) $ do
-                                            -- store the message in the message store
                                             let msg' = setVisited Studio msg
                                             appendMessage msgPath msg'
-                                            -- update the state and get the list of new generated messages
                                             state <- takeMVar stateMV
                                             let newState = update state msg'
                                             putMVar stateMV $! newState
