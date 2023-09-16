@@ -180,7 +180,7 @@ clientApp msgPath storeChan stateMV conn = do
                                 -- send to the Store
                                 putStrLn $ "Send back this processed msgs to the store:\n" ++ show processedMsg
                                 mapM_ (appendMessage msgPath) processedMsg
-                                mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) processedMsg
+                                mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
                             Front -> do
                                 putStrLn "Forwarding to the store"
                                 WS.sendTextData conn $ JSON.encode $ addVisited Studio msg
