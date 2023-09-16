@@ -16,7 +16,7 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited, MessageId)
+import Message (Message (..), MessageId, Payload (..), appendMessage, creator, getFlow, lastVisited, messageId, metadata, payload, readMessages, setCreator, setFlow, setVisited)
 import MessageFlow (MessageFlow (..))
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
@@ -202,29 +202,35 @@ clientApp msgPath storeChan stateMV conn = do
                 st' <- readMVar stateMV
                 case flow (metadata msg) of
                     Requested -> case creator msg of
-                        Front ->
-                            Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st') $ do
-                                -- send msg to the worker thread and to other connected clients
-                                Monad.unless (syncing st') $ do
-                                    putStrLn "\nWriting to the chan"
-                                    writeChan storeChan msg
+                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
+                            let msg' = setVisited Studio msg
+                            appendMessage msgPath msg'
+                            -- Add it or remove to the pending list (if relevant) and keep the uuid
+                            st'' <- takeMVar stateMV
+                            putMVar stateMV $! update st'' msg
+                            putStrLn "updated state"
+                            -- send msg to the worker thread and to other connected clients
+                            Monad.unless (syncing st') $ do
+                                putStrLn "\nWriting to the chan"
+                                writeChan storeChan msg
+                        _ -> return ()
+                    Processed ->
+                        case payload msg of
+                            InitiatedConnection _ -> do
+                                st''' <- takeMVar stateMV
+                                putMVar stateMV $! st'''{syncing = False}
+                                putStrLn "Left the syncing mode"
+                            _ -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
+                                let msg' = setVisited Studio msg
+                                appendMessage msgPath msg'
                                 -- Add it or remove to the pending list (if relevant) and keep the uuid
                                 st'' <- takeMVar stateMV
                                 putMVar stateMV $! update st'' msg
                                 putStrLn "updated state"
-                        _ -> return ()
-                    Processed -> case creator msg of
-                        Studio -> do
-                            Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st') $ do
                                 -- send msg to the worker thread and to other connected clients
                                 Monad.unless (syncing st') $ do
                                     putStrLn "\nWriting to the chan"
                                     writeChan storeChan msg
-                                -- Add it or remove to the pending list (if relevant) and keep the uuid
-                                st'' <- takeMVar stateMV
-                                putMVar stateMV $! update st'' msg
-                                putStrLn "updated state"
-                        _ -> return ()
                     _ -> return ()
             Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
 
