@@ -1,11 +1,9 @@
-port module Message exposing (Message(..), MessageId, base, compare, compareMessageId, decoder, encode, exceptIC, getTime, readMessages, renewSeed, storeMessages, storeMessagesToSend)
+port module Message exposing (Message(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, renewSeed, storeMessages, storeMessagesToSend)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import MessageFlow exposing (MessageFlow)
 import Metadata exposing (Metadata)
 import Payload exposing (Payload(..))
-import Prng.Uuid as Uuid exposing (Uuid)
 import Time exposing (posixToMillis)
 
 
@@ -35,15 +33,6 @@ port renewSeed : () -> Cmd msg
 
 
 -- application/user messages --
-
-
-type alias MessageId =
-    ( Uuid, MessageFlow )
-
-
-compareMessageId : MessageId -> String
-compareMessageId ( uuid, flow ) =
-    Uuid.toString uuid ++ "/" ++ MessageFlow.toString flow
 
 
 type Message

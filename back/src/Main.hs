@@ -8,14 +8,13 @@ import Control.Monad.Fix (fix)
 import Data.Aeson qualified as JSON (eitherDecode, encode)
 import Data.ByteString qualified as BS (append)
 import Data.Function ((&))
-import Data.List qualified as List
 import Data.Map.Strict as Map (Map, delete, empty, insert)
 import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited)
+import Message (Message (..), Payload (..), addVisited, appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow)
 import MessageFlow (MessageFlow (..))
 import MessageId (MessageId, messageId)
 import Metadata (Metadata (..), Origin (..))
@@ -74,7 +73,7 @@ serverApp msgPath chan stateMV pending_conn = do
     -- accept a new connexion
     conn <- WS.acceptRequest pending_conn
     -- increment the client number
-    putStrLn "\nNew browser connected"
+    putStrLn "New browser connected"
 
     _ <- do
         -- SERVER WORKER THREAD (one per client thread)
@@ -85,13 +84,17 @@ serverApp msgPath chan stateMV pending_conn = do
             fix
                 ( \loop -> do
                     msg <- readChan browserChan
+                    putStrLn $ "SERVER WORKER THREAD got this msg from the chan:\n" ++ show msg
                     client <- readMVar clientMV
                     putStrLn $ "Connected client: " ++ show client -- display the client name instead
                     case getFlow msg of
                         Processed -> case creator msg of
                             Studio -> do
-                                putStrLn $ "\nGot stuff through the chan from browser. Sent through WS : " ++ show msg
-                                (WS.sendTextData conn . JSON.encode) msg
+                                putStrLn $ "Sending to " ++ show client
+                                (WS.sendTextData conn . JSON.encode) (addVisited Studio msg)
+                            Ident -> do
+                                putStrLn $ "Sending to " ++ show client
+                                (WS.sendTextData conn . JSON.encode) (addVisited Studio msg)
                             _ -> return ()
                         _ -> return ()
                     loop
@@ -101,9 +104,8 @@ serverApp msgPath chan stateMV pending_conn = do
     -- handle message coming through websocket from the currently connected browser
     WS.withPingThread conn 30 (return ()) $
         Monad.forever $ do
-            putStrLn "\nWaiting for new message from browser"
             message <- WS.receiveDataMessage conn
-            putStrLn $ "\nReceived stuff through websocket from browser. Handling it : " ++ show message
+            putStrLn $ "SERVER MAIN THREAD got this msg from browsers:\n" ++ show message
             case JSON.eitherDecode
                 ( case message of
                     WS.Text bs _ -> WS.fromLazyByteString bs
@@ -122,24 +124,23 @@ serverApp msgPath chan stateMV pending_conn = do
                             let remoteUuids = Connection.uuids connection
                             esevs <- readMessages msgPath
                             let msgs = filter (\m -> messageId (metadata m) `notElem` remoteUuids) esevs
-                            mapM_ (WS.sendTextData conn . JSON.encode) msgs
-                            putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client: " ++ show msgs
+                            mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) msgs
+                            putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to client:\n" ++ show msgs
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> do
                                     st <- readMVar stateMV
                                     case from of
                                         Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
-                                            let msg' = setVisited Studio msg
-                                            appendMessage msgPath msg'
+                                            appendMessage msgPath msg
                                             state <- takeMVar stateMV
-                                            let newState = update state msg'
+                                            let newState = update state msg
                                             putMVar stateMV $! newState
                                             putStrLn "updated state"
-                                            writeChan browserChan msg'
+                                            writeChan browserChan msg
                                         _ -> return ()
                                 _ -> return ()
-                Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
+                Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
 clientApp :: FilePath -> Chan Message -> StateMV -> WS.ClientApp ()
 clientApp msgPath storeChan stateMV conn = do
@@ -151,17 +152,17 @@ clientApp msgPath storeChan stateMV conn = do
     -- send an initiatedConnection
     let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = List.singleton Studio, flow = Requested})
+                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = [Studio], flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
     -- Just reconnected, send the pending messages to the Store
-    mapM_ (WS.sendTextData conn . JSON.encode) (pending state)
+    mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) (pending state)
     -- fork a thread to send back data from the channel to the central store
     -- CLIENT WORKER THREAD
     _ <- forkIO $ do
-        putStrLn "Waiting for messages coming from the client browsers through the chan"
         Monad.forever $ do
             msg <- readChan storeChan -- here we get all messages from all browsers
+            putStrLn $ "CLIENT WORKER THREAD got this msg from the chan:\n" ++ show msg
             case flow (metadata msg) of
                 Requested -> case creator msg of
                     Front -> do
@@ -171,18 +172,18 @@ clientApp msgPath storeChan stateMV conn = do
                         -- it should be forwarded to the browsers by the server worker thread
                         case lastVisited msg of
                             Store -> do
-                                putStrLn $ "\nForwarding to the front this msg coming from the store: " ++ show msg
+                                putStrLn "Forwarding to the front"
                                 st <- takeMVar stateMV
                                 -- process
                                 processedMsg <- processMessage stateMV msg
                                 putMVar stateMV $! foldl update st processedMsg
                                 -- send to the Store
-                                putStrLn $ "Send back this processed msgs to the store: " ++ show processedMsg
+                                putStrLn $ "Send back this processed msgs to the store:\n" ++ show processedMsg
                                 mapM_ (appendMessage msgPath) processedMsg
-                                mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
-                            Studio -> do
-                                putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
-                                WS.sendTextData conn $ JSON.encode msg
+                                mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) processedMsg
+                            Front -> do
+                                putStrLn "Forwarding to the store"
+                                WS.sendTextData conn $ JSON.encode $ addVisited Studio msg
                             _ -> return ()
                     _ -> return ()
                 _ -> return ()
@@ -192,7 +193,7 @@ clientApp msgPath storeChan stateMV conn = do
     Monad.forever $ do
         putStrLn "Waiting for messages coming from the store"
         message <- WS.receiveDataMessage conn
-        putStrLn $ "\nReceived msg through websocket from the Store: " ++ show message
+        putStrLn $ "CLIENT MAIN THREAD received msg through websocket from the Store:\n" ++ show message
         case JSON.eitherDecode
             ( case message of
                 WS.Text bs _ -> WS.fromLazyByteString bs
@@ -203,15 +204,14 @@ clientApp msgPath storeChan stateMV conn = do
                 case flow (metadata msg) of
                     Requested -> case creator msg of
                         Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
-                            let msg' = setVisited Studio msg
-                            appendMessage msgPath msg'
+                            appendMessage msgPath msg
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
                             st'' <- takeMVar stateMV
                             putMVar stateMV $! update st'' msg
                             putStrLn "updated state"
                             -- send msg to the worker thread and to other connected clients
                             Monad.unless (syncing st') $ do
-                                putStrLn "\nWriting to the chan"
+                                putStrLn "Writing to the chan"
                                 writeChan storeChan msg
                         _ -> return ()
                     Processed ->
@@ -221,18 +221,17 @@ clientApp msgPath storeChan stateMV conn = do
                                 putMVar stateMV $! st'''{syncing = False}
                                 putStrLn "Left the syncing mode"
                             _ -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
-                                let msg' = setVisited Studio msg
-                                appendMessage msgPath msg'
+                                appendMessage msgPath msg
                                 -- Add it or remove to the pending list (if relevant) and keep the uuid
                                 st'' <- takeMVar stateMV
                                 putMVar stateMV $! update st'' msg
                                 putStrLn "updated state"
                                 -- send msg to the worker thread and to other connected clients
                                 Monad.unless (syncing st') $ do
-                                    putStrLn "\nWriting to the chan"
+                                    putStrLn "Writing to the chan"
                                     writeChan storeChan msg
                     _ -> return ()
-            Left err -> putStrLn $ "\nError decoding incoming message: " ++ err
+            Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
 update :: State -> Message -> State
 update state msg =
