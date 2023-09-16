@@ -17,7 +17,7 @@ import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
-import Message
+import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
@@ -267,16 +267,16 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedEventType t
-                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
-                                ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                            (Payload.AddedEventType t
+                                :: List.map Payload.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Payload.AddedValue (Dict.values model.values)
+                                ++ List.map (\uuid -> Payload.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Payload.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                                 ++ (if model.hadMenu == model.isMenu then
                                         []
 
                                     else
-                                        [ Message.Configured <| MenuDisplay {what=HType.EventType, uuid=t.uuid, isMenu=model.isMenu} ]
+                                        [ Payload.Configured <| MenuDisplay {what=HType.EventType, uuid=t.uuid, isMenu=model.isMenu} ]
                                    )
                             )
                         , redirect s.navkey (Route.Entity Route.EventType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd

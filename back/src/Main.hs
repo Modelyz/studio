@@ -14,10 +14,10 @@ import Data.Set as Set (Set, empty, insert)
 import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
-import Data.UUID (UUID)
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), MessageId, Payload (..), appendMessage, creator, getFlow, lastVisited, messageId, metadata, payload, readMessages, setCreator, setFlow, setVisited)
+import Message (Message (..), Payload (..), appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow, setVisited)
 import MessageFlow (MessageFlow (..))
+import MessageId (MessageId, messageId)
 import Metadata (Metadata (..), Origin (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
@@ -35,7 +35,7 @@ type Host = String
 type Port = Int
 
 data State = State
-    { pending :: Map UUID Message
+    { pending :: Map MessageId Message
     , uuids :: Set MessageId
     , syncing :: Bool
     }
@@ -121,7 +121,7 @@ serverApp msgPath chan stateMV pending_conn = do
                             putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
                             esevs <- readMessages msgPath
-                            let msgs = filter (\m -> (uuid $ metadata m, flow $ metadata m) `notElem` remoteUuids) esevs
+                            let msgs = filter (\m -> messageId (metadata m) `notElem` remoteUuids) esevs
                             mapM_ (WS.sendTextData conn . JSON.encode) msgs
                             putStrLn $ "\nSent all missing " ++ show (length msgs) ++ " messages to client: " ++ show msgs
                         _ -> do
@@ -129,7 +129,7 @@ serverApp msgPath chan stateMV pending_conn = do
                                 Requested -> do
                                     st <- readMVar stateMV
                                     case from of
-                                        Front -> Monad.when ((uuid $ metadata msg, flow $ metadata msg) `notElem` Main.uuids st) $ do
+                                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
                                             let msg' = setVisited Studio msg
                                             appendMessage msgPath msg'
                                             state <- takeMVar stateMV
@@ -180,7 +180,7 @@ clientApp msgPath storeChan stateMV conn = do
                                 putStrLn $ "Send back this processed msgs to the store: " ++ show processedMsg
                                 mapM_ (appendMessage msgPath) processedMsg
                                 mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
-                            Front -> do
+                            Studio -> do
                                 putStrLn $ "\nForwarding to the store this msg coming from browser: " ++ show msg
                                 WS.sendTextData conn $ JSON.encode msg
                             _ -> return ()
@@ -241,13 +241,13 @@ update state msg =
             InitiatedConnection _ -> state
             _ ->
                 state
-                    { pending = Map.insert (Metadata.uuid (metadata msg)) msg $ pending state
-                    , Main.uuids = Set.insert (uuid $ metadata msg, flow $ metadata msg) (Main.uuids state)
+                    { pending = Map.insert (messageId (metadata msg)) msg $ pending state
+                    , Main.uuids = Set.insert (messageId (metadata msg)) (Main.uuids state)
                     }
         Processed ->
             state
-                { pending = Map.delete (Metadata.uuid (metadata msg)) $ pending state
-                , Main.uuids = Set.insert (uuid $ metadata msg, flow $ metadata msg) (Main.uuids state)
+                { pending = Map.delete (messageId (metadata msg)) $ pending state
+                , Main.uuids = Set.insert (messageId (metadata msg)) (Main.uuids state)
                 }
         Error _ -> state
 
@@ -274,7 +274,7 @@ processMessage _ msg = do
         AddedIdentifierType _ -> return []
         RemovedIdentifierType _ -> return []
         ChangedIdentifierType _ _ -> return []
-        _ -> return [setFlow Processed $ setCreator Studio msg]
+        _ -> return [setFlow Processed $ setCreator Studio msg] -- TODO change the date as well!
 
 maxWait :: Int
 maxWait = 10

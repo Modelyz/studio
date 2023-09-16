@@ -8,7 +8,7 @@ import Element.Input as Input
 import Html.Attributes as Attr
 import Ident.Fragment as Fragment exposing (Fragment(..))
 import Ident.IdentifierType exposing (IdentifierType)
-import Message
+import Payload
 import Route exposing (Route, redirect)
 import Scope exposing (Scope)
 import Scope.View exposing (selectScope)
@@ -179,8 +179,8 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <|
-                            Maybe.withDefault (Message.AddedIdentifierType i) <|
-                                Maybe.map (\old -> Message.ChangedIdentifierType { new = i, old = old }) model.old
+                            Maybe.withDefault (Payload.AddedIdentifierType i) <|
+                                Maybe.map (\old -> Payload.ChangedIdentifierType { new = i, old = old }) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType (Route.List Nothing)
                         ]
                     )

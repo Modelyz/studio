@@ -5,7 +5,7 @@ import Configuration.View
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
-import Message
+import Payload
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -57,7 +57,7 @@ update s msg model =
     case msg of
         Removed c ->
             ( model
-            , Shared.dispatch s <| Message.Unconfigured c
+            , Shared.dispatch s <| Payload.Unconfigured c
             )
 
         Add ->

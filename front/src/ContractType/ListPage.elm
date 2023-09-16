@@ -4,7 +4,7 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Hierarchy.Type as HType
-import Message exposing (Payload(..))
+import Payload exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Route exposing (Route)
 import Scope exposing (Scope(..))

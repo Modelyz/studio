@@ -4,7 +4,7 @@ import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
 import Ident.IdentifierType as IT exposing (IdentifierType)
-import Message
+import Payload
 import Route exposing (Route, redirect)
 import Scope.View
 import Shared
@@ -57,7 +57,7 @@ update s msg model =
     case msg of
         Removed i ->
             ( model
-            , Shared.dispatch s <| Message.RemovedIdentifierType i
+            , Shared.dispatch s <| Payload.RemovedIdentifierType i
             )
 
         Add ->

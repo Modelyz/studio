@@ -16,8 +16,10 @@ import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Message exposing (Message(..), MessageId, Payload(..), compareMetadataId, messageId)
+import Message exposing (Message(..))
 import MessageFlow exposing (MessageFlow(..))
+import Metadata exposing (Metadata)
+import Payload exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation)
@@ -42,7 +44,7 @@ type alias State =
 
     {- probably unusedful: -}
     , lastMessageTime : Time.Posix -- time of the last message
-    , uuids : Dict String MessageId -- the uuids of all messages
+    , uuids : Dict String Metadata -- the uuids of all messages
 
     -- entities
     , resources : Dict String Resource
@@ -133,7 +135,7 @@ aggregate (Message m p) state =
             { state
                 | lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedIdentifierType it ->
@@ -141,7 +143,7 @@ aggregate (Message m p) state =
                 | identifierTypes = Dict.insert (IdentifierType.compare it) it state.identifierTypes
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         ChangedIdentifierType c ->
@@ -181,7 +183,7 @@ aggregate (Message m p) state =
                             (\_ i -> i.name /= it.name || not (containsScope state.types (IsItem i.what i.for) it.scope))
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedValueType it ->
@@ -189,7 +191,7 @@ aggregate (Message m p) state =
                 | valueTypes = Dict.insert (ValueType.compare it) it state.valueTypes
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         ChangedValueType c ->
@@ -228,7 +230,7 @@ aggregate (Message m p) state =
                             (\_ v -> (v.name /= vt.name) || not (containsScope state.types (IsItem v.what v.for) vt.scope))
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedValue v ->
@@ -236,7 +238,7 @@ aggregate (Message m p) state =
                 | values = Dict.insert (Value.compare v) v state.values
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedResourceType rt ->
@@ -245,7 +247,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString rt.uuid) ( rt.uuid, Type.HType HType.ResourceType, rt.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedResourceType uuid ->
@@ -254,7 +256,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedEventType et ->
@@ -263,7 +265,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString et.uuid) ( et.uuid, Type.HType HType.EventType, et.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedEventType uuid ->
@@ -272,7 +274,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedAgentType at ->
@@ -281,7 +283,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString at.uuid) ( at.uuid, Type.HType HType.AgentType, at.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedAgentType uuid ->
@@ -290,7 +292,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedCommitmentType cmt ->
@@ -299,7 +301,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString cmt.uuid) ( cmt.uuid, Type.HType HType.CommitmentType, cmt.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedCommitmentType uuid ->
@@ -308,7 +310,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedContractType cnt ->
@@ -317,7 +319,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString cnt.uuid) ( cnt.uuid, Type.HType HType.ContractType, cnt.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedContractType uuid ->
@@ -326,7 +328,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedProcessType pt ->
@@ -335,7 +337,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString pt.uuid) ( pt.uuid, Type.HType HType.ProcessType, pt.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedProcessType uuid ->
@@ -344,7 +346,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedResource r ->
@@ -353,7 +355,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString r.uuid) ( r.uuid, Type.TType TType.Resource, Just r.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedResource uuid ->
@@ -362,7 +364,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedEvent e ->
@@ -371,7 +373,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString e.uuid) ( e.uuid, Type.TType TType.Event, Just e.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedEvent uuid ->
@@ -380,7 +382,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedAgent a ->
@@ -389,7 +391,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString a.uuid) ( a.uuid, Type.TType TType.Agent, Just a.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedAgent uuid ->
@@ -398,7 +400,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedCommitment cm ->
@@ -407,7 +409,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString cm.uuid) ( cm.uuid, Type.TType TType.Commitment, Just cm.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedCommitment uuid ->
@@ -416,7 +418,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedContract cn ->
@@ -425,7 +427,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString cn.uuid) ( cn.uuid, Type.TType TType.Contract, Just cn.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedContract uuid ->
@@ -434,7 +436,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedProcess pr ->
@@ -443,7 +445,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString pr.uuid) ( pr.uuid, Type.TType TType.Process, Just pr.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedProcess uuid ->
@@ -453,7 +455,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedIdentifier ei ->
@@ -461,7 +463,7 @@ aggregate (Message m p) state =
                 | identifiers = Dict.insert (Identifier.compare ei) ei state.identifiers
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Configured conf ->
@@ -469,7 +471,7 @@ aggregate (Message m p) state =
                 | configs = Dict.insert (Configuration.compare conf) conf state.configs
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Unconfigured conf ->
@@ -477,7 +479,7 @@ aggregate (Message m p) state =
                 | configs = Dict.remove (Configuration.compare conf) state.configs
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedGroupType gt ->
@@ -486,7 +488,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString gt.uuid) ( gt.uuid, Type.HType HType.GroupType, gt.parent ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedGroupType uuid ->
@@ -495,7 +497,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         DefinedGroup g ->
@@ -504,7 +506,7 @@ aggregate (Message m p) state =
                 , types = Dict.insert (Uuid.toString g.uuid) ( g.uuid, Type.TType TType.Group, Just g.type_ ) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedGroup uuid ->
@@ -513,7 +515,7 @@ aggregate (Message m p) state =
                 , types = Dict.remove (Uuid.toString uuid) state.types
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Grouped link ->
@@ -521,7 +523,7 @@ aggregate (Message m p) state =
                 | grouped = Dict.insert (GroupLink.compare link) link state.grouped
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Ungrouped link ->
@@ -529,7 +531,7 @@ aggregate (Message m p) state =
                 | grouped = Dict.remove (GroupLink.compare link) state.grouped
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Reconciled reconciliation ->
@@ -537,7 +539,7 @@ aggregate (Message m p) state =
                 | reconciliations = Dict.insert (Reconcile.compare reconciliation) reconciliation state.reconciliations
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Unreconciled reconciliation ->
@@ -545,7 +547,7 @@ aggregate (Message m p) state =
                 | reconciliations = Dict.remove (Reconcile.compare reconciliation) state.reconciliations
                 , lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (compareMetadataId m) (messageId m) state.uuids
+                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
 

@@ -11,7 +11,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Attr
-import Message
+import Payload
 import Route exposing (Route, redirect)
 import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
@@ -160,7 +160,7 @@ update s msg model =
                 Ok c ->
                     ( model
                     , Effect.batch
-                        [ Shared.dispatch s <| Message.Configured c
+                        [ Shared.dispatch s <| Payload.Configured c
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.List Nothing)
                         ]
                     )

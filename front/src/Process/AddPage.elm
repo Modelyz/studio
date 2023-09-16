@@ -14,7 +14,7 @@ import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
-import Message
+import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialEvents, toPartialEvents)
@@ -223,13 +223,13 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedProcess t
-                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
-                                ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
-                                ++ List.map Message.Reconciled (Dict.values model.reconciliations)
-                                ++ List.map Message.Unreconciled (Dict.values <| Dict.diff model.oldReconciliations model.reconciliations)
+                            (Payload.AddedProcess t
+                                :: List.map Payload.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Payload.AddedValue (Dict.values model.values)
+                                ++ List.map (\uuid -> Payload.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Payload.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                                ++ List.map Payload.Reconciled (Dict.values model.reconciliations)
+                                ++ List.map Payload.Unreconciled (Dict.values <| Dict.diff model.oldReconciliations model.reconciliations)
                             )
                         , redirect s.navkey (Route.Entity Route.Process (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
                         ]

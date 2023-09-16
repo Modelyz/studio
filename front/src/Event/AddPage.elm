@@ -25,6 +25,7 @@ import Ident.Identifiable exposing (getIdentifiers)
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.Input exposing (inputIdentifiers)
 import Message
+import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialProcesses, toPartialProcesses)
@@ -412,11 +413,11 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Message.AddedEvent e
-                                :: List.map Message.AddedIdentifier (Dict.values model.identifiers)
-                                ++ List.map Message.AddedValue (Dict.values model.values)
-                                ++ List.map (\uuid -> Message.Grouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
-                                ++ List.map (\uuid -> Message.Ungrouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                            (Payload.AddedEvent e
+                                :: List.map Payload.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Payload.AddedValue (Dict.values model.values)
+                                ++ List.map (\uuid -> Payload.Grouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Payload.Ungrouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                                 ++ (if Dict.isEmpty model.processes then
                                         Dict.values model.processTypes
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
@@ -424,8 +425,8 @@ update s msg model =
                                                 (\( nextUuid, _, pt ) ->
                                                     Result.map
                                                         (\rational ->
-                                                            [ Message.AddedProcess <| Process TType.Process nextUuid pt
-                                                            , Message.Reconciled <| Reconciliation rational e.uuid nextUuid
+                                                            [ Payload.AddedProcess <| Process TType.Process nextUuid pt
+                                                            , Payload.Reconciled <| Reconciliation rational e.uuid nextUuid
                                                             ]
                                                         )
                                                         qty
@@ -433,7 +434,7 @@ update s msg model =
                                                 )
 
                                     else
-                                        List.map (\r -> Message.Reconciled r) <| Dict.values model.reconciliations
+                                        List.map (\r -> Payload.Reconciled r) <| Dict.values model.reconciliations
                                    )
                             )
 

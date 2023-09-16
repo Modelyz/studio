@@ -6,7 +6,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Expression.Editor exposing (view)
-import Message
+import Payload
 import Route exposing (Route, redirect)
 import Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
@@ -177,8 +177,8 @@ update s msg model =
                     ( model
                     , Effect.batch
                         [ Shared.dispatch s <|
-                            Maybe.withDefault (Message.AddedValueType v) <|
-                                Maybe.map (\old -> Message.ChangedValueType { old = old, new = v }) model.old
+                            Maybe.withDefault (Payload.AddedValueType v) <|
+                                Maybe.map (\old -> Payload.ChangedValueType { old = old, new = v }) model.old
                         , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List Nothing)
                         ]
                     )

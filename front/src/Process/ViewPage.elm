@@ -7,7 +7,7 @@ import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
-import Message exposing (Message(..))
+import Payload exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Reconcile exposing (Reconciliation)
 import Process.Reconcile.View
@@ -111,7 +111,7 @@ update s msg model =
 
         Unreconciled r ->
             ( model
-            , Shared.dispatch s (Message.Unreconciled r)
+            , Shared.dispatch s (Payload.Unreconciled r)
             )
 
 
