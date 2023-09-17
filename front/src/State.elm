@@ -127,27 +127,28 @@ empty =
 
 aggregate : Message -> State -> State
 aggregate (Message m p) state =
-    case p of
-        Null ->
-            state
-
-        InitiatedConnection _ ->
+    let
+        prepState =
             { state
                 | lastMessageTime = m.when
                 , pendingMessages = updatePending (Message m p) state.pendingMessages
                 , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
+    in
+    case p of
+        Null ->
+            state
+
+        InitiatedConnection _ ->
+            prepState
 
         AddedIdentifierType it ->
-            { state
+            { prepState
                 | identifierTypes = Dict.insert (IdentifierType.compare it) it state.identifierTypes
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         ChangedIdentifierType c ->
-            { state
+            { prepState
                 | identifierTypes =
                     Dict.insert (IdentifierType.compare c.new) c.new <|
                         Dict.remove (IdentifierType.compare c.old) state.identifierTypes
@@ -173,7 +174,7 @@ aggregate (Message m p) state =
             }
 
         RemovedIdentifierType it ->
-            { state
+            { prepState
                 | identifierTypes = Dict.remove (IdentifierType.compare it) state.identifierTypes
                 , identifiers =
                     -- keep the identifiers whose name are different from the one removed,
@@ -181,21 +182,15 @@ aggregate (Message m p) state =
                     state.identifiers
                         |> Dict.filter
                             (\_ i -> i.name /= it.name || not (containsScope state.types (IsItem i.what i.for) it.scope))
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedValueType it ->
-            { state
+            { prepState
                 | valueTypes = Dict.insert (ValueType.compare it) it state.valueTypes
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         ChangedValueType c ->
-            { state
+            { prepState
                 | valueTypes =
                     Dict.insert (ValueType.compare c.new) c.new <|
                         Dict.remove (ValueType.compare c.old) state.valueTypes
@@ -220,7 +215,7 @@ aggregate (Message m p) state =
             }
 
         RemovedValueType vt ->
-            { state
+            { prepState
                 | valueTypes = Dict.remove (ValueType.compare vt) state.valueTypes
                 , values =
                     -- keep the values whose name are different from the one removed,
@@ -228,326 +223,215 @@ aggregate (Message m p) state =
                     state.values
                         |> Dict.filter
                             (\_ v -> (v.name /= vt.name) || not (containsScope state.types (IsItem v.what v.for) vt.scope))
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedValue v ->
-            { state
+            { prepState
                 | values = Dict.insert (Value.compare v) v state.values
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedResourceType rt ->
-            { state
+            { prepState
                 | resourceTypes = Dict.insert (Uuid.toString rt.uuid) rt state.resourceTypes
                 , types = Dict.insert (Uuid.toString rt.uuid) ( rt.uuid, Type.HType HType.ResourceType, rt.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedResourceType uuid ->
-            { state
+            { prepState
                 | resourceTypes = Dict.remove (Uuid.toString uuid) state.resourceTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedEventType et ->
-            { state
+            { prepState
                 | eventTypes = Dict.insert (Uuid.toString et.uuid) et state.eventTypes
                 , types = Dict.insert (Uuid.toString et.uuid) ( et.uuid, Type.HType HType.EventType, et.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedEventType uuid ->
-            { state
+            { prepState
                 | eventTypes = Dict.remove (Uuid.toString uuid) state.eventTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedAgentType at ->
-            { state
+            { prepState
                 | agentTypes = Dict.insert (Uuid.toString at.uuid) at state.agentTypes
                 , types = Dict.insert (Uuid.toString at.uuid) ( at.uuid, Type.HType HType.AgentType, at.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedAgentType uuid ->
-            { state
+            { prepState
                 | agentTypes = Dict.remove (Uuid.toString uuid) state.agentTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedCommitmentType cmt ->
-            { state
+            { prepState
                 | commitmentTypes = Dict.insert (Uuid.toString cmt.uuid) cmt state.commitmentTypes
                 , types = Dict.insert (Uuid.toString cmt.uuid) ( cmt.uuid, Type.HType HType.CommitmentType, cmt.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedCommitmentType uuid ->
-            { state
+            { prepState
                 | commitmentTypes = Dict.remove (Uuid.toString uuid) state.commitmentTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedContractType cnt ->
-            { state
+            { prepState
                 | contractTypes = Dict.insert (Uuid.toString cnt.uuid) cnt state.contractTypes
                 , types = Dict.insert (Uuid.toString cnt.uuid) ( cnt.uuid, Type.HType HType.ContractType, cnt.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedContractType uuid ->
-            { state
+            { prepState
                 | contractTypes = Dict.remove (Uuid.toString uuid) state.contractTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedProcessType pt ->
-            { state
+            { prepState
                 | processTypes = Dict.insert (Uuid.toString pt.uuid) pt state.processTypes
                 , types = Dict.insert (Uuid.toString pt.uuid) ( pt.uuid, Type.HType HType.ProcessType, pt.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedProcessType uuid ->
-            { state
+            { prepState
                 | processTypes = Dict.remove (Uuid.toString uuid) state.processTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedResource r ->
-            { state
+            { prepState
                 | resources = Dict.insert (Uuid.toString r.uuid) r state.resources
                 , types = Dict.insert (Uuid.toString r.uuid) ( r.uuid, Type.TType TType.Resource, Just r.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedResource uuid ->
-            { state
+            { prepState
                 | resources = Dict.remove (Uuid.toString uuid) state.resources
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedEvent e ->
-            { state
+            { prepState
                 | events = Dict.insert (Uuid.toString e.uuid) e state.events
                 , types = Dict.insert (Uuid.toString e.uuid) ( e.uuid, Type.TType TType.Event, Just e.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedEvent uuid ->
-            { state
+            { prepState
                 | events = Dict.remove (Uuid.toString uuid) state.events
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedAgent a ->
-            { state
+            { prepState
                 | agents = Dict.insert (Uuid.toString a.uuid) a state.agents
                 , types = Dict.insert (Uuid.toString a.uuid) ( a.uuid, Type.TType TType.Agent, Just a.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedAgent uuid ->
-            { state
+            { prepState
                 | agents = Dict.remove (Uuid.toString uuid) state.agents
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedCommitment cm ->
-            { state
+            { prepState
                 | commitments = Dict.insert (Uuid.toString cm.uuid) cm state.commitments
                 , types = Dict.insert (Uuid.toString cm.uuid) ( cm.uuid, Type.TType TType.Commitment, Just cm.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedCommitment uuid ->
-            { state
+            { prepState
                 | commitments = Dict.remove (Uuid.toString uuid) state.commitments
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedContract cn ->
-            { state
+            { prepState
                 | contracts = Dict.insert (Uuid.toString cn.uuid) cn state.contracts
                 , types = Dict.insert (Uuid.toString cn.uuid) ( cn.uuid, Type.TType TType.Contract, Just cn.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedContract uuid ->
-            { state
+            { prepState
                 | contracts = Dict.remove (Uuid.toString uuid) state.contracts
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedProcess pr ->
-            { state
+            { prepState
                 | processes = Dict.insert (Uuid.toString pr.uuid) pr state.processes
                 , types = Dict.insert (Uuid.toString pr.uuid) ( pr.uuid, Type.TType TType.Process, Just pr.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedProcess uuid ->
-            { state
+            { prepState
                 | processes = Dict.remove (Uuid.toString uuid) state.processes
                 , reconciliations = Dict.filter (\_ r -> r.process /= uuid) state.reconciliations
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedIdentifier ei ->
-            { state
+            { prepState
                 | identifiers = Dict.insert (Identifier.compare ei) ei state.identifiers
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Configured conf ->
-            { state
+            { prepState
                 | configs = Dict.insert (Configuration.compare conf) conf state.configs
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Unconfigured conf ->
-            { state
+            { prepState
                 | configs = Dict.remove (Configuration.compare conf) state.configs
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         AddedGroupType gt ->
-            { state
+            { prepState
                 | groupTypes = Dict.insert (Uuid.toString gt.uuid) gt state.groupTypes
                 , types = Dict.insert (Uuid.toString gt.uuid) ( gt.uuid, Type.HType HType.GroupType, gt.parent ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedGroupType uuid ->
-            { state
+            { prepState
                 | groupTypes = Dict.remove (Uuid.toString uuid) state.groupTypes
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         DefinedGroup g ->
-            { state
+            { prepState
                 | groups = Dict.insert (Uuid.toString g.uuid) g state.groups
                 , types = Dict.insert (Uuid.toString g.uuid) ( g.uuid, Type.TType TType.Group, Just g.type_ ) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         RemovedGroup uuid ->
-            { state
+            { prepState
                 | groups = Dict.remove (Uuid.toString uuid) state.groups
                 , types = Dict.remove (Uuid.toString uuid) state.types
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Grouped link ->
-            { state
+            { prepState
                 | grouped = Dict.insert (GroupLink.compare link) link state.grouped
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Ungrouped link ->
-            { state
+            { prepState
                 | grouped = Dict.remove (GroupLink.compare link) state.grouped
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Reconciled reconciliation ->
-            { state
+            { prepState
                 | reconciliations = Dict.insert (Reconcile.compare reconciliation) reconciliation state.reconciliations
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
         Unreconciled reconciliation ->
-            { state
+            { prepState
                 | reconciliations = Dict.remove (Reconcile.compare reconciliation) state.reconciliations
-                , lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
             }
 
 
