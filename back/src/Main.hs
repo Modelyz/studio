@@ -66,8 +66,8 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-serverApp :: FilePath -> Chan Message -> StateMV -> WS.ServerApp
-serverApp msgPath chan stateMV pending_conn = do
+serverApp :: FilePath -> Chan Message -> WS.ServerApp
+serverApp msgPath chan pending_conn = do
     clientMV <- newMVar None
     browserChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
@@ -128,17 +128,11 @@ serverApp msgPath chan stateMV pending_conn = do
                             putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to client:\n" ++ show msgs
                         _ -> do
                             case flow (metadata msg) of
-                                Requested -> do
-                                    st <- readMVar stateMV
-                                    case from of
-                                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
-                                            appendMessage msgPath msg
-                                            state <- takeMVar stateMV
-                                            let newState = update state msg
-                                            putMVar stateMV $! newState
-                                            putStrLn "updated state"
-                                            writeChan browserChan msg
-                                        _ -> return ()
+                                Requested -> case from of
+                                    Front -> writeChan browserChan msg
+                                    -- we don't store, we just transmit to the store
+                                    -- because the store is the central authority that can trigger accepted messages
+                                    _ -> return ()
                                 _ -> return ()
                 Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
@@ -189,7 +183,7 @@ clientApp msgPath storeChan stateMV conn = do
                 _ -> return ()
 
     -- CLIENT MAIN THREAD
-    -- loop on the handling of messages incoming through websocket
+    -- loop on the handling of messages incoming from Store
     Monad.forever $ do
         putStrLn "Waiting for messages coming from the store"
         message <- WS.receiveDataMessage conn
@@ -200,36 +194,53 @@ clientApp msgPath storeChan stateMV conn = do
                 WS.Binary bs -> WS.fromLazyByteString bs
             ) of
             Right msg -> do
-                st' <- readMVar stateMV
+                st <- readMVar stateMV
                 case flow (metadata msg) of
                     Requested -> case creator msg of
-                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
+                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
                             appendMessage msgPath msg
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
-                            st'' <- takeMVar stateMV
-                            putMVar stateMV $! update st'' msg
+                            st' <- takeMVar stateMV
+                            putMVar stateMV $! update st' msg
                             putStrLn "updated state"
                             -- send msg to the worker thread and to other connected clients
-                            Monad.unless (syncing st') $ do
+                            Monad.unless (syncing st) $ do
                                 putStrLn "Writing to the chan"
                                 writeChan storeChan msg
                         _ -> return ()
                     Processed ->
                         case payload msg of
                             InitiatedConnection _ -> do
-                                st''' <- takeMVar stateMV
-                                putMVar stateMV $! st'''{syncing = False}
-                                putStrLn "Left the syncing mode"
-                            _ -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st') $ do
-                                appendMessage msgPath msg
-                                -- Add it or remove to the pending list (if relevant) and keep the uuid
                                 st'' <- takeMVar stateMV
-                                putMVar stateMV $! update st'' msg
-                                putStrLn "updated state"
-                                -- send msg to the worker thread and to other connected clients
-                                Monad.unless (syncing st') $ do
-                                    putStrLn "Writing to the chan"
-                                    writeChan storeChan msg
+                                putMVar stateMV $! st''{syncing = False}
+                                putStrLn "Left the syncing mode"
+                            _ -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
+                                case creator msg of
+                                    Studio -> do
+                                        st' <- readMVar stateMV
+                                        if syncing st'
+                                            then do
+                                                -- if not syncing we already stored our own Processed
+                                                appendMessage msgPath msg
+                                            else do
+                                                -- send msg to the worker thread and to other connected clients
+                                                putStrLn "Writing to the chan"
+                                                writeChan storeChan msg
+                                        -- Add it or remove to the pending list (if relevant) and keep the uuid
+                                        st'' <- takeMVar stateMV
+                                        putMVar stateMV $! update st'' msg
+                                        putStrLn "updated state"
+                                    Ident -> do
+                                        appendMessage msgPath msg
+                                        -- Add it or remove to the pending list (if relevant) and keep the uuid
+                                        st'' <- takeMVar stateMV
+                                        putMVar stateMV $! update st'' msg
+                                        putStrLn "updated state"
+                                        -- send msg to the worker thread and to other connected clients
+                                        Monad.unless (syncing st) $ do
+                                            putStrLn "Writing to the chan"
+                                            writeChan storeChan msg
+                                    _ -> return ()
                     _ -> return ()
             Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
@@ -286,9 +297,13 @@ reconnectClient waitTime previousTime host port msgPath storeChan stateMV = do
     catches
         (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
         [ Handler
-            (\(_ :: ConnectionException) -> reconnectClient 1 previousTime host port msgPath storeChan stateMV)
+            ( \(e :: ConnectionException) -> do
+                print e
+                reconnectClient 1 previousTime host port msgPath storeChan stateMV
+            )
         , Handler
-            ( \(SomeException _) -> do
+            ( \(SomeException e) -> do
+                print e
                 disconnectTime <- getPOSIXTime
                 let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
                 reconnectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
@@ -312,7 +327,7 @@ serve (Options d host port msgPath storeHost storePort) = do
     _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
     putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
-    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgPath chan stateMV) $ httpApp (Options d host port msgPath storeHost storePort)
+    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgPath chan) $ httpApp (Options d host port msgPath storeHost storePort)
 
 main :: IO ()
 main =
