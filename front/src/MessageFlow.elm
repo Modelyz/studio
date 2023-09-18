@@ -10,7 +10,7 @@ type
     = Requested
       -- Returned as Processed:
     | Processed
-    | Error String
+    | Error
 
 
 toString : MessageFlow -> String
@@ -22,26 +22,18 @@ toString m =
         Processed ->
             "Processed"
 
-        Error err ->
-            "Error: " ++ err
+        Error ->
+            "Error"
 
 
 encode : MessageFlow -> Encode.Value
-encode f =
-    case f of
-        Requested ->
-            Encode.object [ ( "type", Encode.string "Requested" ) ]
-
-        Processed ->
-            Encode.object [ ( "type", Encode.string "Processed" ) ]
-
-        Error err ->
-            Encode.object [ ( "type", Encode.string "Error" ), ( "value", Encode.string err ) ]
+encode =
+    toString >> Encode.string
 
 
 decoder : Decode.Decoder MessageFlow
 decoder =
-    Decode.field "type" Decode.string
+    Decode.string
         |> Decode.andThen
             (\s ->
                 case s of
@@ -52,7 +44,7 @@ decoder =
                         Decode.succeed Processed
 
                     "Error" ->
-                        Decode.map Error (Decode.field "value" Decode.string)
+                        Decode.succeed Error
 
                     _ ->
                         Decode.fail "Unkown MessageFlow"

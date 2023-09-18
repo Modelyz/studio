@@ -41,6 +41,7 @@ type alias State =
     -- Reminder: Dicts in the State are actually meant to bu used as Sets
     -- using a relevant comparable so that each entity can appear only once
     { pendingMessages : Dict Int Message -- pending Messages are in Requested mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
+    , syncing : Bool
 
     {- probably unusedful: -}
     , lastMessageTime : Time.Posix -- time of the last message
@@ -88,6 +89,7 @@ type alias State =
 empty : State
 empty =
     { pendingMessages = Dict.empty
+    , syncing = True
     , lastMessageTime = millisToPosix 0
     , uuids = Dict.empty
 
@@ -140,7 +142,12 @@ aggregate (Message m p) state =
             state
 
         InitiatedConnection _ ->
-            prepState
+            case m.flow of
+                Processed ->
+                    { prepState | syncing = False }
+
+                _ ->
+                    prepState
 
         AddedIdentifierType it ->
             { prepState
@@ -444,5 +451,5 @@ updatePending (Message m p) ms =
         Processed ->
             Dict.remove (Message.compare (Message m p)) ms
 
-        Error _ ->
+        Error ->
             Dict.insert (Message.compare (Message m p)) (Message m p) ms

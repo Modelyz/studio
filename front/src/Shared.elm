@@ -365,8 +365,8 @@ update msg model =
             of
                 Ok (Message m p) ->
                     case m.flow of
-                        Error err ->
-                            ( { model | iostatus = IOError err }, Cmd.none )
+                        Error ->
+                            ( { model | iostatus = IOError "Error MessageFlow received" }, Cmd.none )
 
                         _ ->
                             let

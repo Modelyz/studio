@@ -17,7 +17,7 @@ import Data.UUID.V4 qualified as UUID (nextRandom)
 import Message (Message (..), Payload (..), addVisited, appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow)
 import MessageFlow (MessageFlow (..))
 import MessageId (MessageId, messageId)
-import Metadata (Metadata (..), Origin (..))
+import Metadata (Metadata (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp qualified as Warp
@@ -25,6 +25,7 @@ import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets (ConnectionException (..))
 import Network.WebSockets qualified as WS
 import Options.Applicative
+import Service (Service (..))
 
 -- dir, port, file
 data Options = Options !String !Host !Port !FilePath !Host !Port
@@ -41,6 +42,9 @@ data State = State
     deriving (Show)
 
 type StateMV = MVar State
+
+myself :: Service
+myself = Studio
 
 emptyState :: State
 emptyState =
@@ -116,21 +120,29 @@ serverApp msgPath chan pending_conn = do
                     case payload msg of
                         InitiatedConnection connection -> do
                             -- if the message is a InitiatedConnection, get the uuid list from it,
-                            -- and send back all the missing messages (with an added ack)
+                            -- and send back all the missing messages
                             -- get the name of the connected client
                             _ <- takeMVar clientMV
                             putMVar clientMV from
                             putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
+                            putStrLn "plop"
+                            print remoteUuids
+                            putStrLn "plop"
                             esevs <- readMessages msgPath
                             let msgs = filter (\m -> messageId (metadata m) `notElem` remoteUuids) esevs
-                            mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) msgs
-                            putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to client:\n" ++ show msgs
+                            mapM_ (WS.sendTextData conn . JSON.encode . (if creator msg == myself then id else addVisited myself)) msgs
+                            putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to browsers:\n" ++ show msgs
+                            -- send the InitiatedConnection terminaison to signal the sync is over
+                            (WS.sendTextData conn . JSON.encode) $
+                                Message
+                                    (Metadata{uuid = uuid $ metadata msg, Metadata.when = when $ metadata msg, Metadata.from = [myself], Metadata.flow = Processed})
+                                    (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Set.empty}))
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> case from of
                                     Front -> writeChan browserChan msg
-                                    -- we don't store, we just transmit to the store
+                                    -- we don't store, we just transmit to the workers
                                     -- because the store is the central authority that can trigger accepted messages
                                     _ -> return ()
                                 _ -> return ()
@@ -146,11 +158,11 @@ clientApp msgPath storeChan stateMV conn = do
     -- send an initiatedConnection
     let initiatedConnection =
             Message
-                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = [Studio], flow = Requested})
+                (Metadata{uuid = newUuid, Metadata.when = currentTime, from = [myself], flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
     -- Just reconnected, send the pending messages to the Store
-    mapM_ (WS.sendTextData conn . JSON.encode . addVisited Studio) (pending state)
+    mapM_ (WS.sendTextData conn . JSON.encode . addVisited myself) (pending state)
     -- fork a thread to send back data from the channel to the central store
     -- CLIENT WORKER THREAD
     _ <- forkIO $ do
@@ -177,7 +189,7 @@ clientApp msgPath storeChan stateMV conn = do
                                 mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
                             Front -> do
                                 putStrLn "Forwarding to the store"
-                                WS.sendTextData conn $ JSON.encode $ addVisited Studio msg
+                                WS.sendTextData conn $ JSON.encode $ addVisited myself msg
                             _ -> return ()
                     _ -> return ()
                 _ -> return ()
@@ -219,8 +231,7 @@ clientApp msgPath storeChan stateMV conn = do
                                     Studio -> do
                                         st' <- readMVar stateMV
                                         if syncing st'
-                                            then do
-                                                -- if not syncing we already stored our own Processed
+                                            then -- if not syncing we already stored our own Processed
                                                 appendMessage msgPath msg
                                             else do
                                                 -- send msg to the worker thread and to other connected clients
@@ -284,7 +295,7 @@ processMessage _ msg = do
         AddedIdentifierType _ -> return []
         RemovedIdentifierType _ -> return []
         ChangedIdentifierType _ _ -> return []
-        _ -> return [setFlow Processed $ setCreator Studio msg] -- TODO change the date as well!
+        _ -> return [setFlow Processed $ setCreator myself msg] -- TODO change the date as well!
 
 maxWait :: Int
 maxWait = 10
