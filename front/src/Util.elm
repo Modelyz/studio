@@ -1,6 +1,7 @@
-module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, flip, indexOf, otherwise, otherwiseR, second, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, encodeTuple, flip, indexOf, otherwise, otherwiseR, second, third)
 
 import Dict exposing (Dict)
+import Json.Encode as Encode
 
 
 otherwise : Maybe a -> Maybe a -> Maybe a
@@ -135,3 +136,8 @@ indexOf x =
         >> List.filter (\z -> x == Tuple.second z)
         >> List.head
         >> Maybe.map Tuple.first
+
+
+encodeTuple : (a -> Encode.Value) -> (b -> Encode.Value) -> ( a, b ) -> Encode.Value
+encodeTuple enc1 enc2 ( val1, val2 ) =
+    Encode.list identity [ enc1 val1, enc2 val2 ]

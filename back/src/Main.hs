@@ -14,9 +14,9 @@ import Data.Text qualified as T (Text, append, split, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time.Clock.POSIX
 import Data.UUID.V4 qualified as UUID (nextRandom)
-import Message (Message (..), Payload (..), addVisited, appendMessage, creator, getFlow, lastVisited, metadata, payload, readMessages, setCreator, setFlow)
+import Message (Message (..), addVisited, appendMessage, creator, getFlow, lastVisited, messageId, metadata, payload, readMessages)
 import MessageFlow (MessageFlow (..))
-import MessageId (MessageId, messageId)
+import MessageId (MessageId)
 import Metadata (Metadata (..))
 import Network.HTTP.Types (status200)
 import Network.Wai qualified as Wai
@@ -25,6 +25,7 @@ import Network.Wai.Handler.WebSockets (websocketsOr)
 import Network.WebSockets (ConnectionException (..))
 import Network.WebSockets qualified as WS
 import Options.Applicative
+import Payload (Payload (..))
 import Service (Service (..))
 
 -- dir, port, file
@@ -92,13 +93,18 @@ serverApp msgPath chan pending_conn = do
                     client <- readMVar clientMV
                     putStrLn $ "Connected client: " ++ show client -- display the client name instead
                     case getFlow msg of
+                        Requested -> case creator msg of
+                            Front ->
+                                Monad.when (lastVisited msg == Store) $
+                                    (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
+                            _ -> return ()
                         Processed -> case creator msg of
-                            Studio -> do
+                            Dumb -> do
                                 putStrLn $ "Sending to " ++ show client
-                                (WS.sendTextData conn . JSON.encode) (addVisited Studio msg)
+                                (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
                             Ident -> do
                                 putStrLn $ "Sending to " ++ show client
-                                (WS.sendTextData conn . JSON.encode) (addVisited Studio msg)
+                                (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
                             _ -> return ()
                         _ -> return ()
                     loop
@@ -126,11 +132,14 @@ serverApp msgPath chan pending_conn = do
                             putMVar clientMV from
                             putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
-                            putStrLn "plop"
-                            print remoteUuids
-                            putStrLn "plop"
+                            putStrLn $ "remoteUuids = " ++ show remoteUuids
                             esevs <- readMessages msgPath
-                            let msgs = filter (\m -> messageId (metadata m) `notElem` remoteUuids) esevs
+                            putStrLn "Started syncing to browsers"
+                            putStrLn "event store ="
+                            print esevs
+                            putStrLn "remote UUIDS = "
+                            print remoteUuids
+                            let msgs = filter (\m -> messageId m `notElem` remoteUuids) esevs
                             mapM_ (WS.sendTextData conn . JSON.encode . (if creator msg == myself then id else addVisited myself)) msgs
                             putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to browsers:\n" ++ show msgs
                             -- send the InitiatedConnection terminaison to signal the sync is over
@@ -141,9 +150,9 @@ serverApp msgPath chan pending_conn = do
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> case from of
-                                    Front -> writeChan browserChan msg
-                                    -- we don't store, we just transmit to the workers
-                                    -- because the store is the central authority that can trigger accepted messages
+                                    Front -> do
+                                        writeChan browserChan msg
+                                        appendMessage msgPath msg
                                     _ -> return ()
                                 _ -> return ()
                 Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
@@ -172,21 +181,7 @@ clientApp msgPath storeChan stateMV conn = do
             case flow (metadata msg) of
                 Requested -> case creator msg of
                     Front -> do
-                        -- here we get the requested from front coming from the browser through the server main thread
-                        -- it should just be sent to the store by the client worker thread (ie here)
-                        -- and the requested from front coming from the store through the client main thread
-                        -- it should be forwarded to the browsers by the server worker thread
                         case lastVisited msg of
-                            Store -> do
-                                putStrLn "Forwarding to the front"
-                                st <- takeMVar stateMV
-                                -- process
-                                processedMsg <- processMessage stateMV msg
-                                putMVar stateMV $! foldl update st processedMsg
-                                -- send to the Store
-                                putStrLn $ "Send back this processed msgs to the store:\n" ++ show processedMsg
-                                mapM_ (appendMessage msgPath) processedMsg
-                                mapM_ (WS.sendTextData conn . JSON.encode) processedMsg
                             Front -> do
                                 putStrLn "Forwarding to the store"
                                 WS.sendTextData conn $ JSON.encode $ addVisited myself msg
@@ -209,7 +204,7 @@ clientApp msgPath storeChan stateMV conn = do
                 st <- readMVar stateMV
                 case flow (metadata msg) of
                     Requested -> case creator msg of
-                        Front -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
+                        Front -> Monad.when (messageId msg `notElem` Main.uuids st) $ do
                             appendMessage msgPath msg
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
                             st' <- takeMVar stateMV
@@ -220,37 +215,33 @@ clientApp msgPath storeChan stateMV conn = do
                                 putStrLn "Writing to the chan"
                                 writeChan storeChan msg
                         _ -> return ()
-                    Processed ->
+                    Processed -> do
+                        putStrLn $ "STATE = " ++ show st
                         case payload msg of
                             InitiatedConnection _ -> do
                                 st'' <- takeMVar stateMV
                                 putMVar stateMV $! st''{syncing = False}
-                                putStrLn "Left the syncing mode"
-                            _ -> Monad.when (messageId (metadata msg) `notElem` Main.uuids st) $ do
+                                putStrLn "Finished syncing from Store"
+                            _ -> Monad.when (messageId msg `notElem` Main.uuids st) $ do
                                 case creator msg of
-                                    Studio -> do
-                                        st' <- readMVar stateMV
-                                        if syncing st'
-                                            then -- if not syncing we already stored our own Processed
-                                                appendMessage msgPath msg
-                                            else do
-                                                -- send msg to the worker thread and to other connected clients
-                                                putStrLn "Writing to the chan"
-                                                writeChan storeChan msg
+                                    Dumb -> do
+                                        appendMessage msgPath msg
                                         -- Add it or remove to the pending list (if relevant) and keep the uuid
                                         st'' <- takeMVar stateMV
                                         putMVar stateMV $! update st'' msg
+                                        Monad.unless (syncing st'') $ do
+                                            putStrLn "Writing to the chan"
+                                            writeChan storeChan msg
                                         putStrLn "updated state"
                                     Ident -> do
                                         appendMessage msgPath msg
                                         -- Add it or remove to the pending list (if relevant) and keep the uuid
                                         st'' <- takeMVar stateMV
                                         putMVar stateMV $! update st'' msg
-                                        putStrLn "updated state"
-                                        -- send msg to the worker thread and to other connected clients
-                                        Monad.unless (syncing st) $ do
+                                        Monad.unless (syncing st'') $ do
                                             putStrLn "Writing to the chan"
                                             writeChan storeChan msg
+                                        putStrLn "updated state"
                                     _ -> return ()
                     _ -> return ()
             Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
@@ -262,13 +253,13 @@ update state msg =
             InitiatedConnection _ -> state
             _ ->
                 state
-                    { pending = Map.insert (messageId (metadata msg)) msg $ pending state
-                    , Main.uuids = Set.insert (messageId (metadata msg)) (Main.uuids state)
+                    { pending = Map.insert (messageId msg) msg $ pending state
+                    , Main.uuids = Set.insert (messageId msg) (Main.uuids state)
                     }
         Processed ->
             state
-                { pending = Map.delete (messageId (metadata msg)) $ pending state
-                , Main.uuids = Set.insert (messageId (metadata msg)) (Main.uuids state)
+                { pending = Map.delete (messageId msg) $ pending state
+                , Main.uuids = Set.insert (messageId msg) (Main.uuids state)
                 }
         Error _ -> state
 
@@ -287,15 +278,6 @@ httpApp (Options d _ _ _ _ _) request respond = do
             _ -> Wai.responseLBS status200 [("Content-Type", "text/html")] ""
         "changelog" : _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/static/changelog.html") Nothing
         _ -> Wai.responseFile status200 [("Content-Type", "text/html")] (d ++ "/index.html" :: String) Nothing
-
-processMessage :: StateMV -> Message -> IO [Message]
-processMessage _ msg = do
-    case payload msg of
-        AddedIdentifier _ -> return []
-        AddedIdentifierType _ -> return []
-        RemovedIdentifierType _ -> return []
-        ChangedIdentifierType _ _ -> return []
-        _ -> return [setFlow Processed $ setCreator myself msg] -- TODO change the date as well!
 
 maxWait :: Int
 maxWait = 10

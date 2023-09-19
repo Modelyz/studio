@@ -8,6 +8,7 @@ type Service
     = None
     | Front
     | Studio
+    | Dumb
     | Store
     | Ident
 
@@ -23,6 +24,9 @@ toString s =
 
         Studio ->
             "Studio"
+
+        Dumb ->
+            "Dumb"
 
         Store ->
             "Store"
@@ -50,6 +54,9 @@ decoder =
 
                     "Studio" ->
                         Decode.succeed Studio
+
+                    "Dumb" ->
+                        Decode.succeed Dumb
 
                     "Store" ->
                         Decode.succeed Store

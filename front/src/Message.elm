@@ -1,9 +1,11 @@
-port module Message exposing (Message(..), base, compare, decoder, encode, exceptIC, getTime, readMessages, renewSeed, storeMessages, storeMessagesToSend)
+port module Message exposing (Message(..), base, compare, decoder, encode, exceptIC, getTime, messageId, readMessages, renewSeed, storeMessages, storeMessagesToSend)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import MessageId exposing (MessageId)
 import Metadata exposing (Metadata)
 import Payload exposing (Payload(..))
+import Prng.Uuid as Uuid
 import Time exposing (posixToMillis)
 
 
@@ -39,17 +41,22 @@ type Message
     = Message Metadata Payload
 
 
+messageId : Message -> MessageId
+messageId (Message m _) =
+    ( m.uuid, m.flow )
+
+
 base : Message -> Metadata
 base (Message b _) =
     b
 
 
-compare : Message -> Int
-compare =
+compare : Message -> String
+compare (Message m _) =
     -- TODO what if 2 messages at the exact same time?
     -- => also use a session uuid
     -- TODO : use UUID instead? see updatePending
-    getTime >> posixToMillis
+    (m.when |> posixToMillis |> String.fromInt) ++ ":" ++ Uuid.toString m.uuid
 
 
 getTime : Message -> Time.Posix

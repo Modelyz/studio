@@ -16,9 +16,9 @@ import GroupType.GroupType exposing (GroupType)
 import Hierarchy.Type as HType
 import Ident.Identifier as Identifier exposing (Identifier)
 import Ident.IdentifierType as IdentifierType exposing (IdentifierType)
-import Message exposing (Message(..))
+import Message exposing (Message(..), messageId)
 import MessageFlow exposing (MessageFlow(..))
-import Metadata exposing (Metadata)
+import MessageId exposing (MessageId)
 import Payload exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
@@ -40,12 +40,12 @@ import Value.ValueType as ValueType exposing (ValueType)
 type alias State =
     -- Reminder: Dicts in the State are actually meant to bu used as Sets
     -- using a relevant comparable so that each entity can appear only once
-    { pendingMessages : Dict Int Message -- pending Messages are in Requested mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
+    { pendingMessages : Dict String Message -- pending Messages are in Requested mode. TODO: try to reconstruct the pendingMessages from idb when needed, and just maintain a nb of pending messages
     , syncing : Bool
 
     {- probably unusedful: -}
     , lastMessageTime : Time.Posix -- time of the last message
-    , uuids : Dict String Metadata -- the uuids of all messages
+    , uuids : Dict String MessageId -- the uuids of all messages
 
     -- entities
     , resources : Dict String Resource
@@ -128,13 +128,16 @@ empty =
 
 
 aggregate : Message -> State -> State
-aggregate (Message m p) state =
+aggregate ((Message m p) as msg) state =
     let
+        mid =
+            messageId msg
+
         prepState =
             { state
                 | lastMessageTime = m.when
-                , pendingMessages = updatePending (Message m p) state.pendingMessages
-                , uuids = Dict.insert (Metadata.compare m) m state.uuids
+                , pendingMessages = updatePending msg state.pendingMessages
+                , uuids = Dict.insert (MessageId.compare mid) mid state.uuids
             }
     in
     case p of
@@ -442,7 +445,7 @@ aggregate (Message m p) state =
             }
 
 
-updatePending : Message -> Dict Int Message -> Dict Int Message
+updatePending : Message -> Dict String Message -> Dict String Message
 updatePending (Message m p) ms =
     case m.flow of
         Requested ->

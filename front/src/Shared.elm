@@ -385,13 +385,18 @@ update msg model =
 
         MessagesReceived str ->
             case decodeString Message.decoder str of
-                Ok message ->
+                Ok ((Message _ p) as message) ->
                     ( { model
                         | wsstatus = WSOpen
                         , iostatus = ESStoring
                       }
-                      -- TODO rename to singular
-                    , Message.storeMessages <| Message.encode message
+                    , case p of
+                        InitiatedConnection _ ->
+                            Cmd.none
+
+                        _ ->
+                            -- TODO rename to singular
+                            Message.storeMessages <| Message.encode message
                     )
 
                 Err err ->
