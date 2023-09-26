@@ -170,7 +170,8 @@ clientApp msgPath storeChan stateMV conn = do
                 (Metadata{uuid = newUuid, Metadata.when = currentTime, from = [myself], flow = Requested})
                 (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Main.uuids state}))
     _ <- WS.sendTextData conn $ JSON.encode initiatedConnection
-    -- Just reconnected, send the pending messages to the Store
+    putStrLn "Just reconnected, send the pending messages to the Store"
+    print $ pending state
     mapM_ (WS.sendTextData conn . JSON.encode . addVisited myself) (pending state)
     -- fork a thread to send back data from the channel to the central store
     -- CLIENT WORKER THREAD
