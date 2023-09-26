@@ -2,6 +2,10 @@
 
 [Back to app](../)
 
+## version 17 -- 2023-09-28
+
+* Reworked message passing on the backend
+
 ## version 16 -- 2023-05-12
 
 * Implemented all types on the backend

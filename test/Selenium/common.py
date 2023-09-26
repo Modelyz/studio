@@ -12,7 +12,7 @@ import time
 
 ES = "messagestore.txt"
 site = "http://localhost:8080"
-WAIT = 0.05
+WAIT = 0.1
 LASTSTEP_FILE = "resume"  # store the nb of function execution
 LASTSTEP = int(open(LASTSTEP_FILE).read()) if os.path.exists(LASTSTEP_FILE) else 0
 CURRENT = 0
