@@ -2,7 +2,8 @@
 
 set -e
 
-export APPVERSION=16 # don't forget the CHANGELOG
+# don't forget the CHANGELOG
+export APPVERSION=16
 export IDBVERSION=49 ### IndexedDB version. Upgrade when a json format change occurs ###
 
 # change to the dir of this script
