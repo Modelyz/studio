@@ -10,7 +10,7 @@ set -e
 pushd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 mkdir -p $INSTALLDIR
 
-[ -f ./dist-newstyle/cache/plan.json ] && which cabal-cache && cabal-cache sync-from-archive --archive-uri ~/.cabal/archive
+[ -f ./dist-newstyle/cache/plan.json ] && which cabal-cache && cabal-cache sync-from-archive --threads 4 --archive-uri s3://cabal-store.prelab.fr --host-name-override=s3.fr-par.scw.cloud --host-port-override=443 --host-ssl-override=True --region fr-par
 
 if [ "$1" == "-o" ]; then
     # TODO stripping does not work
@@ -22,6 +22,6 @@ else
     cabal install $OPT_DEVEL $OPT_INSTALL
 fi
 
-which cabal-cache && cabal-cache sync-to-archive --archive-uri ~/.cabal/archive
+which cabal-cache && cabal-cache sync-to-archive --threads 4 --archive-uri s3://cabal-store.prelab.fr --host-name-override=s3.fr-par.scw.cloud --host-port-override=443 --host-ssl-override=True --region fr-par
 
 popd
