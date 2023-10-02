@@ -384,8 +384,8 @@ decoder =
 
                     "ChangedIdentifierType" ->
                         Decode.map2 (\old new -> ChangedIdentifierType { old = old, new = new })
-                            (Decode.field "new" IdentifierType.decoder)
-                            (Decode.field "old" IdentifierType.decoder)
+                            (Decode.at [ "load", "new" ] IdentifierType.decoder)
+                            (Decode.at [ "load", "old" ] IdentifierType.decoder)
 
                     "RemovedIdentifierType" ->
                         Decode.map RemovedIdentifierType
