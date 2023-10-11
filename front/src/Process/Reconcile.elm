@@ -31,7 +31,7 @@ byEvent uuid =
 encode : Reconciliation -> Encode.Value
 encode r =
     Encode.object
-        [ ( "rational", Rational.encode r.qty )
+        [ ( "qty", Rational.encode r.qty )
         , ( "event", Uuid.encode r.event )
         , ( "process", Uuid.encode r.process )
         ]
@@ -40,7 +40,7 @@ encode r =
 decoder : Decoder Reconciliation
 decoder =
     Decode.map3 Reconciliation
-        (Decode.field "rational" Rational.decoder)
+        (Decode.field "qty" Rational.decoder)
         (Decode.field "event" Uuid.decoder)
         (Decode.field "process" Uuid.decoder)
 
