@@ -369,7 +369,7 @@ inputFragment fragments index fragment =
                                         )
                                 )
                     , text = separators.qtySep
-                    , placeholder = Nothing
+                    , placeholder = Just <| Input.placeholder [] <| text " / "
                     , label = Input.labelHidden "Separator"
                     }
                 , Input.text [ width (px 75), height shrink, padding 5, spacing 5, attrId ]
@@ -387,7 +387,7 @@ inputFragment fragments index fragment =
                                         )
                                 )
                     , text = separators.eventSep
-                    , placeholder = Nothing
+                    , placeholder = Just <| Input.placeholder [] <| text ", "
                     , label = Input.labelHidden "Separator"
                     }
                 ]
