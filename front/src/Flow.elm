@@ -50,10 +50,10 @@ encode : Flow -> Encode.Value
 encode flow =
     case flow of
         ResourceFlow resource ->
-            Encode.object [ ( "type", Encode.string "ResourceFlow" ), ( "resource", Resource.encode resource ) ]
+            Encode.object [ ( "type", Encode.string "ResourceFlow" ), ( "value", Resource.encode resource ) ]
 
         ResourceTypeFlow resourceType ->
-            Encode.object [ ( "type", Encode.string "ResourceTypeFlow" ), ( "resourceType", ResourceType.encode resourceType ) ]
+            Encode.object [ ( "type", Encode.string "ResourceTypeFlow" ), ( "value", ResourceType.encode resourceType ) ]
 
 
 uuidOf : Flow -> Uuid
@@ -84,11 +84,11 @@ decoder =
                 case t of
                     "ResourceFlow" ->
                         Decode.map ResourceFlow
-                            (Decode.field "resource" Resource.decoder)
+                            (Decode.field "value" Resource.decoder)
 
                     "ResourceTypeFlow" ->
                         Decode.map ResourceTypeFlow
-                            (Decode.field "resourceType" ResourceType.decoder)
+                            (Decode.field "value" ResourceType.decoder)
 
                     _ ->
                         Decode.fail "Unknown Flow type"
