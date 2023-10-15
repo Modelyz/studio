@@ -1,5 +1,7 @@
 module Process.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -20,8 +22,6 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 mainTType : Type
@@ -85,7 +85,7 @@ init s f =
       , uuid = f.uuid
       , reconciliations =
             s.state.reconciliations
-                |> Dict.filter (\_ v -> v.process == f.uuid)
+                |> Dict.filter (\_ r -> r.process == f.uuid)
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , groups =
             s.state.grouped

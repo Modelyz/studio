@@ -1,7 +1,9 @@
 module Event.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import DateTime
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Expression exposing (Expression)
@@ -12,7 +14,10 @@ import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
 import Ident.View exposing (displayIdentifierDict)
+import Payload exposing (Payload(..))
 import Prng.Uuid as Uuid exposing (Uuid)
+import Process.Reconcile exposing (Reconciliation)
+import Process.Reconcile.View
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
@@ -23,8 +28,6 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 mainTType : Type
@@ -55,12 +58,15 @@ type alias Model =
     , type_ : Maybe Uuid
     , groups : List Uuid
     , when : Posix
+    , reconciliations : Dict String Reconciliation
     }
 
 
 type Msg
     = Edit
     | Close
+    | ViewProcess Uuid
+    | Unreconciled Reconciliation
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -103,6 +109,9 @@ init s f =
                 |> Dict.values
                 |> List.map (\link -> link.group)
       , when = Maybe.map .when event |> Maybe.withDefault (millisToPosix 0)
+      , reconciliations =
+            s.state.reconciliations
+                |> Dict.filter (\_ r -> r.event == f.uuid)
       }
     , Effect.batch [ closeMenu f s.menu ]
     )
@@ -116,6 +125,14 @@ update s msg model =
 
         Edit ->
             ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Event <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
+
+        ViewProcess uuid ->
+            ( model, Route.redirect s.navkey (Route.Entity Route.Process (Route.View (Uuid.toString uuid) Nothing)) |> Effect.fromCmd )
+
+        Unreconciled r ->
+            ( model
+            , Shared.dispatch s (Payload.Unreconciled r)
+            )
 
 
 view : Model -> View Msg
@@ -156,4 +173,13 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
+        , h2 "Is part of the following processes :"
+        , row [ spacing 5 ]
+            (model.reconciliations
+                |> Dict.values
+                |> List.map
+                    (\r ->
+                        Process.Reconcile.View.view s.state ViewProcess Unreconciled r
+                    )
+            )
         ]
