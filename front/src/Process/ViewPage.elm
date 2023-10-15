@@ -56,7 +56,7 @@ type Msg
     | ViewEvent Uuid
     | Unreconciled Reconciliation
     | Close
-    | Add Uuid
+    | Add { type_ : Uuid, related : Maybe Uuid }
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -115,8 +115,8 @@ update s msg model =
             , Shared.dispatch s (Payload.Unreconciled r)
             )
 
-        Add etuuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add { type_ = Just (Uuid.toString etuuid), related = Nothing, step = Nothing })) |> Effect.fromCmd )
+        Add p ->
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add { type_ = Just (Uuid.toString p.type_), related = Maybe.map Uuid.toString p.related, step = Nothing })) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg
@@ -159,7 +159,7 @@ viewContent model s =
             )
         , row [ spacing 5 ] <|
             Dict.values <|
-                Dict.map (\_ etuuid -> button.primary (Ok (Add etuuid)) ("Add " ++ displayZone s.state SmallcardZone (Type.HType HType.EventType) etuuid))
+                Dict.map (\_ etuuid -> button.primary (Ok (Add { type_ = etuuid, related = Just model.uuid })) ("Add " ++ displayZone s.state SmallcardZone (Type.HType HType.EventType) etuuid))
                     (model.type_
                         |> Maybe.map Uuid.toString
                         |> Maybe.andThen (flip Dict.get s.state.processTypes)

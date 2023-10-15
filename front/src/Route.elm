@@ -342,7 +342,13 @@ viewToCustomUrl v =
             CustomUrl [ "view", percentEncode p.uuid ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) Nothing
 
         Add p ->
-            CustomUrl [ "add" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) p.step
+            CustomUrl [ "add" ]
+                (List.filterMap identity
+                    [ p.type_ |> Maybe.map (Builder.string "type")
+                    , p.related |> Maybe.map (Builder.string "related")
+                    ]
+                )
+                p.step
 
         Edit p ->
             CustomUrl [ "edit", percentEncode p.uuid ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) Nothing
@@ -477,6 +483,7 @@ redirectAdd navkey route =
         toString <|
             case route of
                 Entity e v ->
+                    -- related is for instance the process linked to the event being added
                     Entity e (Add { type_ = getType v, related = getRelated v, step = Nothing })
 
                 Home ->
