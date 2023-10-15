@@ -41,8 +41,8 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.IdentifierType (Route.View vtid Nothing) ->
-            Just { route = route, vtid = vtid }
+        Route.Entity Route.IdentifierType (Route.View p) ->
+            Just { route = route, vtid = p.uuid }
 
         _ ->
             Nothing
@@ -61,13 +61,13 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType <| Route.List Nothing )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.IdentifierType <| Route.List { type_ = Nothing } )
 
         Edit ->
             model.identifierType
                 |> Maybe.map
                     (\it ->
-                        ( model, Effect.fromCmd <| redirect s.navkey (Route.Entity Route.IdentifierType (Route.Edit (VT.compare it) Nothing)) )
+                        ( model, Effect.fromCmd <| redirect s.navkey (Route.Entity Route.IdentifierType (Route.Edit { uuid = VT.compare it, type_ = Nothing })) )
                     )
                 |> Maybe.withDefault ( model, Effect.none )
 

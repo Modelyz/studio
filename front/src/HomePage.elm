@@ -86,10 +86,10 @@ adminHome s =
     column [ width fill, alignTop, padding 20 ]
         [ h1 "Entity Types"
         , wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
-            (List.map (\es -> cell s (Route.Entity es (Route.List Nothing))) Route.allTypes)
+            (List.map (\es -> cell s (Route.Entity es (Route.List {type_ = Nothing}))) Route.allTypes)
         , h1 "Behaviours and Configuration"
         , wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
-            (List.map (\es -> cell s (Route.Entity es (Route.List Nothing))) Route.allBehaviours)
+            (List.map (\es -> cell s (Route.Entity es (Route.List {type_ = Nothing}))) Route.allBehaviours)
         ]
 
 
@@ -97,13 +97,13 @@ userHome : Shared.Model -> Element Msg
 userHome s =
     column [ width fill, alignTop, padding 20 ]
         [ wrappedRow [ height fill, width fill, spacing 20, padding 20 ]
-            ((s.state.resourceTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Resource (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.eventTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.agentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.commitmentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.contractTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.processTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid))))
-                ++ (s.state.groupTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid))))
+            ((s.state.resourceTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Resource (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.eventTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Event (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.agentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Agent (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.commitmentTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Commitment (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.contractTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Contract (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.processTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Process (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
+                ++ (s.state.groupTypes |> Dict.values |> List.map (\e -> cell s (Route.Entity Route.Group (Route.List {type_ = Just (Uuid.toString e.uuid)}))))
                 |> View.withDefaultContent
                     (row
                         [ Font.size 15, spacing 10, padding 10, width fill, Background.color color.navbar.hover ]

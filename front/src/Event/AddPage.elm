@@ -125,11 +125,11 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Event (Route.Add tuuid _) ->
-            Just { route = route, uuid = Nothing, tuuid = tuuid }
+        Route.Entity Route.Event (Route.Add p) ->
+            Just { route = route, uuid = Nothing, tuuid = p.type_ }
 
-        Route.Entity Route.Event (Route.Edit uuid tuuid) ->
-            Just { route = route, uuid = Uuid.fromString uuid, tuuid = tuuid }
+        Route.Entity Route.Event (Route.Edit p) ->
+            Just { route = route, uuid = Uuid.fromString p.uuid, tuuid = p.type_ }
 
         _ ->
             Nothing
@@ -440,7 +440,7 @@ update s msg model =
 
                         -- renew the Seed to avoid conflict due to uuidAggregator
                         , Effect.fromCmd <| Message.renewSeed ()
-                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_)))
+                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_}))
                         ]
                     )
 

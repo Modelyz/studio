@@ -38,10 +38,10 @@ adminLinks : Shared.Model -> Route -> List (Element Shared.Msg)
 adminLinks s r =
     menuitem s r Route.Home
         :: List.map
-            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
+            (\e -> menuitem s r (Route.Entity e (Route.List { type_ = Nothing })))
             Route.allTypes
         ++ List.map
-            (\e -> menuitem s r (Route.Entity e (Route.List Nothing)))
+            (\e -> menuitem s r (Route.Entity e (Route.List { type_ = Nothing })))
             Route.allBehaviours
 
 
@@ -51,37 +51,37 @@ userLinks s r =
         :: ((s.state.resourceTypes
                 |> Dict.values
                 |> List.filter (Route.isMenu s.state)
-                |> List.map (\e -> menuitem s r (Route.Entity Route.Resource (Route.List <| Just <| Uuid.toString e.uuid)))
+                |> List.map (\e -> menuitem s r (Route.Entity Route.Resource (Route.List { type_ = Just (Uuid.toString e.uuid) })))
             )
                 ++ (s.state.eventTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Event (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Event (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 ++ (s.state.agentTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Agent (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Agent (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 ++ (s.state.commitmentTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Commitment (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Commitment (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 ++ (s.state.contractTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Contract (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Contract (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 ++ (s.state.processTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Process (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Process (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 ++ (s.state.groupTypes
                         |> Dict.values
                         |> List.filter (Route.isMenu s.state)
-                        |> List.map (\e -> menuitem s r (Route.Entity Route.Group (Route.List <| Just <| Uuid.toString e.uuid)))
+                        |> List.map (\e -> menuitem s r (Route.Entity Route.Group (Route.List { type_ = Just (Uuid.toString e.uuid) })))
                    )
                 |> View.withDefaultContent
                     (row

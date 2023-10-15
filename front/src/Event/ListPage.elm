@@ -49,8 +49,8 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Event (Route.List tuuid) ->
-            Just { route = route, tuuid = Maybe.andThen Uuid.fromString tuuid }
+        Route.Entity Route.Event (Route.List p) ->
+            Just { route = route, tuuid = Maybe.andThen Uuid.fromString p.type_ }
 
         _ ->
             Nothing
@@ -71,7 +71,7 @@ update s msg model =
             ( model, Route.redirectAdd s.navkey model.route |> Effect.fromCmd )
 
         View uuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString uuid) (Maybe.map Uuid.toString model.filter))) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.View { uuid = Uuid.toString uuid, type_ = Maybe.map Uuid.toString model.filter })) |> Effect.fromCmd )
 
         ChangeView vt ->
             ( { model | viewtype = vt }, Effect.none )

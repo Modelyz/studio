@@ -87,11 +87,11 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ContractType (Route.Add _ _) ->
+        Route.Entity Route.ContractType (Route.Add p) ->
             Just { route = route, uuid = Nothing }
 
-        Route.Entity Route.ContractType (Route.Edit uuid _) ->
-            Just { route = route, uuid = Uuid.fromString uuid }
+        Route.Entity Route.ContractType (Route.Edit p) ->
+            Just { route = route, uuid = Uuid.fromString p.uuid }
 
         _ ->
             Nothing
@@ -222,7 +222,7 @@ update s msg model =
                                         [ Payload.Configured <| MenuDisplay {what=HType.ContractType, uuid=t.uuid, isMenu=model.isMenu} ]
                                    )
                             )
-                        , redirect s.navkey (Route.Entity Route.ContractType (Route.View (Uuid.toString model.uuid) Nothing)) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.ContractType (Route.View {uuid = Uuid.toString model.uuid, type_ = Nothing})) |> Effect.fromCmd
                         ]
                     )
 

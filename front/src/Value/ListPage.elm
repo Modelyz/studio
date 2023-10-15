@@ -61,10 +61,10 @@ update s msg model =
             )
 
         Add ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.Add Nothing Nothing) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.Add { type_ = Nothing, step = Nothing }) )
 
         View vtid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.ValueType (Route.View vtid Nothing)) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.ValueType (Route.View { uuid = vtid, type_ = Nothing })) |> Effect.fromCmd )
 
 
 view : Model -> View Msg
@@ -73,7 +73,7 @@ view =
         { title = "ValueTypes"
         , attributes = []
         , element = viewContent
-        , route = Route.Entity Route.ValueType (Route.List Nothing)
+        , route = Route.Entity Route.ValueType (Route.List { type_ = Nothing })
         }
 
 

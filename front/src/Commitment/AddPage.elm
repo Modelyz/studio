@@ -115,11 +115,11 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Commitment (Route.Add tuuid _) ->
-            Just { route = route, uuid = Nothing, tuuid = tuuid }
+        Route.Entity Route.Commitment (Route.Add p) ->
+            Just { route = route, uuid = Nothing, tuuid = p.type_ }
 
-        Route.Entity Route.Commitment (Route.Edit uuid tuuid) ->
-            Just { route = route, uuid = Uuid.fromString uuid, tuuid = tuuid }
+        Route.Entity Route.Commitment (Route.Edit p) ->
+            Just { route = route, uuid = Uuid.fromString p.uuid, tuuid = p.type_ }
 
         _ ->
             Nothing
@@ -329,7 +329,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Payload.Grouped (Link hereType c.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Payload.Ungrouped (Link hereType c.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
-                        , redirect s.navkey (Route.Entity Route.Commitment (Route.View (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_))) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Commitment (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_})) |> Effect.fromCmd
                         ]
                     )
 

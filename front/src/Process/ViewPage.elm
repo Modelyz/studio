@@ -72,8 +72,8 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.Process (Route.View uuid tuuid) ->
-            Uuid.fromString uuid |> Maybe.map (Flags route tuuid)
+        Route.Entity Route.Process (Route.View p) ->
+            Uuid.fromString p.uuid |> Maybe.map (Flags route p.type_)
 
         _ ->
             Nothing
@@ -102,13 +102,13 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Process <| Route.List (Maybe.map Uuid.toString model.type_) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Process <| Route.List { type_ = Maybe.map Uuid.toString model.type_ } )
 
         Edit ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Process <| Route.Edit (Uuid.toString model.uuid) (Maybe.map Uuid.toString model.type_) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Process <| Route.Edit { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ } )
 
         ViewEvent uuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.View (Uuid.toString uuid) Nothing)) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.View { uuid = Uuid.toString uuid, type_ = Nothing })) |> Effect.fromCmd )
 
         Unreconciled r ->
             ( model
@@ -116,7 +116,7 @@ update s msg model =
             )
 
         Add etuuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add (Just <| Uuid.toString etuuid) Nothing)) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add { type_ = Just (Uuid.toString etuuid), step = Nothing })) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

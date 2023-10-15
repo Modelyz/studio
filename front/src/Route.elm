@@ -49,26 +49,26 @@ type EntitySegment
 
 
 type ViewSegment
-    = View String (Maybe String) -- /view/<event_uuid>#<eventtype_uuid>
-    | Edit String (Maybe String) -- /edit/<event_uuid>#<eventtype_uuid>
-    | List (Maybe String) -- /list?type=<eventtype_uuid>
-    | Add (Maybe String) (Maybe String) -- /add/<event_uuid>#<step_number>
+    = View { uuid : String, type_ : Maybe String }
+    | Edit { uuid : String, type_ : Maybe String }
+    | List { type_ : Maybe String }
+    | Add { type_ : Maybe String, step : Maybe String }
 
 
 toTypeFilter : ViewSegment -> Maybe String
 toTypeFilter vs =
     case vs of
-        View _ f ->
-            f
+        View p ->
+            p.type_
 
-        Edit _ f ->
-            f
+        Edit p ->
+            p.type_
 
-        List f ->
-            f
+        List p ->
+            p.type_
 
-        Add f _ ->
-            f
+        Add p ->
+            p.type_
 
 
 toColor : Route -> Color
@@ -328,27 +328,27 @@ entityToUrl e =
 viewParser : Parser (ViewSegment -> a) a
 viewParser =
     oneOf
-        [ map View (s "view" </> encodedString <?> Query.string "type")
-        , map Add (s "add" <?> Query.string "type" </> fragment identity)
-        , map Edit (s "edit" </> encodedString <?> Query.string "type")
-        , map List (s "list" <?> Query.string "type")
+        [ map (\uuid type_ -> View { uuid = uuid, type_ = type_ }) (s "view" </> encodedString <?> Query.string "type")
+        , map (\type_ step -> Add { type_ = type_, step = step }) (s "add" <?> Query.string "type" </> fragment identity)
+        , map (\uuid type_ -> Edit { uuid = uuid, type_ = type_ }) (s "edit" </> encodedString <?> Query.string "type")
+        , map (\type_ -> List { type_ = type_ }) (s "list" <?> Query.string "type")
         ]
 
 
 viewToCustomUrl : ViewSegment -> CustomUrl
 viewToCustomUrl v =
     case v of
-        View s t ->
-            CustomUrl [ "view", percentEncode s ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
+        View p ->
+            CustomUrl [ "view", percentEncode p.uuid ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) Nothing
 
-        Add t mh ->
-            CustomUrl [ "add" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) mh
+        Add p ->
+            CustomUrl [ "add" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) p.step
 
-        Edit s t ->
-            CustomUrl [ "edit", percentEncode s ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
+        Edit p ->
+            CustomUrl [ "edit", percentEncode p.uuid ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) Nothing
 
-        List t ->
-            CustomUrl [ "list" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") t) Nothing
+        List p ->
+            CustomUrl [ "list" ] (Maybe.withDefault [] <| Maybe.map (List.singleton << Builder.string "type") p.type_) Nothing
 
 
 and : CustomUrl -> CustomUrl -> CustomUrl
@@ -361,8 +361,8 @@ setHash route stepnb =
     case route of
         Entity e v ->
             case v of
-                Add t _ ->
-                    Entity e <| Add t (Maybe.map String.fromInt stepnb)
+                Add p ->
+                    Entity e <| Add { p | step = Maybe.map String.fromInt stepnb }
 
                 _ ->
                     route
@@ -411,8 +411,8 @@ toDesc s route =
         Home ->
             "Home"
 
-        Entity e (List (Just uuid)) ->
-            Maybe.map2 (displayZone s MenuZone) (toHType e) (Uuid.fromString uuid) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+        Entity e (List p) ->
+            Maybe.map2 (displayZone s MenuZone) (toHType e) (p.type_ |> Maybe.andThen Uuid.fromString) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
 
         Entity e _ ->
             entityToDesc e
@@ -442,17 +442,17 @@ redirect navkey =
 getType : ViewSegment -> Maybe String
 getType v =
     case v of
-        Add t _ ->
-            t
+        Add p ->
+            p.type_
 
-        Edit _ t ->
-            t
+        Edit p ->
+            p.type_
 
-        List t ->
-            t
+        List p ->
+            p.type_
 
-        View _ t ->
-            t
+        View p ->
+            p.type_
 
 
 redirectAdd : Nav.Key -> Route -> Cmd msg
@@ -461,7 +461,7 @@ redirectAdd navkey route =
         toString <|
             case route of
                 Entity e v ->
-                    Entity e (Add (getType v) Nothing)
+                    Entity e (Add { type_ = getType v, step = Nothing })
 
                 Home ->
                     Home
@@ -477,14 +477,14 @@ goBack navkey route =
 
                 Entity e v ->
                     case v of
-                        Edit s t ->
-                            Entity e (View s t)
+                        Edit p ->
+                            Entity e (View p)
 
-                        View _ t ->
-                            Entity e (List t)
+                        View p ->
+                            Entity e (List { type_ = p.type_ })
 
-                        Add t _ ->
-                            Entity e (List t)
+                        Add p ->
+                            Entity e (List { type_ = p.type_ })
 
                         List _ ->
                             Home

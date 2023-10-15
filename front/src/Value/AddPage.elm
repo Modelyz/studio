@@ -108,11 +108,11 @@ match : Route -> Maybe Flags
 match route =
     -- TODO give the entity to create through the flags? /add/valueType?step=2
     case route of
-        Route.Entity Route.ValueType (Route.Add _ _) ->
+        Route.Entity Route.ValueType (Route.Add _) ->
             Just { route = route, vtid = "" }
 
-        Route.Entity Route.ValueType (Route.Edit vtid _) ->
-            Just { route = route, vtid = vtid }
+        Route.Entity Route.ValueType (Route.Edit p) ->
+            Just { route = route, vtid = p.uuid }
 
         _ ->
             Nothing
@@ -179,7 +179,7 @@ update s msg model =
                         [ Shared.dispatch s <|
                             Maybe.withDefault (Payload.AddedValueType v) <|
                                 Maybe.map (\old -> Payload.ChangedValueType { old = old, new = v }) model.old
-                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List Nothing)
+                        , Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.ValueType (Route.List { type_ = Nothing })
                         ]
                     )
 
