@@ -5,6 +5,7 @@ import Configuration.Zone.View exposing (displayZone)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import EventType.EventType exposing (EventType)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -18,7 +19,7 @@ import Shared
 import Spa.Page
 import Type exposing (Type)
 import Typed.Type as TType
-import Util exposing (third)
+import Util exposing (flip, third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
@@ -56,6 +57,7 @@ type Msg
     | ViewEvent Uuid
     | Unreconciled Reconciliation
     | Close
+    | Add Uuid
 
 
 page : Shared.Model -> Spa.Page.Page Flags Shared.Msg (View Msg) Model Msg
@@ -114,6 +116,9 @@ update s msg model =
             , Shared.dispatch s (Payload.Unreconciled r)
             )
 
+        Add etuuid ->
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add Nothing (Just <| Uuid.toString etuuid))) |> Effect.fromCmd )
+
 
 view : Shared.Model -> Model -> View Msg
 view _ model =
@@ -153,4 +158,13 @@ viewContent model s =
                         Process.Reconcile.View.viewAsEvent s.state ViewEvent Unreconciled r
                     )
             )
+        , row [ spacing 5 ] <|
+            Dict.values <|
+                Dict.map (\_ etuuid -> button.primary (Ok (Add etuuid)) ("Add " ++ displayZone s.state SmallcardZone (Type.HType HType.EventType) etuuid))
+                    (model.type_
+                        |> Maybe.map Uuid.toString
+                        |> Maybe.andThen (flip Dict.get s.state.processTypes)
+                        |> Maybe.map .eventTypes
+                        |> Maybe.withDefault Dict.empty
+                    )
         ]

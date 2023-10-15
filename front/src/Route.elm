@@ -49,10 +49,10 @@ type EntitySegment
 
 
 type ViewSegment
-    = View String (Maybe String)
-    | Edit String (Maybe String)
-    | List (Maybe String)
-    | Add (Maybe String) (Maybe String) -- type=filter #hash
+    = View String (Maybe String) -- event uuid and eventtype uuid
+    | Edit String (Maybe String) -- event uuid and eventtype uuid
+    | List (Maybe String) -- eventtype uuid
+    | Add (Maybe String) (Maybe String) -- (add or edit event uuid) and (eventtype uuid)
 
 
 toTypeFilter : ViewSegment -> Maybe String
