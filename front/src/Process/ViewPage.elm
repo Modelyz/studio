@@ -5,7 +5,6 @@ import Configuration.Zone.View exposing (displayZone)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import EventType.EventType exposing (EventType)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -117,7 +116,7 @@ update s msg model =
             )
 
         Add etuuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add Nothing (Just <| Uuid.toString etuuid))) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add (Just <| Uuid.toString etuuid) Nothing)) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

@@ -49,10 +49,10 @@ type EntitySegment
 
 
 type ViewSegment
-    = View String (Maybe String) -- event uuid and eventtype uuid
-    | Edit String (Maybe String) -- event uuid and eventtype uuid
-    | List (Maybe String) -- eventtype uuid
-    | Add (Maybe String) (Maybe String) -- (add or edit event uuid) and (eventtype uuid)
+    = View String (Maybe String) -- /view/<event_uuid>#<eventtype_uuid>
+    | Edit String (Maybe String) -- /edit/<event_uuid>#<eventtype_uuid>
+    | List (Maybe String) -- /list?type=<eventtype_uuid>
+    | Add (Maybe String) (Maybe String) -- /add/<event_uuid>#<step_number>
 
 
 toTypeFilter : ViewSegment -> Maybe String
