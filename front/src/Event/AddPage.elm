@@ -54,6 +54,7 @@ type alias Flags =
     { route : Route
     , uuid : Maybe Uuid
     , tuuid : Maybe String
+    , related : Maybe Uuid
     }
 
 
@@ -126,10 +127,10 @@ match : Route -> Maybe Flags
 match route =
     case route of
         Route.Entity Route.Event (Route.Add p) ->
-            Just { route = route, uuid = Nothing, tuuid = p.type_ }
+            Just { route = route, uuid = Nothing, tuuid = p.type_, related = Maybe.andThen Uuid.fromString p.related }
 
         Route.Entity Route.Event (Route.Edit p) ->
-            Just { route = route, uuid = Uuid.fromString p.uuid, tuuid = p.type_ }
+            Just { route = route, uuid = Uuid.fromString p.uuid, tuuid = p.type_, related = Nothing }
 
         _ ->
             Nothing
@@ -175,7 +176,7 @@ init s f =
         adding =
             { route = f.route
             , isNew = isNew
-            , processes = Dict.empty
+            , processes = f.related |> Maybe.map (\r -> Dict.singleton (Uuid.toString r) r) |> Maybe.withDefault Dict.empty
             , type_ = wantedType
             , eventType = met
             , processTypes = toProcessTypes s.state (Maybe.map .uuid met)
@@ -440,7 +441,7 @@ update s msg model =
 
                         -- renew the Seed to avoid conflict due to uuidAggregator
                         , Effect.fromCmd <| Message.renewSeed ()
-                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_}))
+                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ }))
                         ]
                     )
 
