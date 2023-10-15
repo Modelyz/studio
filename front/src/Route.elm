@@ -418,7 +418,8 @@ toDesc s route =
             "Home"
 
         Entity e (List p) ->
-            Maybe.map2 (displayZone s MenuZone) (toHType e) (p.type_ |> Maybe.andThen Uuid.fromString) |> Maybe.withDefault ("Unknown " ++ entityToDesc e)
+            Maybe.withDefault (entityToDesc e)
+                (Maybe.map2 (displayZone s MenuZone) (toHType e) (Maybe.andThen Uuid.fromString p.type_))
 
         Entity e _ ->
             entityToDesc e
