@@ -135,15 +135,6 @@ viewContent model s =
             |> Maybe.withDefault ""
             |> h1
         , text <| displayZone s.state SmallcardZone mainTType model.uuid
-        , h2 "Contains:"
-        , row [ spacing 5 ]
-            (model.reconciliations
-                |> Dict.values
-                |> List.map
-                    (\r ->
-                        Process.Reconcile.View.viewAsEvent s.state ViewEvent Unreconciled r
-                    )
-            )
         , getIdentifiers s.state model.what model.uuid model.type_ False
             |> displayIdentifierDict "(none)"
         , h2 "Values:"
@@ -153,4 +144,13 @@ viewContent model s =
         , model.groups
             |> List.map (\guuid -> displayZone s.state SmallcardZone (Type.TType TType.Group) guuid)
             |> displayGroupTable "(none)"
+        , h2 "Contains the following Events:"
+        , row [ spacing 5 ]
+            (model.reconciliations
+                |> Dict.values
+                |> List.map
+                    (\r ->
+                        Process.Reconcile.View.viewAsEvent s.state ViewEvent Unreconciled r
+                    )
+            )
         ]
