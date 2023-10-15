@@ -116,7 +116,7 @@ update s msg model =
             )
 
         Add etuuid ->
-            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add { type_ = Just (Uuid.toString etuuid), step = Nothing })) |> Effect.fromCmd )
+            ( model, Route.redirect s.navkey (Route.Entity Route.Event (Route.Add { type_ = Just (Uuid.toString etuuid), related = Nothing, step = Nothing })) |> Effect.fromCmd )
 
 
 view : Shared.Model -> Model -> View Msg

@@ -61,7 +61,7 @@ update s msg model =
             )
 
         Add ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.Add { type_ = Nothing, step = Nothing }) )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.Configuration (Route.Add { type_ = Nothing, related = Nothing, step = Nothing }) )
 
         View zid ->
             ( model, Route.redirect s.navkey (Route.Entity Route.Configuration (Route.View { uuid = zid, type_ = Nothing })) |> Effect.fromCmd )

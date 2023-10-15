@@ -52,7 +52,7 @@ type ViewSegment
     = View { uuid : String, type_ : Maybe String }
     | Edit { uuid : String, type_ : Maybe String }
     | List { type_ : Maybe String }
-    | Add { type_ : Maybe String, step : Maybe String }
+    | Add { type_ : Maybe String, related : Maybe String, step : Maybe String }
 
 
 toTypeFilter : ViewSegment -> Maybe String
@@ -329,7 +329,7 @@ viewParser : Parser (ViewSegment -> a) a
 viewParser =
     oneOf
         [ map (\uuid type_ -> View { uuid = uuid, type_ = type_ }) (s "view" </> encodedString <?> Query.string "type")
-        , map (\type_ step -> Add { type_ = type_, step = step }) (s "add" <?> Query.string "type" </> fragment identity)
+        , map (\type_ related step -> Add { type_ = type_, related = related, step = step }) (s "add" <?> Query.string "type" <?> Query.string "related" </> fragment identity)
         , map (\uuid type_ -> Edit { uuid = uuid, type_ = type_ }) (s "edit" </> encodedString <?> Query.string "type")
         , map (\type_ -> List { type_ = type_ }) (s "list" <?> Query.string "type")
         ]
@@ -455,13 +455,29 @@ getType v =
             p.type_
 
 
+getRelated : ViewSegment -> Maybe String
+getRelated v =
+    case v of
+        Add p ->
+            p.related
+
+        Edit _ ->
+            Nothing
+
+        List _ ->
+            Nothing
+
+        View _ ->
+            Nothing
+
+
 redirectAdd : Nav.Key -> Route -> Cmd msg
 redirectAdd navkey route =
     Nav.pushUrl navkey <|
         toString <|
             case route of
                 Entity e v ->
-                    Entity e (Add { type_ = getType v, step = Nothing })
+                    Entity e (Add { type_ = getType v, related = getRelated v, step = Nothing })
 
                 Home ->
                     Home
