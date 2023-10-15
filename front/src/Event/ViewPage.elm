@@ -179,7 +179,7 @@ viewContent model s =
                 |> Dict.values
                 |> List.map
                     (\r ->
-                        Process.Reconcile.View.view s.state ViewProcess Unreconciled r
+                        Process.Reconcile.View.viewAsProcess s.state ViewProcess Unreconciled r
                     )
             )
         ]

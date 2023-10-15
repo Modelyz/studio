@@ -141,7 +141,7 @@ viewContent model s =
                 |> Dict.values
                 |> List.map
                     (\r ->
-                        Process.Reconcile.View.view s.state ViewEvent Unreconciled r
+                        Process.Reconcile.View.viewAsEvent s.state ViewEvent Unreconciled r
                     )
             )
         , getIdentifiers s.state model.what model.uuid model.type_ False
