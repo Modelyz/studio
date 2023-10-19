@@ -9,6 +9,7 @@ import View.Style exposing (color)
 
 
 type alias RationalInput =
+    -- a text input converted to a Rational
     String
 
 

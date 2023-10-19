@@ -64,15 +64,15 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , processTypes : Dict String Uuid
-    , processes : Dict String Uuid
+    , processes : Dict String Uuid -- the list of processes this event will be part of
     , type_ : Maybe Uuid
     , eventType : Maybe EventType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
     , qty : Maybe Expression
     , flow : Maybe Flow
-    , partialProcesses : List ( Uuid, RationalInput )
-    , reconciliations : Dict String Reconciliation
+    , partialProcesses : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
+    , reconciliations : Dict String Reconciliation -- the final (with a rational) allocation of this event to the process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -207,7 +207,7 @@ init s f =
                                 |> Dict.values
                            )
                     )
-            , partialProcesses = []
+            , partialProcesses = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
             , reconciliations = Dict.empty
             , qty = met |> Maybe.map .qty
             , calendar = calinit
