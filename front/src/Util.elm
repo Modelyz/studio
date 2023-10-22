@@ -1,4 +1,4 @@
-module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, encodeTuple, flip, indexOf, otherwise, otherwiseR, second, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, encodeTuple, flip, ifEmpty, indexOf, otherwise, otherwiseR, second, third)
 
 import Dict exposing (Dict)
 import Json.Encode as Encode
@@ -52,6 +52,15 @@ checkMaybe ma err =
 
         Just x ->
             Ok x
+
+
+ifEmpty : String -> String -> String
+ifEmpty default s =
+    if String.isEmpty s then
+        default
+
+    else
+        s
 
 
 checkEmptyString : String -> String -> Result String String

@@ -16,6 +16,7 @@ import Scope exposing (Scope(..))
 import State exposing (State)
 import Type exposing (Type)
 import Typed.Type as TType
+import Util exposing (ifEmpty)
 import View.Style exposing (..)
 
 
@@ -138,6 +139,7 @@ toValue s t uuid zone fragment =
                         |> Dict.values
                         |> List.map (\r -> Rational.toFloatString r.qty ++ separator.qtySep ++ displayZone s zone (Type.TType TType.Event) r.event)
                         |> String.join separator.eventSep
+                        |> ifEmpty "(empty)"
 
                 _ ->
                     ""
