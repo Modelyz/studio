@@ -2,6 +2,12 @@
 
 [Back to app](../)
 
+## version 18 -- 2023-10-22
+
+* Added buttons to create Events from a Process
+* Display the related Processes in the Event
+* Upgraded to GHC 9.4
+
 ## version 17 -- 2023-09-28
 
 * Reworked message passing on the backend
