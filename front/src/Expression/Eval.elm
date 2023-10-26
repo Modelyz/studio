@@ -23,6 +23,7 @@ import Value.Value exposing (..)
 
 
 type alias Config =
+    -- the context is the current entity
     { context : ( Type, Uuid ) }
 
 

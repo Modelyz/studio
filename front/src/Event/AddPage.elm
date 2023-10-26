@@ -568,7 +568,7 @@ viewContent model s =
                         )
 
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.HType HType.EventType
                         , muuid = model.type_
                         , onInput = SelectType
@@ -587,7 +587,7 @@ viewContent model s =
                     Maybe.map
                         (\et ->
                             column [ spacing 20 ]
-                                [ flatSelect s
+                                [ flatSelect s.state
                                     { what = Type.TType TType.Agent
                                     , muuid = model.provider
                                     , onInput = SelectProvider
@@ -608,7 +608,7 @@ viewContent model s =
                     Maybe.map
                         (\et ->
                             column [ spacing 20 ]
-                                [ flatSelect s
+                                [ flatSelect s.state
                                     { what = Type.TType TType.Agent
                                     , muuid = model.receiver
                                     , onInput = SelectReceiver
@@ -646,7 +646,7 @@ viewContent model s =
                                         , onInput = InputQty
                                         , context = ( Type.TType TType.Event, model.uuid )
                                         }
-                                        s
+                                        s.state
                                         ( [], qty )
                                         qty
                                     , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] chosen
@@ -672,7 +672,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = Type.TType TType.Event, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = Type.TType TType.Event, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
@@ -683,7 +683,7 @@ viewContent model s =
                         , onInput = InputValue
                         , context = ( Type.TType TType.Event, model.uuid )
                         }
-                        s
+                        s.state
                         model.values
     in
     floatingContainer s

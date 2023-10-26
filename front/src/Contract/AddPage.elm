@@ -198,7 +198,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Payload.Grouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Payload.Ungrouped (Link hereType t.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
-                        , redirect s.navkey (Route.Entity Route.Contract (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Contract (Route.View { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ })) |> Effect.fromCmd
                         ]
                     )
 
@@ -252,7 +252,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.HType HType.ContractType
                         , muuid = model.type_
                         , onInput = InputType
@@ -263,13 +263,13 @@ viewContent model s =
                         (s.state.contractTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s.state model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

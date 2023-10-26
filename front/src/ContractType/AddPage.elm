@@ -137,7 +137,7 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay {what=HType.ContractType, uuid=uuid, isMenu=False}))
+                            |> Dict.get (Config.compare (MenuDisplay { what = HType.ContractType, uuid = uuid, isMenu = False }))
                             |> Maybe.map
                                 (\config ->
                                     case config of
@@ -219,10 +219,10 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Payload.Configured <| MenuDisplay {what=HType.ContractType, uuid=t.uuid, isMenu=model.isMenu} ]
+                                        [ Payload.Configured <| MenuDisplay { what = HType.ContractType, uuid = t.uuid, isMenu = model.isMenu } ]
                                    )
                             )
-                        , redirect s.navkey (Route.Entity Route.ContractType (Route.View {uuid = Uuid.toString model.uuid, type_ = Nothing})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.ContractType (Route.View { uuid = Uuid.toString model.uuid, type_ = Nothing })) |> Effect.fromCmd
                         ]
                     )
 
@@ -261,7 +261,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = hereType
                         , muuid = model.type_
                         , onInput = InputType
@@ -272,7 +272,7 @@ viewContent model s =
                         (s.state.contractTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -292,7 +292,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s.state model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

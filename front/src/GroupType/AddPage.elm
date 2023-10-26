@@ -291,7 +291,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = hereType
                         , muuid = model.type_
                         , onInput = InputType
@@ -302,7 +302,7 @@ viewContent model s =
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
@@ -322,7 +322,7 @@ viewContent model s =
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s.state model.values
 
                 Step.Step StepUnique ->
                     wrappedRow [ spacing 20 ] [ text "An entity can only be in one group of this type: ", switch InputUnique model.unique "False" "True" ]

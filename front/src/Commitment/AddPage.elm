@@ -329,7 +329,7 @@ update s msg model =
                                 ++ List.map (\uuid -> Payload.Grouped (Link hereType c.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Payload.Ungrouped (Link hereType c.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                             )
-                        , redirect s.navkey (Route.Entity Route.Commitment (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Commitment (Route.View { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ })) |> Effect.fromCmd
                         ]
                     )
 
@@ -397,7 +397,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.HType HType.CommitmentType
                         , muuid = model.type_
                         , onInput = SelectType
@@ -411,7 +411,7 @@ viewContent model s =
                     Maybe.map
                         (\ct ->
                             column [ spacing 20 ]
-                                [ flatSelect s
+                                [ flatSelect s.state
                                     { what = Type.TType TType.Agent
                                     , muuid = model.provider
                                     , onInput = SelectProvider
@@ -432,7 +432,7 @@ viewContent model s =
                     Maybe.map
                         (\ct ->
                             column [ spacing 20 ]
-                                [ flatSelect s
+                                [ flatSelect s.state
                                     { what = Type.TType TType.Agent
                                     , muuid = model.receiver
                                     , onInput = SelectReceiver
@@ -470,7 +470,7 @@ viewContent model s =
                                         , onInput = InputQty
                                         , context = ( hereType, model.uuid )
                                         }
-                                        s
+                                        s.state
                                         ( [], qty )
                                         qty
                                     , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] chosen
@@ -489,7 +489,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
@@ -500,7 +500,7 @@ viewContent model s =
                         , onInput = InputValue
                         , context = ( Type.TType TType.Commitment, model.uuid )
                         }
-                        s
+                        s.state
                         model.values
     in
     floatingContainer s

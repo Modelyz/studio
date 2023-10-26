@@ -22,6 +22,7 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
+import State exposing (State)
 import Type
 import Typed.Type as TType
 import Util exposing (checkAllOk, third)
@@ -231,7 +232,7 @@ update s msg model =
                                 ++ List.map Payload.Reconciled (Dict.values model.reconciliations)
                                 ++ List.map Payload.Unreconciled (Dict.values <| Dict.diff model.oldReconciliations model.reconciliations)
                             )
-                        , redirect s.navkey (Route.Entity Route.Process (Route.View {uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.Process (Route.View { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ })) |> Effect.fromCmd
                         ]
                     )
 
@@ -325,7 +326,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.HType HType.ProcessType
                         , muuid = model.type_
                         , onInput = InputType
@@ -354,13 +355,13 @@ viewContent model s =
                         )
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s.state model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)

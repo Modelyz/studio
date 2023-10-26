@@ -8,7 +8,7 @@ import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational
 import Prng.Uuid exposing (Uuid)
-import Shared
+import State exposing (State)
 import Type exposing (Type)
 import Value.Value as Value exposing (..)
 import View exposing (..)
@@ -19,11 +19,11 @@ type alias Config msg =
     , onInput : Value -> msg
 
     -- TODO check the Type is used
-    , context : ( Type, Uuid )
+    , context : ( Type, Uuid ) -- the context is the current entity
     }
 
 
-inputValues : Config msg -> Shared.Model -> Dict String Value -> Element msg
+inputValues : Config msg -> State -> Dict String Value -> Element msg
 inputValues c s values =
     -- display the expression with input fields for each relevant valueType
     column [ spacing 10 ]
@@ -38,7 +38,7 @@ inputValues c s values =
         )
 
 
-inputValue : Config msg -> Shared.Model -> Value -> Element msg
+inputValue : Config msg -> State -> Value -> Element msg
 inputValue c s v =
     column []
         [ el [ paddingXY 0 10 ] <| text (v.name ++ " :")
@@ -52,7 +52,7 @@ inputValue c s v =
                     none
 
                 _ ->
-                    Eval.exeval s.state { context = c.context } s.state.values v.expr
+                    Eval.exeval s { context = c.context } s.values v.expr
                         |> (\r ->
                                 case r of
                                     Ok val ->

@@ -283,7 +283,7 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.HType HType.GroupType
                         , muuid = model.type_
                         , onInput = InputType
@@ -294,7 +294,7 @@ viewContent model s =
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
                 Step.Step StepParent ->
-                    flatSelect s
+                    flatSelect s.state
                         { what = Type.TType TType.Group
                         , muuid = model.parent
                         , onInput = InputParent
@@ -309,13 +309,13 @@ viewContent model s =
                     selectScope s.state InputScope model.scope Scope.anything "What can be in the group?"
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
 
                 Step.Step StepValues ->
-                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s model.values
+                    inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( hereType, model.uuid ) } s.state model.values
     in
     floatingContainer s
         (Just <| Button Step.Cancel)
