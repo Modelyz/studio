@@ -1,4 +1,4 @@
-module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, encodeTuple, flip, ifEmpty, indexOf, otherwise, otherwiseR, second, third)
+module Util exposing (andMapR, checkAllOk, checkEmptyDict, checkEmptyList, checkEmptyString, checkListOne, checkMaybe, checkNothing, chooseIfSingleton, dup, encodeTuple, flip, ifEmpty, indexOf, orShowError, otherwise, otherwiseR, second, third)
 
 import Dict exposing (Dict)
 import Json.Encode as Encode
@@ -22,6 +22,16 @@ otherwiseR fallback main =
 
         Err _ ->
             fallback
+
+
+orShowError : Result String String -> String
+orShowError result =
+    case result of
+        Ok ok ->
+            ok
+
+        Err err ->
+            err
 
 
 second : ( a, b, c ) -> b

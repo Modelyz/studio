@@ -24,7 +24,7 @@ import Spa.Page
 import Time exposing (Posix, millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
-import Util exposing (third)
+import Util exposing (orShowError, third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
@@ -146,6 +146,18 @@ view model =
 
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
+    let
+        rqty =
+            model.qty
+                |> Result.fromMaybe "(no expression)"
+                |> Result.andThen (exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values)
+
+        allocated =
+            model.reconciliations |> Dict.foldl (\_ v q -> Rational.add v.qty q) Rational.zero
+
+        unallocated =
+            rqty |> Result.map (\qty -> Rational.add qty (Rational.neg allocated))
+    in
     floatingContainer s
         (Just Close)
         "Event"
@@ -157,10 +169,14 @@ viewContent model s =
         , h2 ("Date: " ++ DateTime.toString s.zone model.when)
         , h2
             ("What: "
-                ++ (model.qty |> Maybe.map (\expr -> exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values expr |> Result.map Rational.toFloatString |> Result.withDefault "invalid") |> Maybe.withDefault "(none)")
+                ++ (rqty
+                        |> Result.map Rational.toFloatString
+                        |> orShowError
+                   )
                 ++ " "
                 ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardZone (Flow.userTypeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
             )
+        , h2 <| "Unallocated: " ++ (unallocated |> Result.map Rational.toFloatString |> orShowError)
         , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , text <| displayZone s.state SmallcardZone mainTType model.uuid
