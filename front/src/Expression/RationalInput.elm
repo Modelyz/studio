@@ -26,8 +26,9 @@ adaptWidth r =
 
 mandatory : Bool -> String -> Result String Rational
 mandatory isMandatory str =
+    -- TODO mandatory normally means not Nothing
     if String.length str == 0 && isMandatory then
-        Err "Cannot be zerp"
+        Err "Cannot be zero"
 
     else
         Ok Rational.zero
