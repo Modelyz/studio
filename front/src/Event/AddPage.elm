@@ -72,7 +72,6 @@ type alias Model =
     , qty : Maybe Expression
     , flow : Maybe Flow
     , partialProcesses : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
-    , reconciliations : Dict String Reconciliation -- the final (with a rational) allocation of this event to the process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -208,7 +207,6 @@ init s f =
                            )
                     )
             , partialProcesses = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
-            , reconciliations = Dict.empty
             , qty = met |> Maybe.map .qty
             , calendar = calinit
             , uuid = newUuid
@@ -273,7 +271,6 @@ init s f =
                     , qty = event |> Maybe.map .qty
                     , flow = event |> Maybe.map .flow
                     , partialProcesses = toPartialProcesses reconciliations
-                    , reconciliations = reconciliations
                     , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
@@ -339,22 +336,14 @@ update s msg model =
 
         SelectProcesses uuids ->
             let
-                reconciliations =
+                partialProcesses =
                     uuids
                         |> List.map
-                            (\p ->
-                                let
-                                    r =
-                                        { qty = Rational.zero, process = p, event = model.uuid }
-                                in
-                                ( Reconcile.compare r, r )
-                            )
-                        |> Dict.fromList
+                            (\p -> ( p, "" ))
             in
             ( { model
                 | processes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList
-                , reconciliations = reconciliations
-                , partialProcesses = toPartialProcesses reconciliations
+                , partialProcesses = partialProcesses
               }
             , Effect.none
             )
@@ -377,7 +366,6 @@ update s msg model =
         InputPartialProcesses partialProcesses ->
             ( { model
                 | partialProcesses = partialProcesses
-                , reconciliations = fromPartialProcesses model.uuid partialProcesses
               }
             , Effect.none
             )
@@ -435,7 +423,7 @@ update s msg model =
                                                 )
 
                                     else
-                                        List.map (\r -> Payload.Reconciled r) <| Dict.values model.reconciliations
+                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromPartialProcesses model.uuid model.partialProcesses)
                                    )
                             )
 
