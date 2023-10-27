@@ -241,7 +241,7 @@ init s f =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
                     reconciliations =
-                        s.state.reconciliations |> Reconcile.byEvent uuid
+                        s.state.reconciliations |> Reconcile.filterByEvent uuid
 
                     gs =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList

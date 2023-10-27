@@ -1,4 +1,4 @@
-module Process.Reconcile exposing (Reconciliation, byEvent, byProcess, compare, decoder, encode, fromPartialEvents, fromPartialProcesses, toPartialEvents, toPartialProcesses)
+module Process.Reconcile exposing (Reconciliation, byProcess, compare, decoder, encode, filterByEvent, fromPartialEvents, fromPartialProcesses, toPartialEvents, toPartialProcesses)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -23,8 +23,8 @@ byProcess uuid =
     Dict.filter (\_ r -> r.process == uuid)
 
 
-byEvent : Uuid -> Dict String Reconciliation -> Dict String Reconciliation
-byEvent uuid =
+filterByEvent : Uuid -> Dict String Reconciliation -> Dict String Reconciliation
+filterByEvent uuid =
     Dict.filter (\_ r -> r.event == uuid)
 
 
