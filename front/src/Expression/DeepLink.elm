@@ -3,7 +3,7 @@ module Expression.DeepLink exposing (DeepLink(..), addTail, decoder, encode, isC
 import Expression.HardLink as HardLink exposing (HardLink)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 
 
 type DeepLink

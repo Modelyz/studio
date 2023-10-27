@@ -10,6 +10,7 @@ import Typed.Type as TType
 
 type
     HardLink
+    -- a hardlink is a field of an entity
     -- automatically chosen depending on the context ie the selected scope
     = ResourceLink ResourceLink
     | EventLink EventLink
