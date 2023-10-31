@@ -8,7 +8,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import EventType.EventType exposing (EventType)
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Editor exposing (view)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
@@ -21,7 +21,7 @@ import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -104,7 +104,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.EventType (Route.Add p) ->
+        Route.Entity Route.EventType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.EventType (Route.Edit p) ->
@@ -167,7 +167,7 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay {what=HType.EventType, uuid=uuid, isMenu=False}))
+                            |> Dict.get (Config.compare (MenuDisplay { what = HType.EventType, uuid = uuid, isMenu = False }))
                             |> Maybe.map
                                 (\config ->
                                     case config of
@@ -276,10 +276,10 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Payload.Configured <| MenuDisplay {what=HType.EventType, uuid=t.uuid, isMenu=model.isMenu} ]
+                                        [ Payload.Configured <| MenuDisplay { what = HType.EventType, uuid = t.uuid, isMenu = model.isMenu } ]
                                    )
                             )
-                        , redirect s.navkey (Route.Entity Route.EventType (Route.View {uuid = Uuid.toString model.uuid, type_ = Nothing})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.EventType (Route.View { uuid = Uuid.toString model.uuid, type_ = Nothing })) |> Effect.fromCmd
                         ]
                     )
 
