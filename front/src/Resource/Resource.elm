@@ -1,4 +1,4 @@
-module Resource.Resource exposing (Resource, decoder, encode, resourceOf)
+module Resource.Resource exposing (Resource, compare, decoder, encode, resourceOf)
 
 import Dict exposing (Dict)
 import Expression.Rational as Rational exposing (Rational)
@@ -17,6 +17,14 @@ type alias Resource =
     -- for one resource of 1,5 water liter or one transfert of 15 EUR or one lot of 15 identical pens
     , qty : Rational
     }
+
+
+compare : Resource -> String
+compare =
+    -- what allows to distinguish two resources?
+    -- currently it's the uuid.
+    -- Maybe in the future we can allow the identifiers to play that role
+    .uuid >> Uuid.toString
 
 
 resourceOf : Dict String { a | resource : Uuid } -> Dict String Resource -> Uuid -> List Uuid

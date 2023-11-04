@@ -26,7 +26,7 @@ import Process.Reconcile as Reconcile exposing (Reconciliation)
 import ProcessType.ProcessType exposing (ProcessType)
 import Relation.ProcessCommitments exposing (ProcessCommitments)
 import Relation.ProcessEvents exposing (ProcessEvents)
-import Resource.Resource exposing (Resource)
+import Resource.Resource as Resource exposing (Resource)
 import ResourceType.ResourceType exposing (ResourceType)
 import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
@@ -314,7 +314,7 @@ aggregate ((Message m p) as msg) state =
 
         AddedResource r ->
             { commonState
-                | resources = Dict.insert (Uuid.toString r.uuid) r state.resources
+                | resources = Dict.insert (Resource.compare r) r state.resources
                 , types = Dict.insert (Uuid.toString r.uuid) ( r.uuid, Type.TType TType.Resource, Just r.type_ ) state.types
             }
 
