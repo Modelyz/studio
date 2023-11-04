@@ -43,11 +43,8 @@ toString hardlink =
         EventLink EventReceiver ->
             "Event Receiver"
 
-        EventLink EventInflow ->
-            "Event Incoming Resource"
-
-        EventLink EventOutflow ->
-            "Event Outgoing Resource"
+        EventLink EventResource ->
+            "Event Resource"
 
         EventLink EventGroup ->
             "Event Group"
@@ -190,11 +187,8 @@ decoder =
                     "Event Receiver" ->
                         Decode.succeed <| EventLink EventReceiver
 
-                    "Event Incoming Resource" ->
-                        Decode.succeed <| EventLink EventInflow
-
-                    "Event Outgoing Resource" ->
-                        Decode.succeed <| EventLink EventOutflow
+                    "Event Resource" ->
+                        Decode.succeed <| EventLink EventResource
 
                     "Event Group" ->
                         Decode.succeed <| EventLink EventGroup
@@ -336,15 +330,14 @@ allRL =
 type EventLink
     = EventProvider
     | EventReceiver
-    | EventInflow
-    | EventOutflow
+    | EventResource
     | EventGroup
     | EventType
 
 
 allEL : List HardLink
 allEL =
-    [ EventLink EventProvider, EventLink EventReceiver, EventLink EventInflow, EventLink EventOutflow, EventLink EventGroup, EventLink EventType ]
+    [ EventLink EventProvider, EventLink EventReceiver, EventLink EventResource, EventLink EventGroup, EventLink EventType ]
 
 
 type AgentLink
@@ -551,10 +544,7 @@ elToChoice hl =
         EventReceiver ->
             allAL
 
-        EventInflow ->
-            allRL
-
-        EventOutflow ->
+        EventResource ->
             allRL
 
         EventGroup ->
@@ -788,10 +778,7 @@ elToScope hardlink =
         EventReceiver ->
             HasType (Type.TType TType.Agent)
 
-        EventInflow ->
-            HasType (Type.TType TType.Resource)
-
-        EventOutflow ->
+        EventResource ->
             HasType (Type.TType TType.Resource)
 
         EventGroup ->

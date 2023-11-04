@@ -66,11 +66,6 @@ toValue s t uuid zone fragment =
                         |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.resultToString)
                         |> Maybe.withDefault ""
 
-                Type.TType TType.Event ->
-                    Dict.get (Uuid.toString uuid) s.events
-                        |> Maybe.map (.qty >> Eval.exeval s { context = ( t, uuid ) } s.values >> Rational.resultToString)
-                        |> Maybe.withDefault ""
-
                 _ ->
                     ""
 
@@ -78,59 +73,69 @@ toValue s t uuid zone fragment =
             (case t of
                 Type.TType TType.Commitment ->
                     Dict.get (Uuid.toString uuid) s.commitments
+                        |> Maybe.map
+                            (.flow
+                                >> (\f ->
+                                        case f of
+                                            ResourceFlow resource ->
+                                                displayZone s zone (Type.TType TType.Resource) resource.uuid
+
+                                            ResourceTypeFlow resourceType ->
+                                                displayZone s zone (Type.HType HType.ResourceType) resourceType.uuid
+                                   )
+                            )
 
                 Type.TType TType.Event ->
                     Dict.get (Uuid.toString uuid) s.events
+                        |> Maybe.map
+                            (.resource >> displayZone s zone (Type.TType TType.Resource))
 
                 _ ->
                     Nothing
             )
-                |> Maybe.map
-                    (.flow
-                        >> (\f ->
-                                case f of
-                                    ResourceFlow resource ->
-                                        displayZone s zone (Type.TType TType.Resource) resource.uuid
-
-                                    ResourceTypeFlow resourceType ->
-                                        displayZone s zone (Type.HType HType.ResourceType) resourceType.uuid
-                           )
-                    )
                 |> Maybe.withDefault ""
 
         Provider ->
-            (case t of
+            case t of
                 Type.TType TType.Commitment ->
                     Dict.get (Uuid.toString uuid) s.commitments
+                        |> Maybe.map
+                            (.provider
+                                >> displayZone s zone (Type.TType TType.Agent)
+                            )
+                        |> Maybe.withDefault ""
 
                 Type.TType TType.Event ->
                     Dict.get (Uuid.toString uuid) s.events
+                        |> Maybe.map
+                            (.provider
+                                >> displayZone s zone (Type.TType TType.Agent)
+                            )
+                        |> Maybe.withDefault ""
 
                 _ ->
-                    Nothing
-            )
-                |> Maybe.map
-                    (.provider
-                        >> displayZone s zone (Type.TType TType.Agent)
-                    )
-                |> Maybe.withDefault ""
+                    ""
 
         Receiver ->
-            (case t of
+            case t of
                 Type.TType TType.Commitment ->
                     Dict.get (Uuid.toString uuid) s.commitments
+                        |> Maybe.map
+                            (.receiver
+                                >> displayZone s zone (Type.TType TType.Agent)
+                            )
+                        |> Maybe.withDefault ""
 
                 Type.TType TType.Event ->
                     Dict.get (Uuid.toString uuid) s.events
+                        |> Maybe.map
+                            (.receiver
+                                >> displayZone s zone (Type.TType TType.Agent)
+                            )
+                        |> Maybe.withDefault ""
 
                 _ ->
-                    Nothing
-            )
-                |> Maybe.map
-                    (.receiver
-                        >> displayZone s zone (Type.TType TType.Agent)
-                    )
-                |> Maybe.withDefault ""
+                    ""
 
         EventList separator ->
             case t of

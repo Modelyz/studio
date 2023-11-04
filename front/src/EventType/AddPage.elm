@@ -54,7 +54,7 @@ type alias Model =
     , type_ : Maybe Uuid
     , providers : Scope
     , receivers : Scope
-    , flowscope : Scope
+    , resources : Scope
     , editor : Expression.Editor.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -82,7 +82,7 @@ type Msg
     = SelectType (Maybe Uuid)
     | SelectProviders Scope
     | SelectReceivers Scope
-    | SelectFlow Scope
+    | SelectResources Scope
     | InputIdentifier Identifier
     | InputIsMenu Bool
     | GroupMsg Group.Input.Msg
@@ -132,7 +132,7 @@ init s f =
             , type_ = Nothing
             , providers = Scope.HasType (Type.TType TType.Agent)
             , receivers = Scope.HasType (Type.TType TType.Agent)
-            , flowscope = Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))
+            , resources = Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))
             , editor = Expression.Editor.init (HasType (Type.TType TType.Event)) []
             , uuid = newUuid
             , seed = newSeed
@@ -185,18 +185,18 @@ init s f =
                     et =
                         Dict.get (Uuid.toString uuid) s.state.eventTypes
 
-                    flowscope =
-                        Maybe.map .flowscope et |> Maybe.withDefault (HasType (Type.TType TType.Event))
+                    resources =
+                        Maybe.map .resources et |> Maybe.withDefault (HasType (Type.TType TType.Event))
                 in
                 ( { adding
                     | type_ = realType
                     , uuid = uuid
                     , providers = Maybe.map .providers et |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
                     , receivers = Maybe.map .receivers et |> Maybe.withDefault (Scope.HasType (Type.TType TType.Agent))
-                    , flowscope = flowscope
+                    , resources = resources
                     , editor =
                         Expression.Editor.init
-                            flowscope
+                            resources
                             (et |> Maybe.map (.qty >> List.singleton) |> Maybe.withDefault [])
                     , identifiers = getIdentifiers s.state hereType uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values hereType uuid realType False
@@ -238,9 +238,9 @@ update s msg model =
         SelectReceivers scope ->
             ( { model | receivers = scope }, Effect.none )
 
-        SelectFlow scope ->
+        SelectResources scope ->
             ( { model
-                | flowscope = scope
+                | resources = scope
               }
             , Effect.none
             )
@@ -317,7 +317,7 @@ checkStep model =
 validate : Model -> Result String EventType
 validate m =
     Result.map
-        (EventType HType.EventType m.uuid m.type_ m.providers m.receivers m.flowscope)
+        (EventType HType.EventType m.uuid m.type_ m.providers m.receivers m.resources)
         (Expression.Editor.checkExpression m.editor)
 
 
@@ -346,7 +346,7 @@ viewContent model s =
                 Step.Step StepFlow ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                         -- TODO review Scope.or and check Commitment as well
-                        [ selectScope s.state SelectFlow model.flowscope (Scope.or (Scope.HasType (Type.TType TType.Resource)) (Scope.HasType (Type.HType HType.ResourceType))) "What can be exchanged:"
+                        [ selectScope s.state SelectResources model.resources (Scope.HasType (Type.TType TType.Resource)) "What can be exchanged:"
                         , h2 "Build an expression for the quantity exchanged:"
                         , Element.map EditorMsg <| Expression.Editor.view s model.editor
                         ]

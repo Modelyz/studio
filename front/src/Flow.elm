@@ -12,7 +12,9 @@ import Type exposing (Type, typeOf)
 import Typed.Type as TType
 
 
-type Flow
+type
+    Flow
+    -- similar to Either Resource ResourceType
     = ResourceFlow Resource
     | ResourceTypeFlow ResourceType
 

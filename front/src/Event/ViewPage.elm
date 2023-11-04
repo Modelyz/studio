@@ -6,10 +6,7 @@ import DateTime
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Expression exposing (Expression)
-import Expression.Eval exposing (exeval)
 import Expression.Rational as Rational
-import Flow exposing (Flow)
 import Group.View exposing (displayGroupTable)
 import Hierarchy.Type as HType
 import Ident.Identifiable exposing (getIdentifiers)
@@ -24,7 +21,7 @@ import Spa.Page
 import Time exposing (Posix, millisToPosix)
 import Type exposing (Type)
 import Typed.Type as TType
-import Util exposing (orShowError, third)
+import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
@@ -53,8 +50,7 @@ type alias Model =
     , uuid : Uuid
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
-    , qty : Maybe Expression
-    , flow : Maybe Flow
+    , resource : Maybe Uuid
     , type_ : Maybe Uuid
     , groups : List Uuid
     , when : Posix
@@ -101,8 +97,7 @@ init s f =
       , type_ = Maybe.andThen third (Dict.get (Uuid.toString f.uuid) s.state.types)
       , provider = Maybe.map .provider event
       , receiver = Maybe.map .receiver event
-      , qty = Maybe.map .qty event
-      , flow = Maybe.map .flow event
+      , resource = Maybe.map .resource event
       , groups =
             s.state.grouped
                 |> Dict.filter (\_ link -> link.groupable == f.uuid)
@@ -147,16 +142,11 @@ view model =
 viewContent : Model -> Shared.Model -> Element Msg
 viewContent model s =
     let
-        rqty =
-            model.qty
-                |> Result.fromMaybe "(no expression)"
-                |> Result.andThen (exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values)
-
         allocated =
             model.reconciliations |> Dict.foldl (\_ v q -> Rational.add v.qty q) Rational.zero
 
         unallocated =
-            rqty |> Result.map (\qty -> Rational.add qty (Rational.neg allocated))
+            Rational.add Rational.one (Rational.neg allocated)
     in
     floatingContainer s
         (Just Close)
@@ -169,14 +159,9 @@ viewContent model s =
         , h2 ("Date: " ++ DateTime.toString s.zone model.when)
         , h2
             ("What: "
-                ++ (rqty
-                        |> Result.map Rational.toFloatString
-                        |> orShowError
-                   )
-                ++ " "
-                ++ (model.flow |> Maybe.map (\f -> displayZone s.state SmallcardZone (Flow.userTypeOf f) (Flow.uuidOf f)) |> Maybe.withDefault "(none)")
+                ++ (model.resource |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Resource)) |> Maybe.withDefault "(none)")
             )
-        , h2 <| "Unallocated: " ++ (unallocated |> Result.map Rational.toFloatString |> orShowError)
+        , h2 <| "Unallocated: " ++ Rational.toFloatString unallocated
         , h2 ("Provider: " ++ (model.provider |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , h2 ("Receiver: " ++ (model.receiver |> Maybe.map (displayZone s.state SmallcardZone (Type.TType TType.Agent)) |> Maybe.withDefault "(none)"))
         , text <| displayZone s.state SmallcardZone mainTType model.uuid

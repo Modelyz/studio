@@ -3,6 +3,7 @@ module Resource.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
+import Expression.Rational as Rational exposing (Rational)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -28,11 +29,6 @@ import View.FlatSelect exposing (flatSelect)
 import View.Step as Step exposing (Step(..), buttons)
 
 
-typedConstructor : TType.Type
-typedConstructor =
-    TType.Resource
-
-
 hereType : Type.Type
 hereType =
     Type.TType TType.Resource
@@ -52,6 +48,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
+    , qty : Rational -- the internal qty
     , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -71,6 +68,7 @@ type Step
 
 type Msg
     = InputType (Maybe Uuid)
+    | InputQty Rational
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
@@ -119,6 +117,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = wantedType
+            , qty = Rational.one
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state hereType newUuid wantedType True
@@ -166,6 +165,9 @@ update s msg model =
               }
             , Effect.none
             )
+
+        InputQty qty ->
+            ( { model | qty = qty }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -234,7 +236,7 @@ validate m =
     case m.type_ of
         Just uuid ->
             -- TODO check that TType thing is useful
-            Ok <| Resource typedConstructor m.uuid uuid
+            Ok <| Resource TType.Resource m.uuid uuid m.qty
 
         Nothing ->
             Err "You must select a Resource Type"

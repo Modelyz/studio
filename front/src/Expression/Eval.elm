@@ -10,9 +10,9 @@ import Expression.Observable exposing (Observable(..))
 import Expression.Rational as Rational exposing (Rational)
 import Expression.Unary as U
 import Expression.ValueSelection exposing (ValueSelection(..))
-import Flow
 import Group.Group as Group
 import Prng.Uuid exposing (Uuid)
+import Resource.Resource as Resource
 import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
 import State exposing (State)
@@ -93,11 +93,8 @@ step s hl uuid =
         EventLink HardLink.EventReceiver ->
             Agent.receiverOf s.events s.agents uuid
 
-        EventLink HardLink.EventInflow ->
-            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
-
-        EventLink HardLink.EventOutflow ->
-            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
+        EventLink HardLink.EventResource ->
+            Resource.resourceOf s.events s.resources uuid
 
         EventLink HardLink.EventGroup ->
             Group.groupsOf s.grouped uuid
@@ -118,10 +115,7 @@ step s hl uuid =
             Agent.receiverOf s.commitments s.agents uuid
 
         CommitmentLink HardLink.CommitmentInflow ->
-            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
-
-        CommitmentLink HardLink.CommitmentOutflow ->
-            Flow.flowOf s.types s.events s.resources s.resourceTypes uuid
+            Resource.resourceOf s.events s.resources uuid
 
         CommitmentLink HardLink.CommitmentGroup ->
             Group.groupsOf s.grouped uuid

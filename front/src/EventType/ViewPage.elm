@@ -1,5 +1,7 @@
 module EventType.ViewPage exposing (Flags, Model, Msg(..), match, page)
 
+import Configuration.Zone exposing (Zone(..))
+import Configuration.Zone.View exposing (displayZone)
 import Dict
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -21,8 +23,6 @@ import Util exposing (third)
 import Value.Valuable exposing (getValues)
 import Value.View exposing (displayValueDict)
 import View exposing (..)
-import Configuration.Zone.View exposing (displayZone)
-import Configuration.Zone exposing (Zone(..))
 
 
 mainHType : Type
@@ -92,10 +92,10 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update s msg model =
     case msg of
         Close ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.List {type_ = (Maybe.map Uuid.toString model.type_)} )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.List { type_ = Maybe.map Uuid.toString model.type_ } )
 
         Edit ->
-            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.Edit {uuid = Uuid.toString model.uuid, type_ = Nothing} )
+            ( model, Effect.fromCmd <| redirect s.navkey <| Route.Entity Route.EventType <| Route.Edit { uuid = Uuid.toString model.uuid, type_ = Nothing } )
 
 
 view : Model -> View Msg
@@ -136,6 +136,6 @@ viewContent model s =
         -- TODO what about resource conversions?
         , EventType.View.svg
             (Maybe.map (.providers >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
-            (Maybe.map (.flowscope >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
+            (Maybe.map (.resources >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
             (Maybe.map (.receivers >> Scope.View.toDisplay s.state) model.et |> Maybe.withDefault "(none)")
         ]

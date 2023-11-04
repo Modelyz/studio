@@ -7,16 +7,10 @@ import DateTime.View
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Element.Border as Border
 import Event.Event exposing (Event)
 import EventType.EventType exposing (EventType)
-import Expression exposing (Expression)
-import Expression.Eval as Eval
-import Expression.Input
 import Expression.Rational as Rational
 import Expression.RationalInput as RationalInput exposing (RationalInput)
-import Flow exposing (Flow(..))
-import Flow.Input
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -47,7 +41,6 @@ import View exposing (..)
 import View.FlatSelect exposing (flatSelect)
 import View.MultiSelect exposing (multiSelect)
 import View.Step as Step exposing (Step(..), buttons)
-import View.Style exposing (color)
 
 
 type alias Flags =
@@ -69,9 +62,8 @@ type alias Model =
     , eventType : Maybe EventType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
-    , qty : Maybe Expression
-    , flow : Maybe Flow
-    , partialProcesses : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
+    , resource : Maybe Uuid
+    , allocations : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -88,7 +80,7 @@ type Step
     | StepType
     | StepProvider
     | StepReceiver
-    | StepFlow
+    | StepResource
     | StepReconcile
     | StepDate
     | StepIdentifiers
@@ -102,8 +94,7 @@ type Msg
     | SelectProcesses (List Uuid)
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
-    | InputQty Expression
-    | InputFlow (Maybe Flow)
+    | SelectResource (Maybe Uuid)
     | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
     | InputValue Value
@@ -193,21 +184,14 @@ init s f =
                         |> Dict.map (\_ a -> a.uuid)
                         |> Dict.values
                     )
-            , flow =
+            , resource =
                 chooseIfSingleton
-                    ((s.state.resources
-                        |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.flowscope) |> Maybe.withDefault True)
-                        |> Dict.map (\_ r -> ResourceFlow r)
+                    (s.state.resources
+                        |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
+                        |> Dict.map (\_ r -> r.uuid)
                         |> Dict.values
-                     )
-                        ++ (s.state.resourceTypes
-                                |> Dict.filter (\_ rt -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) ct.flowscope) |> Maybe.withDefault True)
-                                |> Dict.map (\_ rt -> ResourceTypeFlow rt)
-                                |> Dict.values
-                           )
                     )
-            , partialProcesses = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
-            , qty = met |> Maybe.map .qty
+            , allocations = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
@@ -222,7 +206,7 @@ init s f =
                 , Step.Step StepProcess
                 , Step.Step StepProvider
                 , Step.Step StepReceiver
-                , Step.Step StepFlow
+                , Step.Step StepResource
                 , Step.Step StepReconcile
                 , Step.Step StepDate
                 , Step.Step StepIdentifiers
@@ -268,9 +252,8 @@ init s f =
                     , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
                     , provider = event |> Maybe.map .provider
                     , receiver = event |> Maybe.map .receiver
-                    , qty = event |> Maybe.map .qty
-                    , flow = event |> Maybe.map .flow
-                    , partialProcesses = toPartialProcesses reconciliations
+                    , resource = event |> Maybe.map .resource
+                    , allocations = toPartialProcesses reconciliations
                     , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
@@ -314,19 +297,12 @@ update s msg model =
                             |> Dict.map (\_ a -> a.uuid)
                             |> Dict.values
                         )
-                , qty = Maybe.map .qty met
-                , flow =
+                , resource =
                     chooseIfSingleton
-                        ((s.state.resources
-                            |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.flowscope) |> Maybe.withDefault True)
-                            |> Dict.map (\_ r -> ResourceFlow r)
+                        (s.state.resources
+                            |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
                             |> Dict.values
-                         )
-                            ++ (s.state.resourceTypes
-                                    |> Dict.filter (\_ rt -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) ct.flowscope) |> Maybe.withDefault True)
-                                    |> Dict.map (\_ rt -> ResourceTypeFlow rt)
-                                    |> Dict.values
-                               )
+                            |> List.map .uuid
                         )
                 , identifiers = getIdentifiers s.state (Type.TType TType.Event) model.uuid muuid True
                 , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) model.uuid muuid True
@@ -336,14 +312,14 @@ update s msg model =
 
         SelectProcesses uuids ->
             let
-                partialProcesses =
+                allocations =
                     uuids
                         |> List.map
                             (\p -> ( p, "" ))
             in
             ( { model
                 | processes = uuids |> List.map (\u -> ( Uuid.toString u, u )) |> Dict.fromList
-                , partialProcesses = partialProcesses
+                , allocations = allocations
               }
             , Effect.none
             )
@@ -357,15 +333,12 @@ update s msg model =
         SelectReceiver uuid ->
             ( { model | receiver = uuid }, Effect.none )
 
-        InputQty qty ->
-            ( { model | qty = Just qty }, Effect.none )
+        SelectResource uuid ->
+            ( { model | resource = uuid }, Effect.none )
 
-        InputFlow flow ->
-            ( { model | flow = flow }, Effect.none )
-
-        InputPartialProcesses partialProcesses ->
+        InputPartialProcesses allocations ->
             ( { model
-                | partialProcesses = partialProcesses
+                | allocations = allocations
               }
             , Effect.none
             )
@@ -393,12 +366,8 @@ update s msg model =
             ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
-            case validate s.state model of
+            case validate model of
                 Ok e ->
-                    let
-                        qty =
-                            Eval.exeval s.state { context = ( Type.TType TType.Event, model.uuid ) } s.state.values e.qty
-                    in
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
@@ -412,18 +381,20 @@ update s msg model =
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
                                             |> List.concatMap
                                                 (\( nextUuid, _, pt ) ->
-                                                    Result.map
-                                                        (\rational ->
-                                                            [ Payload.AddedProcess <| Process TType.Process nextUuid pt
-                                                            , Payload.Reconciled <| Reconciliation rational e.uuid nextUuid
-                                                            ]
-                                                        )
-                                                        qty
-                                                        |> Result.withDefault []
+                                                    model.resource
+                                                        |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.resources)
+                                                        |> Maybe.map .qty
+                                                        |> Maybe.map
+                                                            (\rational ->
+                                                                [ Payload.AddedProcess <| Process TType.Process nextUuid pt
+                                                                , Payload.Reconciled <| Reconciliation rational e.uuid nextUuid
+                                                                ]
+                                                            )
+                                                        |> Maybe.withDefault []
                                                 )
 
                                     else
-                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromPartialProcesses model.uuid model.partialProcesses)
+                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromPartialProcesses model.uuid model.allocations)
                                    )
                             )
 
@@ -450,8 +421,8 @@ view model =
     }
 
 
-checkStep : State -> Model -> Result String ()
-checkStep s model =
+checkStep : Model -> Result String ()
+checkStep model =
     case model.step of
         Step StepType ->
             checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
@@ -462,13 +433,11 @@ checkStep s model =
         Step StepReceiver ->
             checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
-        Step StepFlow ->
-            checkMaybe model.flow "You must input a Resource or Resource Type Flow"
-                |> Result.andThen (\_ -> Eval.checkEval s { context = ( Type.TType TType.Event, model.uuid ) } s.values model.qty)
-                |> Result.map (\_ -> ())
+        Step StepResource ->
+            checkMaybe model.resource "You must select or create a Resource" |> Result.map (\_ -> ())
 
         Step StepReconcile ->
-            checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.partialProcesses
+            checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.allocations
 
         Step StepProcessTypes ->
             checkEmptyDict model.processTypes "You must choose at least one Process Types" |> Result.map (\_ -> ())
@@ -477,36 +446,35 @@ checkStep s model =
             Ok ()
 
 
-validate : State -> Model -> Result String Event
-validate s m =
+validate : Model -> Result String Event
+validate m =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
         (Event TType.Event m.uuid (DateTime.View.toPosix m.calendar))
-        (Eval.checkEval s { context = ( Type.TType TType.Event, m.uuid ) } s.values m.qty)
-        |> andMapR (checkMaybe m.type_ "You must select an Event Type")
+        (checkMaybe m.type_ "You must select an Event Type")
         |> andMapR (checkMaybe m.provider "You must select a Provider")
         |> andMapR (checkMaybe m.receiver "You must select a Receiver")
-        |> andMapR (checkMaybe m.flow "You must input a Resource or Resource Type Flow")
+        |> andMapR (checkMaybe m.resource "You must select a Resource")
 
 
 inputPartialProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
-inputPartialProcess s partialProcesses index ( process, input ) =
-    -- send an event to replace the partialProcess at index in the partialProcesses
+inputPartialProcess s allocations index ( process, input ) =
+    -- send an event to replace the allocation at index in the allocations
     row [ spacing 5 ]
         [ RationalInput.inputText Rational.fromString
             (String.fromInt index)
             (Just "amount")
             (\str ->
                 InputPartialProcesses
-                    (partialProcesses
+                    (allocations
                         |> List.indexedMap
-                            (\i partialProcess ->
+                            (\i allocation ->
                                 if i == index then
                                     ( process, str )
 
                                 else
-                                    partialProcess
+                                    allocation
                             )
                     )
             )
@@ -613,44 +581,32 @@ viewContent model s =
                         model.eventType
                         |> Maybe.withDefault (text "This event has no type")
 
-                Step.Step StepFlow ->
-                    Maybe.map2
-                        (\ct qty ->
-                            let
-                                ( chosen, choice ) =
-                                    Flow.Input.input
-                                        { flow = model.flow
-                                        , scope = ct.flowscope
-                                        , onSelect = InputFlow
-                                        , onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                                        }
-                                        s
-                            in
+                Step.Step StepResource ->
+                    Maybe.map
+                        (\et ->
                             column [ spacing 20 ]
-                                [ h2 "Flow from the provider to the receiver"
-                                , wrappedRow [ width <| minimum 50 shrink, height (px 48), padding 3, spacing 4 ]
-                                    [ Expression.Input.inputExpression
-                                        { onEnter = Step.nextMsg model Button Step.NextPage Step.Added
-                                        , onInput = InputQty
-                                        , context = ( Type.TType TType.Event, model.uuid )
-                                        }
-                                        s.state
-                                        ( [], qty )
-                                        qty
-                                    , el [ padding 3, height (px 49), Border.width 2, Border.color color.item.border ] chosen
-                                    ]
-                                , choice
+                                [ flatSelect s.state
+                                    { what = Type.TType TType.Resource
+                                    , muuid = model.resource
+                                    , onInput = SelectResource
+                                    , title = "Resource:"
+                                    , explain = "Select the resource:"
+                                    , empty = "(There are no resources yet to choose from)"
+                                    }
+                                    (s.state.resources
+                                        |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) et.resources)
+                                        |> Dict.map (\_ r -> r.uuid)
+                                    )
                                 ]
                         )
                         model.eventType
-                        model.qty
                         |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepReconcile ->
                     column [ spacing 20 ]
                         [ h1 "Allocation"
                         , p "What amount do you allocate on each process?"
-                        , column [] <| List.indexedMap (\i pp -> inputPartialProcess s.state model.partialProcesses i pp) model.partialProcesses
+                        , column [] <| List.indexedMap (\i pp -> inputPartialProcess s.state model.allocations i pp) model.allocations
                         ]
 
                 Step.Step StepDate ->
@@ -677,6 +633,6 @@ viewContent model s =
     floatingContainer s
         (Just <| Button Step.Cancel)
         "Adding an Event"
-        (List.map (Element.map Button) (buttons model (checkStep s.state model)))
+        (List.map (Element.map Button) (buttons model (checkStep model)))
         [ step
         ]

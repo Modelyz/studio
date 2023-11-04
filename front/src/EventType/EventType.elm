@@ -1,12 +1,12 @@
 module EventType.EventType exposing (EventType, decoder, encode)
 
-import Expression as Expression exposing (Expression)
+import Expression exposing (Expression)
 import Hierarchy.Type as HType
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Maybe exposing (Maybe)
 import Prng.Uuid as Uuid exposing (Uuid)
-import Scope as Scope exposing (Scope)
+import Scope exposing (Scope)
 
 
 type alias EventType =
@@ -15,7 +15,7 @@ type alias EventType =
     , parent : Maybe Uuid
     , providers : Scope
     , receivers : Scope
-    , flowscope : Scope
+    , resources : Scope
     , qty : Expression
     }
 
@@ -28,7 +28,7 @@ encode et =
         , ( "parent", Maybe.map Uuid.encode et.parent |> Maybe.withDefault Encode.null )
         , ( "providers", Scope.encode et.providers )
         , ( "receivers", Scope.encode et.receivers )
-        , ( "flowscope", Scope.encode et.flowscope )
+        , ( "resources", Scope.encode et.resources )
         , ( "qty", Expression.encode et.qty )
         ]
 
@@ -41,5 +41,5 @@ decoder =
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "providers" Scope.decoder)
         (Decode.field "receivers" Scope.decoder)
-        (Decode.field "flowscope" Scope.decoder)
+        (Decode.field "resources" Scope.decoder)
         (Decode.field "qty" Expression.decoder)
