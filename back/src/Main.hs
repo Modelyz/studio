@@ -86,8 +86,8 @@ serverApp msgsMV msgPath chan pending_conn = do
         -- wait for new message coming from other connected browsers through the chan
         -- and send them to the currently connected browser
         putStrLn "Starting client worker thread"
-        forkIO $
-            fix
+        forkIO
+            $ fix
                 ( \loop -> do
                     msg <- readChan browserChan
                     putStrLn $ "SERVER WORKER THREAD got this msg from the chan:\n" ++ show msg
@@ -96,8 +96,8 @@ serverApp msgsMV msgPath chan pending_conn = do
                     case getFlow msg of
                         Requested -> case creator msg of
                             Front ->
-                                Monad.when (lastVisited msg == Store) $
-                                    (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
+                                Monad.when (lastVisited msg == Store)
+                                    $ (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
                             _ -> return ()
                         Processed -> case creator msg of
                             Dumb -> do
@@ -113,8 +113,9 @@ serverApp msgsMV msgPath chan pending_conn = do
 
     -- SERVER MAIN THREAD
     -- handle message coming through websocket from the currently connected browser
-    WS.withPingThread conn 30 (return ()) $
-        Monad.forever $ do
+    WS.withPingThread conn 30 (return ())
+        $ Monad.forever
+        $ do
             message <- WS.receiveDataMessage conn
             putStrLn $ "SERVER MAIN THREAD got this msg from browsers:\n" ++ show message
             case JSON.eitherDecode
@@ -136,22 +137,23 @@ serverApp msgsMV msgPath chan pending_conn = do
                             putStrLn $ "remoteUuids = " ++ show remoteUuids
                             esevs <- readMVar msgsMV
                             putStrLn "Started syncing to browsers"
-                            putStrLn "event store ="
-                            print esevs
+                            -- putStrLn "event store ="
+                            -- print esevs
                             putStrLn "remote UUIDS = "
                             print remoteUuids
                             let msgs = filter (\m -> messageId m `notElem` remoteUuids) esevs
                             mapM_ (WS.sendTextData conn . JSON.encode . (if creator msg == myself then id else addVisited myself)) msgs
                             putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to browsers:\n" ++ show msgs
                             -- send the InitiatedConnection terminaison to signal the sync is over
-                            (WS.sendTextData conn . JSON.encode) $
-                                Message
+                            (WS.sendTextData conn . JSON.encode)
+                                $ Message
                                     (Metadata{uuid = uuid $ metadata msg, Metadata.when = when $ metadata msg, Metadata.from = [myself], Metadata.flow = Processed})
                                     (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Set.empty}))
                         _ -> do
                             case flow (metadata msg) of
                                 Requested -> case from of
                                     Front -> do
+                                        -- write to the chan, write on file, add to the msg list
                                         writeChan browserChan msg
                                         appendMessage msgPath msg
                                         msgs <- takeMVar msgsMV
@@ -208,7 +210,8 @@ clientApp msgPath storeChan msgsMV stateMV conn = do
                 st <- readMVar stateMV
                 case flow (metadata msg) of
                     Requested -> case creator msg of
-                        Front -> Monad.when (messageId msg `notElem` Main.uuids st) $ do
+                        Front -> Monad.unless (messageId msg `elem` Main.uuids st) $ do
+                            -- add the msg in the msg list and write it
                             appendMessage msgPath msg
                             msgs <- takeMVar msgsMV
                             putMVar msgsMV (msg : msgs)
@@ -222,15 +225,16 @@ clientApp msgPath storeChan msgsMV stateMV conn = do
                                 writeChan storeChan msg
                         _ -> return ()
                     Processed -> do
-                        putStrLn $ "STATE = " ++ show st
+                        -- putStrLn $ "STATE = " ++ show st
                         case payload msg of
                             InitiatedConnection _ -> do
                                 st'' <- takeMVar stateMV
                                 putMVar stateMV $! st''{syncing = False}
                                 putStrLn "Finished syncing from Store"
-                            _ -> Monad.when (messageId msg `notElem` Main.uuids st) $ do
+                            _ -> Monad.unless (messageId msg `elem` Main.uuids st) $ do
                                 case creator msg of
                                     Dumb -> do
+                                        -- add the msg in the msg list and write it
                                         appendMessage msgPath msg
                                         msgs <- takeMVar msgsMV
                                         putMVar msgsMV (msg : msgs)
@@ -242,6 +246,7 @@ clientApp msgPath storeChan msgsMV stateMV conn = do
                                             writeChan storeChan msg
                                         putStrLn "updated state"
                                     Ident -> do
+                                        -- add the msg in the msg list and write it
                                         appendMessage msgPath msg
                                         msgs <- takeMVar msgsMV
                                         putMVar msgsMV (msg : msgs)
