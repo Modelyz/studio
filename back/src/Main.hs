@@ -43,6 +43,7 @@ data State = State
     deriving (Show)
 
 type StateMV = MVar State
+type MessagesMV = MVar [Message]
 
 myself :: Service
 myself = Studio
@@ -71,8 +72,8 @@ contentType filename = case reverse $ T.split (== '.') filename of
     "js" : _ -> "javascript"
     _ -> "raw"
 
-serverApp :: FilePath -> Chan Message -> WS.ServerApp
-serverApp msgPath chan pending_conn = do
+serverApp :: MVar [Message] -> FilePath -> Chan Message -> WS.ServerApp
+serverApp msgsMV msgPath chan pending_conn = do
     clientMV <- newMVar None
     browserChan <- dupChan chan -- channel to the browser application, dedicated to a connection
     -- accept a new connexion
@@ -133,7 +134,7 @@ serverApp msgPath chan pending_conn = do
                             putStrLn $ "Connected client: " ++ show from -- right place to do auth?
                             let remoteUuids = Connection.uuids connection
                             putStrLn $ "remoteUuids = " ++ show remoteUuids
-                            esevs <- readMessages msgPath
+                            esevs <- readMVar msgsMV
                             putStrLn "Started syncing to browsers"
                             putStrLn "event store ="
                             print esevs
@@ -153,12 +154,14 @@ serverApp msgPath chan pending_conn = do
                                     Front -> do
                                         writeChan browserChan msg
                                         appendMessage msgPath msg
+                                        msgs <- takeMVar msgsMV
+                                        putMVar msgsMV (msg : msgs)
                                     _ -> return ()
                                 _ -> return ()
                 Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
-clientApp :: FilePath -> Chan Message -> StateMV -> WS.ClientApp ()
-clientApp msgPath storeChan stateMV conn = do
+clientApp :: FilePath -> Chan Message -> MessagesMV -> StateMV -> WS.ClientApp ()
+clientApp msgPath storeChan msgsMV stateMV conn = do
     putStrLn "Connected!"
     -- Just reconnected, first send an InitiatedConnection to the store
     newUuid <- UUID.nextRandom
@@ -207,6 +210,8 @@ clientApp msgPath storeChan stateMV conn = do
                     Requested -> case creator msg of
                         Front -> Monad.when (messageId msg `notElem` Main.uuids st) $ do
                             appendMessage msgPath msg
+                            msgs <- takeMVar msgsMV
+                            putMVar msgsMV (msg : msgs)
                             -- Add it or remove to the pending list (if relevant) and keep the uuid
                             st' <- takeMVar stateMV
                             putMVar stateMV $! update st' msg
@@ -227,6 +232,8 @@ clientApp msgPath storeChan stateMV conn = do
                                 case creator msg of
                                     Dumb -> do
                                         appendMessage msgPath msg
+                                        msgs <- takeMVar msgsMV
+                                        putMVar msgsMV (msg : msgs)
                                         -- Add it or remove to the pending list (if relevant) and keep the uuid
                                         st'' <- takeMVar stateMV
                                         putMVar stateMV $! update st'' msg
@@ -236,6 +243,8 @@ clientApp msgPath storeChan stateMV conn = do
                                         putStrLn "updated state"
                                     Ident -> do
                                         appendMessage msgPath msg
+                                        msgs <- takeMVar msgsMV
+                                        putMVar msgsMV (msg : msgs)
                                         -- Add it or remove to the pending list (if relevant) and keep the uuid
                                         st'' <- takeMVar stateMV
                                         putMVar stateMV $! update st'' msg
@@ -283,24 +292,24 @@ httpApp (Options d _ _ _ _ _) request respond = do
 maxWait :: Int
 maxWait = 10
 
-reconnectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan Message -> StateMV -> IO ()
-reconnectClient waitTime previousTime host port msgPath storeChan stateMV = do
+reconnectClient :: Int -> POSIXTime -> Host -> Port -> FilePath -> Chan Message -> MessagesMV -> StateMV -> IO ()
+reconnectClient waitTime previousTime host port msgPath storeChan msgsMV stateMV = do
     putStrLn $ "Waiting " ++ show waitTime ++ " seconds"
     threadDelay $ waitTime * 1000000
     putStrLn $ "Connecting to Store at ws://" ++ host ++ ":" ++ show port ++ "..."
     catches
-        (WS.runClient host port "/" (clientApp msgPath storeChan stateMV))
+        (WS.runClient host port "/" (clientApp msgPath storeChan msgsMV stateMV))
         [ Handler
             ( \(e :: ConnectionException) -> do
                 print e
-                reconnectClient 1 previousTime host port msgPath storeChan stateMV
+                reconnectClient 1 previousTime host port msgPath storeChan msgsMV stateMV
             )
         , Handler
             ( \(SomeException e) -> do
                 print e
                 disconnectTime <- getPOSIXTime
                 let newWaitTime = if fromEnum (disconnectTime - previousTime) >= (1000000000000 * (maxWait + 1)) then 1 else min maxWait $ waitTime + 1
-                reconnectClient newWaitTime disconnectTime host port msgPath storeChan stateMV
+                reconnectClient newWaitTime disconnectTime host port msgPath storeChan msgsMV stateMV
             )
         ]
 
@@ -310,6 +319,7 @@ serve (Options d host port msgPath storeHost storePort) = do
     -- Reconstruct the state
     putStrLn "Reconstructing the State..."
     msgs <- readMessages msgPath
+    msgsMV <- newMVar msgs
     stateMV <- newMVar emptyState -- shared application state
     state <- takeMVar stateMV
     let newState = foldl update state msgs -- TODO foldr or strict foldl ?
@@ -318,10 +328,10 @@ serve (Options d host port msgPath storeHost storePort) = do
     -- keep connection to the Store
     firstTime <- getPOSIXTime
     storeChan <- dupChan chan -- output channel to the central message store
-    _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan stateMV
+    _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan msgsMV stateMV
     putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
-    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgPath chan) $ httpApp (Options d host port msgPath storeHost storePort)
+    Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgsMV msgPath chan) $ httpApp (Options d host port msgPath storeHost storePort)
 
 main :: IO ()
 main =
