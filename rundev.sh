@@ -1,2 +1,4 @@
 #!/bin/bash
-./back/rundev.sh
+pushd back
+./rundev.sh
+popd
