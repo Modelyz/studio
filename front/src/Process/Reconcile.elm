@@ -1,4 +1,4 @@
-module Process.Reconcile exposing (Reconciliation, byProcess, compare, decoder, encode, filterByEvent, fromPartialEvents, fromPartialProcesses, toPartialEvents, toPartialProcesses)
+module Process.Reconcile exposing (Reconciliation, byProcess, compare, decoder, encode, filterByEvent, fromAllocations, toAllocations)
 
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -50,45 +50,18 @@ compare r =
     Uuid.toString r.event ++ "-" ++ Uuid.toString r.process
 
 
-toPartialProcesses : Dict String Reconciliation -> List ( Uuid, RationalInput )
-toPartialProcesses reconciliations =
+toAllocations : Dict String Reconciliation -> List ( Uuid, RationalInput )
+toAllocations reconciliations =
     reconciliations
         |> Dict.values
         |> List.map (\r -> ( r.process, Rational.toFloatString r.qty ))
 
 
-fromPartialProcesses : Uuid -> List ( Uuid, RationalInput ) -> Dict String Reconciliation
-fromPartialProcesses event partialProcesses =
+fromAllocations : Uuid -> List ( Uuid, RationalInput ) -> Dict String Reconciliation
+fromAllocations event partialProcesses =
     partialProcesses
         |> List.foldl
             (\( process, sqty ) aggregate ->
-                case Rational.fromString sqty of
-                    Ok qty ->
-                        let
-                            r =
-                                Reconciliation qty event process
-                        in
-                        Dict.insert (compare r) r aggregate
-
-                    Err _ ->
-                        aggregate
-            )
-            Dict.empty
-
-
-toPartialEvents : Dict String Reconciliation -> List ( Uuid, RationalInput )
-toPartialEvents reconciliations =
-    -- needed because Reconciliation does not allow failed rationals
-    reconciliations
-        |> Dict.values
-        |> List.map (\r -> ( r.event, Rational.toFloatString r.qty ))
-
-
-fromPartialEvents : Uuid -> List ( Uuid, RationalInput ) -> Dict String Reconciliation
-fromPartialEvents process partialEvents =
-    partialEvents
-        |> List.foldl
-            (\( event, sqty ) aggregate ->
                 case Rational.fromString sqty of
                     Ok qty ->
                         let

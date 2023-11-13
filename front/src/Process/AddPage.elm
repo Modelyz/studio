@@ -17,7 +17,7 @@ import Ident.Input exposing (inputIdentifiers)
 import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process exposing (Process)
-import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialEvents, toPartialEvents)
+import Process.Reconcile as Reconcile exposing (Reconciliation, fromAllocations, toAllocations)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
@@ -163,7 +163,7 @@ init s f =
                 ( { adding
                     | type_ = realType
                     , uuid = uuid
-                    , partialEvents = toPartialEvents oldReconciliations
+                    , partialEvents = toAllocations oldReconciliations
                     , oldReconciliations = oldReconciliations
                     , reconciliations = oldReconciliations
                     , identifiers = getIdentifiers s.state hereType uuid realType False
@@ -200,7 +200,7 @@ update s msg model =
         InputPartialEvents partialEvents ->
             ( { model
                 | partialEvents = partialEvents
-                , reconciliations = fromPartialEvents model.uuid partialEvents
+                , reconciliations = fromAllocations model.uuid partialEvents
               }
             , Effect.none
             )

@@ -45,32 +45,34 @@ type Payload
     | RemovedContractType Uuid
     | AddedProcessType ProcessType
     | RemovedProcessType Uuid
-    | AddedResource Resource
-    | RemovedResource Uuid
+    | AddedIdentifierType IdentifierType
+    | ChangedIdentifierType { old : IdentifierType, new : IdentifierType }
+    | RemovedIdentifierType IdentifierType
+    | AddedValueType ValueType
+    | ChangedValueType { old : ValueType, new : ValueType }
+    | RemovedValueType ValueType
+    | AddedGroupType GroupType
+    | RemovedGroupType Uuid
+      -- ENTITIES (Maybe this should be part of a specific UI)
+    | AddedResource Resource -- should be removed: we can't create a resource from thin air
+    | RemovedResource Uuid -- should be removed: we can't destroy a resource. It is destroyed with en Event
     | AddedEvent Event
-    | RemovedEvent Uuid
-    | AddedAgent Agent
+    | RemovedEvent Uuid -- Is it necessary? An event cannot be removed (at least in the long term)
+    | AddedAgent Agent -- rename : RecordAgent.
     | RemovedAgent Uuid
     | AddedCommitment Commitment
     | RemovedCommitment Uuid
     | AddedContract Contract
     | RemovedContract Uuid
-    | AddedProcess Process
-    | RemovedProcess Uuid
-    | AddedIdentifierType IdentifierType
-    | ChangedIdentifierType { old : IdentifierType, new : IdentifierType }
-    | RemovedIdentifierType IdentifierType
+    | AddedProcess Process -- maybe rename to StartedProcess
+    | RemovedProcess Uuid -- Can a process be removed ? Rather StopProcess
+    | DefinedGroup Group
+    | RemovedGroup Uuid
+      -- BEHAVIOURS
     | AddedIdentifier Identifier
-    | AddedValueType ValueType
-    | ChangedValueType { old : ValueType, new : ValueType }
-    | RemovedValueType ValueType
     | AddedValue Value
     | Configured Configuration
     | Unconfigured Configuration
-    | AddedGroupType GroupType
-    | RemovedGroupType Uuid
-    | DefinedGroup Group
-    | RemovedGroup Uuid
     | Grouped GroupLink.Link
     | Ungrouped GroupLink.Link
     | Reconciled Reconciliation

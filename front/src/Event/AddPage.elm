@@ -22,7 +22,7 @@ import Message
 import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
-import Process.Reconcile as Reconcile exposing (Reconciliation, fromPartialProcesses, toPartialProcesses)
+import Process.Reconcile as Reconcile exposing (Reconciliation, fromAllocations, toAllocations)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Scope exposing (Scope(..))
@@ -81,7 +81,7 @@ type Step
     | StepProvider
     | StepReceiver
     | StepResource
-    | StepReconcile
+    | StepAllocate
     | StepDate
     | StepIdentifiers
     | StepValues
@@ -207,7 +207,7 @@ init s f =
                 , Step.Step StepProvider
                 , Step.Step StepReceiver
                 , Step.Step StepResource
-                , Step.Step StepReconcile
+                , Step.Step StepAllocate
                 , Step.Step StepDate
                 , Step.Step StepIdentifiers
                 , Step.Step StepValues
@@ -253,7 +253,7 @@ init s f =
                     , provider = event |> Maybe.map .provider
                     , receiver = event |> Maybe.map .receiver
                     , resource = event |> Maybe.map .resource
-                    , allocations = toPartialProcesses reconciliations
+                    , allocations = toAllocations reconciliations
                     , calendar = Tuple.first caledit
                     , identifiers = getIdentifiers s.state (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
@@ -394,7 +394,7 @@ update s msg model =
                                                 )
 
                                     else
-                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromPartialProcesses model.uuid model.allocations)
+                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromAllocations model.uuid model.allocations)
                                    )
                             )
 
@@ -436,7 +436,7 @@ checkStep model =
         Step StepResource ->
             checkMaybe model.resource "You must select or create a Resource" |> Result.map (\_ -> ())
 
-        Step StepReconcile ->
+        Step StepAllocate ->
             checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.allocations
 
         Step StepProcessTypes ->
@@ -458,8 +458,8 @@ validate m =
         |> andMapR (checkMaybe m.resource "You must select a Resource")
 
 
-inputPartialProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
-inputPartialProcess s allocations index ( process, input ) =
+allocateEventToProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
+allocateEventToProcess s allocations index ( process, input ) =
     -- send an event to replace the allocation at index in the allocations
     row [ spacing 5 ]
         [ RationalInput.inputText Rational.fromString
@@ -602,11 +602,11 @@ viewContent model s =
                         model.eventType
                         |> Maybe.withDefault (text "This event has no type")
 
-                Step.Step StepReconcile ->
+                Step.Step StepAllocate ->
                     column [ spacing 20 ]
                         [ h1 "Allocation"
                         , p "What amount do you allocate on each process?"
-                        , column [] <| List.indexedMap (\i pp -> inputPartialProcess s.state model.allocations i pp) model.allocations
+                        , column [] <| List.indexedMap (\i pp -> allocateEventToProcess s.state model.allocations i pp) model.allocations
                         ]
 
                 Step.Step StepDate ->
