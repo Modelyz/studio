@@ -16,6 +16,7 @@ type alias EventType =
     , providers : Scope
     , receivers : Scope
     , resources : Scope
+    , createResource : Bool
     , qty : Expression
     }
 
@@ -29,17 +30,19 @@ encode et =
         , ( "providers", Scope.encode et.providers )
         , ( "receivers", Scope.encode et.receivers )
         , ( "resources", Scope.encode et.resources )
+        , ( "createResource", Encode.bool et.createResource )
         , ( "qty", Expression.encode et.qty )
         ]
 
 
 decoder : Decode.Decoder EventType
 decoder =
-    Decode.map7 EventType
+    Decode.map8 EventType
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
         (Decode.field "providers" Scope.decoder)
         (Decode.field "receivers" Scope.decoder)
         (Decode.field "resources" Scope.decoder)
+        (Decode.field "createResource" Decode.bool)
         (Decode.field "qty" Expression.decoder)

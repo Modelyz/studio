@@ -33,6 +33,7 @@ import Value.ValueType as ValueType exposing (ValueType)
 type Payload
     = Null
     | InitiatedConnection Connection
+      -- TYPES (Maybe studio should only provides these)
     | AddedResourceType ResourceType
     | RemovedResourceType Uuid
     | AddedEventType EventType

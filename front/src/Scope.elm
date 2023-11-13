@@ -1,4 +1,4 @@
-module Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType)
+module Scope exposing (Scope(..), anything, compare, decoder, empty, encode, or, toString, toType, toUserType)
 
 import Ident.Identification as Identification exposing (Identification)
 import Json.Decode as Decode exposing (Decoder)
@@ -174,6 +174,41 @@ toType scope =
             Just t
 
         HasUserType t _ ->
+            Just t
+
+        Identified _ ->
+            Nothing
+
+        And _ _ ->
+            -- TODO this is inconsistent. Try to remove this function
+            Nothing
+
+        Or _ _ ->
+            -- TODO this is inconsistent. Try to remove this function
+            Nothing
+
+        Not _ ->
+            -- TODO this is inconsistent. Try to remove this function
+            Nothing
+
+
+toUserType : Scope -> Maybe Uuid
+toUserType scope =
+    case scope of
+        Empty ->
+            Nothing
+
+        Anything ->
+            -- TODO this is inconsistent. Try to remove this function
+            Nothing
+
+        IsItem _ t ->
+            Just t
+
+        HasType _ ->
+            Nothing
+
+        HasUserType _ t ->
             Just t
 
         Identified _ ->

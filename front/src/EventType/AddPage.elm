@@ -64,6 +64,7 @@ type alias Model =
     , steps : List (Step.Step Step)
     , hadMenu : Bool
     , isMenu : Bool
+    , createResource : Bool
     }
 
 
@@ -85,6 +86,7 @@ type Msg
     | SelectResources Scope
     | InputIdentifier Identifier
     | InputIsMenu Bool
+    | InputCreateResource Bool
     | GroupMsg Group.Input.Msg
     | InputValue Value
     | Button Step.Msg
@@ -140,6 +142,7 @@ init s f =
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , gsubmodel = initgroups
             , isMenu = True
+            , createResource = False
             , hadMenu = True
             , warning = ""
             , step = Step.Step StepType
@@ -203,6 +206,7 @@ init s f =
                     , gsubmodel = editgroups
                     , hadMenu = hadMenu
                     , isMenu = hadMenu
+                    , createResource = Maybe.map .createResource et |> Maybe.withDefault False
                   }
                 , Effect.batch
                     [ closeMenu f s.menu
@@ -253,6 +257,9 @@ update s msg model =
 
         InputIsMenu isMenu ->
             ( { model | isMenu = isMenu }, Effect.none )
+
+        InputCreateResource createResource ->
+            ( { model | createResource = createResource }, Effect.none )
 
         GroupMsg submsg ->
             let
@@ -317,7 +324,7 @@ checkStep model =
 validate : Model -> Result String EventType
 validate m =
     Result.map
-        (EventType HType.EventType m.uuid m.type_ m.providers m.receivers m.resources)
+        (EventType HType.EventType m.uuid m.type_ m.providers m.receivers m.resources m.createResource)
         (Expression.Editor.checkExpression m.editor)
 
 
@@ -357,13 +364,20 @@ viewContent model s =
                 Step.Step StepOptions ->
                     column [ alignTop, width <| minimum 200 fill, spacing 10 ]
                         [ h3 "Options:"
-                        , row [ Font.size size.text.main ]
+                        , column [ Font.size size.text.main, spacing 10 ]
                             [ Input.checkbox
                                 []
                                 { onChange = InputIsMenu
                                 , icon = Input.defaultCheckbox
                                 , checked = model.isMenu
                                 , label = Input.labelRight [] <| text "Display as a menu item"
+                                }
+                            , Input.checkbox
+                                []
+                                { onChange = InputCreateResource
+                                , icon = Input.defaultCheckbox
+                                , checked = model.createResource
+                                , label = Input.labelRight [] <| text "Create the resource with the event (for services)"
                                 }
                             ]
                         ]

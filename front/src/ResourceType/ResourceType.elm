@@ -11,7 +11,6 @@ type alias ResourceType =
     { what : HType.Type
     , uuid : Uuid
     , parent : Maybe Uuid
-    , createdByEvent : Bool
     }
 
 
@@ -21,14 +20,12 @@ encode at =
         [ ( "what", HType.encode at.what )
         , ( "uuid", Uuid.encode at.uuid )
         , ( "parent", Maybe.map Uuid.encode at.parent |> Maybe.withDefault Encode.null )
-        , ( "createdByEvent", Encode.bool at.createdByEvent )
         ]
 
 
 decoder : Decode.Decoder ResourceType
 decoder =
-    Decode.map4 ResourceType
+    Decode.map3 ResourceType
         (Decode.field "what" HType.decoder)
         (Decode.field "uuid" Uuid.decoder)
         (Decode.field "parent" <| Decode.maybe Uuid.decoder)
-        (Decode.field "createdByEvent" Decode.bool)

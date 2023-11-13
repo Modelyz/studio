@@ -62,7 +62,8 @@ type alias Model =
     , eventType : Maybe EventType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
-    , resource : Maybe Uuid
+    , resourceType : Maybe Uuid -- the type that will be used to create the resource
+    , resource : Maybe Uuid -- the created or existing resource
     , allocations : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
@@ -173,15 +174,22 @@ init s f =
             , provider =
                 chooseIfSingleton
                     (s.state.agents
-                        |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers) |> Maybe.withDefault True)
+                        |> Dict.filter (\_ a -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.providers) |> Maybe.withDefault True)
                         |> Dict.map (\_ a -> a.uuid)
                         |> Dict.values
                     )
             , receiver =
                 chooseIfSingleton
                     (s.state.agents
-                        |> Dict.filter (\_ a -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers) |> Maybe.withDefault True)
+                        |> Dict.filter (\_ a -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.receivers) |> Maybe.withDefault True)
                         |> Dict.map (\_ a -> a.uuid)
+                        |> Dict.values
+                    )
+            , resourceType =
+                chooseIfSingleton
+                    (s.state.resourceTypes
+                        |> Dict.filter (\_ rt -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) et.resources) |> Maybe.withDefault True)
+                        |> Dict.map (\_ rt -> rt.uuid)
                         |> Dict.values
                     )
             , resource =
@@ -434,7 +442,11 @@ checkStep model =
             checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
         Step StepResource ->
-            checkMaybe model.resource "You must select or create a Resource" |> Result.map (\_ -> ())
+            if Maybe.map .createResource model.eventType == Just True then
+                Ok ()
+
+            else
+                checkMaybe model.resource "You must select or create a Resource" |> Result.map (\_ -> ())
 
         Step StepAllocate ->
             checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.allocations
@@ -582,24 +594,46 @@ viewContent model s =
                         |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepResource ->
-                    Maybe.map
-                        (\et ->
-                            column [ spacing 20 ]
-                                [ flatSelect s.state
-                                    { what = Type.TType TType.Resource
-                                    , muuid = model.resource
-                                    , onInput = SelectResource
-                                    , title = "Resource:"
-                                    , explain = "Select the resource:"
-                                    , empty = "(There are no resources yet to choose from)"
-                                    }
-                                    (s.state.resources
-                                        |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) et.resources)
-                                        |> Dict.map (\_ r -> r.uuid)
-                                    )
-                                ]
-                        )
-                        model.eventType
+                    -- if createResource, we already know the type of the resource
+                    -- (it's defined in the scope of et.resources)
+                    -- If not createResource, we ask to select the resource to add in the event.
+                    let
+                        rscope =
+                            model.eventType |> Maybe.map .resources
+
+                        rt =
+                            rscope |> Maybe.andThen Scope.toUserType
+
+                        et =
+                            model.eventType
+                    in
+                    rt
+                        |> Maybe.map
+                            (\x ->
+                                if Maybe.map .createResource et == Just True then
+                                    text (displayZone s.state SmallcardZone (Type.HType HType.ResourceType) x ++ " will be created")
+
+                                else
+                                    rscope
+                                        |> Maybe.map
+                                            (\scope ->
+                                                column [ spacing 20 ]
+                                                    [ flatSelect s.state
+                                                        { what = Type.TType TType.Resource
+                                                        , muuid = model.resource
+                                                        , onInput = SelectResource
+                                                        , title = "Resource:"
+                                                        , explain = "Select the resource:"
+                                                        , empty = "(There are no resources yet to choose from)"
+                                                        }
+                                                        (s.state.resources
+                                                            |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) scope)
+                                                            |> Dict.map (\_ r -> r.uuid)
+                                                        )
+                                                    ]
+                                            )
+                                        |> Maybe.withDefault (text "No resource scope defined")
+                            )
                         |> Maybe.withDefault (text "This event has no type")
 
                 Step.Step StepAllocate ->

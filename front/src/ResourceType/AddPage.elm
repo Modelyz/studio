@@ -55,7 +55,6 @@ type alias Model =
     , steps : List (Step.Step Step)
     , hadMenu : Bool
     , isMenu : Bool
-    , createdByEvent : Bool
     }
 
 
@@ -71,7 +70,6 @@ type Msg
     = InputType (Maybe Uuid)
     | InputIdentifier Identifier
     | InputIsMenu Bool
-    | InputCreatedByEvent Bool
     | GroupMsg Group.Input.Msg
     | InputValue Value
     | Button Step.Msg
@@ -122,7 +120,6 @@ init s f =
             , values = getValues s.state.types s.state.valueTypes s.state.values hereType newUuid Nothing True
             , gsubmodel = initgroups
             , isMenu = True
-            , createdByEvent = False
             , hadMenu = True
             , warning = ""
             , step = Step.Step StepType
@@ -133,9 +130,6 @@ init s f =
         |> Maybe.map
             (\uuid ->
                 let
-                    resourceType =
-                        Dict.get (Uuid.toString uuid) s.state.resourceTypes
-
                     realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
@@ -167,7 +161,6 @@ init s f =
                     , gsubmodel = editgroups
                     , hadMenu = hadMenu
                     , isMenu = hadMenu
-                    , createdByEvent = Maybe.map .createdByEvent resourceType |> Maybe.withDefault False
                   }
                 , Effect.batch
                     [ closeMenu f s.menu
@@ -204,9 +197,6 @@ update s msg model =
 
         InputIsMenu isMenu ->
             ( { model | isMenu = isMenu }, Effect.none )
-
-        InputCreatedByEvent createdByEvent ->
-            ( { model | createdByEvent = createdByEvent }, Effect.none )
 
         GroupMsg submsg ->
             let
@@ -263,7 +253,7 @@ checkStep model =
 
 validate : Model -> Result String ResourceType
 validate m =
-    Ok <| ResourceType HType.ResourceType m.uuid m.type_ m.createdByEvent
+    Ok <| ResourceType HType.ResourceType m.uuid m.type_
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -295,13 +285,6 @@ viewContent model s =
                                 , icon = Input.defaultCheckbox
                                 , checked = model.isMenu
                                 , label = Input.labelRight [] <| text "Display as a menu item"
-                                }
-                            , Input.checkbox
-                                []
-                                { onChange = InputCreatedByEvent
-                                , icon = Input.defaultCheckbox
-                                , checked = model.createdByEvent
-                                , label = Input.labelRight [] <| text "Create the resource with the event (for services)"
                                 }
                             ]
                         ]

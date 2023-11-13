@@ -1,4 +1,4 @@
-module Scope.State exposing (containsScope, getUpperList)
+module Scope.State exposing (containsScope, getUpper, getUpperList)
 
 import Dict exposing (Dict)
 import Hierarchy.Hierarchic as H
