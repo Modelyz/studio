@@ -58,7 +58,6 @@ type alias Model =
     , seed : Seed
     , processTypes : Dict String Uuid
     , processes : Dict String Uuid -- the list of processes this event will be part of
-    , type_ : Maybe Uuid
     , eventType : Maybe EventType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
@@ -152,14 +151,11 @@ init s f =
         isNew =
             f.uuid == Nothing
 
-        wantedType =
-            Maybe.andThen Uuid.fromString f.tuuid
-
         ( initgroups, initcmd ) =
             Group.Input.init s Dict.empty
 
         met =
-            wantedType |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+            f.tuuid |> Maybe.andThen Uuid.fromString |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
 
         ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
@@ -168,7 +164,6 @@ init s f =
             { route = f.route
             , isNew = isNew
             , processes = f.related |> Maybe.map (\r -> Dict.singleton (Uuid.toString r) r) |> Maybe.withDefault Dict.empty
-            , type_ = wantedType
             , eventType = met
             , processTypes = toProcessTypes s.state (Maybe.map .uuid met)
             , provider =
@@ -203,8 +198,8 @@ init s f =
             , calendar = calinit
             , uuid = newUuid
             , seed = newSeed
-            , identifiers = getIdentifiers s.state (Type.TType TType.Event) newUuid wantedType True
-            , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid wantedType True
+            , identifiers = getIdentifiers s.state (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
+            , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
             , gsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepProcessTypes
@@ -255,7 +250,6 @@ init s f =
                             |> List.filterMap (\p -> Dict.get (Uuid.toString p) s.state.types |> Maybe.andThen third)
                             |> List.map (\t -> ( Uuid.toString t, t ))
                             |> Dict.fromList
-                    , type_ = realType
                     , uuid = uuid
                     , eventType = realType |> Maybe.andThen (\puuid -> Dict.get (Uuid.toString puuid) s.state.eventTypes)
                     , provider = event |> Maybe.map .provider
@@ -289,8 +283,7 @@ update s msg model =
                     muuid |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
             in
             ( { model
-                | type_ = muuid
-                , eventType = met
+                | eventType = met
                 , provider =
                     chooseIfSingleton
                         (s.state.agents
@@ -408,7 +401,7 @@ update s msg model =
 
                         -- renew the Seed to avoid conflict due to uuidAggregator
                         , Effect.fromCmd <| Message.renewSeed ()
-                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View { uuid = Uuid.toString model.uuid, type_ = Maybe.map Uuid.toString model.type_ }))
+                        , Effect.fromCmd <| redirect s.navkey (Route.Entity Route.Event (Route.View { uuid = Uuid.toString model.uuid, type_ = model.eventType |> Maybe.map (.uuid >> Uuid.toString) }))
                         ]
                     )
 
@@ -433,7 +426,7 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            checkMaybe model.type_ "You must select an Event Type" |> Result.map (\_ -> ())
+            checkMaybe (Maybe.map .uuid model.eventType) "You must select an Event Type" |> Result.map (\_ -> ())
 
         Step StepProvider ->
             checkMaybe model.provider "You must select a Provider" |> Result.map (\_ -> ())
@@ -459,15 +452,15 @@ checkStep model =
 
 
 validate : Model -> Result String Event
-validate m =
+validate model =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
     Result.map
-        (Event TType.Event m.uuid (DateTime.View.toPosix m.calendar))
-        (checkMaybe m.type_ "You must select an Event Type")
-        |> andMapR (checkMaybe m.provider "You must select a Provider")
-        |> andMapR (checkMaybe m.receiver "You must select a Receiver")
-        |> andMapR (checkMaybe m.resource "You must select a Resource")
+        (Event TType.Event model.uuid (DateTime.View.toPosix model.calendar))
+        (checkMaybe (Maybe.map .uuid model.eventType) "You must select an Event Type")
+        |> andMapR (checkMaybe model.provider "You must select a Provider")
+        |> andMapR (checkMaybe model.receiver "You must select a Receiver")
+        |> andMapR (checkMaybe model.resource "You must select a Resource")
 
 
 allocateEventToProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
@@ -538,7 +531,7 @@ viewContent model s =
                 Step.Step StepType ->
                     flatSelect s.state
                         { what = Type.HType HType.EventType
-                        , muuid = model.type_
+                        , muuid = Maybe.map .uuid model.eventType
                         , onInput = SelectType
                         , title = "Type:"
                         , explain = "Select the type of the new Event:"
@@ -650,7 +643,7 @@ viewContent model s =
                         ]
 
                 Step.Step StepGroups ->
-                    Element.map GroupMsg <| inputGroups { type_ = Type.TType TType.Event, mpuuid = model.type_ } s.state model.gsubmodel
+                    Element.map GroupMsg <| inputGroups { type_ = Type.TType TType.Event, mpuuid = Maybe.map .uuid model.eventType } s.state model.gsubmodel
 
                 Step.Step StepIdentifiers ->
                     inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.identifiers
