@@ -57,16 +57,16 @@ type Payload
       -- ENTITIES (Maybe this should be part of a specific UI)
     | AddedResource Resource -- should be removed: we can't create a resource from thin air
     | RemovedResource Uuid -- should be removed: we can't destroy a resource. It is destroyed with en Event
-    | AddedEvent Event
-    | RemovedEvent Uuid -- Is it necessary? An event cannot be removed (at least in the long term)
-    | AddedAgent Agent -- rename : RecordAgent.
-    | RemovedAgent Uuid
-    | AddedCommitment Commitment
-    | RemovedCommitment Uuid
-    | AddedContract Contract
-    | RemovedContract Uuid
+    | AddedEvent Event -- rename : EventOccured
+    | RemovedEvent Uuid -- Is it necessary? An event cannot be removed (at least in the long term) Maybe replace with a single Undo message that applies to anything
+    | AddedAgent Agent -- rename : RecordedAgent.
+    | RemovedAgent Uuid -- remove, or keep only for RGPD
+    | AddedCommitment Commitment -- rename CommitmentExpected
+    | RemovedCommitment Uuid -- rename CommitmentCancelled
+    | AddedContract Contract -- rename CreatedContract
+    | RemovedContract Uuid -- rename DestroyedContract
     | AddedProcess Process -- maybe rename to StartedProcess
-    | RemovedProcess Uuid -- Can a process be removed ? Rather StopProcess
+    | RemovedProcess Uuid -- Can a process be removed ? Rather StoppedProcess
     | DefinedGroup Group
     | RemovedGroup Uuid
       -- BEHAVIOURS
