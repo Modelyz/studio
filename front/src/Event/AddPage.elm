@@ -56,18 +56,23 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
+    , resUuid : Uuid
+    , resSeed : Seed
     , processTypes : Dict String Uuid
     , processes : Dict String Uuid -- the list of processes this event will be part of
     , eventType : Maybe EventType
     , provider : Maybe Uuid
     , receiver : Maybe Uuid
     , resourceType : Maybe Uuid -- the type that will be used to create the resource
-    , resource : Maybe Uuid -- the created or existing resource
+    , resource : Maybe Uuid -- the created or existing resource (as inflow or outflow)
     , allocations : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
+    , resIdentifiers : Dict String Identifier
     , values : Dict String Value
+    , resValues : Dict String Value
     , gsubmodel : Group.Input.Model
+    , resgsubmodel : Group.Input.Model
     , warning : String
     , step : Step.Step Step
     , steps : List (Step.Step Step)
@@ -95,10 +100,12 @@ type Msg
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
     | SelectResource (Maybe Uuid)
+    | SelectResourceType (Maybe Uuid)
     | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
+    | ResGroupMsg Group.Input.Msg
     | Button Step.Msg
     | CalendarMsg DateTime.View.Msg
 
@@ -148,6 +155,9 @@ init s f =
         ( newUuid, newSeed ) =
             Random.step Uuid.generator s.currentSeed
 
+        ( newResUuid, newResSeed ) =
+            Random.step Uuid.generator s.currentSeed
+
         isNew =
             f.uuid == Nothing
 
@@ -156,6 +166,14 @@ init s f =
 
         met =
             f.tuuid |> Maybe.andThen Uuid.fromString |> Maybe.andThen (\uid -> Dict.get (Uuid.toString uid) s.state.eventTypes)
+
+        mrt =
+            chooseIfSingleton
+                (s.state.resourceTypes
+                    |> Dict.filter (\_ rt -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) et.resources) |> Maybe.withDefault True)
+                    |> Dict.map (\_ rt -> rt.uuid)
+                    |> Dict.values
+                )
 
         ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
@@ -180,13 +198,7 @@ init s f =
                         |> Dict.map (\_ a -> a.uuid)
                         |> Dict.values
                     )
-            , resourceType =
-                chooseIfSingleton
-                    (s.state.resourceTypes
-                        |> Dict.filter (\_ rt -> met |> Maybe.map (\et -> containsScope s.state.types (IsItem (Type.HType rt.what) rt.uuid) et.resources) |> Maybe.withDefault True)
-                        |> Dict.map (\_ rt -> rt.uuid)
-                        |> Dict.values
-                    )
+            , resourceType = mrt
             , resource =
                 chooseIfSingleton
                     (s.state.resources
@@ -197,10 +209,15 @@ init s f =
             , allocations = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
             , calendar = calinit
             , uuid = newUuid
+            , resUuid = newResUuid
             , seed = newSeed
+            , resSeed = newResSeed
             , identifiers = getIdentifiers s.state (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
+            , resIdentifiers = getIdentifiers s.state (Type.TType TType.Resource) newResUuid mrt True
             , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
+            , resValues = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Resource) newUuid mrt True
             , gsubmodel = initgroups
+            , resgsubmodel = initgroups
             , warning = ""
             , step = Step.Step StepProcessTypes
             , steps =
@@ -222,20 +239,34 @@ init s f =
         |> Maybe.map
             (\uuid ->
                 let
+                    event =
+                        Dict.get (Uuid.toString uuid) s.state.events
+
                     realType =
                         Dict.get (Uuid.toString uuid) s.state.types |> Maybe.andThen third
 
                     reconciliations =
                         s.state.reconciliations |> Reconcile.filterByEvent uuid
 
-                    gs =
+                    groups =
                         Group.groupsOf s.state.grouped uuid |> List.map (\i -> ( Uuid.toString i, i )) |> Dict.fromList
 
-                    ( editgroups, editcmd ) =
-                        Group.Input.init s gs
+                    resgroups =
+                        event
+                            |> Maybe.map .resource
+                            |> Maybe.map
+                                (\ruuid ->
+                                    Group.groupsOf s.state.grouped ruuid
+                                        |> List.map (\i -> ( Uuid.toString i, i ))
+                                        |> Dict.fromList
+                                )
+                            |> Maybe.withDefault Dict.empty
 
-                    event =
-                        Dict.get (Uuid.toString uuid) s.state.events
+                    ( editgroups, editcmd ) =
+                        Group.Input.init s groups
+
+                    ( reseditgroups, reseditcmd ) =
+                        Group.Input.init s resgroups
 
                     caledit =
                         event |> Maybe.map .when |> Maybe.withDefault (millisToPosix 0) |> Date.fromPosix s.zone |> DateTime.View.init False s.zone
@@ -260,8 +291,9 @@ init s f =
                     , identifiers = getIdentifiers s.state (Type.TType TType.Event) uuid realType False
                     , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) uuid realType False
                     , gsubmodel = editgroups
+                    , resgsubmodel = reseditgroups
                   }
-                , Effect.batch [ closeMenu f s.menu, Effect.map GroupMsg (Effect.fromCmd editcmd) ]
+                , Effect.batch [ closeMenu f s.menu, Effect.map GroupMsg (Effect.fromCmd editcmd), Effect.map ResGroupMsg (Effect.fromCmd reseditcmd) ]
                 )
             )
         |> Maybe.withDefault
@@ -337,6 +369,15 @@ update s msg model =
         SelectResource uuid ->
             ( { model | resource = uuid }, Effect.none )
 
+        SelectResourceType uuid ->
+            ( { model
+                | resourceType = uuid
+                , resIdentifiers = getIdentifiers s.state (Type.TType TType.Resource) model.resUuid uuid True
+                , resValues = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Resource) model.resUuid uuid True
+              }
+            , Effect.none
+            )
+
         InputPartialProcesses allocations ->
             ( { model
                 | allocations = allocations
@@ -365,6 +406,13 @@ update s msg model =
                     Group.Input.update submsg model.gsubmodel
             in
             ( { model | gsubmodel = submodel }, Effect.fromCmd <| subcmd )
+
+        ResGroupMsg submsg ->
+            let
+                ( submodel, subcmd ) =
+                    Group.Input.update submsg model.resgsubmodel
+            in
+            ( { model | resgsubmodel = submodel }, Effect.fromCmd <| subcmd )
 
         Button Step.Added ->
             case validate model of
@@ -590,44 +638,46 @@ viewContent model s =
                     -- if createResource, we already know the type of the resource
                     -- (it's defined in the scope of et.resources)
                     -- If not createResource, we ask to select the resource to add in the event.
-                    let
-                        rscope =
-                            model.eventType |> Maybe.map .resources
+                    if Maybe.map .createResource model.eventType == Just True then
+                        column [ spacing 20 ]
+                            [ flatSelect s.state
+                                { what = Type.HType HType.ResourceType
+                                , muuid = model.resourceType
+                                , onInput = SelectResourceType
+                                , title = "Type:"
+                                , explain = "Choose the type of the new Resource:"
+                                , empty = "(There are no Resource Types yet to choose from)"
+                                }
+                                (s.state.resourceTypes
+                                    |> Dict.filter (\_ r -> model.eventType |> Maybe.map .resources |> Maybe.map (containsScope s.state.types (IsItem (Type.HType r.what) r.uuid)) |> Maybe.withDefault False)
+                                    |> Dict.map (\_ a -> a.uuid)
+                                )
+                            , inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.resIdentifiers
+                            , inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( Type.TType TType.Resource, model.resUuid ) } s.state model.resValues
+                            , Element.map ResGroupMsg <| inputGroups { type_ = Type.TType TType.Resource, mpuuid = model.resourceType } s.state model.resgsubmodel
+                            ]
 
-                        rt =
-                            rscope |> Maybe.andThen Scope.toUserType
-
-                        et =
-                            model.eventType
-                    in
-                    rt
-                        |> Maybe.map
-                            (\x ->
-                                if Maybe.map .createResource et == Just True then
-                                    text (displayZone s.state SmallcardZone (Type.HType HType.ResourceType) x ++ " will be created")
-
-                                else
-                                    rscope
-                                        |> Maybe.map
-                                            (\scope ->
-                                                column [ spacing 20 ]
-                                                    [ flatSelect s.state
-                                                        { what = Type.TType TType.Resource
-                                                        , muuid = model.resource
-                                                        , onInput = SelectResource
-                                                        , title = "Resource:"
-                                                        , explain = "Select the resource:"
-                                                        , empty = "(There are no resources yet to choose from)"
-                                                        }
-                                                        (s.state.resources
-                                                            |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) scope)
-                                                            |> Dict.map (\_ r -> r.uuid)
-                                                        )
-                                                    ]
+                    else
+                        model.eventType
+                            |> Maybe.map .resources
+                            |> Maybe.map
+                                (\scope ->
+                                    column [ spacing 20 ]
+                                        [ flatSelect s.state
+                                            { what = Type.TType TType.Resource
+                                            , muuid = model.resource
+                                            , onInput = SelectResource
+                                            , title = "Resource:"
+                                            , explain = "Select the resource:"
+                                            , empty = "(There are no resources yet to choose from)"
+                                            }
+                                            (s.state.resources
+                                                |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) scope)
+                                                |> Dict.map (\_ r -> r.uuid)
                                             )
-                                        |> Maybe.withDefault (text "No resource scope defined")
-                            )
-                        |> Maybe.withDefault (text "This event has no type")
+                                        ]
+                                )
+                            |> Maybe.withDefault (text "No resource scope defined")
 
                 Step.Step StepAllocate ->
                     column [ spacing 20 ]
