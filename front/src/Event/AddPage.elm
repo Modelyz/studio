@@ -103,7 +103,9 @@ type Msg
     | SelectResourceType (Maybe Uuid)
     | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
+    | InputResIdentifier Identifier
     | InputValue Value
+    | InputResValue Value
     | GroupMsg Group.Input.Msg
     | ResGroupMsg Group.Input.Msg
     | Button Step.Msg
@@ -397,8 +399,14 @@ update s msg model =
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
 
+        InputResIdentifier i ->
+            ( { model | resIdentifiers = Dict.insert (Identifier.compare i) i model.resIdentifiers }, Effect.none )
+
         InputValue v ->
             ( { model | values = Dict.insert (Value.compare v) v model.values }, Effect.none )
+
+        InputResValue v ->
+            ( { model | resValues = Dict.insert (Value.compare v) v model.resValues }, Effect.none )
 
         GroupMsg submsg ->
             let
@@ -422,9 +430,13 @@ update s msg model =
                         [ Shared.dispatchMany s
                             (Payload.AddedEvent e
                                 :: List.map Payload.AddedIdentifier (Dict.values model.identifiers)
+                                ++ List.map Payload.AddedIdentifier (Dict.values model.resIdentifiers)
                                 ++ List.map Payload.AddedValue (Dict.values model.values)
+                                ++ List.map Payload.AddedValue (Dict.values model.resValues)
                                 ++ List.map (\uuid -> Payload.Grouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
                                 ++ List.map (\uuid -> Payload.Ungrouped (Link (Type.TType TType.Event) e.uuid uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
+                                ++ List.map (\uuid -> Payload.Grouped (Link (Type.TType TType.Resource) e.resource uuid)) (Dict.values <| Group.Input.added model.gsubmodel)
+                                ++ List.map (\uuid -> Payload.Ungrouped (Link (Type.TType TType.Event) e.resource uuid)) (Dict.values <| Group.Input.removed model.gsubmodel)
                                 ++ (if Dict.isEmpty model.processes then
                                         Dict.values model.processTypes
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
@@ -652,8 +664,8 @@ viewContent model s =
                                     |> Dict.filter (\_ r -> model.eventType |> Maybe.map .resources |> Maybe.map (containsScope s.state.types (IsItem (Type.HType r.what) r.uuid)) |> Maybe.withDefault False)
                                     |> Dict.map (\_ a -> a.uuid)
                                 )
-                            , inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputIdentifier } model.resIdentifiers
-                            , inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputValue, context = ( Type.TType TType.Resource, model.resUuid ) } s.state model.resValues
+                            , inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResIdentifier } model.resIdentifiers
+                            , inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResValue, context = ( Type.TType TType.Resource, model.resUuid ) } s.state model.resValues
                             , Element.map ResGroupMsg <| inputGroups { type_ = Type.TType TType.Resource, mpuuid = model.resourceType } s.state model.resgsubmodel
                             ]
 
