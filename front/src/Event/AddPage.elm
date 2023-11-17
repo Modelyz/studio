@@ -57,7 +57,6 @@ type alias Model =
     , uuid : Uuid
     , seed : Seed
     , resUuid : Uuid
-    , resSeed : Seed
     , processTypes : Dict String Uuid
     , processes : Dict String Uuid -- the list of processes this event will be part of
     , eventType : Maybe EventType
@@ -158,7 +157,7 @@ init s f =
             Random.step Uuid.generator s.currentSeed
 
         ( newResUuid, newResSeed ) =
-            Random.step Uuid.generator s.currentSeed
+            Random.step Uuid.generator newSeed
 
         isNew =
             f.uuid == Nothing
@@ -212,8 +211,7 @@ init s f =
             , calendar = calinit
             , uuid = newUuid
             , resUuid = newResUuid
-            , seed = newSeed
-            , resSeed = newResSeed
+            , seed = newResSeed
             , identifiers = getIdentifiers s.state (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
             , resIdentifiers = getIdentifiers s.state (Type.TType TType.Resource) newResUuid mrt True
             , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) newUuid (Maybe.map .uuid met) True
@@ -332,13 +330,6 @@ update s msg model =
                             |> Dict.map (\_ a -> a.uuid)
                             |> Dict.values
                         )
-                , resource =
-                    chooseIfSingleton
-                        (s.state.resources
-                            |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
-                            |> Dict.values
-                            |> List.map .uuid
-                        )
                 , identifiers = getIdentifiers s.state (Type.TType TType.Event) model.uuid muuid True
                 , values = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Event) model.uuid muuid True
               }
@@ -371,11 +362,27 @@ update s msg model =
         SelectResource uuid ->
             ( { model | resource = uuid }, Effect.none )
 
-        SelectResourceType uuid ->
+        SelectResourceType muuid ->
             ( { model
-                | resourceType = uuid
-                , resIdentifiers = getIdentifiers s.state (Type.TType TType.Resource) model.resUuid uuid True
-                , resValues = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Resource) model.resUuid uuid True
+                | resourceType = muuid
+                , resIdentifiers = getIdentifiers s.state (Type.TType TType.Resource) model.resUuid muuid True
+                , resValues = getValues s.state.types s.state.valueTypes s.state.values (Type.TType TType.Resource) model.resUuid muuid True
+                , resource =
+                    model.eventType
+                        |> Maybe.map .createResource
+                        |> Maybe.andThen
+                            (\create ->
+                                if create then
+                                    Just model.resUuid
+
+                                else
+                                    chooseIfSingleton
+                                        (s.state.resources
+                                            |> Dict.filter (\_ r -> model.eventType |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
+                                            |> Dict.values
+                                            |> List.map .uuid
+                                        )
+                            )
               }
             , Effect.none
             )
