@@ -195,20 +195,14 @@ parse =
 
 decoder : Decoder Rational
 decoder =
-    Decode.string
-        |> Decode.andThen
-            (fromString
-                >> (\r ->
-                        case r of
-                            Ok rational ->
-                                Decode.succeed rational
-
-                            Err _ ->
-                                Decode.fail "Error decoding rational"
-                   )
-            )
+    Decode.map2 Rational
+        (Decode.field "numerator" Decode.int)
+        (Decode.field "denominator" Decode.int)
 
 
 encode : Rational -> Encode.Value
 encode (Rational n d) =
-    Encode.string (String.fromInt n ++ "/" ++ String.fromInt d)
+    Encode.object
+        [ ( "numeraror", Encode.string <| String.fromInt n )
+        , ( "denominator", Encode.string <| String.fromInt d )
+        ]
