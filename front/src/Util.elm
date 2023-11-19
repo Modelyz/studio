@@ -56,12 +56,7 @@ checkNothing ma err =
 
 checkMaybe : Maybe a -> String -> Result String a
 checkMaybe ma err =
-    case ma of
-        Nothing ->
-            Err err
-
-        Just x ->
-            Ok x
+    Result.fromMaybe err ma
 
 
 ifEmpty : String -> String -> String
