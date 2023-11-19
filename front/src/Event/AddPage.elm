@@ -552,7 +552,7 @@ validate model =
                 Just uuid ->
                     -- TODO check that TType thing is useful
                     Result.map
-                        (Resource TType.Resource model.uuid uuid)
+                        (Resource TType.Resource model.resUuid uuid)
                         (Rational.fromString model.rqty)
 
                 Nothing ->
