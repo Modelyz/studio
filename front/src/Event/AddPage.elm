@@ -545,7 +545,7 @@ validate model =
                 (checkMaybe (Maybe.map .uuid model.eventType) "You must select an Event Type")
                 |> andMapR (checkMaybe model.provider "You must select a Provider")
                 |> andMapR (checkMaybe model.receiver "You must select a Receiver")
-                |> andMapR (checkMaybe model.resource "You must select a Resource")
+                |> andMapR (checkMaybe model.resource "You must select or create a Resource")
 
         r =
             case model.resourceType of
