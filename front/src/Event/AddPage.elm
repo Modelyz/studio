@@ -180,12 +180,21 @@ init s f =
                 )
 
         resource =
-            chooseIfSingleton
-                (s.state.resources
-                    |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
-                    |> Dict.map (\_ r -> r.uuid)
-                    |> Dict.values
-                )
+            met
+                |> Maybe.map .createResource
+                |> Maybe.andThen
+                    (\create ->
+                        if create then
+                            Just newResUuid
+
+                        else
+                            chooseIfSingleton
+                                (s.state.resources
+                                    |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
+                                    |> Dict.values
+                                    |> List.map .uuid
+                                )
+                    )
 
         ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
