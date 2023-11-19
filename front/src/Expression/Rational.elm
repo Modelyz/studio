@@ -203,6 +203,6 @@ decoder =
 encode : Rational -> Encode.Value
 encode (Rational n d) =
     Encode.object
-        [ ( "numeraror", Encode.string <| String.fromInt n )
-        , ( "denominator", Encode.string <| String.fromInt d )
+        [ ( "numerator", Encode.int n )
+        , ( "denominator", Encode.int d )
         ]
