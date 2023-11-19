@@ -3,7 +3,8 @@ module Resource.AddPage exposing (Flags, Model, Msg(..), Step(..), match, page)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
-import Expression.Rational as Rational exposing (Rational)
+import Expression.Rational as Rational
+import Expression.RationalInput as RationalInput exposing (RationalInput)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
 import Group.Link exposing (Link)
@@ -20,7 +21,7 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (third)
+import Util exposing (andMapR, checkMaybe, flip, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -48,7 +49,7 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , qty : Rational -- the internal qty
+    , qty : RationalInput -- the internal qty
     , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -68,7 +69,7 @@ type Step
 
 type Msg
     = InputType (Maybe Uuid)
-    | InputQty Rational
+    | InputQty RationalInput
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
@@ -117,7 +118,7 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = wantedType
-            , qty = Rational.one
+            , qty = ""
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state hereType newUuid wantedType True
@@ -219,7 +220,9 @@ checkStep : Model -> Result String ()
 checkStep model =
     case model.step of
         Step StepType ->
-            Maybe.map (\_ -> Ok ()) model.type_ |> Maybe.withDefault (Err "You must select a Resource Type")
+            model.type_
+                |> Result.fromMaybe "You must select a Resource Type"
+                |> Result.map2 (\_ _ -> ()) (Rational.fromString model.qty |> Result.mapError (always "The qty is invalid"))
 
         Step StepIdentifiers ->
             Ok ()
@@ -233,13 +236,10 @@ checkStep model =
 
 validate : Model -> Result String Resource
 validate m =
-    case m.type_ of
-        Just uuid ->
-            -- TODO check that TType thing is useful
-            Ok <| Resource TType.Resource m.uuid uuid m.qty
-
-        Nothing ->
-            Err "You must select a Resource Type"
+    Result.map
+        (Resource TType.Resource m.uuid)
+        (Result.fromMaybe "You must select a Resource Type" m.type_)
+        |> andMapR (Result.mapError (always "The internal qty is invalid") (Rational.fromString m.qty))
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -248,15 +248,18 @@ viewContent model s =
         step =
             case model.step of
                 Step.Step StepType ->
-                    flatSelect s.state
-                        { what = Type.HType HType.ResourceType
-                        , muuid = model.type_
-                        , onInput = InputType
-                        , title = "Type:"
-                        , explain = "Choose the type of the new Resource:"
-                        , empty = "(There are no Resource Types yet to choose from)"
-                        }
-                        (s.state.resourceTypes |> Dict.map (\_ a -> a.uuid))
+                    column [ spacing 20 ]
+                        [ RationalInput.inputText Rational.fromString "" (Just "Internal qty") InputQty model.qty
+                        , flatSelect s.state
+                            { what = Type.HType HType.ResourceType
+                            , muuid = model.type_
+                            , onInput = InputType
+                            , title = "Type:"
+                            , explain = "Choose the type of the new Resource:"
+                            , empty = "(There are no Resource Types yet to choose from)"
+                            }
+                            (s.state.resourceTypes |> Dict.map (\_ a -> a.uuid))
+                        ]
 
                 Step.Step StepGroups ->
                     Element.map GroupMsg <| inputGroups { type_ = hereType, mpuuid = model.type_ } s.state model.gsubmodel
