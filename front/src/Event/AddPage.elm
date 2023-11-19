@@ -24,6 +24,7 @@ import Prng.Uuid as Uuid exposing (Uuid)
 import Process.Process as Process exposing (Process)
 import Process.Reconcile as Reconcile exposing (Reconciliation, fromAllocations, toAllocations)
 import Random.Pcg.Extended as Random exposing (Seed)
+import Resource.Resource exposing (Resource)
 import Route exposing (Route, redirect)
 import Scope exposing (Scope(..))
 import Scope.State exposing (containsScope)
@@ -64,6 +65,7 @@ type alias Model =
     , receiver : Maybe Uuid
     , resourceType : Maybe Uuid -- the type that will be used to create the resource
     , resource : Maybe Uuid -- the created or existing resource (as inflow or outflow)
+    , rqty : RationalInput -- the internal qty of the resource
     , allocations : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
@@ -99,6 +101,7 @@ type Msg
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
     | SelectResource (Maybe Uuid)
+    | InputQty RationalInput
     | SelectResourceType (Maybe Uuid)
     | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
@@ -176,6 +179,14 @@ init s f =
                     |> Dict.values
                 )
 
+        resource =
+            chooseIfSingleton
+                (s.state.resources
+                    |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
+                    |> Dict.map (\_ r -> r.uuid)
+                    |> Dict.values
+                )
+
         ( calinit, calcmd ) =
             DateTime.View.init True s.zone <| Date.fromPosix s.zone <| millisToPosix 0
 
@@ -200,13 +211,8 @@ init s f =
                         |> Dict.values
                     )
             , resourceType = mrt
-            , resource =
-                chooseIfSingleton
-                    (s.state.resources
-                        |> Dict.filter (\_ r -> met |> Maybe.map (\ct -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) ct.resources) |> Maybe.withDefault True)
-                        |> Dict.map (\_ r -> r.uuid)
-                        |> Dict.values
-                    )
+            , resource = resource
+            , rqty = resource |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.resources) |> Maybe.map .qty |> Maybe.withDefault Rational.one |> Rational.toFloatString
             , allocations = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
             , calendar = calinit
             , uuid = newUuid
@@ -362,6 +368,9 @@ update s msg model =
         SelectResource uuid ->
             ( { model | resource = uuid }, Effect.none )
 
+        InputQty qty ->
+            ( { model | rqty = qty }, Effect.none )
+
         SelectResourceType muuid ->
             ( { model
                 | resourceType = muuid
@@ -431,12 +440,12 @@ update s msg model =
 
         Button Step.Added ->
             case validate model of
-                Ok e ->
+                Ok ( e, r ) ->
                     ( model
                     , Effect.batch
                         [ Shared.dispatchMany s
-                            (Payload.AddedEvent e
-                                :: List.map Payload.AddedIdentifier (Dict.values model.identifiers)
+                            ([ Payload.AddedEvent e, Payload.AddedResource r ]
+                                ++ List.map Payload.AddedIdentifier (Dict.values model.identifiers)
                                 ++ List.map Payload.AddedIdentifier (Dict.values model.resIdentifiers)
                                 ++ List.map Payload.AddedValue (Dict.values model.values)
                                 ++ List.map Payload.AddedValue (Dict.values model.resValues)
@@ -453,16 +462,16 @@ update s msg model =
                                                         |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.resources)
                                                         |> Maybe.map .qty
                                                         |> Maybe.map
-                                                            (\rational ->
+                                                            (\qty ->
                                                                 [ Payload.AddedProcess <| Process TType.Process nextUuid pt
-                                                                , Payload.Reconciled <| Reconciliation rational e.uuid nextUuid
+                                                                , Payload.Reconciled <| Reconciliation qty e.uuid nextUuid
                                                                 ]
                                                             )
                                                         |> Maybe.withDefault []
                                                 )
 
                                     else
-                                        List.map (\r -> Payload.Reconciled r) <| Dict.values (fromAllocations model.uuid model.allocations)
+                                        List.map Payload.Reconciled <| Dict.values (fromAllocations model.uuid model.allocations)
                                    )
                             )
 
@@ -502,11 +511,9 @@ checkStep model =
             checkMaybe model.receiver "You must select a Receiver" |> Result.map (\_ -> ())
 
         Step StepResource ->
-            if Maybe.map .createResource model.eventType == Just True then
-                Ok ()
-
-            else
-                checkMaybe model.resource "You must select or create a Resource" |> Result.map (\_ -> ())
+            model.resourceType
+                |> Result.fromMaybe "You must select a Resource or ResourceType"
+                |> Result.map2 (\_ _ -> ()) (Rational.fromString model.rqty |> Result.mapError (always "The qty is invalid"))
 
         Step StepAllocate ->
             checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.allocations
@@ -518,16 +525,31 @@ checkStep model =
             Ok ()
 
 
-validate : Model -> Result String Event
+validate : Model -> Result String ( Event, Resource )
 validate model =
     -- similar to haskell: f <$> a <*> b <*> c <*> d ...
     -- we apply multiple partial applications until we have the full value
-    Result.map
-        (Event TType.Event model.uuid (DateTime.View.toPosix model.calendar))
-        (checkMaybe (Maybe.map .uuid model.eventType) "You must select an Event Type")
-        |> andMapR (checkMaybe model.provider "You must select a Provider")
-        |> andMapR (checkMaybe model.receiver "You must select a Receiver")
-        |> andMapR (checkMaybe model.resource "You must select a Resource")
+    let
+        e =
+            Result.map
+                (Event TType.Event model.uuid (DateTime.View.toPosix model.calendar))
+                (checkMaybe (Maybe.map .uuid model.eventType) "You must select an Event Type")
+                |> andMapR (checkMaybe model.provider "You must select a Provider")
+                |> andMapR (checkMaybe model.receiver "You must select a Receiver")
+                |> andMapR (checkMaybe model.resource "You must select a Resource")
+
+        r =
+            case model.resourceType of
+                Just uuid ->
+                    -- TODO check that TType thing is useful
+                    Result.map
+                        (Resource TType.Resource model.uuid uuid)
+                        (Rational.fromString model.rqty)
+
+                Nothing ->
+                    Err "You must select a Resource Type"
+    in
+    Result.map2 Tuple.pair e r
 
 
 allocateEventToProcess : State -> List ( Uuid, RationalInput ) -> Int -> ( Uuid, RationalInput ) -> Element Msg
@@ -671,6 +693,12 @@ viewContent model s =
                                     |> Dict.filter (\_ r -> model.eventType |> Maybe.map .resources |> Maybe.map (containsScope s.state.types (IsItem (Type.HType r.what) r.uuid)) |> Maybe.withDefault False)
                                     |> Dict.map (\_ a -> a.uuid)
                                 )
+                            , RationalInput.inputText
+                                Rational.fromString
+                                ""
+                                (Just "Internal qty")
+                                InputQty
+                                model.rqty
                             , inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResIdentifier } model.resIdentifiers
                             , inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResValue, context = ( Type.TType TType.Resource, model.resUuid ) } s.state model.resValues
                             , Element.map ResGroupMsg <| inputGroups { type_ = Type.TType TType.Resource, mpuuid = model.resourceType } s.state model.resgsubmodel
