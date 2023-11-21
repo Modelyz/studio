@@ -290,6 +290,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Choose the type of the new group:"
                         , empty = "(There are no Group Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 
@@ -301,6 +302,7 @@ viewContent model s =
                         , title = "Parent group:"
                         , explain = "Choose the parent of the new group:"
                         , empty = "(There are no Groups yet to choose from)"
+                        , additional = Nothing
                         }
                         -- we display the groups whose type is an ascendent of the newly added group
                         ((s.state.groups |> Dict.filter (\_ v -> Maybe.map (Type.hasCommonParent s.state.types v.type_) model.type_ |> Maybe.withDefault False)) |> Dict.map (\_ a -> a.uuid))

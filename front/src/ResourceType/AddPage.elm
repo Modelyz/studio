@@ -269,6 +269,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Resource Type (it can be hierarchical)"
                         , empty = "(There are no Resource Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.resourceTypes |> Dict.map (\_ a -> a.uuid))
 

@@ -8,7 +8,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Editor exposing (view)
 import Group.Group as Group
 import Group.Input exposing (inputGroups)
@@ -21,7 +21,7 @@ import Payload
 import Prng.Uuid as Uuid exposing (Uuid)
 import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
-import Scope as Scope exposing (Scope(..))
+import Scope exposing (Scope(..))
 import Scope.View exposing (selectScope)
 import Shared
 import Spa.Page
@@ -109,7 +109,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.CommitmentType (Route.Add p) ->
+        Route.Entity Route.CommitmentType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.CommitmentType (Route.Edit p) ->
@@ -339,6 +339,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "You can choose among the following types:"
                         , empty = "(There are no Commitment Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 

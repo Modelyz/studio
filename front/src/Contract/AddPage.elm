@@ -259,6 +259,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Choose the type of the new Contract:"
                         , empty = "(There are no Contract Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.contractTypes |> Dict.map (\_ a -> a.uuid))
 

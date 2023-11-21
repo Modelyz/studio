@@ -87,7 +87,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ContractType (Route.Add p) ->
+        Route.Entity Route.ContractType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.ContractType (Route.Edit p) ->
@@ -268,6 +268,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Contract Type (it can be hierarchical)"
                         , empty = "(There are no Contract Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.contractTypes |> Dict.map (\_ a -> a.uuid))
 

@@ -93,7 +93,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.ProcessType (Route.Add p) ->
+        Route.Entity Route.ProcessType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.ProcessType (Route.Edit p) ->
@@ -154,7 +154,7 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay {what=HType.ProcessType, uuid=uuid, isMenu=False}))
+                            |> Dict.get (Config.compare (MenuDisplay { what = HType.ProcessType, uuid = uuid, isMenu = False }))
                             |> Maybe.map
                                 (\config ->
                                     case config of
@@ -246,10 +246,10 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Payload.Configured <| MenuDisplay {what=HType.ProcessType, uuid=t.uuid, isMenu=model.isMenu} ]
+                                        [ Payload.Configured <| MenuDisplay { what = HType.ProcessType, uuid = t.uuid, isMenu = model.isMenu } ]
                                    )
                             )
-                        , redirect s.navkey (Route.Entity Route.ProcessType (Route.View {uuid = Uuid.toString model.uuid, type_ = Nothing})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.ProcessType (Route.View { uuid = Uuid.toString model.uuid, type_ = Nothing })) |> Effect.fromCmd
                         ]
                     )
 
@@ -295,6 +295,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Process Type (it can be hierarchical)"
                         , empty = "(There are no Process Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.processTypes |> Dict.map (\_ a -> a.uuid))
 

@@ -341,6 +341,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "You can choose among the following types:"
                         , empty = "(There are no Event Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.eventTypes |> Dict.map (\_ a -> a.uuid))
 

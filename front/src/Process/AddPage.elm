@@ -22,7 +22,6 @@ import Random.Pcg.Extended as Random exposing (Seed)
 import Route exposing (Route, redirect)
 import Shared
 import Spa.Page
-import State exposing (State)
 import Type
 import Typed.Type as TType
 import Util exposing (checkAllOk, third)
@@ -333,6 +332,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Choose the type of the new Process:"
                         , empty = "(There are no Process Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.processTypes |> Dict.map (\_ a -> a.uuid))
 

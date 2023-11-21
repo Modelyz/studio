@@ -21,7 +21,7 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (andMapR, checkMaybe, flip, third)
+import Util exposing (andMapR, third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -257,6 +257,7 @@ viewContent model s =
                             , title = "Type:"
                             , explain = "Choose the type of the new Resource:"
                             , empty = "(There are no Resource Types yet to choose from)"
+                            , additional = Nothing
                             }
                             (s.state.resourceTypes |> Dict.map (\_ a -> a.uuid))
                         ]

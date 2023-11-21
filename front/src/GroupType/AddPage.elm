@@ -96,7 +96,7 @@ page s =
 match : Route -> Maybe Flags
 match route =
     case route of
-        Route.Entity Route.GroupType (Route.Add p) ->
+        Route.Entity Route.GroupType (Route.Add _) ->
             Just { route = route, uuid = Nothing }
 
         Route.Entity Route.GroupType (Route.Edit p) ->
@@ -156,7 +156,7 @@ init s f =
 
                     hadMenu =
                         Config.onlyMenu s.state.configs
-                            |> Dict.get (Config.compare (MenuDisplay {what=HType.GroupType, uuid=uuid, isMenu=False}))
+                            |> Dict.get (Config.compare (MenuDisplay { what = HType.GroupType, uuid = uuid, isMenu = False }))
                             |> Maybe.map
                                 (\config ->
                                     case config of
@@ -249,10 +249,10 @@ update s msg model =
                                         []
 
                                     else
-                                        [ Payload.Configured <| MenuDisplay {what=HType.GroupType, uuid=t.uuid, isMenu=model.isMenu} ]
+                                        [ Payload.Configured <| MenuDisplay { what = HType.GroupType, uuid = t.uuid, isMenu = model.isMenu } ]
                                    )
                             )
-                        , redirect s.navkey (Route.Entity Route.GroupType (Route.View {uuid = Uuid.toString model.uuid, type_ = Nothing})) |> Effect.fromCmd
+                        , redirect s.navkey (Route.Entity Route.GroupType (Route.View { uuid = Uuid.toString model.uuid, type_ = Nothing })) |> Effect.fromCmd
                         ]
                     )
 
@@ -298,6 +298,7 @@ viewContent model s =
                         , title = "Parent Type:"
                         , explain = "Optional parent type for the new Group Type (it can be hierarchical)"
                         , empty = "(There are no Group Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.groupTypes |> Dict.map (\_ a -> a.uuid))
 

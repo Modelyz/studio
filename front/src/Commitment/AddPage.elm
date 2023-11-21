@@ -404,6 +404,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Choose the type of the new Commitment:"
                         , empty = "(There are no Commitment Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.commitmentTypes |> Dict.map (\_ a -> a.uuid))
 
@@ -418,6 +419,7 @@ viewContent model s =
                                     , title = "Provider:"
                                     , explain = "Choose the provider of the commitment:"
                                     , empty = "(There are no agents yet to choose from)"
+                                    , additional = Nothing
                                     }
                                     (s.state.agents
                                         |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.providers)
@@ -439,6 +441,7 @@ viewContent model s =
                                     , title = "Receiver:"
                                     , explain = "Choose the receiver of the commitment:"
                                     , empty = "(There are no agents yet to choose from)"
+                                    , additional = Nothing
                                     }
                                     (s.state.agents
                                         |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) ct.receivers)

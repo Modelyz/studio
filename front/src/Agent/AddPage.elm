@@ -262,6 +262,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Choose the type of the new Agent:"
                         , empty = "(There are no Agent Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (s.state.agentTypes |> Dict.map (\_ a -> a.uuid))
 

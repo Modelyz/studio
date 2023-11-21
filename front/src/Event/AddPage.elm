@@ -634,6 +634,7 @@ viewContent model s =
                         , title = "Type:"
                         , explain = "Select the type of the new Event:"
                         , empty = "(There are no Event Types yet to choose from)"
+                        , additional = Nothing
                         }
                         (model.processTypes
                             |> Dict.values
@@ -653,6 +654,7 @@ viewContent model s =
                                     , title = "Provider:"
                                     , explain = "Select the provider:"
                                     , empty = "(There are no agents yet to choose from)"
+                                    , additional = Nothing
                                     }
                                     (s.state.agents
                                         |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.providers)
@@ -674,6 +676,7 @@ viewContent model s =
                                     , title = "Receiver:"
                                     , explain = "Select the receiver:"
                                     , empty = "(There are no agents yet to choose from)"
+                                    , additional = Nothing
                                     }
                                     (s.state.agents
                                         |> Dict.filter (\_ a -> containsScope s.state.types (IsItem (Type.TType a.what) a.uuid) et.receivers)
@@ -697,17 +700,25 @@ viewContent model s =
                                 , title = "Type:"
                                 , explain = "Choose the type of the new Resource:"
                                 , empty = "(There are no Resource Types yet to choose from)"
+                                , additional =
+                                    Just <|
+                                        row [ spacing 20 ]
+                                            [ RationalInput.inputText
+                                                Rational.fromString
+                                                ""
+                                                (Just "Internal qty")
+                                                InputQty
+                                                model.rqty
+                                            , model.resourceType
+                                                |> Maybe.andThen (Type.userTypeOf s.state.types)
+                                                |> Maybe.map (displayZone s.state SmallcardZone (Type.HType HType.ResourceType) >> text)
+                                                |> Maybe.withDefault none
+                                            ]
                                 }
                                 (s.state.resourceTypes
                                     |> Dict.filter (\_ r -> model.eventType |> Maybe.map .resources |> Maybe.map (containsScope s.state.types (IsItem (Type.HType r.what) r.uuid)) |> Maybe.withDefault False)
                                     |> Dict.map (\_ a -> a.uuid)
                                 )
-                            , RationalInput.inputText
-                                Rational.fromString
-                                ""
-                                (Just "Internal qty")
-                                InputQty
-                                model.rqty
                             , inputIdentifiers { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResIdentifier } model.resIdentifiers
                             , inputValues { onEnter = Step.nextMsg model Button Step.NextPage Step.Added, onInput = InputResValue, context = ( Type.TType TType.Resource, model.resUuid ) } s.state model.resValues
                             , Element.map ResGroupMsg <| inputGroups { type_ = Type.TType TType.Resource, mpuuid = model.resourceType } s.state model.resgsubmodel
@@ -726,6 +737,7 @@ viewContent model s =
                                             , title = "Resource:"
                                             , explain = "Select the resource:"
                                             , empty = "(There are no resources yet to choose from)"
+                                            , additional = Nothing
                                             }
                                             (s.state.resources
                                                 |> Dict.filter (\_ r -> containsScope s.state.types (IsItem (Type.TType r.what) r.uuid) scope)
