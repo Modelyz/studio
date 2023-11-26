@@ -65,7 +65,6 @@ type alias Model =
     , receiver : Maybe Uuid
     , resourceType : Maybe Uuid -- the type that will be used to create the resource
     , resource : Maybe Uuid -- the created or existing resource (as inflow or outflow)
-    , rqty : RationalInput -- the internal qty of the resource
     , allocations : List ( Uuid, RationalInput ) -- a temporary partial allocation of this event to a process
     , calendar : DateTime.View.Model
     , identifiers : Dict String Identifier
@@ -101,7 +100,6 @@ type Msg
     | SelectProvider (Maybe Uuid)
     | SelectReceiver (Maybe Uuid)
     | SelectResource (Maybe Uuid)
-    | InputQty RationalInput
     | SelectResourceType (Maybe Uuid)
     | InputPartialProcesses (List ( Uuid, RationalInput ))
     | InputIdentifier Identifier
@@ -221,7 +219,6 @@ init s f =
                     )
             , resourceType = mrt
             , resource = resource
-            , rqty = resource |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.resources) |> Maybe.map .qty |> Maybe.withDefault Rational.one |> Rational.toFloatString
             , allocations = f.related |> Maybe.map (\r -> [ ( r, "0" ) ]) |> Maybe.withDefault []
             , calendar = calinit
             , uuid = newUuid
@@ -377,9 +374,6 @@ update s msg model =
         SelectResource uuid ->
             ( { model | resource = uuid }, Effect.none )
 
-        InputQty qty ->
-            ( { model | rqty = qty }, Effect.none )
-
         SelectResourceType muuid ->
             ( { model
                 | resourceType = muuid
@@ -467,16 +461,9 @@ update s msg model =
                                             |> List.foldl (Shared.uuidAggregator model.seed) []
                                             |> List.concatMap
                                                 (\( nextUuid, _, pt ) ->
-                                                    model.resource
-                                                        |> Maybe.andThen (\uuid -> Dict.get (Uuid.toString uuid) s.state.resources)
-                                                        |> Maybe.map .qty
-                                                        |> Maybe.map
-                                                            (\qty ->
-                                                                [ Payload.AddedProcess <| Process TType.Process nextUuid pt
-                                                                , Payload.Reconciled <| Reconciliation qty e.uuid nextUuid
-                                                                ]
-                                                            )
-                                                        |> Maybe.withDefault []
+                                                    [ Payload.AddedProcess <| Process TType.Process nextUuid pt
+                                                    , Payload.Reconciled <| Reconciliation Rational.one e.uuid nextUuid
+                                                    ]
                                                 )
 
                                     else
@@ -522,7 +509,7 @@ checkStep model =
         Step StepResource ->
             model.resourceType
                 |> Result.fromMaybe "You must select a Resource or ResourceType"
-                |> Result.map2 (\_ _ -> ()) (Rational.fromString model.rqty |> Result.mapError (always "The qty is invalid"))
+                |> Result.map (\_ -> ())
 
         Step StepAllocate ->
             checkAllOk (Tuple.second >> Rational.fromString >> Result.map (always ())) model.allocations
@@ -548,15 +535,8 @@ validate model =
                 |> andMapR (checkMaybe model.resource "You must select or create a Resource")
 
         r =
-            case model.resourceType of
-                Just uuid ->
-                    -- TODO check that TType thing is useful
-                    Result.map
-                        (Resource TType.Resource model.resUuid uuid)
-                        (Rational.fromString model.rqty)
-
-                Nothing ->
-                    Err "You must select a Resource Type"
+            Result.fromMaybe "You must select a Resource Type" model.resourceType
+                |> Result.map (Resource TType.Resource model.resUuid)
     in
     Result.map2 Tuple.pair e r
 
@@ -703,13 +683,7 @@ viewContent model s =
                                 , additional =
                                     Just <|
                                         row [ spacing 20 ]
-                                            [ RationalInput.inputText
-                                                Rational.fromString
-                                                ""
-                                                (Just "Internal qty")
-                                                InputQty
-                                                model.rqty
-                                            , model.resourceType
+                                            [ model.resourceType
                                                 |> Maybe.andThen (Type.userTypeOf s.state.types)
                                                 |> Maybe.map (displayZone s.state SmallcardZone (Type.HType HType.ResourceType) >> text)
                                                 |> Maybe.withDefault none

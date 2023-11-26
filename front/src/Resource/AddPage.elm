@@ -21,7 +21,7 @@ import Shared
 import Spa.Page
 import Type
 import Typed.Type as TType
-import Util exposing (andMapR, third)
+import Util exposing (third)
 import Value.Input exposing (inputValues)
 import Value.Valuable exposing (getValues)
 import Value.Value as Value exposing (Value)
@@ -49,7 +49,6 @@ type alias Model =
     , isNew : Bool
     , uuid : Uuid
     , seed : Seed
-    , qty : RationalInput -- the internal qty
     , type_ : Maybe Uuid
     , identifiers : Dict String Identifier
     , values : Dict String Value
@@ -69,7 +68,6 @@ type Step
 
 type Msg
     = InputType (Maybe Uuid)
-    | InputQty RationalInput
     | InputIdentifier Identifier
     | InputValue Value
     | GroupMsg Group.Input.Msg
@@ -118,7 +116,6 @@ init s f =
             { route = f.route
             , isNew = isNew
             , type_ = wantedType
-            , qty = ""
             , uuid = newUuid
             , seed = newSeed
             , identifiers = getIdentifiers s.state hereType newUuid wantedType True
@@ -166,9 +163,6 @@ update s msg model =
               }
             , Effect.none
             )
-
-        InputQty qty ->
-            ( { model | qty = qty }, Effect.none )
 
         InputIdentifier i ->
             ( { model | identifiers = Dict.insert (Identifier.compare i) i model.identifiers }, Effect.none )
@@ -222,7 +216,7 @@ checkStep model =
         Step StepType ->
             model.type_
                 |> Result.fromMaybe "You must select a Resource Type"
-                |> Result.map2 (\_ _ -> ()) (Rational.fromString model.qty |> Result.mapError (always "The qty is invalid"))
+                |> Result.map (always ())
 
         Step StepIdentifiers ->
             Ok ()
@@ -239,7 +233,6 @@ validate m =
     Result.map
         (Resource TType.Resource m.uuid)
         (Result.fromMaybe "You must select a Resource Type" m.type_)
-        |> andMapR (Result.mapError (always "The internal qty is invalid") (Rational.fromString m.qty))
 
 
 viewContent : Model -> Shared.Model -> Element Msg
@@ -249,8 +242,7 @@ viewContent model s =
             case model.step of
                 Step.Step StepType ->
                     column [ spacing 20 ]
-                        [ RationalInput.inputText Rational.fromString "" (Just "Internal qty") InputQty model.qty
-                        , flatSelect s.state
+                        [ flatSelect s.state
                             { what = Type.HType HType.ResourceType
                             , muuid = model.type_
                             , onInput = InputType
