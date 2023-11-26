@@ -50,12 +50,12 @@ inputObservable c s targetPath obs expr =
         Constant n ->
             text n
 
-        ObsNumber n ->
+        Variable n ->
             RationalInput.inputText
                 Rational.fromString
                 ((targetPath |> List.map String.fromInt) ++ [ n.name ] |> String.join "/")
                 (Just n.name)
-                (\str -> c.onInput <| Expression.updateExpr targetPath [] (Leaf <| ObsNumber { n | input = str }) expr)
+                (\str -> c.onInput <| Expression.updateExpr targetPath [] (Leaf <| Variable { n | input = str }) expr)
                 n.input
 
         ObsValue (ValueSelection.SelectedValue sv) ->

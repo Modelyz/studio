@@ -47,7 +47,7 @@ exeval s c allVals expr =
                 Constant n ->
                     Rational.fromString n
 
-                ObsNumber n ->
+                Variable n ->
                     Rational.fromString n.input
 
                 ObsValue vs ->

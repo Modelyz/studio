@@ -256,7 +256,7 @@ editObservable s ( stackNum, exprPath ) obs =
                     ]
                 ]
 
-        ObsNumber n ->
+        Variable n ->
             row [ Background.color color.item.background ]
                 [ row [ Font.size size.text.small ]
                     [ Input.text
@@ -265,7 +265,7 @@ editObservable s ( stackNum, exprPath ) obs =
                         ]
                         { onChange =
                             \x ->
-                                InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | name = x })
+                                InputExpression ( stackNum, exprPath ) (Leaf <| Variable { n | name = x })
                         , text = n.name
                         , placeholder =
                             Just <| Input.placeholder [] <| text "Name"
@@ -277,7 +277,7 @@ editObservable s ( stackNum, exprPath ) obs =
                         Rational.fromString
                         ("def" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
                         (Just "Default value")
-                        (\x -> InputExpression ( stackNum, exprPath ) (Leaf <| ObsNumber { n | input = x }))
+                        (\x -> InputExpression ( stackNum, exprPath ) (Leaf <| Variable { n | input = x }))
                         n.input
                     ]
                 ]
@@ -318,8 +318,8 @@ buttonObservable obs =
         Constant n ->
             button.primary (Ok <| AddExpression <| Leaf (Constant n)) (Obs.toString obs)
 
-        ObsNumber n ->
-            button.primary (Ok <| AddExpression <| Leaf (ObsNumber n)) (Obs.toString obs)
+        Variable n ->
+            button.primary (Ok <| AddExpression <| Leaf (Variable n)) (Obs.toString obs)
 
         ObsValue v ->
             button.primary (Ok <| AddExpression <| Leaf (ObsValue v)) (Obs.toString obs)

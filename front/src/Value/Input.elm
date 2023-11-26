@@ -2,7 +2,7 @@ module Value.Input exposing (Config, inputValues)
 
 import Dict exposing (Dict)
 import Element exposing (..)
-import Expression as Expression exposing (Expression(..))
+import Expression exposing (Expression(..))
 import Expression.Eval as Eval
 import Expression.Input exposing (inputExpression)
 import Expression.Observable exposing (Observable(..))
@@ -47,7 +47,7 @@ inputValue c s v =
 
             -- display the evaluated expression:
             , case v.expr of
-                Leaf (ObsNumber _) ->
+                Leaf (Variable _) ->
                     -- don't repeat the single number...
                     none
 

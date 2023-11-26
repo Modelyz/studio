@@ -60,7 +60,7 @@ viewObservable s obs =
         Constant n ->
             text n
 
-        ObsNumber n ->
+        Variable n ->
             text <|
                 case n.name of
                     "" ->
@@ -100,7 +100,7 @@ inputObservable s c obs =
         Constant n ->
             text n
 
-        ObsNumber n ->
+        Variable n ->
             text <| Rational.parse n.input
 
         ObsValue (ValueSelection.SelectedValue sv) ->

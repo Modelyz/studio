@@ -10,7 +10,7 @@ type
     Observable
     -- a single number with a name and a value
     = Constant String -- with unit ??
-    | ObsNumber { name : String, input : String }
+    | Variable { name : String, input : String }
       -- the value maybe existing for entity of gived type and uuid
     | ObsValue ValueSelection
     | ObsLink DeepLink
@@ -27,8 +27,8 @@ toString obs =
         Constant _ ->
             "Constant"
 
-        ObsNumber _ ->
-            "Free Number"
+        Variable _ ->
+            "Variable"
 
         ObsValue _ ->
             "Other Value"
@@ -39,7 +39,7 @@ toString obs =
 
 number : String -> String -> Observable
 number name input =
-    ObsNumber { name = name, input = input }
+    Variable { name = name, input = input }
 
 
 constant : String -> Observable
@@ -53,9 +53,9 @@ encode obs =
         Constant n ->
             Encode.object [ ( "type", Encode.string "Constant" ), ( "value", Encode.string n ) ]
 
-        ObsNumber n ->
+        Variable n ->
             Encode.object
-                [ ( "type", Encode.string "ObsNumber" )
+                [ ( "type", Encode.string "Variable" )
                 , ( "name", Encode.string n.name )
                 , ( "input", Encode.string n.input )
                 ]
@@ -76,8 +76,8 @@ decoder =
                     "Constant" ->
                         Decode.map Constant (Decode.field "value" Decode.string)
 
-                    "ObsNumber" ->
-                        Decode.map2 (\n i -> ObsNumber { name = n, input = i })
+                    "Variable" ->
+                        Decode.map2 (\n i -> Variable { name = n, input = i })
                             (Decode.field "name" Decode.string)
                             (Decode.field "input" Decode.string)
 
