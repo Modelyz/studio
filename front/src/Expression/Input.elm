@@ -47,6 +47,9 @@ inputExpression c s ( currentPath, currentExpr ) expr =
 inputObservable : Config msg -> State -> List Int -> Observable -> Expression -> Element msg
 inputObservable c s targetPath obs expr =
     case obs of
+        Constant n ->
+            text n
+
         ObsNumber n ->
             RationalInput.inputText
                 Rational.fromString

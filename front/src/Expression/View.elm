@@ -57,6 +57,9 @@ inputExpression s c expr =
 viewObservable : State -> Observable -> Element msg
 viewObservable s obs =
     case obs of
+        Constant n ->
+            text n
+
         ObsNumber n ->
             text <|
                 case n.name of
@@ -94,6 +97,9 @@ viewObservable s obs =
 inputObservable : State -> Config -> Observable -> Element msg
 inputObservable s c obs =
     case obs of
+        Constant n ->
+            text n
+
         ObsNumber n ->
             text <| Rational.parse n.input
 

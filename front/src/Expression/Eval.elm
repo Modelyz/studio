@@ -44,6 +44,9 @@ exeval s c allVals expr =
     case expr of
         Leaf obs ->
             case obs of
+                Constant n ->
+                    Rational.fromString n
+
                 ObsNumber n ->
                     Rational.fromString n.input
 

@@ -238,6 +238,24 @@ editExpression s model stackNum ( currentPath, expr ) =
 editObservable : Shared.Model -> ( Int, List Int ) -> Observable -> Element Msg
 editObservable s ( stackNum, exprPath ) obs =
     case obs of
+        Constant n ->
+            row [ Background.color color.item.background ]
+                [ row [ Font.size size.text.small ]
+                    [ Input.text
+                        [ width (px 70)
+                        , htmlAttribute <| Attr.id ("var" :: (stackNum :: exprPath |> List.map String.fromInt) |> String.join "/")
+                        ]
+                        { onChange =
+                            \x ->
+                                InputExpression ( stackNum, exprPath ) (Leaf <| Constant x)
+                        , text = n
+                        , placeholder =
+                            Just <| Input.placeholder [] <| text "Name"
+                        , label = Input.labelHidden <| "Name"
+                        }
+                    ]
+                ]
+
         ObsNumber n ->
             row [ Background.color color.item.background ]
                 [ row [ Font.size size.text.small ]
@@ -297,6 +315,9 @@ editObservable s ( stackNum, exprPath ) obs =
 buttonObservable : Observable -> Element Msg
 buttonObservable obs =
     case obs of
+        Constant n ->
+            button.primary (Ok <| AddExpression <| Leaf (Constant n)) (Obs.toString obs)
+
         ObsNumber n ->
             button.primary (Ok <| AddExpression <| Leaf (ObsNumber n)) (Obs.toString obs)
 

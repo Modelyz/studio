@@ -9,7 +9,8 @@ import Json.Encode as Encode
 type
     Observable
     -- a single number with a name and a value
-    = ObsNumber { name : String, input : String }
+    = Constant String -- with unit ??
+    | ObsNumber { name : String, input : String }
       -- the value maybe existing for entity of gived type and uuid
     | ObsValue ValueSelection
     | ObsLink DeepLink
@@ -17,12 +18,15 @@ type
 
 allObs : List Observable
 allObs =
-    [ number "" "", ObsValue UndefinedValue, ObsLink Null ]
+    [ constant "", number "" "", ObsValue UndefinedValue, ObsLink Null ]
 
 
 toString : Observable -> String
 toString obs =
     case obs of
+        Constant _ ->
+            "Constant"
+
         ObsNumber _ ->
             "Free Number"
 
@@ -38,9 +42,17 @@ number name input =
     ObsNumber { name = name, input = input }
 
 
+constant : String -> Observable
+constant =
+    Constant
+
+
 encode : Observable -> Encode.Value
 encode obs =
     case obs of
+        Constant n ->
+            Encode.object [ ( "type", Encode.string "Constant" ), ( "value", Encode.string n ) ]
+
         ObsNumber n ->
             Encode.object
                 [ ( "type", Encode.string "ObsNumber" )
@@ -61,6 +73,9 @@ decoder =
         |> Decode.andThen
             (\t ->
                 case t of
+                    "Constant" ->
+                        Decode.map Constant (Decode.field "value" Decode.string)
+
                     "ObsNumber" ->
                         Decode.map2 (\n i -> ObsNumber { name = n, input = i })
                             (Decode.field "name" Decode.string)
