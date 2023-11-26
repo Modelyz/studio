@@ -680,14 +680,7 @@ viewContent model s =
                                 , title = "Type:"
                                 , explain = "Choose the type of the new Resource:"
                                 , empty = "(There are no Resource Types yet to choose from)"
-                                , additional =
-                                    Just <|
-                                        row [ spacing 20 ]
-                                            [ model.resourceType
-                                                |> Maybe.andThen (Type.userTypeOf s.state.types)
-                                                |> Maybe.map (displayZone s.state SmallcardZone (Type.HType HType.ResourceType) >> text)
-                                                |> Maybe.withDefault none
-                                            ]
+                                , additional = Nothing
                                 }
                                 (s.state.resourceTypes
                                     |> Dict.filter (\_ r -> model.eventType |> Maybe.map .resources |> Maybe.map (containsScope s.state.types (IsItem (Type.HType r.what) r.uuid)) |> Maybe.withDefault False)
