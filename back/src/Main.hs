@@ -43,6 +43,7 @@ data State = State
     deriving (Show)
 
 type StateMV = MVar State
+
 type MessagesMV = MVar [Message]
 
 myself :: Service
@@ -86,8 +87,8 @@ serverApp msgsMV msgPath chan pending_conn = do
         -- wait for new message coming from other connected browsers through the chan
         -- and send them to the currently connected browser
         putStrLn "Starting client worker thread"
-        forkIO
-            $ fix
+        forkIO $
+            fix
                 ( \loop -> do
                     msg <- readChan browserChan
                     putStrLn $ "SERVER WORKER THREAD got this msg from the chan:\n" ++ show msg
@@ -96,8 +97,8 @@ serverApp msgsMV msgPath chan pending_conn = do
                     case getFlow msg of
                         Requested -> case creator msg of
                             Front ->
-                                Monad.when (lastVisited msg == Store)
-                                    $ (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
+                                Monad.when (lastVisited msg == Store) $
+                                    (WS.sendTextData conn . JSON.encode) (addVisited myself msg)
                             _ -> return ()
                         Processed -> case creator msg of
                             Dumb -> do
@@ -113,54 +114,54 @@ serverApp msgsMV msgPath chan pending_conn = do
 
     -- SERVER MAIN THREAD
     -- handle message coming through websocket from the currently connected browser
-    WS.withPingThread conn 30 (return ())
-        $ Monad.forever
-        $ do
-            message <- WS.receiveDataMessage conn
-            putStrLn $ "SERVER MAIN THREAD got this msg from browsers:\n" ++ show message
-            case JSON.eitherDecode
-                ( case message of
-                    WS.Text bs _ -> WS.fromLazyByteString bs
-                    WS.Binary bs -> WS.fromLazyByteString bs
-                ) of
-                Right msg -> do
-                    let from = creator msg
-                    case payload msg of
-                        InitiatedConnection connection -> do
-                            -- if the message is a InitiatedConnection, get the uuid list from it,
-                            -- and send back all the missing messages
-                            -- get the name of the connected client
-                            _ <- takeMVar clientMV
-                            putMVar clientMV from
-                            putStrLn $ "Connected client: " ++ show from -- right place to do auth?
-                            let remoteUuids = Connection.uuids connection
-                            putStrLn $ "remoteUuids = " ++ show remoteUuids
-                            esevs <- readMVar msgsMV
-                            putStrLn "Started syncing to browsers"
-                            -- putStrLn "event store ="
-                            -- print esevs
-                            putStrLn "remote UUIDS = "
-                            print remoteUuids
-                            let msgs = filter (\m -> messageId m `notElem` remoteUuids) esevs
-                            mapM_ (WS.sendTextData conn . JSON.encode . (if creator msg == myself then id else addVisited myself)) msgs
-                            putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to browsers:\n" ++ show msgs
-                            -- send the InitiatedConnection terminaison to signal the sync is over
-                            (WS.sendTextData conn . JSON.encode)
-                                $ Message
-                                    (Metadata{uuid = uuid $ metadata msg, Metadata.when = when $ metadata msg, Metadata.from = [myself], Metadata.flow = Processed})
-                                    (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Set.empty}))
-                        _ -> do
-                            case flow (metadata msg) of
-                                Requested -> case from of
-                                    Front -> do
-                                        -- write to the chan, write on file, add to the msg list
-                                        writeChan browserChan msg
-                                        appendMessage msgPath msg
-                                        msgs <- takeMVar msgsMV
-                                        putMVar msgsMV (msg : msgs)
+    WS.withPingThread conn 30 (return ()) $
+        Monad.forever $
+            do
+                message <- WS.receiveDataMessage conn
+                putStrLn $ "SERVER MAIN THREAD got this msg from browsers:\n" ++ show message
+                case JSON.eitherDecode
+                    ( case message of
+                        WS.Text bs _ -> WS.fromLazyByteString bs
+                        WS.Binary bs -> WS.fromLazyByteString bs
+                    ) of
+                    Right msg -> do
+                        let from = creator msg
+                        case payload msg of
+                            InitiatedConnection connection -> do
+                                -- if the message is a InitiatedConnection, get the uuid list from it,
+                                -- and send back all the missing messages
+                                -- get the name of the connected client
+                                _ <- takeMVar clientMV
+                                putMVar clientMV from
+                                putStrLn $ "Connected client: " ++ show from -- right place to do auth?
+                                let remoteUuids = Connection.uuids connection
+                                putStrLn $ "remoteUuids = " ++ show remoteUuids
+                                esevs <- readMVar msgsMV
+                                putStrLn "Started syncing to browsers"
+                                -- putStrLn "event store ="
+                                -- print esevs
+                                putStrLn "remote UUIDS = "
+                                print remoteUuids
+                                let msgs = filter (\m -> messageId m `notElem` remoteUuids) esevs
+                                mapM_ (WS.sendTextData conn . JSON.encode . (if creator msg == myself then id else addVisited myself)) msgs
+                                putStrLn $ "Sent all missing " ++ show (length msgs) ++ " messages to browsers:\n" ++ show msgs
+                                -- send the InitiatedConnection terminaison to signal the sync is over
+                                (WS.sendTextData conn . JSON.encode) $
+                                    Message
+                                        (Metadata{uuid = uuid $ metadata msg, Metadata.when = when $ metadata msg, Metadata.from = [myself], Metadata.flow = Processed})
+                                        (InitiatedConnection (Connection{lastMessageTime = 0, Connection.uuids = Set.empty}))
+                            _ -> do
+                                case flow (metadata msg) of
+                                    Requested -> case from of
+                                        Front -> do
+                                            -- write to the chan, write on file, add to the msg list
+                                            writeChan browserChan msg
+                                            appendMessage msgPath msg
+                                            msgs <- takeMVar msgsMV
+                                            putMVar msgsMV (msg : msgs)
+                                        _ -> return ()
                                     _ -> return ()
-                                _ -> return ()
-                Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
+                    Left err -> putStrLn $ "Error decoding incoming message:\n" ++ err
 
 clientApp :: FilePath -> Chan Message -> MessagesMV -> StateMV -> WS.ClientApp ()
 clientApp msgPath storeChan msgsMV stateMV conn = do
@@ -334,7 +335,7 @@ serve (Options d host port msgPath storeHost storePort) = do
     firstTime <- getPOSIXTime
     storeChan <- dupChan chan -- output channel to the central message store
     _ <- forkIO $ reconnectClient 1 firstTime storeHost storePort msgPath storeChan msgsMV stateMV
-    putStrLn $ "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
+    putStrLn $! "Modelyz Studio, serving on http://" ++ show host ++ ":" ++ show port ++ "/"
     -- listen for client browsers
     Warp.run port $ websocketsOr WS.defaultConnectionOptions (serverApp msgsMV msgPath chan) $ httpApp (Options d host port msgPath storeHost storePort)
 
